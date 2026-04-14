@@ -44,6 +44,7 @@ export default defineConfig({
       '@/application': resolve(__dirname, 'src/application'),
       '@/presentation': resolve(__dirname, 'src/presentation'),
       '@/infrastructure': resolve(__dirname, 'src/infrastructure'),
+      '@/utils': resolve(__dirname, 'src/utils'),
     },
   },
   define: {

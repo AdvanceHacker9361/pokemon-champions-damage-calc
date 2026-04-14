@@ -73,15 +73,27 @@ export function Calculator() {
     <>
       <FieldStateBar />
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+        {/* モバイル: 攻守交代ボタンを最上部に表示 */}
+        <div className="flex justify-center mb-3 lg:hidden">
+          <button
+            type="button"
+            onClick={swapStores}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-slate-300 rounded-full border border-slate-600 transition-colors"
+            title="攻撃側と防御側を入れ替え"
+          >
+            ⇄ 攻守交代
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* 攻撃側 */}
           <PokemonPanel store={attackerStore} label="攻撃側" showMoves />
 
           {/* ダメージ計算結果 */}
-          <div className="flex flex-col gap-4">
-            {/* 攻守交代ボタン */}
-            <div className="flex justify-center">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            {/* デスクトップのみ攻守交代ボタン */}
+            <div className="hidden lg:flex justify-center">
               <button
                 type="button"
                 onClick={swapStores}
