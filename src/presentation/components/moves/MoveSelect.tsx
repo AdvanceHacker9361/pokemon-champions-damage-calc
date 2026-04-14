@@ -83,9 +83,9 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
   }
 
   const categoryColors: Record<string, string> = {
-    '物理': 'text-orange-400',
-    '特殊': 'text-blue-400',
-    '変化': 'text-slate-400',
+    '物理': 'text-orange-500 dark:text-orange-400',
+    '特殊': 'text-blue-500 dark:text-blue-400',
+    '変化': 'text-slate-500 dark:text-slate-400',
   }
 
   return (
@@ -103,13 +103,13 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
       />
       {value && !query && (
         <div className="absolute inset-0 flex items-center px-2 pointer-events-none pr-6">
-          <span className="text-sm text-slate-200 truncate">{value}</span>
+          <span className="text-sm text-slate-800 dark:text-slate-200 truncate">{value}</span>
         </div>
       )}
       {value && (
         <button
           type="button"
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs px-1.5 py-1"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xs px-1.5 py-1"
           onClick={() => { onChange(null); setQuery(''); setIsOpen(false) }}
         >
           ✕
@@ -119,7 +119,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
       {isOpen && results.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded shadow-xl max-h-52 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded shadow-xl max-h-52 overflow-y-auto"
         >
           {results.map((m, i) => (
             <button
@@ -127,13 +127,15 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
               ref={i === activeIndex ? activeItemRef : undefined}
               type="button"
               className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-                i === activeIndex ? 'bg-slate-600' : 'hover:bg-slate-700'
+                i === activeIndex
+                  ? 'bg-slate-100 dark:bg-slate-600'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
               onClick={() => handleSelect(m.name)}
             >
-              <span className="text-sm text-slate-100 flex-1">{m.name}</span>
+              <span className="text-sm text-slate-900 dark:text-slate-100 flex-1">{m.name}</span>
               <span className={`text-xs ${categoryColors[m.category] ?? ''}`}>{m.category}</span>
-              {m.power && <span className="text-xs text-slate-400 font-mono w-8 text-right">{m.power}</span>}
+              {m.power && <span className="text-xs text-slate-500 dark:text-slate-400 font-mono w-8 text-right">{m.power}</span>}
             </button>
           ))}
         </div>

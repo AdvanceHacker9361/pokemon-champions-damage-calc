@@ -33,9 +33,9 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
       {/* SP 合計表示 */}
       <div className="flex items-center justify-between">
         <span className="label">能力ポイント(SP)</span>
-        <span className={`text-xs font-mono ${isOver ? 'text-red-400' : 'text-slate-400'}`}>
+        <span className={`text-xs font-mono ${isOver ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
           {total}/{SP_MAX_TOTAL}
-          {isOver && <span className="ml-1 text-red-400">超過!</span>}
+          {isOver && <span className="ml-1 text-red-500 dark:text-red-400">超過!</span>}
           {!isOver && <span className="ml-1 text-slate-500">(残{remaining})</span>}
         </span>
       </div>

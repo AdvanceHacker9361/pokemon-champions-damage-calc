@@ -89,7 +89,7 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
         autoComplete="off"
       />
       {value && !query && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none truncate max-w-[60%]">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-400 pointer-events-none truncate max-w-[60%]">
           {value}
         </span>
       )}
@@ -97,7 +97,7 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
       {isOpen && results.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-64 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-xl max-h-64 overflow-y-auto"
         >
           {results.map((p, i) => (
             <button
@@ -105,12 +105,14 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
               ref={i === activeIndex ? activeItemRef : undefined}
               type="button"
               className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${
-                i === activeIndex ? 'bg-slate-600' : 'hover:bg-slate-700'
+                i === activeIndex
+                  ? 'bg-slate-100 dark:bg-slate-600'
+                  : 'hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
               onClick={() => handleSelect(p)}
             >
-              <span className="text-sm font-medium text-slate-100 min-w-0 flex-1">{p.name}</span>
-              <span className="text-xs text-slate-500 font-mono hidden sm:inline">{p.nameEn}</span>
+              <span className="text-sm font-medium text-slate-900 dark:text-slate-100 min-w-0 flex-1">{p.name}</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500 font-mono hidden sm:inline">{p.nameEn}</span>
               <div className="flex gap-1 flex-shrink-0">
                 {p.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}
               </div>

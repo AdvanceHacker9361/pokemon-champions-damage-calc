@@ -4,44 +4,46 @@
 
 @layer base {
   html {
-    @apply bg-slate-950 text-slate-100;
+    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100;
   }
 
   * {
     @apply box-border;
   }
 
-  /* Custom scrollbar for dark mode */
+  /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-slate-800;
+    @apply bg-slate-200 dark:bg-slate-800;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-600 rounded;
+    @apply bg-slate-400 dark:bg-slate-600 rounded;
   }
 }
 
 @layer components {
   .panel {
-    @apply bg-slate-900 border border-slate-700 rounded-lg p-3 sm:p-4;
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 sm:p-4;
   }
 
   .label {
-    @apply text-xs font-medium text-slate-400 uppercase tracking-wide;
+    @apply text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide;
   }
 
   .input-base {
-    @apply bg-slate-800 border border-slate-600 rounded px-2 py-1.5 sm:py-1 text-sm text-slate-100
+    @apply bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600
+           rounded px-2 py-1.5 sm:py-1 text-sm text-slate-900 dark:text-slate-100
            focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-           placeholder:text-slate-500;
+           placeholder:text-slate-400 dark:placeholder:text-slate-500;
   }
 
   .btn {
     @apply px-3 py-2 sm:py-1.5 rounded text-sm font-medium transition-colors
-           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900;
+           focus:outline-none focus:ring-2 focus:ring-offset-2
+           focus:ring-offset-white dark:focus:ring-offset-slate-900;
   }
 
   .btn-primary {
@@ -49,10 +51,12 @@
   }
 
   .btn-secondary {
-    @apply btn bg-slate-700 hover:bg-slate-600 text-slate-100 focus:ring-slate-500;
+    @apply btn bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600
+           text-slate-800 dark:text-slate-100 focus:ring-slate-500;
   }
 
   .btn-ghost {
-    @apply btn bg-transparent hover:bg-slate-800 text-slate-300 focus:ring-slate-500;
+    @apply btn bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800
+           text-slate-600 dark:text-slate-300 focus:ring-slate-500;
   }
 }

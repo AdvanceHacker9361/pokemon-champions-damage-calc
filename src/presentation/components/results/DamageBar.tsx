@@ -17,7 +17,7 @@ function getBarColor(koResult: KoResult): string {
     if (koResult.hits === 2) return 'bg-orange-400'
     return 'bg-yellow-400'
   }
-  return 'bg-slate-500'
+  return 'bg-slate-400 dark:bg-slate-500'
 }
 
 export function DamageBar({ percentMax, koResult }: DamageBarProps) {
@@ -25,13 +25,13 @@ export function DamageBar({ percentMax, koResult }: DamageBarProps) {
   const color = getBarColor(koResult)
 
   return (
-    <div className="relative h-2 bg-slate-700 rounded overflow-hidden">
+    <div className="relative h-2 bg-slate-200 dark:bg-slate-700 rounded overflow-hidden">
       <div
         className={`absolute inset-y-0 left-0 rounded transition-all duration-150 ${color}`}
         style={{ width: `${width}%` }}
       />
       {/* 100% マーク */}
-      <div className="absolute inset-y-0 left-[100%] w-px bg-slate-400 opacity-50" />
+      <div className="absolute inset-y-0 left-[100%] w-px bg-slate-500 dark:bg-slate-400 opacity-50" />
     </div>
   )
 }
