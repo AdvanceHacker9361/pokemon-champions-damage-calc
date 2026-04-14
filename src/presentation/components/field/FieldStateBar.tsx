@@ -1,6 +1,5 @@
 import { useFieldStore } from '@/presentation/store/fieldStore'
 import type { Weather, TerrainField } from '@/domain/models/Pokemon'
-// トリックルームはシングルバトル想定外のため非表示
 
 const WEATHERS: { value: Weather; label: string }[] = [
   { value: null,        label: 'なし' },
@@ -22,8 +21,8 @@ export function FieldStateBar() {
   const field = useFieldStore()
 
   return (
-    <div className="bg-slate-900 border-b border-slate-800 px-4 py-2">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-4 text-sm">
+    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-2">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
         {/* 天候 */}
         <div className="flex items-center gap-1.5">
           <span className="label">天候:</span>
@@ -34,8 +33,8 @@ export function FieldStateBar() {
               onClick={() => field.setWeather(w.value)}
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
                 field.weather === w.value
-                  ? 'bg-blue-700 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               {w.label}
@@ -53,8 +52,8 @@ export function FieldStateBar() {
               onClick={() => field.setTerrain(t.value)}
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
                 field.terrain === t.value
-                  ? 'bg-green-700 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-green-600 dark:bg-green-700 text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               {t.label}
@@ -76,15 +75,14 @@ export function FieldStateBar() {
               onClick={() => setter(!value)}
               className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                 value
-                  ? 'bg-indigo-800 border-indigo-600 text-white'
-                  : 'border-slate-700 text-slate-400 hover:border-slate-600'
+                  ? 'bg-indigo-700 dark:bg-indigo-800 border-indigo-500 dark:border-indigo-600 text-white'
+                  : 'border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'
               }`}
             >
               {label}
             </button>
           ))}
         </div>
-
       </div>
     </div>
   )
