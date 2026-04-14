@@ -41,8 +41,9 @@ export function calcKoProbability(
 
 /**
  * n発でKOできる確率をDP計算（各乱数は等確率 1/16）
+ * 外部から直接呼び出せるよう export
  */
-function calcKoProbabilityForNHits(
+export function calcKoProbabilityForNHits(
   rolls: number[],
   defenderHp: number,
   hits: number,

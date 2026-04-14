@@ -1,5 +1,6 @@
 import { useFieldStore } from '@/presentation/store/fieldStore'
 import type { Weather, TerrainField } from '@/domain/models/Pokemon'
+// トリックルームはシングルバトル想定外のため非表示
 
 const WEATHERS: { value: Weather; label: string }[] = [
   { value: null,        label: 'なし' },
@@ -84,18 +85,6 @@ export function FieldStateBar() {
           ))}
         </div>
 
-        {/* トリックルーム */}
-        <button
-          type="button"
-          onClick={() => field.setTrickRoom(!field.isTrickRoom)}
-          className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-            field.isTrickRoom
-              ? 'bg-violet-800 border-violet-600 text-white'
-              : 'border-slate-700 text-slate-400 hover:border-slate-600'
-          }`}
-        >
-          トリックルーム
-        </button>
       </div>
     </div>
   )

@@ -6,7 +6,6 @@ import { AbilitySelect } from './AbilitySelect'
 import { ItemSelect } from './ItemSelect'
 import { MegaToggle } from './MegaToggle'
 import { SpDistributionPanel } from './SpDistribution'
-import { RankModifier } from './RankModifier'
 import { StatusToggle } from './StatusToggle'
 import { MoveSlots } from '@/presentation/components/moves/MoveSlots'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
@@ -66,12 +65,14 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           {/* 性格 */}
           <NatureSelect value={store.natureName} onChange={store.setNature} />
 
-          {/* SP配分 */}
+          {/* SP配分 + ランク補正（統合） */}
           <SpDistributionPanel
             sp={store.sp}
             stats={computedStats}
             onChangeSp={store.setSp}
             onSetPreset={store.setSpFull}
+            ranks={store.ranks}
+            onChangeRank={(stat: StatKey, rank: number) => store.setRank(stat, rank)}
           />
 
           {/* 特性 */}
@@ -85,12 +86,6 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
           {/* 持ち物 */}
           <ItemSelect value={store.itemName} onChange={store.setItem} />
-
-          {/* ランク補正 */}
-          <RankModifier
-            ranks={store.ranks}
-            onChangeRank={(stat: StatKey, rank: number) => store.setRank(stat, rank)}
-          />
 
           {/* 状態異常 */}
           <StatusToggle value={store.status} onChange={store.setStatus} />

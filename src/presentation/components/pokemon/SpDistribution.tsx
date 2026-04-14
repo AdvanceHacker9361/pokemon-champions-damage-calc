@@ -8,15 +8,19 @@ import { SP_MAX_TOTAL } from '@/domain/constants/spLimits'
 import { getTotalSp } from '@/domain/models/StatPoints'
 
 const SP_STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
+// HPにはランク補正なし
+const RANK_STATS = new Set<StatKey>(['atk', 'def', 'spa', 'spd', 'spe'])
 
 interface SpDistributionProps {
   sp: SpDistribution
   stats: ComputedStats
   onChangeSp: (stat: StatKey, value: number) => void
   onSetPreset: (sp: SpDistribution) => void
+  ranks?: Partial<Record<StatKey, number>>
+  onChangeRank?: (stat: StatKey, rank: number) => void
 }
 
-export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset }: SpDistributionProps) {
+export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks, onChangeRank }: SpDistributionProps) {
   const total = getTotalSp(sp)
   const remaining = SP_MAX_TOTAL - total
   const isOver = remaining < 0
@@ -47,7 +51,7 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset }: SpDi
         ))}
       </div>
 
-      {/* スライダー */}
+      {/* スライダー + ランク補正（横並び） */}
       <div className="space-y-1.5">
         {SP_STAT_KEYS.map(stat => (
           <SpSlider
@@ -57,6 +61,10 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset }: SpDi
             statValue={stats[stat]}
             remaining={remaining}
             onChange={v => onChangeSp(stat, v)}
+            rank={RANK_STATS.has(stat) && ranks ? (ranks[stat] ?? 0) : undefined}
+            onChangeRank={RANK_STATS.has(stat) && onChangeRank
+              ? (r) => onChangeRank(stat, r)
+              : undefined}
           />
         ))}
       </div>

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { DamageResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
+import { calcKoProbabilityForNHits } from '@/domain/calculators/KoProbabilityCalc'
 
 interface DamageResultRowProps {
   moveName: string
@@ -30,8 +32,20 @@ function koLabelColor(result: DamageResult): string {
   return 'text-slate-500'
 }
 
+function multiHitKoColor(prob: number): string {
+  if (prob >= 1.0) return 'text-red-400'
+  if (prob >= 0.75) return 'text-orange-400'
+  if (prob >= 0.5) return 'text-yellow-400'
+  if (prob > 0) return 'text-amber-400'
+  return 'text-slate-500'
+}
+
 export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const { min, max, percentMin, percentMax, defenderMaxHp } = result
+  const [expanded, setExpanded] = useState(false)
+  const [hitCount, setHitCount] = useState(2)
+  const [constDmg, setConstDmg] = useState(0)
+  const [constRec, setConstRec] = useState(0)
 
   if (min === 0 && max === 0) {
     return (
@@ -42,8 +56,25 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
     )
   }
 
+  // 加算計算
+  const netConst = constDmg - constRec
+  const effectiveHp = Math.max(1, defenderMaxHp - netConst)
+  const rolls = Array.from(result.rolls)
+  const multiProb = calcKoProbabilityForNHits(rolls, effectiveHp, hitCount)
+  const multiMin = min * hitCount + netConst
+  const multiMax = max * hitCount + netConst
+  const multiPercentMin = (multiMin / defenderMaxHp * 100)
+  const multiPercentMax = (multiMax / defenderMaxHp * 100)
+
+  const probDisplay = multiProb >= 1.0
+    ? '確定'
+    : multiProb <= 0
+    ? '不可'
+    : `${(multiProb * 100).toFixed(1)}%`
+
   return (
     <div className="py-2 border-b border-slate-800 last:border-0">
+      {/* 1発ダメージ */}
       <div className="flex items-baseline justify-between mb-1">
         <span className="text-sm font-medium text-slate-200">{moveName}</span>
         <span className={`text-xs font-bold ${koLabelColor(result)}`}>
@@ -59,9 +90,111 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           ({percentMin.toFixed(1)}%〜{percentMax.toFixed(1)}%)
         </span>
         <span className="text-xs text-slate-600">/{defenderMaxHp}</span>
+
+        {/* 加算計算トグル */}
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="ml-auto text-xs text-slate-500 hover:text-slate-300 transition-colors"
+          title="加算計算"
+        >
+          {expanded ? '▲' : '▼'}加算
+        </button>
       </div>
 
       <DamageBar percentMax={percentMax} koResult={result.koResult} />
+
+      {/* 加算計算パネル */}
+      {expanded && (
+        <div className="mt-2 pt-2 border-t border-slate-700 space-y-2">
+          {/* 攻撃回数 */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-slate-400 w-14 flex-shrink-0">攻撃回数</span>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setHitCount(n)}
+                  className={`w-6 h-6 text-xs rounded transition-colors ${
+                    hitCount === n
+                      ? 'bg-blue-700 text-white'
+                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 定数ダメージ */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-slate-400 w-14 flex-shrink-0">定数ダメ</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="w-5 h-5 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+                onClick={() => setConstDmg(v => Math.max(0, v - 1))}
+              >-</button>
+              <input
+                type="number"
+                min={0}
+                value={constDmg}
+                onChange={e => setConstDmg(Math.max(0, Number(e.target.value)))}
+                className="input-base w-14 text-center text-xs px-1"
+              />
+              <button
+                type="button"
+                className="w-5 h-5 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+                onClick={() => setConstDmg(v => v + 1)}
+              >+</button>
+            </div>
+            <span className="text-xs text-slate-600">砂/毒/やけど等</span>
+          </div>
+
+          {/* 定数回復 */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-slate-400 w-14 flex-shrink-0">定数回復</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="w-5 h-5 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+                onClick={() => setConstRec(v => Math.max(0, v - 1))}
+              >-</button>
+              <input
+                type="number"
+                min={0}
+                value={constRec}
+                onChange={e => setConstRec(Math.max(0, Number(e.target.value)))}
+                className="input-base w-14 text-center text-xs px-1"
+              />
+              <button
+                type="button"
+                className="w-5 h-5 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+                onClick={() => setConstRec(v => v + 1)}
+              >+</button>
+            </div>
+            <span className="text-xs text-slate-600">残飯/黒ヘド等</span>
+          </div>
+
+          {/* 加算結果 */}
+          <div className="bg-slate-800 rounded px-2 py-1.5 flex items-center justify-between">
+            <div>
+              <span className="text-xs text-slate-400">{hitCount}発累積: </span>
+              <span className="text-sm font-mono text-slate-100">
+                {multiMin}〜{multiMax}
+              </span>
+              <span className="text-xs text-slate-400 font-mono ml-1">
+                ({multiPercentMin.toFixed(1)}%〜{multiPercentMax.toFixed(1)}%)
+              </span>
+            </div>
+            <span className={`text-sm font-bold ${multiHitKoColor(multiProb)}`}>
+              {probDisplay}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
