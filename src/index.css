@@ -30,14 +30,14 @@
   }
 
   .label {
-    @apply text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide;
+    @apply text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide;
   }
 
   .input-base {
     @apply bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600
            rounded px-2 py-1.5 sm:py-1 text-sm text-slate-900 dark:text-slate-100
            focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-           placeholder:text-slate-400 dark:placeholder:text-slate-500;
+           placeholder:text-slate-500 dark:placeholder:text-slate-500;
   }
 
   .btn {

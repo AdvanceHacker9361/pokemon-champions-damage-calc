@@ -54,13 +54,13 @@ export function DamageAccumPanel() {
         {entries.map(entry => (
           <div key={entry.id} className="flex items-center justify-between text-xs">
             <span className="text-slate-700 dark:text-slate-300 truncate flex-1">{entry.label}</span>
-            <span className="text-slate-500 dark:text-slate-400 font-mono ml-2 flex-shrink-0">
+            <span className="text-slate-700 dark:text-slate-400 font-mono ml-2 flex-shrink-0">
               {entry.minDmg}〜{entry.maxDmg}
             </span>
             <button
               type="button"
               onClick={() => removeEntry(entry.id)}
-              className="ml-2 text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
+              className="ml-2 text-slate-600 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
             >
               ✕
             </button>
@@ -74,17 +74,17 @@ export function DamageAccumPanel() {
       {/* 合計・KO確率 */}
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs text-slate-500 dark:text-slate-400">合計: </span>
+          <span className="text-xs text-slate-700 dark:text-slate-400">合計: </span>
           <span className="text-sm font-mono text-slate-900 dark:text-slate-100">
             {minTotal}〜{maxTotal}
           </span>
           {hp > 0 && (
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono ml-1">
+            <span className="text-xs text-slate-700 dark:text-slate-400 font-mono ml-1">
               ({minPct.toFixed(1)}%〜{maxPct.toFixed(1)}%)
             </span>
           )}
           {hp > 0 && (
-            <span className="text-xs text-slate-400 dark:text-slate-600 ml-1">/{hp}</span>
+            <span className="text-xs text-slate-600 dark:text-slate-600 ml-1">/{hp}</span>
           )}
         </div>
         <span className={`text-sm font-bold ${koColor(combinedProb)}`}>

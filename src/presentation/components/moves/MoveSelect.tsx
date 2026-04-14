@@ -85,7 +85,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
   const categoryColors: Record<string, string> = {
     '物理': 'text-orange-500 dark:text-orange-400',
     '特殊': 'text-blue-500 dark:text-blue-400',
-    '変化': 'text-slate-500 dark:text-slate-400',
+    '変化': 'text-slate-600 dark:text-slate-400',
   }
 
   return (
@@ -109,7 +109,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
       {value && (
         <button
           type="button"
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-xs px-1.5 py-1"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs px-1.5 py-1"
           onClick={() => { onChange(null); setQuery(''); setIsOpen(false) }}
         >
           ✕
@@ -135,7 +135,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
             >
               <span className="text-sm text-slate-900 dark:text-slate-100 flex-1">{m.name}</span>
               <span className={`text-xs ${categoryColors[m.category] ?? ''}`}>{m.category}</span>
-              {m.power && <span className="text-xs text-slate-500 dark:text-slate-400 font-mono w-8 text-right">{m.power}</span>}
+              {m.power && <span className="text-xs text-slate-600 dark:text-slate-400 font-mono w-8 text-right">{m.power}</span>}
             </button>
           ))}
         </div>
