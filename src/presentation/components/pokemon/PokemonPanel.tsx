@@ -37,7 +37,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
     <div className="panel space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-300">{label}</h2>
+        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</h2>
         {store.pokemonId && (
           <div className="flex items-center gap-1.5">
             {store.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}

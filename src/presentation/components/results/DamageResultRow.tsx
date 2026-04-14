@@ -280,7 +280,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                   className={`w-6 h-6 text-xs rounded transition-colors ${
                     hitCount === n
                       ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
                   }`}
                 >
                   {n}
@@ -325,7 +325,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                     className={`text-xs px-1 py-0.5 rounded border transition-colors ${
                       constDmg === val
                         ? 'bg-amber-600 dark:bg-amber-700 border-amber-500 dark:border-amber-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
                     }`}
                     title={`${f.label} = ${val}`}
                   >
@@ -380,7 +380,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                     className={`text-xs px-1 py-0.5 rounded border transition-colors ${
                       constRec === val
                         ? 'bg-teal-600 dark:bg-teal-700 border-teal-500 dark:border-teal-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
                     }`}
                     title={`${f.label} = ${val}`}
                   >
