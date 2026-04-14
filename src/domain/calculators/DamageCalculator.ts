@@ -83,12 +83,13 @@ function resolveAtk(input: DamageCalcInput): number {
   if (attackerAbility === 'サンパワー' && input.field.weather === 'はれ') {
     if (move.category === '特殊') atkMod *= 1.5
   }
-  if (attackerAbility === 'すいすい' && input.field.weather === 'あめ') {
-    // 素早さ補正のみ（ダメージに直接影響なし）
+  // こんじょう: 状態異常時に物理攻撃1.5倍
+  if (attackerAbility === 'こんじょう' && input.attackerStatus !== null) {
+    if (move.category === '物理') atkMod *= 1.5
   }
-  if (attackerAbility === 'フェアリースキン' || attackerAbility === 'スカイスキン' ||
-      attackerAbility === 'エレキスキン' || attackerAbility === 'フリーズスキン') {
-    // ノーマル技をタイプ変換する場合の威力1.2倍はpowerResolveで処理
+  // はりきり: 物理攻撃1.5倍
+  if (attackerAbility === 'はりきり') {
+    if (move.category === '物理') atkMod *= 1.5
   }
 
   // 持ち物補正（攻撃側）
@@ -126,12 +127,6 @@ function resolveDef(input: DamageCalcInput): number {
   let defMod = 1.0
   if (defenderAbility === 'ふわふわもうふ' || defenderAbility === 'もふもふ') {
     if (move.flags.contact) defMod *= 0.5
-  }
-  if (defenderAbility === 'マルチスケイル' || defenderAbility === 'ファントムガード') {
-    // HP満タン時ダメ半減 — DamageCalcで処理
-  }
-  if (defenderAbility === 'とつげきチョッキ' === (defenderItem === 'とつげきチョッキ')) {
-    // 持ち物で処理
   }
 
   // 砂嵐時の岩タイプ特防1.5倍
@@ -342,6 +337,20 @@ function applyOtherModifiers(
   if (attackerAbility === 'いろめがね') {
     if (typeEff < 1 && typeEff > 0) d = pokeRound(d * 2)
   }
+  // すてみ: 反動技の威力1.2倍
+  if (attackerAbility === 'すてみ' && move.flags.recoil) {
+    d = pokeRound(d * 1.2)
+  }
+  // てつのこぶし: パンチ技の威力1.2倍
+  if (attackerAbility === 'てつのこぶし' && move.flags.punch) {
+    d = pokeRound(d * 1.2)
+  }
+  // すなのちから: すなあらし時にいわ/はがね/じめん技1.3倍
+  if (attackerAbility === 'すなのちから' && input.field.weather === 'すなあらし') {
+    if (moveType === 'いわ' || moveType === 'はがね' || moveType === 'じめん') {
+      d = pokeRound(d * 1.3)
+    }
+  }
   // スキン特性: ノーマル→他タイプ変換 + 威力1.2倍
   if ((attackerAbility === 'フェアリースキン' || attackerAbility === 'スカイスキン' ||
        attackerAbility === 'エレキスキン' || attackerAbility === 'フリーズスキン') &&
@@ -359,7 +368,7 @@ function applyOtherModifiers(
   // タイプ強化アイテム（各種+1.2倍）
   const typeBoostItems: Record<string, TypeName> = {
     'もくたん': 'ほのお', 'しんかいのキバ': 'みず', 'じしゃく': 'でんき',
-    '奇跡の種': 'くさ', 'とけないこおり': 'こおり', 'くろおび': 'かくとう',
+    'きせきのたね': 'くさ', 'とけないこおり': 'こおり', 'くろおび': 'かくとう',
     'どくバリ': 'どく', 'やわらかいすな': 'じめん', 'するどいくちばし': 'ひこう',
     'まがったスプーン': 'エスパー', 'ぎんのこな': 'むし', 'かたいいし': 'いわ',
     'のろいのおふだ': 'ゴースト', 'りゅうのキバ': 'ドラゴン', 'くろいめがね': 'あく',

@@ -1,5 +1,6 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
+import { DamageAccumPanel } from './DamageAccumPanel'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 
 export function DamageResultArea() {
@@ -24,15 +25,18 @@ export function DamageResultArea() {
   }
 
   return (
-    <div className="panel">
-      <div className="text-xs text-slate-500 mb-3">
-        {attackerName} → {defenderName}
+    <>
+      <div className="panel">
+        <div className="text-xs text-slate-500 mb-3">
+          {attackerName} → {defenderName}
+        </div>
+        <div>
+          {results.map(({ moveName, result }) => (
+            <DamageResultRow key={moveName} moveName={moveName} result={result} />
+          ))}
+        </div>
       </div>
-      <div>
-        {results.map(({ moveName, result }) => (
-          <DamageResultRow key={moveName} moveName={moveName} result={result} />
-        ))}
-      </div>
-    </div>
+      <DamageAccumPanel />
+    </>
   )
 }

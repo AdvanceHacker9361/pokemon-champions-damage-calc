@@ -20,6 +20,7 @@ export interface MoveFlags {
   punch: boolean
   bite: boolean
   slice: boolean
+  recoil?: boolean
 }
 
 export interface MoveData {

@@ -39,6 +39,7 @@ export interface MoveRecord {
     punch: boolean
     bite: boolean
     slice: boolean
+    recoil?: boolean
   }
   special: SpecialMoveTag | null
 }

@@ -73,3 +73,34 @@ export function calcKoProbabilityForNHits(
   }
   return Math.min(1, koProb)
 }
+
+/**
+ * 複数の技・ポケモンによる複合ダメージのKO確率をDP計算
+ * 各rollSetから1ロールずつ独立に選んだ合計がdefenderHp以上になる確率
+ */
+export function calcCombinedKoProbability(
+  rollSets: number[][],
+  defenderHp: number,
+): number {
+  if (rollSets.length === 0) return 0
+
+  let dp: Map<number, number> = new Map([[0, 1.0]])
+
+  for (const rolls of rollSets) {
+    const n = rolls.length
+    const next: Map<number, number> = new Map()
+    for (const [dmg, prob] of dp) {
+      for (const roll of rolls) {
+        const newDmg = dmg + roll
+        next.set(newDmg, (next.get(newDmg) ?? 0) + prob / n)
+      }
+    }
+    dp = next
+  }
+
+  let koProb = 0
+  for (const [dmg, prob] of dp) {
+    if (dmg >= defenderHp) koProb += prob
+  }
+  return Math.min(1, koProb)
+}
