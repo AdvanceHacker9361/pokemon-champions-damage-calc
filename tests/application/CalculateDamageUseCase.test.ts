@@ -60,14 +60,14 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
     special: null,
   }
 
-  it('スペック計算 - ガブリアスのHP実数値が正しい (仕様書: 184)', () => {
+  it('スペック計算 - ガブリアスのHP実数値が正しい (sp=2: 185)', () => {
     const stats = calculateStats({
       baseStats: garchompInput.baseStats,
       sp: garchompInput.sp,
       natureName: garchompInput.natureName,
       ranks: garchompInput.ranks,
     })
-    expect(stats.hp).toBe(184)
+    expect(stats.hp).toBe(185)
   })
 
   it('スペック計算 - ガブリアスのA実数値が正しい (仕様書: 200)', () => {

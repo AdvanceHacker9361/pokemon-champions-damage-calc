@@ -2,11 +2,11 @@ import type { NatureModifier } from '@/domain/constants/natureModifiers'
 
 /**
  * Champions HP 計算式
- * floor((種族値×2 + 31 + SP) × 50 ÷ 100 + 60)
- * ※レベル50固定、IV31固定、HPのSPはそのまま加算（非HP統計の半分の効率）
+ * floor((種族値×2 + 31 + SP×2) × 50 ÷ 100 + 60)
+ * ※レベル50固定、IV31固定
  */
 export function calculateHP(base: number, sp: number): number {
-  return Math.floor((base * 2 + 31 + sp) * 50 / 100 + 60)
+  return Math.floor((base * 2 + 31 + sp * 2) * 50 / 100 + 60)
 }
 
 /**

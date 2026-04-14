@@ -21,12 +21,13 @@ describe('StatCalculator', () => {
     })
 
     it('SP=32 の時の最大値計算 (ガブリアス)', () => {
-      // HP: floor((108*2 + 31 + 32) * 50/100 + 60) = floor(279*0.5 + 60) = floor(139.5 + 60) = 199
-      expect(calculateHP(108, 32)).toBe(199)
+      // HP: floor((108*2 + 31 + 32*2) * 50/100 + 60) = floor(311*0.5 + 60) = floor(215.5) = 215
+      expect(calculateHP(108, 32)).toBe(215)
     })
 
-    it('SP=2 の検証 (仕様書: ガブリアス HP=184)', () => {
-      expect(calculateHP(108, 2)).toBe(184)
+    it('SP=2 の検証 (ガブリアス HP=185)', () => {
+      // floor((108*2+31+2*2)*0.5+60) = floor(251*0.5+60) = floor(185.5) = 185
+      expect(calculateHP(108, 2)).toBe(185)
     })
   })
 

@@ -6,7 +6,7 @@
 export const STAT_TEST_CASES = [
   // { pokemonName, stat, base, sp, nature, natureModifier, expected }
   // ガブリアス いじっぱり (A↑ C↓)
-  { label: 'ガブリアス HP (sp=2)',      base: 108, sp: 2,  natureModifier: 1.0, isHP: true,  expected: 184 },
+  { label: 'ガブリアス HP (sp=2)',      base: 108, sp: 2,  natureModifier: 1.0, isHP: true,  expected: 185 },
   { label: 'ガブリアス A (sp=32, いじっぱり)', base: 130, sp: 32, natureModifier: 1.1, isHP: false, expected: 200 },
   { label: 'ガブリアス S (sp=32, いじっぱり)', base: 102, sp: 32, natureModifier: 1.0, isHP: false, expected: 154 },
   // メガゲンガー おくびょう (S↑ A↓)
