@@ -28,7 +28,7 @@ function koLabelColor(result: DamageResult): string {
     return 'text-green-600 dark:text-green-400'
   }
   if (koResult.type === 'chance') return 'text-amber-600 dark:text-amber-400'
-  return 'text-slate-500'
+  return 'text-slate-600'
 }
 
 function multiHitKoColor(prob: number): string {
@@ -36,7 +36,7 @@ function multiHitKoColor(prob: number): string {
   if (prob >= 0.75) return 'text-orange-500 dark:text-orange-400'
   if (prob >= 0.5) return 'text-yellow-600 dark:text-yellow-400'
   if (prob > 0) return 'text-amber-600 dark:text-amber-400'
-  return 'text-slate-500'
+  return 'text-slate-600'
 }
 
 /** 1ロール値をKO判定色でクラス取得 */
@@ -44,7 +44,7 @@ function rollKoClass(roll: number, hp: number): string {
   if (roll >= hp) return 'text-red-500 dark:text-red-400 font-bold'
   if (roll * 2 >= hp) return 'text-orange-500 dark:text-orange-400'
   if (roll * 3 >= hp) return 'text-yellow-600 dark:text-yellow-400'
-  return 'text-slate-500 dark:text-slate-400'
+  return 'text-slate-700 dark:text-slate-400'
 }
 
 // 定数ダメージのプリセット割合
@@ -76,30 +76,30 @@ function ParentalBondTable({ rolls, defenderHp }: { rolls: number[]; defenderHp:
 
   return (
     <div className="mt-1 overflow-x-auto">
-      <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+      <div className="text-xs text-slate-700 dark:text-slate-400 mb-1">
         おやこあい合計 (親 + 子×25%) — <span className="text-red-500 dark:text-red-400">赤=確定KO</span>
         <span className="text-orange-500 dark:text-orange-400 ml-2">橙=乱数2発</span>
       </div>
       <table className="text-xs font-mono border-collapse">
         <thead>
           <tr>
-            <th className="text-slate-400 dark:text-slate-600 pr-1 text-right">親↓子→</th>
+            <th className="text-slate-600 dark:text-slate-600 pr-1 text-right">親↓子→</th>
             {childRolls.map((c, j) => (
-              <th key={j} className="text-slate-500 w-7 text-center px-0.5">{c}</th>
+              <th key={j} className="text-slate-600 w-7 text-center px-0.5">{c}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {rolls.map((r, i) => (
             <tr key={i}>
-              <td className="text-slate-500 dark:text-slate-400 pr-1 text-right">{r}</td>
+              <td className="text-slate-700 dark:text-slate-400 pr-1 text-right">{r}</td>
               {childRolls.map((c, j) => {
                 const total = r + c
                 const isKo = total >= defenderHp
                 return (
                   <td
                     key={j}
-                    className={`text-center px-0.5 ${isKo ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-500'}`}
+                    className={`text-center px-0.5 ${isKo ? 'text-red-500 dark:text-red-400 font-bold' : 'text-slate-600'}`}
                   >
                     {total}
                   </td>
@@ -124,7 +124,7 @@ function ParentalBondKoInfo({ rolls, childRolls, defenderHp }: { rolls: number[]
   const total = rolls.length * childRolls.length
   const prob = koCount / total
 
-  if (koCount === 0) return <div className="text-xs text-slate-500 mt-1">KO不可</div>
+  if (koCount === 0) return <div className="text-xs text-slate-600 mt-1">KO不可</div>
   if (koCount === total) return <div className="text-xs text-red-500 dark:text-red-400 mt-1">確定KO (親子愛1発)</div>
   return (
     <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
@@ -152,7 +152,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
     return (
       <div className="py-2 border-b border-slate-200 dark:border-slate-800">
         <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">{moveName}</div>
-        <div className="text-xs text-slate-400 dark:text-slate-600 mt-1">効果がない</div>
+        <div className="text-xs text-slate-600 dark:text-slate-600 mt-1">効果がない</div>
       </div>
     )
   }
@@ -197,7 +197,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
             className={`text-xs px-1.5 py-0.5 rounded border transition-colors ${
               added
                 ? 'bg-blue-600 dark:bg-blue-700 border-blue-500 dark:border-blue-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-400'
+                : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-400'
             }`}
             title="加算リストに追加"
           >
@@ -209,15 +209,15 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       {/* ダメージ範囲 + トグルボタン群 */}
       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
         <span className="text-sm font-mono text-slate-900 dark:text-slate-100">{min}〜{max}</span>
-        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+        <span className="text-xs text-slate-700 dark:text-slate-400 font-mono">
           ({percentMin.toFixed(1)}%〜{percentMax.toFixed(1)}%)
         </span>
-        <span className="text-xs text-slate-400 dark:text-slate-600">/{defenderMaxHp}</span>
+        <span className="text-xs text-slate-600 dark:text-slate-600">/{defenderMaxHp}</span>
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
             onClick={() => setRollsExpanded(v => !v)}
-            className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+            className="text-xs text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
             title="16乱数を表示"
           >
             {rollsExpanded ? '▲' : '▼'}乱数
@@ -225,7 +225,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           <button
             type="button"
             onClick={() => setExpanded(v => !v)}
-            className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+            className="text-xs text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
             title="加算計算"
           >
             {expanded ? '▲' : '▼'}加算
@@ -238,7 +238,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       {/* 16乱数表示 */}
       {rollsExpanded && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-xs text-slate-500 mb-1">16乱数 (最小〜最大)</div>
+          <div className="text-xs text-slate-600 mb-1">16乱数 (最小〜最大)</div>
           <div className="flex flex-wrap gap-x-1 gap-y-0.5">
             {rolls.map((r, i) => (
               <span key={i} className={`text-xs font-mono ${rollKoClass(r, defenderMaxHp)}`}>
@@ -253,7 +253,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
               <button
                 type="button"
                 onClick={() => setPbExpanded(v => !v)}
-                className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
                 {pbExpanded ? '▲' : '▼'} おやこあい 16×16乱数表
               </button>
@@ -270,7 +270,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
           {/* 攻撃回数 */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500 dark:text-slate-400 w-14 flex-shrink-0">攻撃回数</span>
+            <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">攻撃回数</span>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map(n => (
                 <button
@@ -292,7 +292,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           {/* 定数ダメージ */}
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-500 dark:text-slate-400 w-14 flex-shrink-0">定数ダメ</span>
+              <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">定数ダメ</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -312,7 +312,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                   onClick={() => setConstDmg(v => v + 1)}
                 >+</button>
               </div>
-              <span className="text-xs text-slate-400 dark:text-slate-600">砂/毒/やけど等</span>
+              <span className="text-xs text-slate-600 dark:text-slate-600">砂/毒/やけど等</span>
             </div>
             <div className="flex items-center gap-1 pl-[3.75rem]">
               {CONST_FRACTIONS.map(f => {
@@ -325,7 +325,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                     className={`text-xs px-1 py-0.5 rounded border transition-colors ${
                       constDmg === val
                         ? 'bg-amber-600 dark:bg-amber-700 border-amber-500 dark:border-amber-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                     }`}
                     title={`${f.label} = ${val}`}
                   >
@@ -347,7 +347,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           {/* 定数回復 */}
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-500 dark:text-slate-400 w-14 flex-shrink-0">定数回復</span>
+              <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">定数回復</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -367,7 +367,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                   onClick={() => setConstRec(v => v + 1)}
                 >+</button>
               </div>
-              <span className="text-xs text-slate-400 dark:text-slate-600">残飯/黒ヘド等</span>
+              <span className="text-xs text-slate-600 dark:text-slate-600">残飯/黒ヘド等</span>
             </div>
             <div className="flex items-center gap-1 pl-[3.75rem]">
               {CONST_FRACTIONS.map(f => {
@@ -380,7 +380,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                     className={`text-xs px-1 py-0.5 rounded border transition-colors ${
                       constRec === val
                         ? 'bg-teal-600 dark:bg-teal-700 border-teal-500 dark:border-teal-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                     }`}
                     title={`${f.label} = ${val}`}
                   >
@@ -402,9 +402,9 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           {/* 加算結果 */}
           <div className="bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{hitCount}発累積: </span>
+              <span className="text-xs text-slate-700 dark:text-slate-400">{hitCount}発累積: </span>
               <span className="text-sm font-mono text-slate-900 dark:text-slate-100">{multiMin}〜{multiMax}</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono ml-1">
+              <span className="text-xs text-slate-700 dark:text-slate-400 font-mono ml-1">
                 ({multiPercentMin.toFixed(1)}%〜{multiPercentMax.toFixed(1)}%)
               </span>
             </div>

@@ -34,7 +34,7 @@ export function FieldStateBar() {
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
                 field.weather === w.value
                   ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               {w.label}
@@ -53,7 +53,7 @@ export function FieldStateBar() {
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
                 field.terrain === t.value
                   ? 'bg-green-600 dark:bg-green-700 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               {t.label}
@@ -76,7 +76,7 @@ export function FieldStateBar() {
               className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                 value
                   ? 'bg-indigo-700 dark:bg-indigo-800 border-indigo-500 dark:border-indigo-600 text-white'
-                  : 'border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500'
+                  : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-400 hover:border-slate-500 dark:hover:border-slate-500'
               }`}
             >
               {label}

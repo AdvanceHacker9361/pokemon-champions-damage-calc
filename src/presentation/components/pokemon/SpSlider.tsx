@@ -71,7 +71,7 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
                 onClick={() => onChangeRank(Math.max(-6, rank - 1))}
               >−</button>
               <span className={`text-xs w-6 text-center font-mono ${
-                rank > 0 ? 'text-blue-500 dark:text-blue-400' : rank < 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-500'
+                rank > 0 ? 'text-blue-500 dark:text-blue-400' : rank < 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-600'
               }`}>
                 {rank > 0 ? `+${rank}` : rank}
               </span>
@@ -95,7 +95,7 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
                       ? opt.val > 1.0 ? 'bg-blue-600 dark:bg-blue-700 text-white'
                         : opt.val < 1.0 ? 'bg-red-600 dark:bg-red-700 text-white'
                         : 'bg-slate-400 dark:bg-slate-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 hover:text-slate-800 dark:hover:text-slate-300'
                   }`}
                 >
                   {opt.label}

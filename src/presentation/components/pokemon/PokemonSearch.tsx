@@ -89,7 +89,7 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
         autoComplete="off"
       />
       {value && !query && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-400 pointer-events-none truncate max-w-[60%]">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-600 dark:text-slate-400 pointer-events-none truncate max-w-[60%]">
           {value}
         </span>
       )}
@@ -112,7 +112,7 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
               onClick={() => handleSelect(p)}
             >
               <span className="text-sm font-medium text-slate-900 dark:text-slate-100 min-w-0 flex-1">{p.name}</span>
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-mono hidden sm:inline">{p.nameEn}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-500 font-mono hidden sm:inline">{p.nameEn}</span>
               <div className="flex gap-1 flex-shrink-0">
                 {p.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}
               </div>

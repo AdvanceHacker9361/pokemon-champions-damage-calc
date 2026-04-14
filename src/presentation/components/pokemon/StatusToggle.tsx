@@ -6,7 +6,7 @@ interface StatusToggleProps {
 }
 
 const STATUS_OPTIONS: { value: StatusCondition; label: string; color: string }[] = [
-  { value: null,      label: 'なし',     color: 'text-slate-500 dark:text-slate-400' },
+  { value: null,      label: 'なし',     color: 'text-slate-700 dark:text-slate-400' },
   { value: 'やけど',  label: 'やけど',   color: 'text-orange-500 dark:text-orange-400' },
   { value: 'まひ',    label: 'まひ',     color: 'text-yellow-600 dark:text-yellow-400' },
   { value: 'どく',    label: 'どく',     color: 'text-purple-500 dark:text-purple-400' },
@@ -26,7 +26,7 @@ export function StatusToggle({ value, onChange }: StatusToggleProps) {
             className={`text-xs px-2 py-0.5 rounded border transition-colors ${
               value === opt.value
                 ? `${opt.color} border-current bg-slate-100 dark:bg-slate-800`
-                : 'text-slate-500 border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600'
+                : 'text-slate-600 border-slate-300 dark:border-slate-700 hover:border-slate-500 dark:hover:border-slate-600'
             }`}
           >
             {opt.label}
