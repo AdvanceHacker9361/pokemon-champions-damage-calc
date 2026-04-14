@@ -7,7 +7,7 @@ function koColor(prob: number): string {
   if (prob >= 0.75) return 'text-orange-500 dark:text-orange-400'
   if (prob >= 0.5) return 'text-yellow-600 dark:text-yellow-400'
   if (prob > 0) return 'text-amber-600 dark:text-amber-400'
-  return 'text-slate-500'
+  return 'text-slate-600'
 }
 
 export function DamageAccumPanel() {
@@ -43,7 +43,7 @@ export function DamageAccumPanel() {
         <button
           type="button"
           onClick={clearEntries}
-          className="text-xs text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          className="text-xs text-slate-600 hover:text-red-500 dark:hover:text-red-400 dark:text-slate-500 transition-colors"
         >
           クリア
         </button>
@@ -60,7 +60,7 @@ export function DamageAccumPanel() {
             <button
               type="button"
               onClick={() => removeEntry(entry.id)}
-              className="ml-2 text-slate-600 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
+              className="ml-2 text-slate-500 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
             >
               ✕
             </button>

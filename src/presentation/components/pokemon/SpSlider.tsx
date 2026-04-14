@@ -71,7 +71,7 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
                 onClick={() => onChangeRank(Math.max(-6, rank - 1))}
               >−</button>
               <span className={`text-xs w-6 text-center font-mono ${
-                rank > 0 ? 'text-blue-500 dark:text-blue-400' : rank < 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-600'
+                rank > 0 ? 'text-blue-500 dark:text-blue-400' : rank < 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-500'
               }`}>
                 {rank > 0 ? `+${rank}` : rank}
               </span>
