@@ -1,20 +1,19 @@
+import { useEffect } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
 
-function swapStores(
-  attackerStore: ReturnType<typeof useAttackerStore.getState>,
-  defenderStore: ReturnType<typeof useDefenderStore.getState>,
-) {
-  const a = { ...useAttackerStore.getState() }
-  const d = { ...useDefenderStore.getState() }
+/** 攻守交代 */
+function swapStores() {
+  const a = useAttackerStore.getState()
+  const d = useDefenderStore.getState()
 
   const pick = (s: typeof a) => ({
     pokemonId: s.pokemonId,
     pokemonName: s.pokemonName,
-    natureName: s.natureName,
+    statNatures: s.statNatures,
     sp: s.sp,
     abilityName: s.abilityName,
     itemName: s.itemName,
@@ -31,8 +30,31 @@ function swapStores(
 
   useAttackerStore.setState(pick(d))
   useDefenderStore.setState(pick(a))
-  void attackerStore
-  void defenderStore
+}
+
+/** 初期ポケモン設定 */
+function initDefaults() {
+  // 攻撃側: ガブリアス A182 (atk SP=32) げきりん/じしん/いわなだれ/ほのおのキバ
+  const atk = useAttackerStore.getState()
+  atk.setPokemon(445)                  // ガブリアス
+  useAttackerStore.getState().setSp('atk', 32)
+  useAttackerStore.getState().setMove(0, 'げきりん')
+  useAttackerStore.getState().setMove(1, 'じしん')
+  useAttackerStore.getState().setMove(2, 'いわなだれ')
+  useAttackerStore.getState().setMove(3, 'ほのおのキバ')
+
+  // 防御側: メガガルーラ H207(hp SP=27) B121(def SP=1) D121(spd SP=1)
+  // すてみタックル/ねこだまし/じしん/ふいうち
+  const def = useDefenderStore.getState()
+  def.setPokemon(115)                  // ガルーラ
+  useDefenderStore.getState().setMega(true)
+  useDefenderStore.getState().setSp('hp',  27)
+  useDefenderStore.getState().setSp('def',  1)
+  useDefenderStore.getState().setSp('spd',  1)
+  useDefenderStore.getState().setMove(0, 'すてみタックル')
+  useDefenderStore.getState().setMove(1, 'ねこだまし')
+  useDefenderStore.getState().setMove(2, 'じしん')
+  useDefenderStore.getState().setMove(3, 'ふいうち')
 }
 
 export function Calculator() {
@@ -40,6 +62,12 @@ export function Calculator() {
   const defenderStore = useDefenderStore()
 
   useDamageCalc()
+
+  // 初回マウント時にデフォルトポケモンを設定
+  useEffect(() => {
+    initDefaults()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <>
@@ -56,7 +84,7 @@ export function Calculator() {
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => swapStores(attackerStore, defenderStore)}
+                onClick={swapStores}
                 className="flex items-center gap-2 px-4 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-full border border-slate-600 transition-colors"
                 title="攻撃側と防御側を入れ替え"
               >

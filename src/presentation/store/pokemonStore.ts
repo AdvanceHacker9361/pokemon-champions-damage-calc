@@ -8,12 +8,21 @@ import { SP_MAX_TOTAL } from '@/domain/constants/spLimits'
 import type { BaseStats } from '@/domain/models/Pokemon'
 import { hasMegaEvolution } from '@/application/usecases/ApplyMegaEvolutionUseCase'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
+import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
+
+/** 性格倍率 3択 */
+export type StatNatureVal = 0.9 | 1.0 | 1.1
+
+const NATURE_STATS: Exclude<StatKey, 'hp'>[] = ['atk', 'def', 'spa', 'spd', 'spe']
+const DEFAULT_STAT_NATURES: StatNatures = Object.fromEntries(
+  NATURE_STATS.map(s => [s, 1.0])
+) as StatNatures
 
 export interface PokemonStore {
   // State
   pokemonId: number | null
   pokemonName: string
-  natureName: string
+  statNatures: StatNatures
   sp: SpDistribution
   abilityName: string
   itemName: string | null
@@ -30,7 +39,7 @@ export interface PokemonStore {
 
   // Actions
   setPokemon: (id: number) => void
-  setNature: (name: string) => void
+  setStatNature: (stat: StatKey, val: number) => void
   setSp: (stat: StatKey, value: number) => void
   setSpFull: (sp: SpDistribution) => void
   setAbility: (name: string) => void
@@ -49,7 +58,7 @@ function createPokemonStore() {
   return create<PokemonStore>((set, get) => ({
     pokemonId: null,
     pokemonName: '',
-    natureName: 'まじめ',
+    statNatures: { ...DEFAULT_STAT_NATURES },
     sp: createSpDistribution(),
     abilityName: 'なし',
     itemName: null,
@@ -101,14 +110,16 @@ function createPokemonStore() {
       })
     },
 
-    setNature: (name) => set({ natureName: name }),
+    setStatNature: (stat, val) => set(s => ({
+      statNatures: { ...s.statNatures, [stat]: val },
+    })),
 
     setSp: (stat, value) => {
       const current = get().sp
       const clamped = Math.max(0, Math.min(32, value))
       const newSp = withStat(current, stat, clamped)
       const total = getTotalSp(newSp)
-      if (total > SP_MAX_TOTAL) return  // 超過は無視
+      if (total > SP_MAX_TOTAL) return
       set({ sp: newSp })
     },
 
@@ -122,7 +133,7 @@ function createPokemonStore() {
       const { isMega, pokemonId } = get()
       if (isMega && pokemonId) {
         const mega = PokemonRepository.getMegaByBaseId(pokemonId)
-        if (mega) return  // メガシンカ中は特性変更不可
+        if (mega) return
       }
       set({ abilityName: name, effectiveAbility: name })
     },
@@ -167,7 +178,8 @@ function createPokemonStore() {
     }),
 
     reset: () => set({
-      pokemonId: null, pokemonName: '', natureName: 'まじめ',
+      pokemonId: null, pokemonName: '',
+      statNatures: { ...DEFAULT_STAT_NATURES },
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
       isMega: false, canMega: false, ranks: { ...DEFAULT_RANKS }, status: null,
       moves: [null, null, null, null],

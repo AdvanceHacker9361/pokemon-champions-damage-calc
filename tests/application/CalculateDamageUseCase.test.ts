@@ -7,14 +7,15 @@ import type { MoveData } from '@/domain/models/Move'
 
 describe('CalculateDamageUseCase - フルパイプライン', () => {
   /**
-   * ガブリアス(いじっぱり, AS全振り) vs メガゲンガー(おくびょう, CS全振り)
+   * ガブリアス(いじっぱり相当 A↑C↓, AS全振り) vs メガゲンガー(おくびょう相当 S↑A↓, CS全振り)
+   * statNatures で性格を表現 (いじっぱり=A:1.1,C:0.9 / おくびょう=S:1.1,A:0.9)
    */
 
   const garchompInput = {
     baseStats: { hp: 108, atk: 130, def: 95, spa: 80, spd: 85, spe: 102 },
     types: ['ドラゴン', 'じめん'] as ['ドラゴン', 'じめん'],
     sp: createSpDistribution({ hp: 2, atk: 32, spe: 32 }),
-    natureName: 'いじっぱり',
+    statNatures: { atk: 1.1, def: 1.0, spa: 0.9, spd: 1.0, spe: 1.0 }, // いじっぱり
     abilityName: 'すながくれ',
     itemName: null,
     ranks: {},
@@ -26,7 +27,7 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
     baseStats: { hp: 60, atk: 65, def: 60, spa: 170, spd: 95, spe: 130 },
     types: ['ゴースト', 'どく'] as ['ゴースト', 'どく'],
     sp: createSpDistribution({ spa: 32, spe: 32 }),
-    natureName: 'おくびょう',
+    statNatures: { atk: 0.9, def: 1.0, spa: 1.0, spd: 1.0, spe: 1.1 }, // おくびょう
     abilityName: 'シャドータッグ',
     itemName: null,
     ranks: {},
@@ -64,17 +65,17 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
     const stats = calculateStats({
       baseStats: garchompInput.baseStats,
       sp: garchompInput.sp,
-      natureName: garchompInput.natureName,
+      statNatures: garchompInput.statNatures,
       ranks: garchompInput.ranks,
     })
     expect(stats.hp).toBe(185)
   })
 
-  it('スペック計算 - ガブリアスのA実数値が正しい (仕様書: 200)', () => {
+  it('スペック計算 - ガブリアスのA実数値が正しい (いじっぱり sp=32: 200)', () => {
     const stats = calculateStats({
       baseStats: garchompInput.baseStats,
       sp: garchompInput.sp,
-      natureName: garchompInput.natureName,
+      statNatures: garchompInput.statNatures,
       ranks: garchompInput.ranks,
     })
     expect(stats.atk).toBe(200)

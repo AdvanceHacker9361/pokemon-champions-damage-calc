@@ -8,11 +8,26 @@ interface SpSliderProps {
   onChange: (v: number) => void
   rank?: number
   onChangeRank?: (rank: number) => void
+  nature?: number
+  onChangeNature?: (val: number) => void
 }
 
-export function SpSlider({ label, value, statValue, remaining, onChange, rank, onChangeRank }: SpSliderProps) {
+const NATURE_OPTIONS: { val: number; label: string }[] = [
+  { val: 0.9, label: '0.9' },
+  { val: 1.0, label: '1.0' },
+  { val: 1.1, label: '1.1' },
+]
+
+function natureColor(nature: number): string {
+  if (nature > 1.0) return 'text-blue-400'
+  if (nature < 1.0) return 'text-red-400'
+  return 'text-slate-300'
+}
+
+export function SpSlider({ label, value, statValue, remaining, onChange, rank, onChangeRank, nature, onChangeNature }: SpSliderProps) {
   const max = Math.min(SP_MAX_STAT, value + remaining)
   const hasRank = onChangeRank !== undefined && rank !== undefined
+  const hasNature = onChangeNature !== undefined && nature !== undefined
 
   return (
     <div className="flex items-center gap-1.5">
@@ -37,7 +52,7 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
         }}
         className="input-base w-10 text-center text-xs px-1"
       />
-      <span className="text-xs text-slate-300 w-9 text-right font-mono">
+      <span className={`text-xs w-9 text-right font-mono flex-shrink-0 ${hasNature ? natureColor(nature!) : 'text-slate-300'}`}>
         {statValue}
       </span>
 
@@ -58,6 +73,27 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
             className="w-4 h-4 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300 leading-none"
             onClick={() => onChangeRank(Math.min(6, rank + 1))}
           >+</button>
+        </div>
+      )}
+
+      {hasNature && (
+        <div className="flex gap-px ml-0.5">
+          {NATURE_OPTIONS.map(opt => (
+            <button
+              key={opt.val}
+              type="button"
+              onClick={() => onChangeNature(opt.val)}
+              className={`text-xs px-1 py-0.5 rounded transition-colors leading-none ${
+                Math.abs((nature ?? 1.0) - opt.val) < 0.01
+                  ? opt.val > 1.0 ? 'bg-blue-700 text-white'
+                    : opt.val < 1.0 ? 'bg-red-700 text-white'
+                    : 'bg-slate-600 text-white'
+                  : 'bg-slate-800 text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

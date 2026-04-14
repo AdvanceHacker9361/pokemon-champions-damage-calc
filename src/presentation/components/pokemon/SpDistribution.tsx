@@ -6,10 +6,11 @@ import type { SpDistribution } from '@/domain/models/StatPoints'
 import type { ComputedStats } from '@/domain/models/Pokemon'
 import { SP_MAX_TOTAL } from '@/domain/constants/spLimits'
 import { getTotalSp } from '@/domain/models/StatPoints'
+import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
 
 const SP_STAT_KEYS: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
-// HPにはランク補正なし
-const RANK_STATS = new Set<StatKey>(['atk', 'def', 'spa', 'spd', 'spe'])
+// HP にはランク補正・性格補正なし
+const NATURE_RANK_STATS = new Set<StatKey>(['atk', 'def', 'spa', 'spd', 'spe'])
 
 interface SpDistributionProps {
   sp: SpDistribution
@@ -18,9 +19,11 @@ interface SpDistributionProps {
   onSetPreset: (sp: SpDistribution) => void
   ranks?: Partial<Record<StatKey, number>>
   onChangeRank?: (stat: StatKey, rank: number) => void
+  statNatures?: StatNatures
+  onChangeNature?: (stat: StatKey, val: number) => void
 }
 
-export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks, onChangeRank }: SpDistributionProps) {
+export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks, onChangeRank, statNatures, onChangeNature }: SpDistributionProps) {
   const total = getTotalSp(sp)
   const remaining = SP_MAX_TOTAL - total
   const isOver = remaining < 0
@@ -51,7 +54,7 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
         ))}
       </div>
 
-      {/* スライダー + ランク補正（横並び） */}
+      {/* スライダー + ランク補正 + 性格 */}
       <div className="space-y-1.5">
         {SP_STAT_KEYS.map(stat => (
           <SpSlider
@@ -61,9 +64,15 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
             statValue={stats[stat]}
             remaining={remaining}
             onChange={v => onChangeSp(stat, v)}
-            rank={RANK_STATS.has(stat) && ranks ? (ranks[stat] ?? 0) : undefined}
-            onChangeRank={RANK_STATS.has(stat) && onChangeRank
+            rank={NATURE_RANK_STATS.has(stat) && ranks ? (ranks[stat] ?? 0) : undefined}
+            onChangeRank={NATURE_RANK_STATS.has(stat) && onChangeRank
               ? (r) => onChangeRank(stat, r)
+              : undefined}
+            nature={NATURE_RANK_STATS.has(stat) && statNatures
+              ? (statNatures[stat] ?? 1.0)
+              : undefined}
+            onChangeNature={NATURE_RANK_STATS.has(stat) && onChangeNature
+              ? (v) => onChangeNature(stat, v)
               : undefined}
           />
         ))}

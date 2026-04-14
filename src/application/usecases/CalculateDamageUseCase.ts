@@ -1,5 +1,6 @@
 import { calculateDamage } from '@/domain/calculators/DamageCalculator'
 import { calculateStats } from '@/application/usecases/CalculateStatsUseCase'
+import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
 import type { DamageResult } from '@/domain/models/DamageResult'
 import type { MoveData } from '@/domain/models/Move'
 import type { BattleField } from '@/domain/models/BattleField'
@@ -11,7 +12,7 @@ export interface PokemonBattleState {
   baseStats: BaseStats
   types: TypeName[]
   sp: SpDistribution
-  natureName: string
+  statNatures?: StatNatures
   abilityName: string
   itemName: string | null
   ranks: Partial<Record<StatKey, number>>
@@ -33,14 +34,14 @@ export function executeDamageCalculation(
   const attackerStats = calculateStats({
     baseStats: input.attacker.baseStats,
     sp: input.attacker.sp,
-    natureName: input.attacker.natureName,
+    statNatures: input.attacker.statNatures,
     ranks: input.attacker.ranks,
   })
 
   const defenderStats = calculateStats({
     baseStats: input.defender.baseStats,
     sp: input.defender.sp,
-    natureName: input.defender.natureName,
+    statNatures: input.defender.statNatures,
     ranks: input.defender.ranks,
   })
 

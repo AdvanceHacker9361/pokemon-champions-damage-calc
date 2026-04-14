@@ -1,7 +1,6 @@
 import type { PokemonStore } from '@/presentation/store/pokemonStore'
 import { useStatCalc } from '@/presentation/hooks/useStatCalc'
 import { PokemonSearch } from './PokemonSearch'
-import { NatureSelect } from './NatureSelect'
 import { AbilitySelect } from './AbilitySelect'
 import { ItemSelect } from './ItemSelect'
 import { MegaToggle } from './MegaToggle'
@@ -20,7 +19,7 @@ interface PokemonPanelProps {
 }
 
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {
-  const computedStats = useStatCalc(store.baseStats, store.sp, store.natureName, store.ranks)
+  const computedStats = useStatCalc(store.baseStats, store.sp, store.statNatures, store.ranks)
 
   function handleSelectPokemon(pokemon: PokemonRecord) {
     store.setPokemon(pokemon.id)
@@ -62,10 +61,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
       {store.pokemonId && (
         <>
-          {/* 性格 */}
-          <NatureSelect value={store.natureName} onChange={store.setNature} />
-
-          {/* SP配分 + ランク補正（統合） */}
+          {/* SP配分 + ランク補正 + 性格（統合） */}
           <SpDistributionPanel
             sp={store.sp}
             stats={computedStats}
@@ -73,6 +69,8 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             onSetPreset={store.setSpFull}
             ranks={store.ranks}
             onChangeRank={(stat: StatKey, rank: number) => store.setRank(stat, rank)}
+            statNatures={store.statNatures}
+            onChangeNature={(stat: StatKey, val: number) => store.setStatNature(stat, val)}
           />
 
           {/* 特性 */}

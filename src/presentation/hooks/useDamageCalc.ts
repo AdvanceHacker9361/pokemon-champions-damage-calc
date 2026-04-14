@@ -39,7 +39,7 @@ export function useDamageCalc() {
               baseStats: attacker.baseStats,
               types: attacker.types,
               sp: attacker.sp,
-              natureName: attacker.natureName,
+              statNatures: attacker.statNatures,
               abilityName: attacker.effectiveAbility,
               itemName: attacker.itemName,
               ranks: attacker.ranks,
@@ -50,7 +50,7 @@ export function useDamageCalc() {
               baseStats: defender.baseStats,
               types: defender.types,
               sp: defender.sp,
-              natureName: defender.natureName,
+              statNatures: defender.statNatures,
               abilityName: defender.effectiveAbility,
               itemName: defender.itemName,
               ranks: defender.ranks,
@@ -69,10 +69,10 @@ export function useDamageCalc() {
 
     setResults(results)
   }, [
-    attacker.pokemonId, attacker.sp, attacker.natureName,
+    attacker.pokemonId, attacker.sp, attacker.statNatures,
     attacker.effectiveAbility, attacker.itemName, attacker.moves,
     attacker.ranks, attacker.status,
-    defender.pokemonId, defender.sp, defender.natureName,
+    defender.pokemonId, defender.sp, defender.statNatures,
     defender.effectiveAbility, defender.itemName,
     defender.ranks, defender.status,
     field.weather, field.terrain,
