@@ -1,7 +1,7 @@
 import pokemonData from '@/data/json/pokemon.json'
 import megaData from '@/data/json/pokemon-mega.json'
 import type { PokemonRecord, MegaPokemonRecord } from '@/data/schemas/types'
-import { toKatakana } from '@/utils/japanese'
+import { toKatakana } from '../../utils/japanese'
 
 const pokemon = pokemonData as PokemonRecord[]
 const megaPokemon = megaData as MegaPokemonRecord[]

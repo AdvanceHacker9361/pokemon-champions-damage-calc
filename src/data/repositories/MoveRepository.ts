@@ -1,6 +1,6 @@
 import movesData from '@/data/json/moves.json'
 import type { MoveRecord } from '@/data/schemas/types'
-import { toKatakana } from '@/utils/japanese'
+import { toKatakana } from '../../utils/japanese'
 
 const moves = movesData as MoveRecord[]
 // nameKata: ひらがな名・カタカナ名どちらで入力してもマッチするよう正規化
