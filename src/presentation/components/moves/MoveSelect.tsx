@@ -12,16 +12,26 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<MoveRecord[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const activeItemRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!query) { setResults([]); return }
       setResults(MoveRepository.search(query, 12))
-    }, 100)
+    }, 80)
     return () => clearTimeout(timer)
   }, [query])
+
+  // 結果変化時にアクティブ選択リセット
+  useEffect(() => { setActiveIndex(-1) }, [results])
+
+  // アクティブ項目を自動スクロール
+  useEffect(() => {
+    activeItemRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -35,6 +45,42 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  function handleSelect(moveName: string) {
+    onChange(moveName)
+    setQuery('')
+    setIsOpen(false)
+    setActiveIndex(-1)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!isOpen || results.length === 0) {
+      if (e.key === 'Enter' && results.length > 0) {
+        handleSelect(results[0].name)
+      }
+      return
+    }
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setActiveIndex(i => Math.min(i + 1, results.length - 1))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setActiveIndex(i => Math.max(i - 1, 0))
+        break
+      case 'Enter': {
+        e.preventDefault()
+        const idx = activeIndex >= 0 ? activeIndex : 0
+        if (results[idx]) handleSelect(results[idx].name)
+        break
+      }
+      case 'Escape':
+        setIsOpen(false)
+        setActiveIndex(-1)
+        break
+    }
+  }
 
   const categoryColors: Record<string, string> = {
     '物理': 'text-orange-400',
@@ -52,16 +98,18 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
         value={query}
         onChange={e => { setQuery(e.target.value); setIsOpen(true) }}
         onFocus={() => { setIsOpen(true); if (!query) setResults(MoveRepository.getAll().slice(0, 12)) }}
+        onKeyDown={handleKeyDown}
+        autoComplete="off"
       />
       {value && !query && (
-        <div className="absolute inset-0 flex items-center px-2 pointer-events-none">
+        <div className="absolute inset-0 flex items-center px-2 pointer-events-none pr-6">
           <span className="text-sm text-slate-200 truncate">{value}</span>
         </div>
       )}
       {value && (
         <button
           type="button"
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs px-1"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs px-1.5 py-1"
           onClick={() => { onChange(null); setQuery(''); setIsOpen(false) }}
         >
           ✕
@@ -71,14 +119,17 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
       {isOpen && results.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded shadow-xl max-h-48 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded shadow-xl max-h-52 overflow-y-auto"
         >
-          {results.map(m => (
+          {results.map((m, i) => (
             <button
               key={m.name}
+              ref={i === activeIndex ? activeItemRef : undefined}
               type="button"
-              className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-700 text-left"
-              onClick={() => { onChange(m.name); setQuery(''); setIsOpen(false) }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                i === activeIndex ? 'bg-slate-600' : 'hover:bg-slate-700'
+              }`}
+              onClick={() => handleSelect(m.name)}
             >
               <span className="text-sm text-slate-100 flex-1">{m.name}</span>
               <span className={`text-xs ${categoryColors[m.category] ?? ''}`}>{m.category}</span>
