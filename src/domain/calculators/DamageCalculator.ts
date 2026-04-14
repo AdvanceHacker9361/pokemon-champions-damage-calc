@@ -47,6 +47,11 @@ function resolvePower(input: DamageCalcInput): number {
     if (result.effectivePower !== undefined) return result.effectivePower
   }
 
+  // ウェザーボール: 天候時に威力2倍
+  if (move.special === 'weather-ball' && input.field.weather !== null) {
+    return 100
+  }
+
   return move.power ?? 0
 }
 
@@ -151,6 +156,17 @@ function resolveDef(input: DamageCalcInput): number {
 /** 技のタイプを解決（スキン特性によるタイプ変換を含む） */
 function resolveMoveType(input: DamageCalcInput): TypeName {
   const { move, attackerAbility } = input
+  // ウェザーボール: 天候によってタイプ変化
+  if (move.special === 'weather-ball') {
+    switch (input.field.weather) {
+      case 'はれ': return 'ほのお'
+      case 'あめ': return 'みず'
+      case 'すなあらし': return 'いわ'
+      case 'ゆき': return 'こおり'
+      default: return 'ノーマル'
+    }
+  }
+
   if (move.type === 'ノーマル') {
     if (attackerAbility === 'フェアリースキン') return 'フェアリー'
     if (attackerAbility === 'スカイスキン')    return 'ひこう'
@@ -223,7 +239,19 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     }
 
     // 5. タイプ相性
-    const typeEff = getTypeEffectiveness(moveType, input.defenderTypes)
+    let typeEff: number = getTypeEffectiveness(moveType, input.defenderTypes)
+    // フリーズドライ: みず タイプに対して2倍有効（通常はこおり→みず 0.5倍）
+    if (move.special === 'freeze-dry' && input.defenderTypes.includes('みず')) {
+      let eff = 1
+      for (const defType of input.defenderTypes) {
+        if (defType === 'みず') {
+          eff *= 2  // 常に2倍
+        } else {
+          eff *= getTypeEffectiveness('こおり', [defType])
+        }
+      }
+      typeEff = eff
+    }
     if (typeEff !== 1) {
       d = pokeRound(d * typeEff)
     }
@@ -242,7 +270,11 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   })
 
   // 無効タイプは0
-  const typeEffCheck = getTypeEffectiveness(moveType, input.defenderTypes)
+  let typeEffCheck: number = getTypeEffectiveness(moveType, input.defenderTypes)
+  if (move.special === 'freeze-dry') {
+    // みずタイプへの無効化はない（こおりに免疫なし）
+    typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効
+  }
   const effectiveRolls = typeEffCheck === 0
     ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
     : (finalRolls as DamageResult['rolls'])

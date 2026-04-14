@@ -11,6 +11,8 @@ export type SpecialMoveTag =
   | 'hex'           // たたりめ: 状態異常時威力2倍
   | 'facade'        // からげんき: 状態異常時威力140
   | 'stealth-rock'  // ステルスロック: タイプ相性依存定数ダメージ
+  | 'freeze-dry'    // フリーズドライ: みず タイプに対して2倍有効
+  | 'weather-ball'  // ウェザーボール: 天候でタイプと威力が変化
 
 export interface MoveFlags {
   contact: boolean
