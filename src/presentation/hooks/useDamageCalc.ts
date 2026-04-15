@@ -44,6 +44,7 @@ export function useDamageCalc() {
               itemName: attacker.itemName,
               ranks: attacker.ranks,
               status: attacker.status,
+              abilityActivated: attacker.abilityActivated,
               weight: attacker.weight,
             },
             defender: {
@@ -55,6 +56,7 @@ export function useDamageCalc() {
               itemName: defender.itemName,
               ranks: defender.ranks,
               status: defender.status,
+              abilityActivated: defender.abilityActivated,
               weight: defender.weight,
             },
             move,
@@ -71,10 +73,10 @@ export function useDamageCalc() {
   }, [
     attacker.pokemonId, attacker.sp, attacker.statNatures,
     attacker.effectiveAbility, attacker.itemName, attacker.moves,
-    attacker.ranks, attacker.status,
+    attacker.ranks, attacker.status, attacker.abilityActivated,
     defender.pokemonId, defender.sp, defender.statNatures,
     defender.effectiveAbility, defender.itemName,
-    defender.ranks, defender.status,
+    defender.ranks, defender.status, defender.abilityActivated,
     field.weather, field.terrain,
     field.isReflect, field.isLightScreen, field.isAuroraVeil,
     setResults,

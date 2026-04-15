@@ -17,6 +17,7 @@ export interface PokemonBattleState {
   itemName: string | null
   ranks: Partial<Record<StatKey, number>>
   status: StatusCondition
+  abilityActivated?: boolean
   weight?: number
 }
 
@@ -51,6 +52,7 @@ export function executeDamageCalculation(
     attackerAbility: input.attacker.abilityName,
     attackerItem: input.attacker.itemName,
     attackerStatus: input.attacker.status,
+    attackerAbilityActivated: input.attacker.abilityActivated,
     attackerRankModifiers: input.attacker.ranks as Record<string, number>,
     attackerWeight: input.attacker.weight,
     defenderStats,
@@ -58,6 +60,7 @@ export function executeDamageCalculation(
     defenderAbility: input.defender.abilityName,
     defenderItem: input.defender.itemName,
     defenderStatus: input.defender.status,
+    defenderAbilityActivated: input.defender.abilityActivated,
     defenderWeight: input.defender.weight,
     move: input.move,
     field: input.field,

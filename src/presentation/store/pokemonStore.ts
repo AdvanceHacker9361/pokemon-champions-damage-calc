@@ -30,6 +30,7 @@ export interface PokemonStore {
   canMega: boolean
   ranks: Record<StatKey, number>
   status: StatusCondition
+  abilityActivated: boolean
   moves: [string | null, string | null, string | null, string | null]
   // Derived (cached)
   baseStats: BaseStats
@@ -47,6 +48,7 @@ export interface PokemonStore {
   setMega: (enable: boolean) => void
   setRank: (stat: StatKey, rank: number) => void
   setStatus: (status: StatusCondition) => void
+  setAbilityActivated: (v: boolean) => void
   setMove: (slot: 0 | 1 | 2 | 3, moveName: string | null) => void
   reset: () => void
 }
@@ -66,6 +68,7 @@ function createPokemonStore() {
     canMega: false,
     ranks: { ...DEFAULT_RANKS },
     status: null,
+    abilityActivated: false,
     moves: [null, null, null, null],
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
@@ -107,6 +110,7 @@ function createPokemonStore() {
         sp: createSpDistribution(),
         ranks: { ...DEFAULT_RANKS },
         status: null,
+        abilityActivated: false,
       })
     },
 
@@ -171,6 +175,8 @@ function createPokemonStore() {
 
     setStatus: (status) => set({ status }),
 
+    setAbilityActivated: (v) => set({ abilityActivated: v }),
+
     setMove: (slot, moveName) => set(s => {
       const moves = [...s.moves] as typeof s.moves
       moves[slot] = moveName
@@ -182,6 +188,7 @@ function createPokemonStore() {
       statNatures: { ...DEFAULT_STAT_NATURES },
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
       isMega: false, canMega: false, ranks: { ...DEFAULT_RANKS }, status: null,
+      abilityActivated: false,
       moves: [null, null, null, null],
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',

@@ -13,6 +13,7 @@ export interface DamageCalcInput {
   attackerAbility: string
   attackerItem: string | null
   attackerStatus: StatusCondition
+  attackerAbilityActivated?: boolean
   attackerRankModifiers: Record<string, number>
   attackerWeight?: number
   defenderStats: ComputedStats
@@ -20,6 +21,7 @@ export interface DamageCalcInput {
   defenderAbility: string
   defenderItem: string | null
   defenderStatus: StatusCondition
+  defenderAbilityActivated?: boolean
   defenderWeight?: number
   move: MoveData
   field: BattleField
@@ -96,6 +98,13 @@ function resolveAtk(input: DamageCalcInput): number {
   if (attackerAbility === 'はりきり') {
     if (move.category === '物理') atkMod *= 1.5
   }
+  // HP1/3以下で発動するピンチ特性（手動トグル）
+  if (input.attackerAbilityActivated) {
+    if (attackerAbility === 'げきりゅう' && move.type === 'みず') atkMod *= 1.5
+    if (attackerAbility === 'もうか'     && move.type === 'ほのお') atkMod *= 1.5
+    if (attackerAbility === 'しんりょく' && move.type === 'くさ') atkMod *= 1.5
+    if (attackerAbility === 'むしのしらせ' && move.type === 'むし') atkMod *= 1.5
+  }
 
   // 持ち物補正（攻撃側）
   if (attackerItem === 'こだわりハチマキ' && move.category === '物理') atkMod *= 1.5
@@ -132,6 +141,10 @@ function resolveDef(input: DamageCalcInput): number {
   let defMod = 1.0
   if (defenderAbility === 'ふわふわもうふ' || defenderAbility === 'もふもふ') {
     if (move.flags.contact) defMod *= 0.5
+  }
+  // ふしぎなうろこ: 状態異常時に特防1.5倍（statusフィールドから自動判定）
+  if (defenderAbility === 'ふしぎなうろこ' && input.defenderStatus !== null) {
+    if (move.category === '特殊') defMod *= 1.5
   }
 
   // 砂嵐時の岩タイプ特防1.5倍
@@ -351,9 +364,10 @@ function applyOtherModifiers(
   }
 
   // 特性補正（防御側）
-  if (defenderAbility === 'マルチスケイル' || defenderAbility === 'ファントムガード') {
-    // HP満タン想定（UIで管理）
-    // ここでは入力フラグで制御する設計だが、簡略化のため常時適用しない
+  // マルチスケイル/ファントムガード: HP満タン時ダメージ0.5倍（手動トグルで有効化）
+  if ((defenderAbility === 'マルチスケイル' || defenderAbility === 'ファントムガード') &&
+      input.defenderAbilityActivated) {
+    d = pokeRound(d * 0.5)
   }
   if (defenderAbility === 'フィルター' || defenderAbility === 'ハードロック') {
     if (typeEff > 1) d = pokeRound(d * 0.75)
