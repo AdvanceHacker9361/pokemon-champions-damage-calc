@@ -13,6 +13,9 @@ export type SpecialMoveTag =
   | 'stealth-rock'  // ステルスロック: タイプ相性依存定数ダメージ
   | 'freeze-dry'    // フリーズドライ: みず タイプに対して2倍有効
   | 'weather-ball'  // ウェザーボール: 天候でタイプと威力が変化
+  | 'knock-off'     // はたきおとす: 相手が持ち物を持っている場合威力1.5倍
+  | 'stored-power'  // アシストパワー: ランク上昇分で威力増加
+  | 'reversal'      // きしかいせい: HPが少ないほど威力増加
 
 export interface MoveFlags {
   contact: boolean
