@@ -6,6 +6,7 @@ import { ItemSelect } from './ItemSelect'
 import { MegaToggle } from './MegaToggle'
 import { SpDistributionPanel } from './SpDistribution'
 import { StatusToggle } from './StatusToggle'
+import { ProteanTypePicker } from './ProteanTypePicker'
 import { MoveSlots } from '@/presentation/components/moves/MoveSlots'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
@@ -26,6 +27,7 @@ const ACTIVATABLE_ABILITIES: Record<string, string> = {
   'むしのしらせ': 'HP1/3以下',
   'マルチスケイル':   'HP満タン',
   'ファントムガード':  'HP満タン',
+  'へんげんじざい':   'タイプ変換',
 }
 
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {
@@ -102,21 +104,30 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
           {/* 特性発動トグル（条件付き特性のみ表示） */}
           {abilityConditionLabel && (
-            <div>
-              <label className="label block mb-1">特性条件</label>
-              <button
-                type="button"
-                onClick={() => store.setAbilityActivated(!store.abilityActivated)}
-                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                  store.abilityActivated
-                    ? 'text-indigo-600 border-indigo-500 bg-indigo-50 dark:text-indigo-400 dark:border-indigo-600 dark:bg-indigo-950'
-                    : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
-                }`}
-              >
-                {store.abilityActivated
-                  ? `✓ ${abilityConditionLabel}`
-                  : abilityConditionLabel}
-              </button>
+            <div className="space-y-2">
+              <div>
+                <label className="label block mb-1">特性条件</label>
+                <button
+                  type="button"
+                  onClick={() => store.setAbilityActivated(!store.abilityActivated)}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                    store.abilityActivated
+                      ? 'text-indigo-600 border-indigo-500 bg-indigo-50 dark:text-indigo-400 dark:border-indigo-600 dark:bg-indigo-950'
+                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                  }`}
+                >
+                  {store.abilityActivated
+                    ? `✓ ${abilityConditionLabel}`
+                    : abilityConditionLabel}
+                </button>
+              </div>
+              {/* へんげんじざい: 発動中かつ防御側（または攻撃側でタイプ選択を指定する場合）にタイプピッカーを表示 */}
+              {store.effectiveAbility === 'へんげんじざい' && store.abilityActivated && label === '防御側' && (
+                <ProteanTypePicker
+                  value={store.proteanType}
+                  onChange={store.setProteanType}
+                />
+              )}
             </div>
           )}
 
