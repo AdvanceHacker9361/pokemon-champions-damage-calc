@@ -220,5 +220,6 @@
   {"id":889,"name":"ザマゼンタ",   "nameEn":"Zamazenta",    "types":["かくとう"],       "baseStats":{"hp":92,"atk":120,"def":115,"spa":80,"spd":115,"spe":138},"abilities":["おうじゃのシルシ"],"weight":242.0},
   {"id":891,"name":"ウーラオス",   "nameEn":"Urshifu",      "types":["かくとう","あく"], "baseStats":{"hp":100,"atk":130,"def":100,"spa":63,"spd":60,"spe":97},"abilities":["ふかしのこぶし"],"weight":105.0},
   {"id":946,"name":"ヘイラッシャ", "nameEn":"Dondozo",      "types":["みず"],           "baseStats":{"hp":150,"atk":100,"def":115,"spa":65,"spd":65,"spe":35},"abilities":["すいほう","どんかん","ちからずく"],"weight":220.0},
-  {"id":965,"name":"ブリジュラス", "nameEn":"Baxcalibur",   "types":["ドラゴン","こおり"],"baseStats":{"hp":115,"atk":145,"def":92,"spa":75,"spd":86,"spe":87},"abilities":["ねつこうかん","アイスフェイス"],"weight":210.0}
+  {"id":965,"name":"ブリジュラス", "nameEn":"Archaludon",   "types":["はがね","ドラゴン"],"baseStats":{"hp":90,"atk":105,"def":130,"spa":125,"spd":65,"spe":85},"abilities":["スタミナ","クラウドナイン"],"weight":60.0},
+  {"id":993,"name":"セグレイブ",   "nameEn":"Baxcalibur",   "types":["ドラゴン","こおり"],"baseStats":{"hp":115,"atk":145,"def":92,"spa":75,"spd":86,"spe":87},"abilities":["ねつこうかん","ゆきがくれ"],"weight":210.0}
 ]
