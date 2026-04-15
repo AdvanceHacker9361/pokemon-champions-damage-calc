@@ -1,9 +1,15 @@
 import { useState } from 'react'
 import type { DamageResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
-import { calcKoProbabilityForNHits } from '@/domain/calculators/KoProbabilityCalc'
+import {
+  calcKoProbabilityForNHits,
+  calcVariableMultiHitKo,
+  VARIABLE_MULTI_HIT_DIST,
+} from '@/domain/calculators/KoProbabilityCalc'
 import { useAccumStore } from '@/presentation/store/accumStore'
 import { useAttackerStore } from '@/presentation/store/pokemonStore'
+import { MoveRepository } from '@/data/repositories/MoveRepository'
+import type { MultiHitData } from '@/domain/models/Move'
 
 interface DamageResultRowProps {
   moveName: string
@@ -133,20 +139,76 @@ function ParentalBondKoInfo({ rolls, childRolls, defenderHp }: { rolls: number[]
   )
 }
 
+/** 変動連続技（2〜5回）の確率計算パネル */
+function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defenderHp: number }) {
+  const res = calcVariableMultiHitKo(rolls, defenderHp)
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+        連続技 KO確率（2〜5回ランダム）
+      </div>
+      {/* 各ヒット数の行 */}
+      <div className="grid grid-cols-4 gap-x-2 text-xs font-mono">
+        {res.perHit.map(({ hits, prob, koProbForHits }) => {
+          const hitMin = rolls[0] * hits
+          const hitMax = rolls[rolls.length - 1] * hits
+          const hitMinPct = hitMin / defenderHp * 100
+          const hitMaxPct = hitMax / defenderHp * 100
+          const distPct = (prob * 100).toFixed(0)
+          const koPct = koProbForHits >= 1 ? '確定' : koProbForHits <= 0 ? '不可' : `${(koProbForHits * 100).toFixed(1)}%`
+          return (
+            <div key={hits} className="bg-slate-100 dark:bg-slate-800 rounded px-1.5 py-1">
+              <div className="text-slate-500 dark:text-slate-500 text-[10px]">{hits}回 ({distPct}%)</div>
+              <div className="text-slate-800 dark:text-slate-200">{hitMin}〜{hitMax}</div>
+              <div className="text-slate-600 dark:text-slate-400 text-[10px]">
+                {hitMinPct.toFixed(1)}〜{hitMaxPct.toFixed(1)}%
+              </div>
+              <div className={`font-bold text-[10px] mt-0.5 ${multiHitKoColor(koProbForHits)}`}>
+                {koPct}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {/* 加重平均合計 */}
+      <div className="bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 flex items-center justify-between">
+        <div className="text-xs text-slate-700 dark:text-slate-400">
+          期待KO確率（加重平均）
+          <span className="ml-2 text-slate-500 dark:text-slate-500 text-[10px]">
+            期待ダメ: {res.expectedDmg.toFixed(1)}
+          </span>
+        </div>
+        <span className={`text-sm font-bold ${multiHitKoColor(res.totalKoProb)}`}>
+          {res.totalKoProb >= 1 ? '確定KO'
+            : res.totalKoProb <= 0 ? '倒せない'
+            : `${(res.totalKoProb * 100).toFixed(1)}%`}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const { min, max, percentMin, percentMax, defenderMaxHp } = result
   const [expanded, setExpanded] = useState(false)
   const [rollsExpanded, setRollsExpanded] = useState(false)
+  const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
   const [hitCount, setHitCount] = useState(2)
   const [constDmg, setConstDmg] = useState(0)
   const [constRec, setConstRec] = useState(0)
   const [added, setAdded] = useState(false)
+  const [accumUsages, setAccumUsages] = useState(1)
 
   const addEntry = useAccumStore(s => s.addEntry)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
   const isParentalBond = attackerAbility === 'おやこあい'
+
+  // 連続技データを取得
+  const moveRecord = MoveRepository.findByName(moveName)
+  const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
 
   if (min === 0 && max === 0) {
     return (
@@ -174,6 +236,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
     addEntry({
       label: `${attackerName} の${moveName}`,
       rolls,
+      usages: accumUsages,
       minDmg: min,
       maxDmg: max,
       defenderMaxHp,
@@ -184,13 +247,38 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
 
   return (
     <div className="py-2 border-b border-slate-200 dark:border-slate-800 last:border-0">
-      {/* ヘッダー: 技名 + KOラベル + 追加ボタン */}
+      {/* ヘッダー: 技名 + KOラベル + 追加ボタン群 */}
       <div className="flex items-baseline justify-between mb-1">
-        <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{moveName}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{moveName}</span>
+          {multiHit && (
+            <span className="text-[10px] px-1 py-0 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium">
+              {multiHit.type === 'fixed' ? `固定${multiHit.count}回` : '2〜5回'}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
           <span className={`text-xs font-bold ${koLabelColor(result)}`}>
             {koLabel(result)}
           </span>
+          {/* 加算回数セレクター */}
+          <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setAccumUsages(n)}
+                className={`w-5 h-5 text-[10px] rounded transition-colors ${
+                  accumUsages === n
+                    ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
+                }`}
+                title={`${n}回加算`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
           <button
             type="button"
             onClick={handleAddToAccum}
@@ -199,9 +287,9 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                 ? 'bg-blue-600 dark:bg-blue-700 border-blue-500 dark:border-blue-600 text-white'
                 : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-400'
             }`}
-            title="加算リストに追加"
+            title={`${accumUsages}回分を加算リストに追加`}
           >
-            {added ? '✓' : '+'}
+            {added ? '✓' : `+${accumUsages > 1 ? `×${accumUsages}` : ''}`}
           </button>
         </div>
       </div>
@@ -214,6 +302,17 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
         </span>
         <span className="text-xs text-slate-600 dark:text-slate-600">/{defenderMaxHp}</span>
         <div className="ml-auto flex items-center gap-1">
+          {/* 変動連続技のみ「連続技」ボタン表示 */}
+          {multiHit?.type === 'variable' && (
+            <button
+              type="button"
+              onClick={() => setMultiHitExpanded(v => !v)}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
+              title="連続技 KO確率"
+            >
+              {multiHitExpanded ? '▲' : '▼'}連続技
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setRollsExpanded(v => !v)}
@@ -234,6 +333,13 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       </div>
 
       <DamageBar percentMax={percentMax} koResult={result.koResult} />
+
+      {/* 変動連続技 KO確率パネル */}
+      {multiHitExpanded && multiHit?.type === 'variable' && (
+        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <VariableMultiHitPanel rolls={rolls} defenderHp={defenderMaxHp} />
+        </div>
+      )}
 
       {/* 16乱数表示 */}
       {rollsExpanded && (
@@ -268,7 +374,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       {/* 加算計算パネル */}
       {expanded && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
-          {/* 攻撃回数 */}
+          {/* 攻撃回数（固定連続技のデフォルト値を反映） */}
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">攻撃回数</span>
             <div className="flex gap-1">
@@ -287,6 +393,11 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                 </button>
               ))}
             </div>
+            {multiHit?.type === 'fixed' && (
+              <span className="text-[10px] text-slate-500 dark:text-slate-600">
+                （この技は常に{multiHit.count}回）
+              </span>
+            )}
           </div>
 
           {/* 定数ダメージ */}
@@ -417,3 +528,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
     </div>
   )
 }
+
+// 未使用変数の警告を防ぐ
+void VARIABLE_MULTI_HIT_DIST

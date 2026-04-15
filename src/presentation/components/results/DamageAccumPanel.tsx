@@ -1,6 +1,5 @@
 import { useAccumStore } from '@/presentation/store/accumStore'
 import { calcCombinedKoProbability } from '@/domain/calculators/KoProbabilityCalc'
-import { useDefenderStore } from '@/presentation/store/pokemonStore'
 
 function koColor(prob: number): string {
   if (prob >= 1.0) return 'text-red-500 dark:text-red-400'
@@ -12,19 +11,17 @@ function koColor(prob: number): string {
 
 export function DamageAccumPanel() {
   const { entries, removeEntry, clearEntries } = useAccumStore()
-  const defenderMaxHp = useDefenderStore(s => s.baseStats.hp > 0
-    ? entries[0]?.defenderMaxHp ?? 0
-    : 0)
 
   const hp = entries[0]?.defenderMaxHp ?? 0
 
   if (entries.length === 0) return null
 
-  const rollSets = entries.map(e => e.rolls)
+  // usages 回分のロールセットを展開して KO 確率を計算
+  const rollSets = entries.flatMap(e => Array<number[]>(e.usages).fill(e.rolls))
   const combinedProb = calcCombinedKoProbability(rollSets, hp)
 
-  const minTotal = entries.reduce((s, e) => s + e.minDmg, 0)
-  const maxTotal = entries.reduce((s, e) => s + e.maxDmg, 0)
+  const minTotal = entries.reduce((s, e) => s + e.minDmg * e.usages, 0)
+  const maxTotal = entries.reduce((s, e) => s + e.maxDmg * e.usages, 0)
   const minPct = hp > 0 ? (minTotal / hp * 100) : 0
   const maxPct = hp > 0 ? (maxTotal / hp * 100) : 0
 
@@ -33,8 +30,6 @@ export function DamageAccumPanel() {
     : combinedProb <= 0
     ? '倒せない'
     : `${(combinedProb * 100).toFixed(1)}%`
-
-  void defenderMaxHp
 
   return (
     <div className="panel space-y-2">
@@ -53,9 +48,18 @@ export function DamageAccumPanel() {
       <div className="space-y-1">
         {entries.map(entry => (
           <div key={entry.id} className="flex items-center justify-between text-xs">
-            <span className="text-slate-700 dark:text-slate-300 truncate flex-1">{entry.label}</span>
+            <span className="text-slate-700 dark:text-slate-300 truncate flex-1">
+              {entry.label}
+              {entry.usages > 1 && (
+                <span className="ml-1 text-blue-600 dark:text-blue-400 font-medium">
+                  ×{entry.usages}回
+                </span>
+              )}
+            </span>
             <span className="text-slate-700 dark:text-slate-400 font-mono ml-2 flex-shrink-0">
-              {entry.minDmg}〜{entry.maxDmg}
+              {entry.usages > 1
+                ? `${entry.minDmg * entry.usages}〜${entry.maxDmg * entry.usages}`
+                : `${entry.minDmg}〜${entry.maxDmg}`}
             </span>
             <button
               type="button"
@@ -103,12 +107,10 @@ export function DamageAccumPanel() {
             className="absolute left-0 h-full bg-red-400 rounded-full transition-all"
             style={{ width: `${Math.min(100, minPct)}%` }}
           />
-          {hp > 0 && (
-            <div
-              className="absolute top-0 bottom-0 w-px bg-slate-700 dark:bg-white opacity-40"
-              style={{ left: '100%', transform: 'translateX(-1px)' }}
-            />
-          )}
+          <div
+            className="absolute top-0 bottom-0 w-px bg-slate-700 dark:bg-white opacity-40"
+            style={{ left: '100%', transform: 'translateX(-1px)' }}
+          />
         </div>
       )}
     </div>
