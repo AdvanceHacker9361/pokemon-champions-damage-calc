@@ -18,6 +18,16 @@ interface PokemonPanelProps {
   showMoves?: boolean
 }
 
+/** 手動トグルが必要な条件付き特性。key=特性名、value=表示する条件ラベル */
+const ACTIVATABLE_ABILITIES: Record<string, string> = {
+  'げきりゅう':   'HP1/3以下',
+  'もうか':       'HP1/3以下',
+  'しんりょく':   'HP1/3以下',
+  'むしのしらせ': 'HP1/3以下',
+  'マルチスケイル':   'HP満タン',
+  'ファントムガード':  'HP満タン',
+}
+
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {
   const computedStats = useStatCalc(store.baseStats, store.sp, store.statNatures, store.ranks)
 
@@ -32,6 +42,8 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
   const megaAbility = store.pokemonId
     ? PokemonRepository.getMegaByBaseId(store.pokemonId)?.ability
     : undefined
+
+  const abilityConditionLabel = ACTIVATABLE_ABILITIES[store.effectiveAbility]
 
   return (
     <div className="panel space-y-4">
@@ -87,6 +99,26 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
           {/* 状態異常 */}
           <StatusToggle value={store.status} onChange={store.setStatus} />
+
+          {/* 特性発動トグル（条件付き特性のみ表示） */}
+          {abilityConditionLabel && (
+            <div>
+              <label className="label block mb-1">特性条件</label>
+              <button
+                type="button"
+                onClick={() => store.setAbilityActivated(!store.abilityActivated)}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  store.abilityActivated
+                    ? 'text-indigo-600 border-indigo-500 bg-indigo-50 dark:text-indigo-400 dark:border-indigo-600 dark:bg-indigo-950'
+                    : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                }`}
+              >
+                {store.abilityActivated
+                  ? `✓ ${abilityConditionLabel}`
+                  : abilityConditionLabel}
+              </button>
+            </div>
+          )}
 
           {/* 技（攻撃側のみ） */}
           {showMoves && (
