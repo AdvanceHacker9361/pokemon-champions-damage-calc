@@ -22,6 +22,7 @@ export interface DamageCalcInput {
   defenderItem: string | null
   defenderStatus: StatusCondition
   defenderAbilityActivated?: boolean
+  defenderProteanType?: TypeName | null
   defenderWeight?: number
   move: MoveData
   field: BattleField
@@ -149,7 +150,7 @@ function resolveDef(input: DamageCalcInput): number {
 
   // 砂嵐時の岩タイプ特防1.5倍
   if (input.field.weather === 'すなあらし') {
-    if (defenderStats === defenderStats && move.category === '特殊') {
+    if (move.category === '特殊') {
       if (input.defenderTypes?.includes('いわ')) defMod *= 1.5
     }
   }
@@ -213,6 +214,14 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   const def = resolveDef(input)
   const moveType = resolveMoveType(input)
 
+  // へんげんじざい: 防御側タイプを変換済みタイプで上書き
+  const effectiveDefenderTypes: TypeName[] =
+    (defenderAbility === 'へんげんじざい' &&
+     input.defenderAbilityActivated &&
+     input.defenderProteanType != null)
+      ? [input.defenderProteanType]
+      : input.defenderTypes
+
   // ===== 基本ダメージ =====
   // floor((レベル×2÷5+2)) = floor((50×2÷5+2)) = floor(22) = 22
   const levelCalc = Math.floor(50 * 2 / 5 + 2)  // = 22 (レベル50固定)
@@ -242,7 +251,10 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     let d = roll
 
     // 4. タイプ一致補正 (STAB)
-    const hasSTAB = input.attackerTypes.includes(moveType)
+    // へんげんじざい: 技タイプ=自分のタイプになるため常にSTAB
+    const hasSTAB = (attackerAbility === 'へんげんじざい' && input.attackerAbilityActivated)
+      ? true
+      : input.attackerTypes.includes(moveType)
     if (hasSTAB) {
       if (attackerAbility === 'てきおうりょく') {
         d = pokeRound(d * 2.0)
@@ -251,12 +263,12 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
       }
     }
 
-    // 5. タイプ相性
-    let typeEff: number = getTypeEffectiveness(moveType, input.defenderTypes)
+    // 5. タイプ相性（へんげんじざい発動時は変換後タイプで判定）
+    let typeEff: number = getTypeEffectiveness(moveType, effectiveDefenderTypes)
     // フリーズドライ: みず タイプに対して2倍有効（通常はこおり→みず 0.5倍）
-    if (move.special === 'freeze-dry' && input.defenderTypes.includes('みず')) {
+    if (move.special === 'freeze-dry' && effectiveDefenderTypes.includes('みず')) {
       let eff = 1
-      for (const defType of input.defenderTypes) {
+      for (const defType of effectiveDefenderTypes) {
         if (defType === 'みず') {
           eff *= 2  // 常に2倍
         } else {
@@ -282,8 +294,8 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     return Math.max(1, d)  // 最低1ダメージ（無効タイプは0）
   })
 
-  // 無効タイプは0
-  let typeEffCheck: number = getTypeEffectiveness(moveType, input.defenderTypes)
+  // 無効タイプは0（へんげんじざい発動時は変換後タイプで判定）
+  let typeEffCheck: number = getTypeEffectiveness(moveType, effectiveDefenderTypes)
   if (move.special === 'freeze-dry') {
     // みずタイプへの無効化はない（こおりに免疫なし）
     typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効

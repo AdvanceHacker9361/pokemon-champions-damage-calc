@@ -18,6 +18,7 @@ export interface PokemonBattleState {
   ranks: Partial<Record<StatKey, number>>
   status: StatusCondition
   abilityActivated?: boolean
+  proteanType?: TypeName | null
   weight?: number
 }
 
@@ -61,6 +62,7 @@ export function executeDamageCalculation(
     defenderItem: input.defender.itemName,
     defenderStatus: input.defender.status,
     defenderAbilityActivated: input.defender.abilityActivated,
+    defenderProteanType: input.defender.proteanType,
     defenderWeight: input.defender.weight,
     move: input.move,
     field: input.field,
