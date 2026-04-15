@@ -1,5 +1,5 @@
 import type { TypeName, StatKey } from '@/domain/models/Pokemon'
-import type { SpecialMoveTag } from '@/domain/models/Move'
+import type { SpecialMoveTag, MultiHitData } from '@/domain/models/Move'
 
 export interface PokemonRecord {
   id: number
@@ -42,6 +42,7 @@ export interface MoveRecord {
     recoil?: boolean
   }
   special: SpecialMoveTag | null
+  multiHit?: MultiHitData | null
 }
 
 export interface AbilityRecord {

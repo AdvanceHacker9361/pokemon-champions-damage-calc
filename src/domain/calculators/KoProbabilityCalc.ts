@@ -75,6 +75,57 @@ export function calcKoProbabilityForNHits(
 }
 
 /**
+ * 連続技（2〜5回ランダム）のKO確率と期待ダメージを計算
+ * 回数分布: P(2)=1/3, P(3)=1/3, P(4)=1/6, P(5)=1/6
+ */
+export interface VariableMultiHitResult {
+  /** 各ヒット数ごとのKO確率 */
+  perHit: { hits: number; prob: number; koProbForHits: number }[]
+  /** 全回数分布を加重平均したKO確率 */
+  totalKoProb: number
+  /** 最小ダメージ（2回最小ロール）*/
+  minDmg: number
+  /** 最大ダメージ（5回最大ロール）*/
+  maxDmg: number
+  /** 期待値ダメージ（加重平均） */
+  expectedDmg: number
+}
+
+export const VARIABLE_MULTI_HIT_DIST: { hits: number; prob: number }[] = [
+  { hits: 2, prob: 1 / 3 },
+  { hits: 3, prob: 1 / 3 },
+  { hits: 4, prob: 1 / 6 },
+  { hits: 5, prob: 1 / 6 },
+]
+
+export function calcVariableMultiHitKo(
+  rolls: number[],
+  defenderHp: number,
+): VariableMultiHitResult {
+  const perHit = VARIABLE_MULTI_HIT_DIST.map(({ hits, prob }) => ({
+    hits,
+    prob,
+    koProbForHits: calcKoProbabilityForNHits(rolls, defenderHp, hits),
+  }))
+
+  const totalKoProb = Math.min(
+    1,
+    perHit.reduce((sum, { prob, koProbForHits }) => sum + prob * koProbForHits, 0),
+  )
+
+  const minRoll = rolls[0]
+  const maxRoll = rolls[rolls.length - 1]
+  const minDmg = minRoll * 2
+  const maxDmg = maxRoll * 5
+  const expectedDmg = VARIABLE_MULTI_HIT_DIST.reduce(
+    (sum, { hits, prob }) => sum + ((minRoll + maxRoll) / 2) * hits * prob,
+    0,
+  )
+
+  return { perHit, totalKoProb, minDmg, maxDmg, expectedDmg }
+}
+
+/**
  * 複数の技・ポケモンによる複合ダメージのKO確率をDP計算
  * 各rollSetから1ロールずつ独立に選んだ合計がdefenderHp以上になる確率
  */

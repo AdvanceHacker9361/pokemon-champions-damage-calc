@@ -1,5 +1,14 @@
 import type { TypeName, MoveCategory } from '@/domain/models/Pokemon'
 
+/**
+ * 連続技の回数データ
+ * - fixed: 常に count 回ヒット（ダブルキック=2、すいりゅうれんだ=3 等）
+ * - variable: 2〜5回ランダム（P(2)=1/3, P(3)=1/3, P(4)=1/6, P(5)=1/6）
+ */
+export type MultiHitData =
+  | { type: 'fixed'; count: number }
+  | { type: 'variable' }
+
 export type SpecialMoveTag =
   | 'foul-play'     // イカサマ: 相手のAを使用
   | 'body-press'    // ボディプレス: 自分のBで攻撃
@@ -39,4 +48,6 @@ export interface MoveData {
   priority: number
   flags: MoveFlags
   special: SpecialMoveTag | null
+  /** 連続技データ（null = 単発技） */
+  multiHit?: MultiHitData | null
 }
