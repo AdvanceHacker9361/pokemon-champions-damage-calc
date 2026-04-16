@@ -50,4 +50,6 @@ export interface MoveData {
   special: SpecialMoveTag | null
   /** 連続技データ（null = 単発技） */
   multiHit?: MultiHitData | null
+  /** 可変威力の選択肢（おはかまいり等） */
+  powerOptions?: number[]
 }
