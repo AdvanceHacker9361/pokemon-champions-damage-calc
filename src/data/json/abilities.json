@@ -973,5 +973,460 @@
     "name": "かんつうドリル",
     "nameEn": "Piercing Drill",
     "calcTag": "piercing-drill"
+  },
+  {
+    "name": "Friend Guard",
+    "nameEn": "Friend Guard",
+    "calcTag": "friend-guard"
+  },
+  {
+    "name": "Tinted Lens",
+    "nameEn": "Tinted Lens",
+    "calcTag": "tinted-lens"
+  },
+  {
+    "name": "Wonder Skin",
+    "nameEn": "Wonder Skin",
+    "calcTag": "wonder-skin"
+  },
+  {
+    "name": "Stench",
+    "nameEn": "Stench",
+    "calcTag": "stench"
+  },
+  {
+    "name": "Arena Trap",
+    "nameEn": "Arena Trap",
+    "calcTag": "arena-trap"
+  },
+  {
+    "name": "Liquid Ooze",
+    "nameEn": "Liquid Ooze",
+    "calcTag": "liquid-ooze"
+  },
+  {
+    "name": "Sticky Hold",
+    "nameEn": "Sticky Hold",
+    "calcTag": "sticky-hold"
+  },
+  {
+    "name": "Forewarn",
+    "nameEn": "Forewarn",
+    "calcTag": "forewarn"
+  },
+  {
+    "name": "Aftermath",
+    "nameEn": "Aftermath",
+    "calcTag": "aftermath"
+  },
+  {
+    "name": "Neutralizing Gas",
+    "nameEn": "Neutralizing Gas",
+    "calcTag": "neutralizing-gas"
+  },
+  {
+    "name": "Imposter",
+    "nameEn": "Imposter",
+    "calcTag": "imposter"
+  },
+  {
+    "name": "Download",
+    "nameEn": "Download",
+    "calcTag": "download"
+  },
+  {
+    "name": "Volt Absorb",
+    "nameEn": "Volt Absorb",
+    "calcTag": "volt-absorb"
+  },
+  {
+    "name": "Wind Rider",
+    "nameEn": "Wind Rider",
+    "calcTag": "wind-rider"
+  },
+  {
+    "name": "White Smoke",
+    "nameEn": "White Smoke",
+    "calcTag": "white-smoke"
+  },
+  {
+    "name": "Storm Drain",
+    "nameEn": "Storm Drain",
+    "calcTag": "storm-drain"
+  },
+  {
+    "name": "Flare Boost",
+    "nameEn": "Flare Boost",
+    "calcTag": "flare-boost"
+  },
+  {
+    "name": "Slow Start",
+    "nameEn": "Slow Start",
+    "calcTag": "slow-start"
+  },
+  {
+    "name": "Multitype",
+    "nameEn": "Multitype",
+    "calcTag": "multitype"
+  },
+  {
+    "name": "Grass Pelt",
+    "nameEn": "Grass Pelt",
+    "calcTag": "grass-pelt"
+  },
+  {
+    "name": "Mega Launcher",
+    "nameEn": "Mega Launcher",
+    "calcTag": "mega-launcher"
+  },
+  {
+    "name": "Stakeout",
+    "nameEn": "Stakeout",
+    "calcTag": "stakeout"
+  },
+  {
+    "name": "Strong Jaw",
+    "nameEn": "Strong Jaw",
+    "calcTag": "strong-jaw"
+  },
+  {
+    "name": "Battery",
+    "nameEn": "Battery",
+    "calcTag": "battery"
+  },
+  {
+    "name": "Dancer",
+    "nameEn": "Dancer",
+    "calcTag": "dancer"
+  },
+  {
+    "name": "Stamina",
+    "nameEn": "Stamina",
+    "calcTag": "stamina"
+  },
+  {
+    "name": "Triage",
+    "nameEn": "Triage",
+    "calcTag": "triage"
+  },
+  {
+    "name": "Receiver",
+    "nameEn": "Receiver",
+    "calcTag": "receiver"
+  },
+  {
+    "name": "Water Compaction",
+    "nameEn": "Water Compaction",
+    "calcTag": "water-compaction"
+  },
+  {
+    "name": "Shields Down",
+    "nameEn": "Shields Down",
+    "calcTag": "shields-down"
+  },
+  {
+    "name": "Comatose",
+    "nameEn": "Comatose",
+    "calcTag": "comatose"
+  },
+  {
+    "name": "Full Metal Body",
+    "nameEn": "Full Metal Body",
+    "calcTag": "full-metal-body"
+  },
+  {
+    "name": "Soul-Heart",
+    "nameEn": "Soul-Heart",
+    "calcTag": "soul-heart"
+  },
+  {
+    "name": "Dazzling",
+    "nameEn": "Dazzling",
+    "calcTag": "dazzling"
+  },
+  {
+    "name": "Grassy Surge",
+    "nameEn": "Grassy Surge",
+    "calcTag": "grassy-surge"
+  },
+  {
+    "name": "Libero",
+    "nameEn": "Libero",
+    "calcTag": "libero"
+  },
+  {
+    "name": "Mirror Armor",
+    "nameEn": "Mirror Armor",
+    "calcTag": "mirror-armor"
+  },
+  {
+    "name": "Steam Engine",
+    "nameEn": "Steam Engine",
+    "calcTag": "steam-engine"
+  },
+  {
+    "name": "Ripen",
+    "nameEn": "Ripen",
+    "calcTag": "ripen"
+  },
+  {
+    "name": "Sand Spit",
+    "nameEn": "Sand Spit",
+    "calcTag": "sand-spit"
+  },
+  {
+    "name": "Propeller Tail",
+    "nameEn": "Propeller Tail",
+    "calcTag": "propeller-tail"
+  },
+  {
+    "name": "Gulp Missile",
+    "nameEn": "Gulp Missile",
+    "calcTag": "gulp-missile"
+  },
+  {
+    "name": "Punk Rock",
+    "nameEn": "Punk Rock",
+    "calcTag": "punk-rock"
+  },
+  {
+    "name": "Aroma Veil",
+    "nameEn": "Aroma Veil",
+    "calcTag": "aroma-veil"
+  },
+  {
+    "name": "かたいツメ",
+    "nameEn": "Tough Claws",
+    "calcTag": "tough-claws"
+  },
+  {
+    "name": "Steely Spirit",
+    "nameEn": "Steely Spirit",
+    "calcTag": "steely-spirit"
+  },
+  {
+    "name": "Hunger Switch",
+    "nameEn": "Hunger Switch",
+    "calcTag": "hunger-switch"
+  },
+  {
+    "name": "Ice Scales",
+    "nameEn": "Ice Scales",
+    "calcTag": "ice-scales"
+  },
+  {
+    "name": "Power Spot",
+    "nameEn": "Power Spot",
+    "calcTag": "power-spot"
+  },
+  {
+    "name": "Stalwart",
+    "nameEn": "Stalwart",
+    "calcTag": "stalwart"
+  },
+  {
+    "name": "Psychic Surge",
+    "nameEn": "Psychic Surge",
+    "calcTag": "psychic-surge"
+  },
+  {
+    "name": "Ice Face",
+    "nameEn": "Ice Face",
+    "calcTag": "ice-face"
+  },
+  {
+    "name": "Electric Surge",
+    "nameEn": "Electric Surge",
+    "calcTag": "electric-surge"
+  },
+  {
+    "name": "Dragon's Maw",
+    "nameEn": "Dragon's Maw",
+    "calcTag": "dragon's-maw"
+  },
+  {
+    "name": "Grim Neigh",
+    "nameEn": "Grim Neigh",
+    "calcTag": "grim-neigh"
+  },
+  {
+    "name": "Transistor",
+    "nameEn": "Transistor",
+    "calcTag": "transistor"
+  },
+  {
+    "name": "Chilling Neigh",
+    "nameEn": "Chilling Neigh",
+    "calcTag": "chilling-neigh"
+  },
+  {
+    "name": "Lingering Aroma",
+    "nameEn": "Lingering Aroma",
+    "calcTag": "lingering-aroma"
+  },
+  {
+    "name": "Well-Baked Body",
+    "nameEn": "Well-Baked Body",
+    "calcTag": "well-baked-body"
+  },
+  {
+    "name": "Seed Sower",
+    "nameEn": "Seed Sower",
+    "calcTag": "seed-sower"
+  },
+  {
+    "name": "Purifying Salt",
+    "nameEn": "Purifying Salt",
+    "calcTag": "purifying-salt"
+  },
+  {
+    "name": "Wind Power",
+    "nameEn": "Wind Power",
+    "calcTag": "wind-power"
+  },
+  {
+    "name": "Electromorphosis",
+    "nameEn": "Electromorphosis",
+    "calcTag": "electromorphosis"
+  },
+  {
+    "name": "Guard Dog",
+    "nameEn": "Guard Dog",
+    "calcTag": "guard-dog"
+  },
+  {
+    "name": "Mycelium Might",
+    "nameEn": "Mycelium Might",
+    "calcTag": "mycelium-might"
+  },
+  {
+    "name": "Anger Shell",
+    "nameEn": "Anger Shell",
+    "calcTag": "anger-shell"
+  },
+  {
+    "name": "Opportunist",
+    "nameEn": "Opportunist",
+    "calcTag": "opportunist"
+  },
+  {
+    "name": "Zero to Hero",
+    "nameEn": "Zero to Hero",
+    "calcTag": "zero-to-hero"
+  },
+  {
+    "name": "Earth Eater",
+    "nameEn": "Earth Eater",
+    "calcTag": "earth-eater"
+  },
+  {
+    "name": "Rocky Payload",
+    "nameEn": "Rocky Payload",
+    "calcTag": "rocky-payload"
+  },
+  {
+    "name": "Toxic Debris",
+    "nameEn": "Toxic Debris",
+    "calcTag": "toxic-debris"
+  },
+  {
+    "name": "Filter",
+    "nameEn": "Filter",
+    "calcTag": "filter"
+  },
+  {
+    "name": "Commander",
+    "nameEn": "Commander",
+    "calcTag": "commander"
+  },
+  {
+    "name": "Costar",
+    "nameEn": "Costar",
+    "calcTag": "costar"
+  },
+  {
+    "name": "Cud Chew",
+    "nameEn": "Cud Chew",
+    "calcTag": "cud-chew"
+  },
+  {
+    "name": "Armor Tail",
+    "nameEn": "Armor Tail",
+    "calcTag": "armor-tail"
+  },
+  {
+    "name": "Protosynthesis",
+    "nameEn": "Protosynthesis",
+    "calcTag": "protosynthesis"
+  },
+  {
+    "name": "Supreme Overlord",
+    "nameEn": "Supreme Overlord",
+    "calcTag": "supreme-overlord"
+  },
+  {
+    "name": "Good as Gold",
+    "nameEn": "Good as Gold",
+    "calcTag": "good-as-gold"
+  },
+  {
+    "name": "Thermal Exchange",
+    "nameEn": "Thermal Exchange",
+    "calcTag": "thermal-exchange"
+  },
+  {
+    "name": "Tablets of Ruin",
+    "nameEn": "Tablets of Ruin",
+    "calcTag": "tablets-of-ruin"
+  },
+  {
+    "name": "Sword of Ruin",
+    "nameEn": "Sword of Ruin",
+    "calcTag": "sword-of-ruin"
+  },
+  {
+    "name": "Orichalcum Pulse",
+    "nameEn": "Orichalcum Pulse",
+    "calcTag": "orichalcum-pulse"
+  },
+  {
+    "name": "Beads of Ruin",
+    "nameEn": "Beads of Ruin",
+    "calcTag": "beads-of-ruin"
+  },
+  {
+    "name": "Vessel of Ruin",
+    "nameEn": "Vessel of Ruin",
+    "calcTag": "vessel-of-ruin"
+  },
+  {
+    "name": "Supersweet Syrup",
+    "nameEn": "Supersweet Syrup",
+    "calcTag": "supersweet-syrup"
+  },
+  {
+    "name": "Hadron Engine",
+    "nameEn": "Hadron Engine",
+    "calcTag": "hadron-engine"
+  },
+  {
+    "name": "Hospitality",
+    "nameEn": "Hospitality",
+    "calcTag": "hospitality"
+  },
+  {
+    "name": "Toxic Chain",
+    "nameEn": "Toxic Chain",
+    "calcTag": "toxic-chain"
+  },
+  {
+    "name": "Tera Shift",
+    "nameEn": "Tera Shift",
+    "calcTag": "tera-shift"
+  },
+  {
+    "name": "Poison Puppeteer",
+    "nameEn": "Poison Puppeteer",
+    "calcTag": "poison-puppeteer"
   }
 ]
