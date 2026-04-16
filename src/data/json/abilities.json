@@ -1428,5 +1428,10 @@
     "name": "Poison Puppeteer",
     "nameEn": "Poison Puppeteer",
     "calcTag": "poison-puppeteer"
+  },
+  {
+    "name": "サイコフィールド",
+    "nameEn": "Psychic Surge",
+    "calcTag": "psychic-surge"
   }
 ]

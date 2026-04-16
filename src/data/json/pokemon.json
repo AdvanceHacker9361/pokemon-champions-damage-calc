@@ -13964,8 +13964,8 @@
   },
   {
     "id": 876,
-    "name": "イエッサン",
-    "nameEn": "Indeedee",
+    "name": "イエッサンオス",
+    "nameEn": "Indeedee-M",
     "types": [
       "エスパー",
       "ノーマル"
@@ -13981,7 +13981,30 @@
     "abilities": [
       "せいしんりょく",
       "シンクロ",
-      "Psychic Surge"
+      "サイコフィールド"
+    ],
+    "weight": 28
+  },
+  {
+    "id": 10876,
+    "name": "イエッサンメス",
+    "nameEn": "Indeedee-F",
+    "types": [
+      "エスパー",
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 55,
+      "def": 65,
+      "spa": 95,
+      "spd": 105,
+      "spe": 85
+    },
+    "abilities": [
+      "マイペース",
+      "シンクロ",
+      "サイコフィールド"
     ],
     "weight": 28
   },
