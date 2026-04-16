@@ -219,6 +219,30 @@
     "weight": 29.5
   },
   {
+    "id": 18,
+    "name": "ピジョット",
+    "nameEn": "Pidgeot",
+    "types": [
+      "ノーマル",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 83,
+      "atk": 80,
+      "def": 75,
+      "spa": 70,
+      "spd": 70,
+      "spe": 101
+    },
+    "abilities": [
+      "するどいめ",
+      "ちどりあし",
+      "はとむね"
+    ],
+    "weight": 39.5,
+    "megaEvolutionKey": "mega-pidgeot"
+  },
+  {
     "id": 23,
     "name": "アーボ",
     "nameEn": "Ekans",
@@ -2190,6 +2214,30 @@
       "アナライズ"
     ],
     "weight": 36.5
+  },
+  {
+    "id": 142,
+    "name": "プテラ",
+    "nameEn": "Aerodactyl",
+    "types": [
+      "いわ",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 105,
+      "def": 65,
+      "spa": 60,
+      "spd": 75,
+      "spe": 130
+    },
+    "abilities": [
+      "いしあたま",
+      "プレッシャー",
+      "きんちょうかん"
+    ],
+    "weight": 59,
+    "megaEvolutionKey": "mega-aerodactyl"
   },
   {
     "id": 143,
@@ -5801,6 +5849,26 @@
     "weight": 162
   },
   {
+    "id": 351,
+    "name": "ポワルン",
+    "nameEn": "Castform",
+    "types": [
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 70,
+      "def": 70,
+      "spa": 70,
+      "spd": 70,
+      "spe": 70
+    },
+    "abilities": [
+      "てんきや"
+    ],
+    "weight": 0.8
+  },
+  {
     "id": 353,
     "name": "カゲボウズ",
     "nameEn": "Shuppet",
@@ -8567,6 +8635,28 @@
     "weight": 94.6
   },
   {
+    "id": 505,
+    "name": "ミルホッグ",
+    "nameEn": "Watchog",
+    "types": [
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 85,
+      "def": 69,
+      "spa": 60,
+      "spd": 69,
+      "spe": 77
+    },
+    "abilities": [
+      "はっこう",
+      "するどいめ",
+      "アナライズ"
+    ],
+    "weight": 27
+  },
+  {
     "id": 508,
     "name": "ムーランド",
     "nameEn": "Stoutland",
@@ -8609,6 +8699,48 @@
       "かるわざ"
     ],
     "weight": 37.5
+  },
+  {
+    "id": 512,
+    "name": "ヤナッキー",
+    "nameEn": "Simisage",
+    "types": [
+      "くさ"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 98,
+      "def": 63,
+      "spa": 98,
+      "spd": 63,
+      "spe": 101
+    },
+    "abilities": [
+      "くいしんぼう",
+      "しんりょく"
+    ],
+    "weight": 30.5
+  },
+  {
+    "id": 514,
+    "name": "バオッキー",
+    "nameEn": "Simisear",
+    "types": [
+      "ほのお"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 98,
+      "def": 63,
+      "spa": 98,
+      "spd": 63,
+      "spe": 101
+    },
+    "abilities": [
+      "くいしんぼう",
+      "もうか"
+    ],
+    "weight": 28
   },
   {
     "id": 522,
@@ -8699,6 +8831,29 @@
     ],
     "weight": 40.4,
     "megaEvolutionKey": "mega-excadrill"
+  },
+  {
+    "id": 531,
+    "name": "タブンネ",
+    "nameEn": "Audino",
+    "types": [
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 103,
+      "atk": 60,
+      "def": 86,
+      "spa": 60,
+      "spd": 86,
+      "spe": 50
+    },
+    "abilities": [
+      "いやしのこころ",
+      "さいせいりょく",
+      "ぶきよう"
+    ],
+    "weight": 31,
+    "megaEvolutionKey": "mega-audino"
   },
   {
     "id": 532,
@@ -9173,6 +9328,28 @@
     "weight": 32
   },
   {
+    "id": 569,
+    "name": "ダストダス",
+    "nameEn": "Garbodor",
+    "types": [
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 95,
+      "def": 82,
+      "spa": 60,
+      "spd": 82,
+      "spe": 75
+    },
+    "abilities": [
+      "あくしゅう",
+      "くだけるよろい",
+      "ゆうばく"
+    ],
+    "weight": 107.3
+  },
+  {
     "id": 570,
     "name": "ゾロア",
     "nameEn": "Zorua",
@@ -9433,6 +9610,28 @@
       "はとむね"
     ],
     "weight": 24.2
+  },
+  {
+    "id": 584,
+    "name": "バイバニラ",
+    "nameEn": "Vanilluxe",
+    "types": [
+      "こおり"
+    ],
+    "baseStats": {
+      "hp": 71,
+      "atk": 95,
+      "def": 85,
+      "spa": 110,
+      "spd": 95,
+      "spe": 79
+    },
+    "abilities": [
+      "アイスボディ",
+      "ゆきふらし",
+      "くだけるよろい"
+    ],
+    "weight": 57.5
   },
   {
     "id": 585,
@@ -9897,6 +10096,29 @@
       "ふゆう"
     ],
     "weight": 148
+  },
+  {
+    "id": 618,
+    "name": "マッギョ",
+    "nameEn": "Stunfisk",
+    "types": [
+      "じめん",
+      "でんき"
+    ],
+    "baseStats": {
+      "hp": 109,
+      "atk": 66,
+      "def": 84,
+      "spa": 81,
+      "spd": 99,
+      "spe": 32
+    },
+    "abilities": [
+      "せいでんき",
+      "じゅうなん",
+      "すながくれ"
+    ],
+    "weight": 11
   },
   {
     "id": 619,
@@ -10995,6 +11217,49 @@
     "weight": 91
   },
   {
+    "id": 675,
+    "name": "ゴロンダ",
+    "nameEn": "Pangoro",
+    "types": [
+      "かくとう",
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 124,
+      "def": 78,
+      "spa": 69,
+      "spd": 71,
+      "spe": 58
+    },
+    "abilities": [
+      "てつのこぶし",
+      "かたやぶり",
+      "きもったま"
+    ],
+    "weight": 136
+  },
+  {
+    "id": 676,
+    "name": "トリミアン",
+    "nameEn": "Furfrou",
+    "types": [
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 80,
+      "def": 60,
+      "spa": 65,
+      "spd": 90,
+      "spe": 102
+    },
+    "abilities": [
+      "ファーコート"
+    ],
+    "weight": 28
+  },
+  {
     "id": 677,
     "name": "ニャスパー",
     "nameEn": "Espurr",
@@ -11059,6 +11324,48 @@
       "バトルスイッチ"
     ],
     "weight": 53
+  },
+  {
+    "id": 683,
+    "name": "アロマティース",
+    "nameEn": "Aromatisse",
+    "types": [
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 101,
+      "atk": 72,
+      "def": 72,
+      "spa": 99,
+      "spd": 89,
+      "spe": 29
+    },
+    "abilities": [
+      "いやしのこころ",
+      "アロマベール"
+    ],
+    "weight": 15.5
+  },
+  {
+    "id": 685,
+    "name": "ペロリーム",
+    "nameEn": "Slurpuff",
+    "types": [
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 82,
+      "atk": 80,
+      "def": 86,
+      "spa": 85,
+      "spd": 75,
+      "spe": 72
+    },
+    "abilities": [
+      "スイートベール",
+      "かるわざ"
+    ],
+    "weight": 5
   },
   {
     "id": 686,
@@ -11215,6 +11522,50 @@
       "すながくれ"
     ],
     "weight": 21
+  },
+  {
+    "id": 697,
+    "name": "ガチゴラス",
+    "nameEn": "Tyrantrum",
+    "types": [
+      "いわ",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 82,
+      "atk": 121,
+      "def": 119,
+      "spa": 69,
+      "spd": 59,
+      "spe": 71
+    },
+    "abilities": [
+      "がんじょうあご",
+      "いしあたま"
+    ],
+    "weight": 270
+  },
+  {
+    "id": 699,
+    "name": "アマルルガ",
+    "nameEn": "Aurorus",
+    "types": [
+      "いわ",
+      "こおり"
+    ],
+    "baseStats": {
+      "hp": 123,
+      "atk": 77,
+      "def": 72,
+      "spa": 99,
+      "spd": 92,
+      "spe": 58
+    },
+    "abilities": [
+      "フリーズスキン",
+      "ゆきふらし"
+    ],
+    "weight": 225
   },
   {
     "id": 700,
@@ -11439,6 +11790,52 @@
       "おみとおし"
     ],
     "weight": 71
+  },
+  {
+    "id": 710,
+    "name": "カボチャン",
+    "nameEn": "Pumpkaboo",
+    "types": [
+      "ゴースト",
+      "くさ"
+    ],
+    "baseStats": {
+      "hp": 49,
+      "atk": 66,
+      "def": 70,
+      "spa": 44,
+      "spd": 55,
+      "spe": 51
+    },
+    "abilities": [
+      "ものひろい",
+      "おみとおし",
+      "ふみん"
+    ],
+    "weight": 5
+  },
+  {
+    "id": 711,
+    "name": "パンプジン",
+    "nameEn": "Gourgeist",
+    "types": [
+      "ゴースト",
+      "くさ"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 90,
+      "def": 122,
+      "spa": 58,
+      "spd": 75,
+      "spe": 84
+    },
+    "abilities": [
+      "ものひろい",
+      "おみとおし",
+      "ふみん"
+    ],
+    "weight": 12.5
   },
   {
     "id": 712,
@@ -12750,6 +13147,27 @@
     "weight": 19
   },
   {
+    "id": 781,
+    "name": "ジジーロン",
+    "nameEn": "Dhelmise",
+    "types": [
+      "ゴースト",
+      "くさ"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 131,
+      "def": 100,
+      "spa": 86,
+      "spd": 90,
+      "spe": 40
+    },
+    "abilities": [
+      "はがねつかい"
+    ],
+    "weight": 210
+  },
+  {
     "id": 782,
     "name": "ジャラコ",
     "nameEn": "Jangmo-o",
@@ -13793,6 +14211,50 @@
       "Steely Spirit"
     ],
     "weight": 28
+  },
+  {
+    "id": 866,
+    "name": "バリコオル",
+    "nameEn": "Mr. Rime",
+    "types": [
+      "こおり",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 85,
+      "def": 75,
+      "spa": 110,
+      "spd": 100,
+      "spe": 70
+    },
+    "abilities": [
+      "ちどりあし",
+      "スクリーンクリーナー",
+      "アイスボディ"
+    ],
+    "weight": 58.2
+  },
+  {
+    "id": 867,
+    "name": "デスバーン",
+    "nameEn": "Runerigus",
+    "types": [
+      "じめん",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 58,
+      "atk": 95,
+      "def": 145,
+      "spa": 50,
+      "spd": 105,
+      "spe": 30
+    },
+    "abilities": [
+      "さまようたましい"
+    ],
+    "weight": 66.6
   },
   {
     "id": 868,
@@ -17135,6 +17597,68 @@
     "weight": 0.3
   },
   {
+    "id": 10351,
+    "name": "ポワルン(たいようのすがた)",
+    "nameEn": "Castform-Sunny",
+    "types": [
+      "ほのお"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 70,
+      "def": 70,
+      "spa": 70,
+      "spd": 70,
+      "spe": 70
+    },
+    "abilities": [
+      "てんきや"
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": 10479,
+    "name": "ヒートロトム",
+    "nameEn": "Rotom-Heat",
+    "types": [
+      "でんき",
+      "ほのお"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      "ふゆう"
+    ],
+    "weight": 0.3
+  },
+  {
+    "id": 10618,
+    "name": "ガラルマッギョ",
+    "nameEn": "Stunfisk-Galar",
+    "types": [
+      "じめん",
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 109,
+      "atk": 81,
+      "def": 99,
+      "spa": 66,
+      "spd": 84,
+      "spe": 32
+    },
+    "abilities": [
+      "ミミクリー"
+    ],
+    "weight": 20.5
+  },
+  {
     "id": 10678,
     "name": "ニャオニクスメス",
     "nameEn": "Meowstic-F",
@@ -17156,6 +17680,29 @@
     ],
     "megaEvolutionKey": "mega-meowstic-f",
     "weight": 8.5
+  },
+  {
+    "id": 10706,
+    "name": "ヒスイヌメルゴン",
+    "nameEn": "Goodra-Hisui",
+    "types": [
+      "はがね",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 100,
+      "def": 100,
+      "spa": 110,
+      "spd": 150,
+      "spe": 60
+    },
+    "abilities": [
+      "そうしょく",
+      "シェルアーマー",
+      "ぬめぬめ"
+    ],
+    "weight": 334.1
   },
   {
     "id": 10876,
@@ -17202,5 +17749,129 @@
       "かたやぶり"
     ],
     "weight": 110
+  },
+  {
+    "id": 20351,
+    "name": "ポワルン(あまみずのすがた)",
+    "nameEn": "Castform-Rainy",
+    "types": [
+      "みず"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 70,
+      "def": 70,
+      "spa": 70,
+      "spd": 70,
+      "spe": 70
+    },
+    "abilities": [
+      "てんきや"
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": 20479,
+    "name": "ウォッシュロトム",
+    "nameEn": "Rotom-Wash",
+    "types": [
+      "でんき",
+      "みず"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      "ふゆう"
+    ],
+    "weight": 0.3
+  },
+  {
+    "id": 30351,
+    "name": "ポワルン(ゆきぐものすがた)",
+    "nameEn": "Castform-Snowy",
+    "types": [
+      "こおり"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 70,
+      "def": 70,
+      "spa": 70,
+      "spd": 70,
+      "spe": 70
+    },
+    "abilities": [
+      "てんきや"
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": 30479,
+    "name": "フロストロトム",
+    "nameEn": "Rotom-Frost",
+    "types": [
+      "でんき",
+      "こおり"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      "ふゆう"
+    ],
+    "weight": 0.3
+  },
+  {
+    "id": 40479,
+    "name": "スピンロトム",
+    "nameEn": "Rotom-Fan",
+    "types": [
+      "でんき",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      "ふゆう"
+    ],
+    "weight": 0.3
+  },
+  {
+    "id": 50479,
+    "name": "カットロトム",
+    "nameEn": "Rotom-Mow",
+    "types": [
+      "でんき",
+      "くさ"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 65,
+      "def": 107,
+      "spa": 105,
+      "spd": 107,
+      "spe": 86
+    },
+    "abilities": [
+      "ふゆう"
+    ],
+    "weight": 0.3
   }
 ]

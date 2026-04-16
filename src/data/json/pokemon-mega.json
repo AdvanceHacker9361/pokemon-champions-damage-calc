@@ -1276,5 +1276,62 @@
       "spe": 124
     },
     "ability": "トレース"
+  },
+  {
+    "key": "mega-pidgeot",
+    "basePokemonId": 18,
+    "name": "メガピジョット",
+    "nameEn": "Mega Pidgeot",
+    "types": [
+      "ノーマル",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 83,
+      "atk": 80,
+      "def": 80,
+      "spa": 135,
+      "spd": 80,
+      "spe": 121
+    },
+    "ability": "ノーガード"
+  },
+  {
+    "key": "mega-aerodactyl",
+    "basePokemonId": 142,
+    "name": "メガプテラ",
+    "nameEn": "Mega Aerodactyl",
+    "types": [
+      "いわ",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 135,
+      "def": 85,
+      "spa": 70,
+      "spd": 95,
+      "spe": 150
+    },
+    "ability": "かたいツメ"
+  },
+  {
+    "key": "mega-audino",
+    "basePokemonId": 531,
+    "name": "メガタブンネ",
+    "nameEn": "Mega Audino",
+    "types": [
+      "ノーマル",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 103,
+      "atk": 60,
+      "def": 126,
+      "spa": 80,
+      "spd": 126,
+      "spe": 50
+    },
+    "ability": "いやしのこころ"
   }
 ]

@@ -1433,5 +1433,55 @@
     "name": "サイコメイカー",
     "nameEn": "Psychic Surge",
     "calcTag": "psychic-surge"
+  },
+  {
+    "name": "てんきや",
+    "nameEn": "Forecast",
+    "calcTag": "forecast"
+  },
+  {
+    "name": "あくしゅう",
+    "nameEn": "Stench",
+    "calcTag": "stench"
+  },
+  {
+    "name": "ゆうばく",
+    "nameEn": "Aftermath",
+    "calcTag": "aftermath"
+  },
+  {
+    "name": "ファーコート",
+    "nameEn": "Fur Coat",
+    "calcTag": "fur-coat"
+  },
+  {
+    "name": "アロマベール",
+    "nameEn": "Aroma Veil",
+    "calcTag": "aroma-veil"
+  },
+  {
+    "name": "がんじょうあご",
+    "nameEn": "Strong Jaw",
+    "calcTag": "strong-jaw"
+  },
+  {
+    "name": "はがねつかい",
+    "nameEn": "Steelworker",
+    "calcTag": "steelworker"
+  },
+  {
+    "name": "スクリーンクリーナー",
+    "nameEn": "Screen Cleaner",
+    "calcTag": "screen-cleaner"
+  },
+  {
+    "name": "さまようたましい",
+    "nameEn": "Wandering Spirit",
+    "calcTag": "wandering-spirit"
+  },
+  {
+    "name": "ミミクリー",
+    "nameEn": "Mimicry",
+    "calcTag": "mimicry"
   }
 ]
