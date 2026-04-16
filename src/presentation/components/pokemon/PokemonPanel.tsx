@@ -102,6 +102,40 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           {/* 状態異常 */}
           <StatusToggle value={store.status} onChange={store.setStatus} />
 
+          {/* バトルスイッチ: シールド/ブレードフォルム切り替え */}
+          {store.effectiveAbility === 'バトルスイッチ' && (
+            <div>
+              <label className="label block mb-1">フォルム</label>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => store.setBlade(false)}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                    !store.isBlade
+                      ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
+                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                  }`}
+                >
+                  🛡 シールドフォルム
+                </button>
+                <button
+                  type="button"
+                  onClick={() => store.setBlade(true)}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                    store.isBlade
+                      ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white'
+                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                  }`}
+                >
+                  ⚔ ブレードフォルム
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                {store.isBlade ? '攻撃時（A・C↑ / B・D↓）' : '防御時（B・D↑ / A・C↓）'}
+              </p>
+            </div>
+          )}
+
           {/* 特性発動トグル（条件付き特性のみ表示） */}
           {abilityConditionLabel && (
             <div className="space-y-2">

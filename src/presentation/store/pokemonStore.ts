@@ -28,6 +28,7 @@ export interface PokemonStore {
   itemName: string | null
   isMega: boolean
   canMega: boolean
+  isBlade: boolean  // バトルスイッチ: true=ブレードフォルム, false=シールドフォルム
   ranks: Record<StatKey, number>
   status: StatusCondition
   abilityActivated: boolean
@@ -47,6 +48,7 @@ export interface PokemonStore {
   setAbility: (name: string) => void
   setItem: (name: string | null) => void
   setMega: (enable: boolean) => void
+  setBlade: (enable: boolean) => void
   setRank: (stat: StatKey, rank: number) => void
   setStatus: (status: StatusCondition) => void
   setAbilityActivated: (v: boolean) => void
@@ -68,6 +70,7 @@ function createPokemonStore() {
     itemName: null,
     isMega: false,
     canMega: false,
+    isBlade: false,
     ranks: { ...DEFAULT_RANKS },
     status: null,
     abilityActivated: false,
@@ -107,6 +110,7 @@ function createPokemonStore() {
         types,
         canMega,
         isMega,
+        isBlade: false,
         abilityName: record.abilities[0] ?? 'なし',
         effectiveAbility,
         weight,
@@ -173,6 +177,23 @@ function createPokemonStore() {
       }
     },
 
+    setBlade: (enable) => {
+      const { isBlade, baseStats, effectiveAbility } = get()
+      if (effectiveAbility !== 'バトルスイッチ') return
+      if (isBlade === enable) return
+      // シールド↔ブレード: atk↔def, spa↔spd を入れ替え
+      set({
+        isBlade: enable,
+        baseStats: {
+          ...baseStats,
+          atk: baseStats.def,
+          def: baseStats.atk,
+          spa: baseStats.spd,
+          spd: baseStats.spa,
+        },
+      })
+    },
+
     setRank: (stat, rank) => set(s => ({
       ranks: { ...s.ranks, [stat]: Math.max(-6, Math.min(6, rank)) },
     })),
@@ -193,7 +214,7 @@ function createPokemonStore() {
       pokemonId: null, pokemonName: '',
       statNatures: { ...DEFAULT_STAT_NATURES },
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
-      isMega: false, canMega: false, ranks: { ...DEFAULT_RANKS }, status: null,
+      isMega: false, canMega: false, isBlade: false, ranks: { ...DEFAULT_RANKS }, status: null,
       abilityActivated: false, proteanType: null,
       moves: [null, null, null, null],
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
