@@ -11018,8 +11018,8 @@
   },
   {
     "id": 678,
-    "name": "ニャオニクス",
-    "nameEn": "Meowstic",
+    "name": "ニャオニクスオス",
+    "nameEn": "Meowstic-M",
     "types": [
       "エスパー"
     ],
@@ -11033,10 +11033,10 @@
     },
     "abilities": [
       "するどいめ",
-      "いたずらごころ",
-      "すりぬけ"
+      "すりぬけ",
+      "いたずらごころ"
     ],
-    "megaEvolutionKey": "mega-meowstic",
+    "megaEvolutionKey": "mega-meowstic-m",
     "weight": 8.5
   },
   {
@@ -13986,29 +13986,6 @@
     "weight": 28
   },
   {
-    "id": 10876,
-    "name": "イエッサンメス",
-    "nameEn": "Indeedee-F",
-    "types": [
-      "エスパー",
-      "ノーマル"
-    ],
-    "baseStats": {
-      "hp": 70,
-      "atk": 55,
-      "def": 65,
-      "spa": 95,
-      "spd": 105,
-      "spe": 85
-    },
-    "abilities": [
-      "マイペース",
-      "シンクロ",
-      "サイコメイカー"
-    ],
-    "weight": 28
-  },
-  {
     "id": 877,
     "name": "モルペコ",
     "nameEn": "Morpeko",
@@ -14470,29 +14447,6 @@
       "atk": 112,
       "def": 65,
       "spa": 80,
-      "spd": 75,
-      "spe": 78
-    },
-    "abilities": [
-      "すいすい",
-      "てきおうりょく",
-      "かたやぶり"
-    ],
-    "weight": 110
-  },
-  {
-    "id": 10902,
-    "name": "イダイトウメス",
-    "nameEn": "Basculegion-F",
-    "types": [
-      "みず",
-      "ゴースト"
-    ],
-    "baseStats": {
-      "hp": 120,
-      "atk": 92,
-      "def": 65,
-      "spa": 100,
       "spd": 75,
       "spe": 78
     },
@@ -17179,5 +17133,74 @@
       "Poison Puppeteer"
     ],
     "weight": 0.3
+  },
+  {
+    "id": 10678,
+    "name": "ニャオニクスメス",
+    "nameEn": "Meowstic-F",
+    "types": [
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 74,
+      "atk": 48,
+      "def": 76,
+      "spa": 83,
+      "spd": 81,
+      "spe": 104
+    },
+    "abilities": [
+      "するどいめ",
+      "すりぬけ",
+      "かちき"
+    ],
+    "megaEvolutionKey": "mega-meowstic-f",
+    "weight": 8.5
+  },
+  {
+    "id": 10876,
+    "name": "イエッサンメス",
+    "nameEn": "Indeedee-F",
+    "types": [
+      "エスパー",
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 55,
+      "def": 65,
+      "spa": 95,
+      "spd": 105,
+      "spe": 85
+    },
+    "abilities": [
+      "マイペース",
+      "シンクロ",
+      "サイコメイカー"
+    ],
+    "weight": 28
+  },
+  {
+    "id": 10902,
+    "name": "イダイトウメス",
+    "nameEn": "Basculegion-F",
+    "types": [
+      "みず",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 120,
+      "atk": 92,
+      "def": 65,
+      "spa": 100,
+      "spd": 75,
+      "spe": 78
+    },
+    "abilities": [
+      "すいすい",
+      "てきおうりょく",
+      "かたやぶり"
+    ],
+    "weight": 110
   }
 ]

@@ -207,6 +207,7 @@ export const CHAMPIONS_POKEMON_IDS: string[] = [
   'pyroar',
   'florges',
   'meowstic',
+  'meowsticf',
   'aegislash',
   'malamar',
   'heliolisk',
