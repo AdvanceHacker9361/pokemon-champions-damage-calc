@@ -6,6 +6,36 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-04-16
+
+### Added
+- **データ完全性戦略の実装（全フェーズ）**
+  - `scripts/fetch-showdown-data.ts`: Pokemon Showdown 公開データから全量自動取得
+  - `scripts/filter-champions-data.ts`: Champions内定210体でフィルタリング
+  - `scripts/fetch-japanese-names.ts`: PokeAPI 経由で日本語名を100%カバー
+  - `scripts/build-final-data.ts`: フィルタ済みデータをJSONに統合
+  - `src/data/champions-roster.ts`: 内定ポケモン210体のShowdown IDリスト
+  - `src/data/i18n/ja.json`: 技・特性・アイテムの日本語名マッピング
+  - `tests/data/data-integrity.test.ts`: 26項目のデータ整合性テスト
+
+### Changed
+- `moves.json`: 203技 → 562技（全内定ポケモン習得技を網羅、日本語名100%）
+- `abilities.json`: 63特性 → 189特性（誤記5件修正含む）
+- 乱数幅を Champions 固有仕様の15段階（86〜100）に変更（85は出現しない）
+- KO確率計算: 「確定2発」誤表示 → 「乱数1発」を正しく判定するよう修正
+
+### Added (UI)
+- 加算計算パネルを4技結果行の下に統合（1箇所に集約）
+- もうどく累積ダメージ計算機能（ターン数選択 → 定数ダメに自動合算）
+- 定数ダメ・定数回復・もうどくを総合累積KO確率に自動加算
+- 定数ダメプリセットに 1/32 を追加
+- 連続技（2〜5回）の回数分布別KO確率パネル（つららばり・スケイルショット等）
+- おやこあい 15×15 ダメージテーブル表示
+
+### Fixed
+- 乱数ロール配列のゼロ初期化が16要素だった型エラーを修正（→15要素）
+- ガブリアスのデフォルト技4: ほのおのキバ → どくづき
+
 ## [1.0.0] - 2026-04-14
 
 ### Added
