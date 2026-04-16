@@ -1351,5 +1351,24 @@
       "spe": 102
     },
     "ability": "フェアリーオーラ"
+  },
+  {
+    "key": "mega-scovillain",
+    "basePokemonId": 952,
+    "name": "メガスコヴィラン",
+    "nameEn": "Mega Scovillain",
+    "types": [
+      "くさ",
+      "ほのお"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 138,
+      "def": 85,
+      "spa": 138,
+      "spd": 85,
+      "spe": 75
+    },
+    "ability": "スパイシースプレー"
   }
 ]
