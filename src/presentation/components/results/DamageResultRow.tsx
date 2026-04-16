@@ -2,7 +2,6 @@ import { useState } from 'react'
 import type { DamageResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
 import {
-  calcKoProbabilityForNHits,
   calcVariableMultiHitKo,
   VARIABLE_MULTI_HIT_DIST,
 } from '@/domain/calculators/KoProbabilityCalc'
@@ -51,25 +50,6 @@ function rollKoClass(roll: number, hp: number): string {
   if (roll * 2 >= hp) return 'text-orange-500 dark:text-orange-400'
   if (roll * 3 >= hp) return 'text-yellow-600 dark:text-yellow-400'
   return 'text-slate-700 dark:text-slate-400'
-}
-
-// 定数ダメージのプリセット割合
-const CONST_FRACTIONS = [
-  { label: '1/32', num: 1, den: 32 },
-  { label: '1/16', num: 1, den: 16 },
-  { label: '1/8',  num: 1, den: 8  },
-  { label: '1/6',  num: 1, den: 6  },
-  { label: '1/4',  num: 1, den: 4  },
-  { label: '1/2',  num: 1, den: 2  },
-]
-
-function ConstBar({ value, maxHp }: { value: number; maxHp: number }) {
-  const pct = Math.min(100, (value / maxHp) * 100)
-  return (
-    <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-      <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-    </div>
-  )
 }
 
 /** おやこあい: 子の一撃ロールを計算 (各ロールの25%) */
@@ -149,7 +129,6 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
       <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
         連続技 KO確率（2〜5回ランダム）
       </div>
-      {/* 各ヒット数の行 */}
       <div className="grid grid-cols-4 gap-x-2 text-xs font-mono">
         {res.perHit.map(({ hits, prob, koProbForHits }) => {
           const hitMin = rolls[0] * hits
@@ -172,7 +151,6 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
           )
         })}
       </div>
-      {/* 加重平均合計 */}
       <div className="bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 flex items-center justify-between">
         <div className="text-xs text-slate-700 dark:text-slate-400">
           期待KO確率（加重平均）
@@ -192,14 +170,9 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
 
 export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const { min, max, percentMin, percentMax, defenderMaxHp } = result
-  const [expanded, setExpanded] = useState(false)
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
-  const [hitCount, setHitCount] = useState(2)
-  const [constDmg, setConstDmg] = useState(0)
-  const [constRec, setConstRec] = useState(0)
-  const [poisonTurns, setPoisonTurns] = useState(0)
   const [added, setAdded] = useState(false)
   const [accumUsages, setAccumUsages] = useState(1)
 
@@ -208,9 +181,10 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
   const isParentalBond = attackerAbility === 'おやこあい'
 
-  // 連続技データを取得
   const moveRecord = MoveRepository.findByName(moveName)
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
+
+  const rolls = Array.from(result.rolls)
 
   if (min === 0 && max === 0) {
     return (
@@ -220,19 +194,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       </div>
     )
   }
-
-  const netConst = constDmg - constRec
-  const effectiveHp = Math.max(1, defenderMaxHp - netConst)
-  const rolls = Array.from(result.rolls)
-  const multiProb = calcKoProbabilityForNHits(rolls, effectiveHp, hitCount)
-  const multiMin = min * hitCount + netConst
-  const multiMax = max * hitCount + netConst
-  const multiPercentMin = (multiMin / defenderMaxHp * 100)
-  const multiPercentMax = (multiMax / defenderMaxHp * 100)
-
-  const probDisplay = multiProb >= 1.0 ? '確定'
-    : multiProb <= 0 ? '不可'
-    : `${(multiProb * 100).toFixed(1)}%`
 
   function handleAddToAccum() {
     addEntry({
@@ -249,7 +210,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
 
   return (
     <div className="py-2 border-b border-slate-200 dark:border-slate-800 last:border-0">
-      {/* ヘッダー: 技名 + KOラベル + 追加ボタン群 */}
+      {/* ヘッダー: 技名 + KOラベル + 加算回数セレクター */}
       <div className="flex items-baseline justify-between mb-1">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{moveName}</span>
@@ -263,7 +224,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           <span className={`text-xs font-bold ${koLabelColor(result)}`}>
             {koLabel(result)}
           </span>
-          {/* 加算回数セレクター */}
+          {/* 加算リストへの回数セレクター */}
           <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map(n => (
               <button
@@ -304,7 +265,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
         </span>
         <span className="text-xs text-slate-600 dark:text-slate-600">/{defenderMaxHp}</span>
         <div className="ml-auto flex items-center gap-1">
-          {/* 変動連続技のみ「連続技」ボタン表示 */}
           {multiHit?.type === 'variable' && (
             <button
               type="button"
@@ -322,14 +282,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
             title="16乱数を表示"
           >
             {rollsExpanded ? '▲' : '▼'}乱数
-          </button>
-          <button
-            type="button"
-            onClick={() => setExpanded(v => !v)}
-            className="text-xs text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
-            title="加算計算"
-          >
-            {expanded ? '▲' : '▼'}加算
           </button>
         </div>
       </div>
@@ -355,7 +307,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
             ))}
           </div>
 
-          {/* おやこあい 16×16テーブル */}
           {isParentalBond && (
             <div className="mt-2">
               <button
@@ -370,228 +321,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* 加算計算パネル */}
-      {expanded && (
-        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
-          {/* 攻撃回数（固定連続技のデフォルト値を反映） */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">攻撃回数</span>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map(n => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setHitCount(n)}
-                  className={`w-6 h-6 text-xs rounded transition-colors ${
-                    hitCount === n
-                      ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                      : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            {multiHit?.type === 'fixed' && (
-              <span className="text-[10px] text-slate-500 dark:text-slate-600">
-                （この技は常に{multiHit.count}回）
-              </span>
-            )}
-          </div>
-
-          {/* 定数ダメージ */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">定数ダメ</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
-                  onClick={() => setConstDmg(v => Math.max(0, v - 1))}
-                >-</button>
-                <input
-                  type="number"
-                  min={0}
-                  value={constDmg}
-                  onChange={e => setConstDmg(Math.max(0, Number(e.target.value)))}
-                  className="input-base w-14 text-center text-xs px-1"
-                />
-                <button
-                  type="button"
-                  className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
-                  onClick={() => setConstDmg(v => v + 1)}
-                >+</button>
-              </div>
-              <span className="text-xs text-slate-600 dark:text-slate-600">砂/毒/やけど等</span>
-            </div>
-            <div className="flex items-center gap-1 pl-[3.75rem]">
-              {CONST_FRACTIONS.map(f => {
-                const val = Math.floor(defenderMaxHp * f.num / f.den)
-                return (
-                  <button
-                    key={f.label}
-                    type="button"
-                    onClick={() => setConstDmg(val)}
-                    className={`text-xs px-1 py-0.5 rounded border transition-colors ${
-                      constDmg === val
-                        ? 'bg-amber-600 dark:bg-amber-700 border-amber-500 dark:border-amber-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
-                    }`}
-                    title={`${f.label} = ${val}`}
-                  >
-                    {f.label}<span className="ml-0.5 opacity-60">{val}</span>
-                  </button>
-                )
-              })}
-            </div>
-            {constDmg > 0 && (
-              <div className="pl-[3.75rem]">
-                <ConstBar value={constDmg} maxHp={defenderMaxHp} />
-                <span className="text-xs text-amber-600 dark:text-amber-500 font-mono">
-                  {(constDmg / defenderMaxHp * 100).toFixed(1)}%
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* 定数回復 */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">定数回復</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
-                  onClick={() => setConstRec(v => Math.max(0, v - 1))}
-                >-</button>
-                <input
-                  type="number"
-                  min={0}
-                  value={constRec}
-                  onChange={e => setConstRec(Math.max(0, Number(e.target.value)))}
-                  className="input-base w-14 text-center text-xs px-1"
-                />
-                <button
-                  type="button"
-                  className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
-                  onClick={() => setConstRec(v => v + 1)}
-                >+</button>
-              </div>
-              <span className="text-xs text-slate-600 dark:text-slate-600">残飯/黒ヘド等</span>
-            </div>
-            <div className="flex items-center gap-1 pl-[3.75rem]">
-              {CONST_FRACTIONS.map(f => {
-                const val = Math.floor(defenderMaxHp * f.num / f.den)
-                return (
-                  <button
-                    key={f.label}
-                    type="button"
-                    onClick={() => setConstRec(val)}
-                    className={`text-xs px-1 py-0.5 rounded border transition-colors ${
-                      constRec === val
-                        ? 'bg-teal-600 dark:bg-teal-700 border-teal-500 dark:border-teal-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
-                    }`}
-                    title={`${f.label} = ${val}`}
-                  >
-                    {f.label}<span className="ml-0.5 opacity-60">{val}</span>
-                  </button>
-                )
-              })}
-            </div>
-            {constRec > 0 && (
-              <div className="pl-[3.75rem]">
-                <ConstBar value={constRec} maxHp={defenderMaxHp} />
-                <span className="text-xs text-teal-600 dark:text-teal-400 font-mono">
-                  {(constRec / defenderMaxHp * 100).toFixed(1)}%
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* もうどく累積ダメージ */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">もうどく</span>
-              <div className="flex gap-1 flex-wrap">
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setPoisonTurns(n)}
-                    className={`w-6 h-6 text-xs rounded transition-colors ${
-                      poisonTurns === n
-                        ? 'bg-purple-600 dark:bg-purple-700 text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
-                    }`}
-                    title={n === 0 ? 'なし' : `${n}ターン目まで`}
-                  >
-                    {n === 0 ? '×' : n}
-                  </button>
-                ))}
-              </div>
-              <span className="text-xs text-slate-600 dark:text-slate-600">T</span>
-            </div>
-            {poisonTurns > 0 && (() => {
-              // もうどく: kターン目のダメージ = max(1, floor(maxHP * k / 16))
-              const perTurn = Array.from({ length: poisonTurns }, (_, i) =>
-                Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
-              )
-              const poisonTotal = perTurn.reduce((s, v) => s + v, 0)
-              return (
-                <div className="pl-[3.75rem] space-y-1">
-                  {/* ターン別内訳 */}
-                  <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-                    {perTurn.map((dmg, i) => (
-                      <span key={i} className="text-[10px] font-mono text-purple-700 dark:text-purple-400">
-                        {i + 1}T:{dmg}
-                      </span>
-                    ))}
-                  </div>
-                  {/* 累積合計 + 定数ダメに追加ボタン */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-300">
-                      累計 {poisonTotal}
-                      <span className="font-normal text-purple-500 dark:text-purple-400 ml-1">
-                        ({(poisonTotal / defenderMaxHp * 100).toFixed(1)}%)
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setConstDmg(v => v + poisonTotal)}
-                      className="text-[10px] px-1.5 py-0.5 rounded border border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
-                    >
-                      +定数ダメ
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConstDmg(poisonTotal)}
-                      className="text-[10px] px-1.5 py-0.5 rounded border border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
-                    >
-                      =定数ダメ
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-
-          {/* 加算結果 */}
-          <div className="bg-slate-100 dark:bg-slate-800 rounded px-2 py-1.5 flex items-center justify-between">
-            <div>
-              <span className="text-xs text-slate-700 dark:text-slate-400">{hitCount}発累積: </span>
-              <span className="text-sm font-mono text-slate-900 dark:text-slate-100">{multiMin}〜{multiMax}</span>
-              <span className="text-xs text-slate-700 dark:text-slate-400 font-mono ml-1">
-                ({multiPercentMin.toFixed(1)}%〜{multiPercentMax.toFixed(1)}%)
-              </span>
-            </div>
-            <span className={`text-sm font-bold ${multiHitKoColor(multiProb)}`}>
-              {probDisplay}
-            </span>
-          </div>
         </div>
       )}
     </div>
