@@ -42,7 +42,6 @@ function koColor(prob: number): string {
 }
 
 export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
-  const [expanded, setExpanded] = useState(false)
   const [hitCounts, setHitCounts] = useState<Record<string, number>>({})
   const [constDmg, setConstDmg] = useState(0)
   const [constRec, setConstRec] = useState(0)
@@ -107,22 +106,17 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
 
   return (
     <div className="border-t border-slate-200 dark:border-slate-700 pt-2">
-      {/* ▼加算 トグル */}
-      <button
-        type="button"
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors py-1"
-      >
-        <span className="font-medium">{expanded ? '▲' : '▼'} 加算計算</span>
-        {!expanded && hasAnything && (
+      {/* 加算計算ヘッダー */}
+      <div className="flex items-center justify-between py-1">
+        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">加算計算</span>
+        {hasAnything && (
           <span className={`text-xs font-bold ${koColor(combinedKoProb)}`}>
             {probDisplay}
           </span>
         )}
-      </button>
+      </div>
 
-      {expanded && (
-        <div className="space-y-3 pt-2">
+      <div className="space-y-3 pt-1">
           {/* 技ごとの攻撃回数セレクター */}
           <div className="space-y-1.5">
             {results.map(({ moveName, result }) => {
@@ -379,8 +373,7 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
               </>
             )}
           </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
