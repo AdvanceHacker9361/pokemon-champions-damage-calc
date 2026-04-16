@@ -958,5 +958,20 @@
     "name": "てつのとげ",
     "nameEn": "Iron Barbs",
     "calcTag": "iron-barbs"
+  },
+  {
+    "name": "サージサーファー",
+    "nameEn": "Surge Surfer",
+    "calcTag": "surge-surfer"
+  },
+  {
+    "name": "みえないこぶし",
+    "nameEn": "Unseen Fist",
+    "calcTag": "unseen-fist"
+  },
+  {
+    "name": "かんつうドリル",
+    "nameEn": "Piercing Drill",
+    "calcTag": "piercing-drill"
   }
 ]

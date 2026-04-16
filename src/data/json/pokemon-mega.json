@@ -1,50 +1,1243 @@
 [
-  {"key":"mega-venusaur","basePokemonId":3,"name":"メガフシギバナ","nameEn":"Mega Venusaur","types":["くさ","どく"],"baseStats":{"hp":80,"atk":100,"def":123,"spa":122,"spd":120,"spe":80},"ability":"あついしぼう"},
-  {"key":"mega-charizard-x","basePokemonId":6,"name":"メガリザードンX","nameEn":"Mega Charizard X","types":["ほのお","ドラゴン"],"baseStats":{"hp":78,"atk":130,"def":111,"spa":130,"spd":85,"spe":100},"ability":"かたいツメ"},
-  {"key":"mega-charizard-y","basePokemonId":6,"name":"メガリザードンY","nameEn":"Mega Charizard Y","types":["ほのお","ひこう"],"baseStats":{"hp":78,"atk":104,"def":78,"spa":159,"spd":115,"spe":100},"ability":"ひでり"},
-  {"key":"mega-blastoise","basePokemonId":9,"name":"メガカメックス","nameEn":"Mega Blastoise","types":["みず"],"baseStats":{"hp":79,"atk":103,"def":120,"spa":135,"spd":115,"spe":78},"ability":"メガランチャー"},
-  {"key":"mega-alakazam","basePokemonId":65,"name":"メガフーディン","nameEn":"Mega Alakazam","types":["エスパー"],"baseStats":{"hp":55,"atk":50,"def":65,"spa":175,"spd":105,"spe":150},"ability":"トレース"},
-  {"key":"mega-slowbro","basePokemonId":80,"name":"メガヤドラン","nameEn":"Mega Slowbro","types":["みず","エスパー"],"baseStats":{"hp":95,"atk":75,"def":180,"spa":130,"spd":80,"spe":30},"ability":"シェルアーマー"},
-  {"key":"mega-gengar","basePokemonId":94,"name":"メガゲンガー","nameEn":"Mega Gengar","types":["ゴースト","どく"],"baseStats":{"hp":60,"atk":65,"def":80,"spa":170,"spd":95,"spe":130},"ability":"かげふみ"},
-  {"key":"mega-kangaskhan","basePokemonId":115,"name":"メガガルーラ","nameEn":"Mega Kangaskhan","types":["ノーマル"],"baseStats":{"hp":105,"atk":125,"def":100,"spa":60,"spd":100,"spe":100},"ability":"おやこあい"},
-  {"key":"mega-pinsir","basePokemonId":127,"name":"メガカイロス","nameEn":"Mega Pinsir","types":["むし","ひこう"],"baseStats":{"hp":65,"atk":155,"def":120,"spa":65,"spd":90,"spe":105},"ability":"スカイスキン"},
-  {"key":"mega-gyarados","basePokemonId":130,"name":"メガギャラドス","nameEn":"Mega Gyarados","types":["みず","あく"],"baseStats":{"hp":95,"atk":155,"def":109,"spa":70,"spd":130,"spe":81},"ability":"かたやぶり"},
-  {"key":"mega-steelix","basePokemonId":208,"name":"メガハガネール","nameEn":"Mega Steelix","types":["はがね","じめん"],"baseStats":{"hp":75,"atk":125,"def":230,"spa":55,"spd":95,"spe":30},"ability":"すなのちから"},
-  {"key":"mega-scizor","basePokemonId":212,"name":"メガハッサム","nameEn":"Mega Scizor","types":["むし","はがね"],"baseStats":{"hp":70,"atk":150,"def":140,"spa":65,"spd":100,"spe":75},"ability":"テクニシャン"},
-  {"key":"mega-heracross","basePokemonId":214,"name":"メガヘラクロス","nameEn":"Mega Heracross","types":["むし","かくとう"],"baseStats":{"hp":80,"atk":185,"def":115,"spa":40,"spd":105,"spe":75},"ability":"スキルリンク"},
-  {"key":"mega-houndoom","basePokemonId":229,"name":"メガヘルガー","nameEn":"Mega Houndoom","types":["あく","ほのお"],"baseStats":{"hp":75,"atk":90,"def":90,"spa":140,"spd":90,"spe":115},"ability":"サンパワー"},
-  {"key":"mega-tyranitar","basePokemonId":248,"name":"メガバンギラス","nameEn":"Mega Tyranitar","types":["いわ","あく"],"baseStats":{"hp":100,"atk":164,"def":150,"spa":95,"spd":120,"spe":71},"ability":"すなおこし"},
-  {"key":"mega-mewtwo-y","basePokemonId":150,"name":"メガミュウツーY","nameEn":"Mega Mewtwo Y","types":["エスパー"],"baseStats":{"hp":106,"atk":150,"def":70,"spa":194,"spd":120,"spe":140},"ability":"ふみん"},
-  {"key":"mega-mewtwo-x","basePokemonId":150,"name":"メガミュウツーX","nameEn":"Mega Mewtwo X","types":["エスパー","かくとう"],"baseStats":{"hp":106,"atk":190,"def":100,"spa":154,"spd":100,"spe":130},"ability":"ふくつのこころ"},
-  {"key":"mega-ampharos","basePokemonId":181,"name":"メガデンリュウ","nameEn":"Mega Ampharos","types":["でんき","ドラゴン"],"baseStats":{"hp":90,"atk":95,"def":105,"spa":165,"spd":110,"spe":45},"ability":"かたやぶり"},
-  {"key":"mega-gardevoir","basePokemonId":282,"name":"メガサーナイト","nameEn":"Mega Gardevoir","types":["エスパー","フェアリー"],"baseStats":{"hp":68,"atk":85,"def":65,"spa":165,"spd":135,"spe":100},"ability":"フェアリースキン"},
-  {"key":"mega-mawile","basePokemonId":303,"name":"メガクチート","nameEn":"Mega Mawile","types":["はがね","フェアリー"],"baseStats":{"hp":50,"atk":105,"def":125,"spa":55,"spd":95,"spe":50},"ability":"ちからもち"},
-  {"key":"mega-aggron","basePokemonId":306,"name":"メガボスゴドラ","nameEn":"Mega Aggron","types":["はがね"],"baseStats":{"hp":70,"atk":140,"def":230,"spa":60,"spd":80,"spe":50},"ability":"フィルター"},
-  {"key":"mega-manectric","basePokemonId":310,"name":"メガライボルト","nameEn":"Mega Manectric","types":["でんき"],"baseStats":{"hp":70,"atk":75,"def":80,"spa":135,"spd":80,"spe":135},"ability":"いかく"},
-  {"key":"mega-sharpedo","basePokemonId":319,"name":"メガサメハダー","nameEn":"Mega Sharpedo","types":["みず","あく"],"baseStats":{"hp":70,"atk":140,"def":70,"spa":110,"spd":65,"spe":105},"ability":"がんじょうあご"},
-  {"key":"mega-altaria","basePokemonId":334,"name":"メガチルタリス","nameEn":"Mega Altaria","types":["ドラゴン","フェアリー"],"baseStats":{"hp":75,"atk":110,"def":110,"spa":110,"spd":105,"spe":80},"ability":"フェアリースキン"},
-  {"key":"mega-salamence","basePokemonId":373,"name":"メガボーマンダ","nameEn":"Mega Salamence","types":["ドラゴン","ひこう"],"baseStats":{"hp":95,"atk":145,"def":130,"spa":120,"spd":90,"spe":120},"ability":"スカイスキン"},
-  {"key":"mega-metagross","basePokemonId":376,"name":"メガメタグロス","nameEn":"Mega Metagross","types":["はがね","エスパー"],"baseStats":{"hp":80,"atk":145,"def":150,"spa":105,"spd":110,"spe":110},"ability":"かたいツメ"},
-  {"key":"mega-latias","basePokemonId":380,"name":"メガラティアス","nameEn":"Mega Latias","types":["ドラゴン","エスパー"],"baseStats":{"hp":80,"atk":100,"def":120,"spa":140,"spd":150,"spe":110},"ability":"ふゆう"},
-  {"key":"mega-latios","basePokemonId":381,"name":"メガラティオス","nameEn":"Mega Latios","types":["ドラゴン","エスパー"],"baseStats":{"hp":80,"atk":130,"def":100,"spa":160,"spd":120,"spe":110},"ability":"ふゆう"},
-  {"key":"mega-rayquaza","basePokemonId":384,"name":"メガレックウザ","nameEn":"Mega Rayquaza","types":["ドラゴン","ひこう"],"baseStats":{"hp":105,"atk":180,"def":100,"spa":180,"spd":100,"spe":115},"ability":"デルタストリーム"},
-  {"key":"mega-sceptile","basePokemonId":254,"name":"メガジュカイン","nameEn":"Mega Sceptile","types":["くさ","ドラゴン"],"baseStats":{"hp":70,"atk":110,"def":75,"spa":145,"spd":85,"spe":145},"ability":"ひらいしん"},
-  {"key":"mega-blaziken","basePokemonId":257,"name":"メガバシャーモ","nameEn":"Mega Blaziken","types":["ほのお","かくとう"],"baseStats":{"hp":80,"atk":160,"def":80,"spa":130,"spd":80,"spe":100},"ability":"かそく"},
-  {"key":"mega-swampert","basePokemonId":260,"name":"メガラグラージ","nameEn":"Mega Swampert","types":["みず","じめん"],"baseStats":{"hp":100,"atk":150,"def":110,"spa":95,"spd":110,"spe":70},"ability":"すいすい"},
-  {"key":"mega-banette","basePokemonId":354,"name":"メガジュペッタ","nameEn":"Mega Banette","types":["ゴースト"],"baseStats":{"hp":64,"atk":165,"def":75,"spa":93,"spd":83,"spe":75},"ability":"いたずらごころ"},
-  {"key":"mega-absol","basePokemonId":359,"name":"メガアブソル","nameEn":"Mega Absol","types":["あく"],"baseStats":{"hp":65,"atk":150,"def":60,"spa":115,"spd":60,"spe":115},"ability":"マジックミラー"},
-  {"key":"mega-glalie","basePokemonId":362,"name":"メガオニゴーリ","nameEn":"Mega Glalie","types":["こおり"],"baseStats":{"hp":80,"atk":120,"def":80,"spa":120,"spd":80,"spe":100},"ability":"フリーズスキン"},
-  {"key":"mega-lucario","basePokemonId":448,"name":"メガルカリオ","nameEn":"Mega Lucario","types":["かくとう","はがね"],"baseStats":{"hp":70,"atk":145,"def":88,"spa":140,"spd":70,"spe":112},"ability":"てきおうりょく"},
-  {"key":"mega-gallade","basePokemonId":475,"name":"メガエルレイド","nameEn":"Mega Gallade","types":["エスパー","かくとう"],"baseStats":{"hp":68,"atk":165,"def":95,"spa":65,"spd":115,"spe":110},"ability":"せいしんりょく"},
-  {"key":"mega-lopunny","basePokemonId":428,"name":"メガミミロップ","nameEn":"Mega Lopunny","types":["ノーマル","かくとう"],"baseStats":{"hp":65,"atk":136,"def":94,"spa":54,"spd":96,"spe":135},"ability":"きもったま"},
-  {"key":"mega-garchomp","basePokemonId":445,"name":"メガガブリアス","nameEn":"Mega Garchomp","types":["ドラゴン","じめん"],"baseStats":{"hp":108,"atk":170,"def":115,"spa":120,"spd":95,"spe":92},"ability":"すなのちから"},
-  {"key":"mega-abomasnow","basePokemonId":460,"name":"メガユキノオー","nameEn":"Mega Abomasnow","types":["くさ","こおり"],"baseStats":{"hp":90,"atk":132,"def":105,"spa":132,"spd":105,"spe":30},"ability":"ゆきふらし"},
-  {"key":"mega-starmie","basePokemonId":121,"name":"メガスターミー","nameEn":"Mega Starmie","types":["みず","エスパー"],"baseStats":{"hp":60,"atk":100,"def":105,"spa":130,"spd":105,"spe":120},"ability":"ちからもち"},
-  {"key":"mega-greninja","basePokemonId":658,"name":"メガゲッコウガ","nameEn":"Mega Greninja","types":["みず","あく"],"baseStats":{"hp":72,"atk":125,"def":77,"spa":133,"spd":81,"spe":142},"ability":"へんげんじざい"},
-  {"key":"mega-chesnaught","basePokemonId":652,"name":"メガブリガロン","nameEn":"Mega Chesnaught","types":["くさ","かくとう"],"baseStats":{"hp":88,"atk":137,"def":172,"spa":74,"spd":115,"spe":44},"ability":"ぼうだん"},
-  {"key":"mega-delphox","basePokemonId":655,"name":"メガマフォクシー","nameEn":"Mega Delphox","types":["ほのお","エスパー"],"baseStats":{"hp":75,"atk":69,"def":72,"spa":159,"spd":125,"spe":134},"ability":"ふゆう"},
-  {"key":"mega-meganium","basePokemonId":154,"name":"メガメガニウム","nameEn":"Mega Meganium","types":["くさ","フェアリー"],"baseStats":{"hp":80,"atk":92,"def":115,"spa":143,"spd":115,"spe":80},"ability":"メガソーラー"},
-  {"key":"mega-feraligatr","basePokemonId":160,"name":"メガオーダイル","nameEn":"Mega Feraligatr","types":["みず","ドラゴン"],"baseStats":{"hp":85,"atk":160,"def":125,"spa":89,"spd":93,"spe":78},"ability":"ドラゴンスキン"},
-  {"key":"mega-emboar","basePokemonId":500,"name":"メガエンブオー","nameEn":"Mega Emboar","types":["ほのお","かくとう"],"baseStats":{"hp":110,"atk":148,"def":75,"spa":110,"spd":110,"spe":75},"ability":"かたやぶり"},
-  {"key":"mega-meowstic","basePokemonId":678,"name":"メガニャオニクス","nameEn":"Mega Meowstic","types":["エスパー"],"baseStats":{"hp":74,"atk":48,"def":76,"spa":143,"spd":101,"spe":124},"ability":"トレース"}
+  {
+    "key": "mega-venusaur",
+    "basePokemonId": 3,
+    "name": "メガフシギバナ",
+    "nameEn": "Mega Venusaur",
+    "types": [
+      "くさ",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 100,
+      "def": 123,
+      "spa": 122,
+      "spd": 120,
+      "spe": 80
+    },
+    "ability": "あついしぼう"
+  },
+  {
+    "key": "mega-charizard-x",
+    "basePokemonId": 6,
+    "name": "メガリザードンX",
+    "nameEn": "Mega Charizard X",
+    "types": [
+      "ほのお",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 78,
+      "atk": 130,
+      "def": 111,
+      "spa": 130,
+      "spd": 85,
+      "spe": 100
+    },
+    "ability": "かたいツメ"
+  },
+  {
+    "key": "mega-charizard-y",
+    "basePokemonId": 6,
+    "name": "メガリザードンY",
+    "nameEn": "Mega Charizard Y",
+    "types": [
+      "ほのお",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 78,
+      "atk": 104,
+      "def": 78,
+      "spa": 159,
+      "spd": 115,
+      "spe": 100
+    },
+    "ability": "ひでり"
+  },
+  {
+    "key": "mega-blastoise",
+    "basePokemonId": 9,
+    "name": "メガカメックス",
+    "nameEn": "Mega Blastoise",
+    "types": [
+      "みず"
+    ],
+    "baseStats": {
+      "hp": 79,
+      "atk": 103,
+      "def": 120,
+      "spa": 135,
+      "spd": 115,
+      "spe": 78
+    },
+    "ability": "メガランチャー"
+  },
+  {
+    "key": "mega-alakazam",
+    "basePokemonId": 65,
+    "name": "メガフーディン",
+    "nameEn": "Mega Alakazam",
+    "types": [
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 55,
+      "atk": 50,
+      "def": 65,
+      "spa": 175,
+      "spd": 105,
+      "spe": 150
+    },
+    "ability": "トレース"
+  },
+  {
+    "key": "mega-slowbro",
+    "basePokemonId": 80,
+    "name": "メガヤドラン",
+    "nameEn": "Mega Slowbro",
+    "types": [
+      "みず",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 75,
+      "def": 180,
+      "spa": 130,
+      "spd": 80,
+      "spe": 30
+    },
+    "ability": "シェルアーマー"
+  },
+  {
+    "key": "mega-gengar",
+    "basePokemonId": 94,
+    "name": "メガゲンガー",
+    "nameEn": "Mega Gengar",
+    "types": [
+      "ゴースト",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 65,
+      "def": 80,
+      "spa": 170,
+      "spd": 95,
+      "spe": 130
+    },
+    "ability": "かげふみ"
+  },
+  {
+    "key": "mega-kangaskhan",
+    "basePokemonId": 115,
+    "name": "メガガルーラ",
+    "nameEn": "Mega Kangaskhan",
+    "types": [
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 105,
+      "atk": 125,
+      "def": 100,
+      "spa": 60,
+      "spd": 100,
+      "spe": 100
+    },
+    "ability": "おやこあい"
+  },
+  {
+    "key": "mega-pinsir",
+    "basePokemonId": 127,
+    "name": "メガカイロス",
+    "nameEn": "Mega Pinsir",
+    "types": [
+      "むし",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 155,
+      "def": 120,
+      "spa": 65,
+      "spd": 90,
+      "spe": 105
+    },
+    "ability": "スカイスキン"
+  },
+  {
+    "key": "mega-gyarados",
+    "basePokemonId": 130,
+    "name": "メガギャラドス",
+    "nameEn": "Mega Gyarados",
+    "types": [
+      "みず",
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 155,
+      "def": 109,
+      "spa": 70,
+      "spd": 130,
+      "spe": 81
+    },
+    "ability": "かたやぶり"
+  },
+  {
+    "key": "mega-steelix",
+    "basePokemonId": 208,
+    "name": "メガハガネール",
+    "nameEn": "Mega Steelix",
+    "types": [
+      "はがね",
+      "じめん"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 125,
+      "def": 230,
+      "spa": 55,
+      "spd": 95,
+      "spe": 30
+    },
+    "ability": "すなのちから"
+  },
+  {
+    "key": "mega-scizor",
+    "basePokemonId": 212,
+    "name": "メガハッサム",
+    "nameEn": "Mega Scizor",
+    "types": [
+      "むし",
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 150,
+      "def": 140,
+      "spa": 65,
+      "spd": 100,
+      "spe": 75
+    },
+    "ability": "テクニシャン"
+  },
+  {
+    "key": "mega-heracross",
+    "basePokemonId": 214,
+    "name": "メガヘラクロス",
+    "nameEn": "Mega Heracross",
+    "types": [
+      "むし",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 185,
+      "def": 115,
+      "spa": 40,
+      "spd": 105,
+      "spe": 75
+    },
+    "ability": "スキルリンク"
+  },
+  {
+    "key": "mega-houndoom",
+    "basePokemonId": 229,
+    "name": "メガヘルガー",
+    "nameEn": "Mega Houndoom",
+    "types": [
+      "あく",
+      "ほのお"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 90,
+      "def": 90,
+      "spa": 140,
+      "spd": 90,
+      "spe": 115
+    },
+    "ability": "サンパワー"
+  },
+  {
+    "key": "mega-tyranitar",
+    "basePokemonId": 248,
+    "name": "メガバンギラス",
+    "nameEn": "Mega Tyranitar",
+    "types": [
+      "いわ",
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 100,
+      "atk": 164,
+      "def": 150,
+      "spa": 95,
+      "spd": 120,
+      "spe": 71
+    },
+    "ability": "すなおこし"
+  },
+  {
+    "key": "mega-mewtwo-y",
+    "basePokemonId": 150,
+    "name": "メガミュウツーY",
+    "nameEn": "Mega Mewtwo Y",
+    "types": [
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 106,
+      "atk": 150,
+      "def": 70,
+      "spa": 194,
+      "spd": 120,
+      "spe": 140
+    },
+    "ability": "ふみん"
+  },
+  {
+    "key": "mega-mewtwo-x",
+    "basePokemonId": 150,
+    "name": "メガミュウツーX",
+    "nameEn": "Mega Mewtwo X",
+    "types": [
+      "エスパー",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 106,
+      "atk": 190,
+      "def": 100,
+      "spa": 154,
+      "spd": 100,
+      "spe": 130
+    },
+    "ability": "ふくつのこころ"
+  },
+  {
+    "key": "mega-ampharos",
+    "basePokemonId": 181,
+    "name": "メガデンリュウ",
+    "nameEn": "Mega Ampharos",
+    "types": [
+      "でんき",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 90,
+      "atk": 95,
+      "def": 105,
+      "spa": 165,
+      "spd": 110,
+      "spe": 45
+    },
+    "ability": "かたやぶり"
+  },
+  {
+    "key": "mega-gardevoir",
+    "basePokemonId": 282,
+    "name": "メガサーナイト",
+    "nameEn": "Mega Gardevoir",
+    "types": [
+      "エスパー",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 68,
+      "atk": 85,
+      "def": 65,
+      "spa": 165,
+      "spd": 135,
+      "spe": 100
+    },
+    "ability": "フェアリースキン"
+  },
+  {
+    "key": "mega-mawile",
+    "basePokemonId": 303,
+    "name": "メガクチート",
+    "nameEn": "Mega Mawile",
+    "types": [
+      "はがね",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 105,
+      "def": 125,
+      "spa": 55,
+      "spd": 95,
+      "spe": 50
+    },
+    "ability": "ちからもち"
+  },
+  {
+    "key": "mega-aggron",
+    "basePokemonId": 306,
+    "name": "メガボスゴドラ",
+    "nameEn": "Mega Aggron",
+    "types": [
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 140,
+      "def": 230,
+      "spa": 60,
+      "spd": 80,
+      "spe": 50
+    },
+    "ability": "フィルター"
+  },
+  {
+    "key": "mega-manectric",
+    "basePokemonId": 310,
+    "name": "メガライボルト",
+    "nameEn": "Mega Manectric",
+    "types": [
+      "でんき"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 75,
+      "def": 80,
+      "spa": 135,
+      "spd": 80,
+      "spe": 135
+    },
+    "ability": "いかく"
+  },
+  {
+    "key": "mega-sharpedo",
+    "basePokemonId": 319,
+    "name": "メガサメハダー",
+    "nameEn": "Mega Sharpedo",
+    "types": [
+      "みず",
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 140,
+      "def": 70,
+      "spa": 110,
+      "spd": 65,
+      "spe": 105
+    },
+    "ability": "がんじょうあご"
+  },
+  {
+    "key": "mega-altaria",
+    "basePokemonId": 334,
+    "name": "メガチルタリス",
+    "nameEn": "Mega Altaria",
+    "types": [
+      "ドラゴン",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 110,
+      "def": 110,
+      "spa": 110,
+      "spd": 105,
+      "spe": 80
+    },
+    "ability": "フェアリースキン"
+  },
+  {
+    "key": "mega-salamence",
+    "basePokemonId": 373,
+    "name": "メガボーマンダ",
+    "nameEn": "Mega Salamence",
+    "types": [
+      "ドラゴン",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 145,
+      "def": 130,
+      "spa": 120,
+      "spd": 90,
+      "spe": 120
+    },
+    "ability": "スカイスキン"
+  },
+  {
+    "key": "mega-metagross",
+    "basePokemonId": 376,
+    "name": "メガメタグロス",
+    "nameEn": "Mega Metagross",
+    "types": [
+      "はがね",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 145,
+      "def": 150,
+      "spa": 105,
+      "spd": 110,
+      "spe": 110
+    },
+    "ability": "かたいツメ"
+  },
+  {
+    "key": "mega-latias",
+    "basePokemonId": 380,
+    "name": "メガラティアス",
+    "nameEn": "Mega Latias",
+    "types": [
+      "ドラゴン",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 100,
+      "def": 120,
+      "spa": 140,
+      "spd": 150,
+      "spe": 110
+    },
+    "ability": "ふゆう"
+  },
+  {
+    "key": "mega-latios",
+    "basePokemonId": 381,
+    "name": "メガラティオス",
+    "nameEn": "Mega Latios",
+    "types": [
+      "ドラゴン",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 130,
+      "def": 100,
+      "spa": 160,
+      "spd": 120,
+      "spe": 110
+    },
+    "ability": "ふゆう"
+  },
+  {
+    "key": "mega-rayquaza",
+    "basePokemonId": 384,
+    "name": "メガレックウザ",
+    "nameEn": "Mega Rayquaza",
+    "types": [
+      "ドラゴン",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 105,
+      "atk": 180,
+      "def": 100,
+      "spa": 180,
+      "spd": 100,
+      "spe": 115
+    },
+    "ability": "デルタストリーム"
+  },
+  {
+    "key": "mega-sceptile",
+    "basePokemonId": 254,
+    "name": "メガジュカイン",
+    "nameEn": "Mega Sceptile",
+    "types": [
+      "くさ",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 110,
+      "def": 75,
+      "spa": 145,
+      "spd": 85,
+      "spe": 145
+    },
+    "ability": "ひらいしん"
+  },
+  {
+    "key": "mega-blaziken",
+    "basePokemonId": 257,
+    "name": "メガバシャーモ",
+    "nameEn": "Mega Blaziken",
+    "types": [
+      "ほのお",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 160,
+      "def": 80,
+      "spa": 130,
+      "spd": 80,
+      "spe": 100
+    },
+    "ability": "かそく"
+  },
+  {
+    "key": "mega-swampert",
+    "basePokemonId": 260,
+    "name": "メガラグラージ",
+    "nameEn": "Mega Swampert",
+    "types": [
+      "みず",
+      "じめん"
+    ],
+    "baseStats": {
+      "hp": 100,
+      "atk": 150,
+      "def": 110,
+      "spa": 95,
+      "spd": 110,
+      "spe": 70
+    },
+    "ability": "すいすい"
+  },
+  {
+    "key": "mega-banette",
+    "basePokemonId": 354,
+    "name": "メガジュペッタ",
+    "nameEn": "Mega Banette",
+    "types": [
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 64,
+      "atk": 165,
+      "def": 75,
+      "spa": 93,
+      "spd": 83,
+      "spe": 75
+    },
+    "ability": "いたずらごころ"
+  },
+  {
+    "key": "mega-absol",
+    "basePokemonId": 359,
+    "name": "メガアブソル",
+    "nameEn": "Mega Absol",
+    "types": [
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 150,
+      "def": 60,
+      "spa": 115,
+      "spd": 60,
+      "spe": 115
+    },
+    "ability": "マジックミラー"
+  },
+  {
+    "key": "mega-glalie",
+    "basePokemonId": 362,
+    "name": "メガオニゴーリ",
+    "nameEn": "Mega Glalie",
+    "types": [
+      "こおり"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 120,
+      "def": 80,
+      "spa": 120,
+      "spd": 80,
+      "spe": 100
+    },
+    "ability": "フリーズスキン"
+  },
+  {
+    "key": "mega-lucario",
+    "basePokemonId": 448,
+    "name": "メガルカリオ",
+    "nameEn": "Mega Lucario",
+    "types": [
+      "かくとう",
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 145,
+      "def": 88,
+      "spa": 140,
+      "spd": 70,
+      "spe": 112
+    },
+    "ability": "てきおうりょく"
+  },
+  {
+    "key": "mega-gallade",
+    "basePokemonId": 475,
+    "name": "メガエルレイド",
+    "nameEn": "Mega Gallade",
+    "types": [
+      "エスパー",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 68,
+      "atk": 165,
+      "def": 95,
+      "spa": 65,
+      "spd": 115,
+      "spe": 110
+    },
+    "ability": "せいしんりょく"
+  },
+  {
+    "key": "mega-lopunny",
+    "basePokemonId": 428,
+    "name": "メガミミロップ",
+    "nameEn": "Mega Lopunny",
+    "types": [
+      "ノーマル",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 136,
+      "def": 94,
+      "spa": 54,
+      "spd": 96,
+      "spe": 135
+    },
+    "ability": "きもったま"
+  },
+  {
+    "key": "mega-garchomp",
+    "basePokemonId": 445,
+    "name": "メガガブリアス",
+    "nameEn": "Mega Garchomp",
+    "types": [
+      "ドラゴン",
+      "じめん"
+    ],
+    "baseStats": {
+      "hp": 108,
+      "atk": 170,
+      "def": 115,
+      "spa": 120,
+      "spd": 95,
+      "spe": 92
+    },
+    "ability": "すなのちから"
+  },
+  {
+    "key": "mega-abomasnow",
+    "basePokemonId": 460,
+    "name": "メガユキノオー",
+    "nameEn": "Mega Abomasnow",
+    "types": [
+      "くさ",
+      "こおり"
+    ],
+    "baseStats": {
+      "hp": 90,
+      "atk": 132,
+      "def": 105,
+      "spa": 132,
+      "spd": 105,
+      "spe": 30
+    },
+    "ability": "ゆきふらし"
+  },
+  {
+    "key": "mega-starmie",
+    "basePokemonId": 121,
+    "name": "メガスターミー",
+    "nameEn": "Mega Starmie",
+    "types": [
+      "みず",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 100,
+      "def": 105,
+      "spa": 130,
+      "spd": 105,
+      "spe": 120
+    },
+    "ability": "ちからもち"
+  },
+  {
+    "key": "mega-greninja",
+    "basePokemonId": 658,
+    "name": "メガゲッコウガ",
+    "nameEn": "Mega Greninja",
+    "types": [
+      "みず",
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 72,
+      "atk": 125,
+      "def": 77,
+      "spa": 133,
+      "spd": 81,
+      "spe": 142
+    },
+    "ability": "へんげんじざい"
+  },
+  {
+    "key": "mega-chesnaught",
+    "basePokemonId": 652,
+    "name": "メガブリガロン",
+    "nameEn": "Mega Chesnaught",
+    "types": [
+      "くさ",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 88,
+      "atk": 137,
+      "def": 172,
+      "spa": 74,
+      "spd": 115,
+      "spe": 44
+    },
+    "ability": "ぼうだん"
+  },
+  {
+    "key": "mega-delphox",
+    "basePokemonId": 655,
+    "name": "メガマフォクシー",
+    "nameEn": "Mega Delphox",
+    "types": [
+      "ほのお",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 69,
+      "def": 72,
+      "spa": 159,
+      "spd": 125,
+      "spe": 134
+    },
+    "ability": "ふゆう"
+  },
+  {
+    "key": "mega-meganium",
+    "basePokemonId": 154,
+    "name": "メガメガニウム",
+    "nameEn": "Mega Meganium",
+    "types": [
+      "くさ",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 92,
+      "def": 115,
+      "spa": 143,
+      "spd": 115,
+      "spe": 80
+    },
+    "ability": "メガソーラー"
+  },
+  {
+    "key": "mega-feraligatr",
+    "basePokemonId": 160,
+    "name": "メガオーダイル",
+    "nameEn": "Mega Feraligatr",
+    "types": [
+      "みず",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 85,
+      "atk": 160,
+      "def": 125,
+      "spa": 89,
+      "spd": 93,
+      "spe": 78
+    },
+    "ability": "ドラゴンスキン"
+  },
+  {
+    "key": "mega-emboar",
+    "basePokemonId": 500,
+    "name": "メガエンブオー",
+    "nameEn": "Mega Emboar",
+    "types": [
+      "ほのお",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 110,
+      "atk": 148,
+      "def": 75,
+      "spa": 110,
+      "spd": 110,
+      "spe": 75
+    },
+    "ability": "かたやぶり"
+  },
+  {
+    "key": "mega-meowstic",
+    "basePokemonId": 678,
+    "name": "メガニャオニクス",
+    "nameEn": "Mega Meowstic",
+    "types": [
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 74,
+      "atk": 48,
+      "def": 76,
+      "spa": 143,
+      "spd": 101,
+      "spe": 124
+    },
+    "ability": "トレース"
+  },
+  {
+    "key": "mega-raichu-x",
+    "basePokemonId": 26,
+    "name": "メガライチュウX",
+    "nameEn": "Mega Raichu X",
+    "types": [
+      "でんき"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 135,
+      "def": 95,
+      "spa": 90,
+      "spd": 95,
+      "spe": 110
+    },
+    "ability": "サージサーファー"
+  },
+  {
+    "key": "mega-raichu-y",
+    "basePokemonId": 26,
+    "name": "メガライチュウY",
+    "nameEn": "Mega Raichu Y",
+    "types": [
+      "でんき"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 100,
+      "def": 55,
+      "spa": 160,
+      "spd": 80,
+      "spe": 130
+    },
+    "ability": "サージサーファー"
+  },
+  {
+    "key": "mega-dragonite",
+    "basePokemonId": 149,
+    "name": "メガカイリュー",
+    "nameEn": "Mega Dragonite",
+    "types": [
+      "ドラゴン",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 91,
+      "atk": 124,
+      "def": 115,
+      "spa": 145,
+      "spd": 125,
+      "spe": 100
+    },
+    "ability": "マルチスケイル"
+  },
+  {
+    "key": "mega-sableye",
+    "basePokemonId": 302,
+    "name": "メガヤミラミ",
+    "nameEn": "Mega Sableye",
+    "types": [
+      "あく",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 50,
+      "atk": 85,
+      "def": 125,
+      "spa": 85,
+      "spd": 115,
+      "spe": 20
+    },
+    "ability": "マジックミラー"
+  },
+  {
+    "key": "mega-medicham",
+    "basePokemonId": 308,
+    "name": "メガチャーレム",
+    "nameEn": "Mega Medicham",
+    "types": [
+      "かくとう",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 100,
+      "def": 85,
+      "spa": 80,
+      "spd": 85,
+      "spe": 100
+    },
+    "ability": "ヨガパワー"
+  },
+  {
+    "key": "mega-camerupt",
+    "basePokemonId": 323,
+    "name": "メガバクーダ",
+    "nameEn": "Mega Camerupt",
+    "types": [
+      "ほのお",
+      "じめん"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 120,
+      "def": 100,
+      "spa": 145,
+      "spd": 105,
+      "spe": 20
+    },
+    "ability": "ちからずく"
+  },
+  {
+    "key": "mega-staraptor",
+    "basePokemonId": 398,
+    "name": "メガムクホーク",
+    "nameEn": "Mega Staraptor",
+    "types": [
+      "かくとう",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 85,
+      "atk": 140,
+      "def": 100,
+      "spa": 60,
+      "spd": 90,
+      "spe": 110
+    },
+    "ability": "いかく"
+  },
+  {
+    "key": "mega-froslass",
+    "basePokemonId": 478,
+    "name": "メガユキメノコ",
+    "nameEn": "Mega Froslass",
+    "types": [
+      "こおり",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 80,
+      "def": 70,
+      "spa": 140,
+      "spd": 100,
+      "spe": 120
+    },
+    "ability": "ゆきふらし"
+  },
+  {
+    "key": "mega-darkrai",
+    "basePokemonId": 491,
+    "name": "メガダークライ",
+    "nameEn": "Mega Darkrai",
+    "types": [
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 120,
+      "def": 130,
+      "spa": 165,
+      "spd": 130,
+      "spe": 85
+    },
+    "ability": "ナイトメア"
+  },
+  {
+    "key": "mega-excadrill",
+    "basePokemonId": 530,
+    "name": "メガドリュウズ",
+    "nameEn": "Mega Excadrill",
+    "types": [
+      "じめん",
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 110,
+      "atk": 165,
+      "def": 100,
+      "spa": 65,
+      "spd": 65,
+      "spe": 103
+    },
+    "ability": "かんつうドリル"
+  },
+  {
+    "key": "mega-scolipede",
+    "basePokemonId": 545,
+    "name": "メガペンドラー",
+    "nameEn": "Mega Scolipede",
+    "types": [
+      "むし",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 140,
+      "def": 149,
+      "spa": 75,
+      "spd": 99,
+      "spe": 62
+    },
+    "ability": "かそく"
+  },
+  {
+    "key": "mega-scrafty",
+    "basePokemonId": 560,
+    "name": "メガズルズキン",
+    "nameEn": "Mega Scrafty",
+    "types": [
+      "あく",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 130,
+      "def": 135,
+      "spa": 55,
+      "spd": 135,
+      "spe": 68
+    },
+    "ability": "いかく"
+  },
+  {
+    "key": "mega-chandelure",
+    "basePokemonId": 609,
+    "name": "メガシャンデラ",
+    "nameEn": "Mega Chandelure",
+    "types": [
+      "ゴースト",
+      "ほのお"
+    ],
+    "baseStats": {
+      "hp": 60,
+      "atk": 75,
+      "def": 110,
+      "spa": 175,
+      "spd": 110,
+      "spe": 90
+    },
+    "ability": "すりぬけ"
+  },
+  {
+    "key": "mega-golurk",
+    "basePokemonId": 623,
+    "name": "メガゴルーグ",
+    "nameEn": "Mega Golurk",
+    "types": [
+      "じめん",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 89,
+      "atk": 159,
+      "def": 105,
+      "spa": 70,
+      "spd": 105,
+      "spe": 55
+    },
+    "ability": "みえないこぶし"
+  },
+  {
+    "key": "mega-pyroar",
+    "basePokemonId": 668,
+    "name": "メガカエンジシ",
+    "nameEn": "Mega Pyroar",
+    "types": [
+      "ほのお",
+      "ノーマル"
+    ],
+    "baseStats": {
+      "hp": 86,
+      "atk": 88,
+      "def": 92,
+      "spa": 129,
+      "spd": 86,
+      "spe": 126
+    },
+    "ability": "とうそうしん"
+  },
+  {
+    "key": "mega-malamar",
+    "basePokemonId": 687,
+    "name": "メガカラマネロ",
+    "nameEn": "Mega Malamar",
+    "types": [
+      "あく",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 86,
+      "atk": 102,
+      "def": 88,
+      "spa": 98,
+      "spd": 120,
+      "spe": 88
+    },
+    "ability": "あまのじゃく"
+  },
+  {
+    "key": "mega-zygarde",
+    "basePokemonId": 718,
+    "name": "メガジガルデ",
+    "nameEn": "Mega Zygarde",
+    "types": [
+      "ドラゴン",
+      "じめん"
+    ],
+    "baseStats": {
+      "hp": 216,
+      "atk": 70,
+      "def": 91,
+      "spa": 216,
+      "spd": 85,
+      "spe": 100
+    },
+    "ability": "オーラブレイク"
+  },
+  {
+    "key": "mega-golisopod",
+    "basePokemonId": 768,
+    "name": "メガグソクムシャ",
+    "nameEn": "Mega Golisopod",
+    "types": [
+      "むし",
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 150,
+      "def": 175,
+      "spa": 70,
+      "spd": 120,
+      "spe": 40
+    },
+    "ability": "ききかいひ"
+  }
 ]
