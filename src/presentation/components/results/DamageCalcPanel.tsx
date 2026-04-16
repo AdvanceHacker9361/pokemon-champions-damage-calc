@@ -265,7 +265,7 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
           <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">もうどく</span>
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex gap-1">
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                   <button
                     key={n}
@@ -282,7 +282,6 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-slate-600 dark:text-slate-600">T</span>
             </div>
             {poisonTurns > 0 && (
               <div className="pl-[3.75rem] space-y-1">
