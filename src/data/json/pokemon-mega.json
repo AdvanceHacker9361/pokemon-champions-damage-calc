@@ -884,10 +884,10 @@
     "ability": "かたやぶり"
   },
   {
-    "key": "mega-meowstic",
+    "key": "mega-meowstic-m",
     "basePokemonId": 678,
-    "name": "メガニャオニクス",
-    "nameEn": "Mega Meowstic",
+    "name": "メガニャオニクスオス",
+    "nameEn": "Mega Meowstic-M",
     "types": [
       "エスパー"
     ],
@@ -1258,5 +1258,23 @@
       "spe": 145
     },
     "ability": "てきおうりょく"
+  },
+  {
+    "key": "mega-meowstic-f",
+    "basePokemonId": 10678,
+    "name": "メガニャオニクスメス",
+    "nameEn": "Mega Meowstic-F",
+    "types": [
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 74,
+      "atk": 48,
+      "def": 76,
+      "spa": 143,
+      "spd": 101,
+      "spe": 124
+    },
+    "ability": "トレース"
   }
 ]
