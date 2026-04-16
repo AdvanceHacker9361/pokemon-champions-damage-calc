@@ -175,6 +175,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
               setMove={store.setMove}
               movePowers={store.movePowers}
               setMovePower={store.setMovePower}
+              maxHP={computedStats.hp}
             />
           )}
         </>
