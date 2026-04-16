@@ -236,6 +236,7 @@ export const CHAMPIONS_POKEMON_IDS: string[] = [
   'pheromosa',
   'necrozma',
   // Gen 8
+  'dragapult',
   'zacian',
   'zamazenta',
   'kubfu',

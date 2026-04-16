@@ -4842,6 +4842,29 @@
     "weight": 230
   },
   {
+    "id": 887,
+    "name": "ドラパルト",
+    "nameEn": "Dragapult",
+    "types": [
+      "ドラゴン",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 88,
+      "atk": 120,
+      "def": 75,
+      "spa": 100,
+      "spd": 75,
+      "spe": 142
+    },
+    "abilities": [
+      "クリアボディ",
+      "すりぬけ",
+      "のろわれボディ"
+    ],
+    "weight": 50
+  },
+  {
     "id": 888,
     "name": "ザシアン",
     "nameEn": "Zacian",
