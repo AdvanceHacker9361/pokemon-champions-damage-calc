@@ -20,6 +20,12 @@ export function calcKoProbability(
     return { type: 'guaranteed', hits: 1 }
   }
 
+  // 乱数1発チェック（最大ロールは届くが最小ロールは届かない）
+  if (maxRoll >= defenderHp) {
+    const probability = calcKoProbabilityForNHits(rolls, defenderHp, 1)
+    return { type: 'chance', hits: 1, probability }
+  }
+
   // nHKOを確認
   for (let hits = 2; hits <= maxHits; hits++) {
     const minTotal = minRoll * hits
