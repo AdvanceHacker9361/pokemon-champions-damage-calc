@@ -6,7 +6,7 @@ import {
 } from '@/domain/models/StatPoints'
 import { SP_MAX_TOTAL } from '@/domain/constants/spLimits'
 import type { BaseStats } from '@/domain/models/Pokemon'
-import { hasMegaEvolution } from '@/application/usecases/ApplyMegaEvolutionUseCase'
+import type { MegaPokemonRecord } from '@/data/schemas/types'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
 import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
 
@@ -28,6 +28,8 @@ export interface PokemonStore {
   itemName: string | null
   isMega: boolean
   canMega: boolean
+  availableMegas: MegaPokemonRecord[]  // 利用可能なメガ形態リスト（複数形態対応）
+  megaKey: string | null               // 選択中のメガ形態キー
   isBlade: boolean  // バトルスイッチ: true=ブレードフォルム, false=シールドフォルム
   ranks: Record<StatKey, number>
   status: StatusCondition
@@ -48,6 +50,7 @@ export interface PokemonStore {
   setAbility: (name: string) => void
   setItem: (name: string | null) => void
   setMega: (enable: boolean) => void
+  setMegaForm: (key: string) => void   // X/Y等の形態切り替え
   setBlade: (enable: boolean) => void
   setRank: (stat: StatKey, rank: number) => void
   setStatus: (status: StatusCondition) => void
@@ -70,6 +73,8 @@ function createPokemonStore() {
     itemName: null,
     isMega: false,
     canMega: false,
+    availableMegas: [],
+    megaKey: null,
     isBlade: false,
     ranks: { ...DEFAULT_RANKS },
     status: null,
@@ -84,7 +89,8 @@ function createPokemonStore() {
     setPokemon: (id: number) => {
       const record = PokemonRepository.findById(id)
       if (!record) return
-      const canMega = hasMegaEvolution(id)
+      const availableMegas = PokemonRepository.getMegasByBaseId(id)
+      const canMega = availableMegas.length > 0
       const isMega = get().isMega && canMega
 
       let baseStats = record.baseStats as BaseStats
@@ -92,15 +98,15 @@ function createPokemonStore() {
       let abilityName = record.abilities[0] ?? 'なし'
       let effectiveAbility = abilityName
       let weight = record.weight
+      let megaKey: string | null = null
 
-      if (isMega) {
-        const mega = PokemonRepository.getMegaByBaseId(id)
-        if (mega) {
-          baseStats = mega.baseStats as BaseStats
-          types = mega.types as TypeName[]
-          effectiveAbility = mega.ability
-          weight = record.weight
-        }
+      if (isMega && availableMegas.length > 0) {
+        const mega = availableMegas[0]
+        baseStats = mega.baseStats as BaseStats
+        types = mega.types as TypeName[]
+        effectiveAbility = mega.ability
+        weight = record.weight
+        megaKey = mega.key
       }
 
       set({
@@ -109,6 +115,8 @@ function createPokemonStore() {
         baseStats,
         types,
         canMega,
+        availableMegas,
+        megaKey,
         isMega,
         isBlade: false,
         abilityName: record.abilities[0] ?? 'なし',
@@ -153,14 +161,15 @@ function createPokemonStore() {
     setItem: (name) => set({ itemName: name }),
 
     setMega: (enable) => {
-      const { pokemonId, canMega, abilityName } = get()
+      const { pokemonId, canMega, abilityName, availableMegas } = get()
       if (!canMega || !pokemonId) return
 
       if (enable) {
-        const mega = PokemonRepository.getMegaByBaseId(pokemonId)
+        const mega = availableMegas[0]
         if (!mega) return
         set({
           isMega: true,
+          megaKey: mega.key,
           baseStats: mega.baseStats as BaseStats,
           types: mega.types as TypeName[],
           effectiveAbility: mega.ability,
@@ -170,11 +179,25 @@ function createPokemonStore() {
         if (!base) return
         set({
           isMega: false,
+          megaKey: null,
           baseStats: base.baseStats as BaseStats,
           types: base.types as TypeName[],
           effectiveAbility: abilityName,
         })
       }
+    },
+
+    setMegaForm: (key) => {
+      const { pokemonId, isMega, availableMegas } = get()
+      if (!pokemonId || !isMega) return
+      const mega = availableMegas.find(m => m.key === key)
+      if (!mega) return
+      set({
+        megaKey: mega.key,
+        baseStats: mega.baseStats as BaseStats,
+        types: mega.types as TypeName[],
+        effectiveAbility: mega.ability,
+      })
     },
 
     setBlade: (enable) => {
@@ -214,7 +237,8 @@ function createPokemonStore() {
       pokemonId: null, pokemonName: '',
       statNatures: { ...DEFAULT_STAT_NATURES },
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
-      isMega: false, canMega: false, isBlade: false, ranks: { ...DEFAULT_RANKS }, status: null,
+      isMega: false, canMega: false, availableMegas: [], megaKey: null,
+      isBlade: false, ranks: { ...DEFAULT_RANKS }, status: null,
       abilityActivated: false, proteanType: null,
       moves: [null, null, null, null],
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,

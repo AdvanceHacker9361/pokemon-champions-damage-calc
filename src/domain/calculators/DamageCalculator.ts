@@ -395,6 +395,10 @@ function applyOtherModifiers(
   if (attackerAbility === 'いろめがね') {
     if (typeEff < 1 && typeEff > 0) d = pokeRound(d * 2)
   }
+  // かたいツメ: 接触技の威力1.3倍
+  if (attackerAbility === 'かたいツメ' && move.flags.contact) {
+    d = pokeRound(d * 1.3)
+  }
   // すてみ: 反動技の威力1.2倍
   if (attackerAbility === 'すてみ' && move.flags.recoil) {
     d = pokeRound(d * 1.2)

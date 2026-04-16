@@ -18,6 +18,14 @@ const searchIndex = pokemon.map(p => ({
 const megaByKey = new Map(megaPokemon.map(m => [m.key, m]))
 const megaByBaseId = new Map(megaPokemon.map(m => [m.basePokemonId, m]))
 
+// 複数形態（リザードンX/Y等）対応
+const megasByBaseId = new Map<number, MegaPokemonRecord[]>()
+for (const m of megaPokemon) {
+  const list = megasByBaseId.get(m.basePokemonId) ?? []
+  list.push(m)
+  megasByBaseId.set(m.basePokemonId, list)
+}
+
 export const PokemonRepository = {
   getAll(): PokemonRecord[] {
     return pokemon
@@ -49,6 +57,11 @@ export const PokemonRepository = {
 
   getMegaByBaseId(pokemonId: number): MegaPokemonRecord | undefined {
     return megaByBaseId.get(pokemonId)
+  },
+
+  /** 複数形態対応: 該当ポケモンの全メガシンカ形態を返す */
+  getMegasByBaseId(pokemonId: number): MegaPokemonRecord[] {
+    return megasByBaseId.get(pokemonId) ?? []
   },
 
   getAllMega(): MegaPokemonRecord[] {
