@@ -193,7 +193,7 @@ function resolveMoveType(input: DamageCalcInput): TypeName {
 /**
  * ダメージ計算メイン関数
  * Gen9 ダメージ計算式 + Champions フィールド補正
- * 16段階乱数ロールすべてを返す
+ * Champions仕様: 15段階乱数ロール（86〜100）すべてを返す
  */
 export function calculateDamage(input: DamageCalcInput): DamageResult {
   const { move, attackerAbility, defenderAbility,
@@ -240,9 +240,9 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     damage = pokeRound(damage * 1.5)
   }
 
-  // 3. 乱数（16段階: 85〜100を100で割った値）
+  // 3. 乱数（Champions仕様: 15段階 86〜100を100で割った値、85は出現しない）
   const rolls: number[] = []
-  for (let r = 85; r <= 100; r++) {
+  for (let r = 86; r <= 100; r++) {
     rolls.push(Math.floor(damage * r / 100))
   }
 
@@ -301,11 +301,11 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効
   }
   const effectiveRolls = typeEffCheck === 0
-    ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
+    ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
     : (finalRolls as DamageResult['rolls'])
 
   const min = effectiveRolls[0]
-  const max = effectiveRolls[15]
+  const max = effectiveRolls[14]
   const defHp = defenderStats.hp
 
   return {

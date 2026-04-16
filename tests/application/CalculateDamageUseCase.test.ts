@@ -92,7 +92,7 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
     expect(result.min).toBeGreaterThan(0)
     expect(result.max).toBeGreaterThanOrEqual(result.min)
     expect(result.defenderMaxHp).toBeGreaterThan(0)
-    expect(result.rolls).toHaveLength(16)
+    expect(result.rolls).toHaveLength(15)
   })
 
   it('ゴーストには効かないノーマル技は0ダメージ', () => {
