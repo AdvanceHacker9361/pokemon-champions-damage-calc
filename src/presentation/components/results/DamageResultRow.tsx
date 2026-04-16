@@ -199,6 +199,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const [hitCount, setHitCount] = useState(2)
   const [constDmg, setConstDmg] = useState(0)
   const [constRec, setConstRec] = useState(0)
+  const [poisonTurns, setPoisonTurns] = useState(0)
   const [added, setAdded] = useState(false)
   const [accumUsages, setAccumUsages] = useState(1)
 
@@ -509,6 +510,73 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                 </span>
               </div>
             )}
+          </div>
+
+          {/* もうどく累積ダメージ */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">もうどく</span>
+              <div className="flex gap-1 flex-wrap">
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPoisonTurns(n)}
+                    className={`w-6 h-6 text-xs rounded transition-colors ${
+                      poisonTurns === n
+                        ? 'bg-purple-600 dark:bg-purple-700 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
+                    }`}
+                    title={n === 0 ? 'なし' : `${n}ターン目まで`}
+                  >
+                    {n === 0 ? '×' : n}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-slate-600 dark:text-slate-600">T</span>
+            </div>
+            {poisonTurns > 0 && (() => {
+              // もうどく: kターン目のダメージ = max(1, floor(maxHP * k / 16))
+              const perTurn = Array.from({ length: poisonTurns }, (_, i) =>
+                Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
+              )
+              const poisonTotal = perTurn.reduce((s, v) => s + v, 0)
+              return (
+                <div className="pl-[3.75rem] space-y-1">
+                  {/* ターン別内訳 */}
+                  <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                    {perTurn.map((dmg, i) => (
+                      <span key={i} className="text-[10px] font-mono text-purple-700 dark:text-purple-400">
+                        {i + 1}T:{dmg}
+                      </span>
+                    ))}
+                  </div>
+                  {/* 累積合計 + 定数ダメに追加ボタン */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-300">
+                      累計 {poisonTotal}
+                      <span className="font-normal text-purple-500 dark:text-purple-400 ml-1">
+                        ({(poisonTotal / defenderMaxHp * 100).toFixed(1)}%)
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setConstDmg(v => v + poisonTotal)}
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
+                    >
+                      +定数ダメ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConstDmg(poisonTotal)}
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
+                    >
+                      =定数ダメ
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           {/* 加算結果 */}
