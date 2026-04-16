@@ -1,0 +1,702 @@
+[
+  {
+    "nameEn": "Adaptability",
+    "name": "Adaptability"
+  },
+  {
+    "nameEn": "Air Lock",
+    "name": "Air Lock"
+  },
+  {
+    "nameEn": "Analytic",
+    "name": "Analytic"
+  },
+  {
+    "nameEn": "Anger Point",
+    "name": "Anger Point"
+  },
+  {
+    "nameEn": "Anticipation",
+    "name": "Anticipation"
+  },
+  {
+    "nameEn": "Aura Break",
+    "name": "Aura Break"
+  },
+  {
+    "nameEn": "Bad Dreams",
+    "name": "Bad Dreams"
+  },
+  {
+    "nameEn": "Battle Armor",
+    "name": "Battle Armor"
+  },
+  {
+    "nameEn": "Battle Bond",
+    "name": "Battle Bond"
+  },
+  {
+    "nameEn": "Beast Boost",
+    "name": "Beast Boost"
+  },
+  {
+    "nameEn": "Big Pecks",
+    "name": "Big Pecks"
+  },
+  {
+    "nameEn": "Blaze",
+    "name": "Blaze"
+  },
+  {
+    "nameEn": "Bulletproof",
+    "name": "Bulletproof"
+  },
+  {
+    "nameEn": "Cheek Pouch",
+    "name": "Cheek Pouch"
+  },
+  {
+    "nameEn": "Chlorophyll",
+    "name": "Chlorophyll"
+  },
+  {
+    "nameEn": "Clear Body",
+    "name": "Clear Body"
+  },
+  {
+    "nameEn": "Cloud Nine",
+    "name": "Cloud Nine"
+  },
+  {
+    "nameEn": "Competitive",
+    "name": "Competitive"
+  },
+  {
+    "nameEn": "Compound Eyes",
+    "name": "Compound Eyes"
+  },
+  {
+    "nameEn": "Contrary",
+    "name": "Contrary"
+  },
+  {
+    "nameEn": "Corrosion",
+    "name": "Corrosion"
+  },
+  {
+    "nameEn": "Cursed Body",
+    "name": "Cursed Body"
+  },
+  {
+    "nameEn": "Cute Charm",
+    "name": "Cute Charm"
+  },
+  {
+    "nameEn": "Damp",
+    "name": "Damp"
+  },
+  {
+    "nameEn": "Dark Aura",
+    "name": "Dark Aura"
+  },
+  {
+    "nameEn": "Dauntless Shield",
+    "name": "Dauntless Shield"
+  },
+  {
+    "nameEn": "Defeatist",
+    "name": "Defeatist"
+  },
+  {
+    "nameEn": "Defiant",
+    "name": "Defiant"
+  },
+  {
+    "nameEn": "Disguise",
+    "name": "Disguise"
+  },
+  {
+    "nameEn": "Drizzle",
+    "name": "Drizzle"
+  },
+  {
+    "nameEn": "Drought",
+    "name": "Drought"
+  },
+  {
+    "nameEn": "Dry Skin",
+    "name": "Dry Skin"
+  },
+  {
+    "nameEn": "Early Bird",
+    "name": "Early Bird"
+  },
+  {
+    "nameEn": "Effect Spore",
+    "name": "Effect Spore"
+  },
+  {
+    "nameEn": "Emergency Exit",
+    "name": "Emergency Exit"
+  },
+  {
+    "nameEn": "Fairy Aura",
+    "name": "Fairy Aura"
+  },
+  {
+    "nameEn": "Flame Body",
+    "name": "Flame Body"
+  },
+  {
+    "nameEn": "Flash Fire",
+    "name": "Flash Fire"
+  },
+  {
+    "nameEn": "Flower Veil",
+    "name": "Flower Veil"
+  },
+  {
+    "nameEn": "Fluffy",
+    "name": "Fluffy"
+  },
+  {
+    "nameEn": "Frisk",
+    "name": "Frisk"
+  },
+  {
+    "nameEn": "Gale Wings",
+    "name": "Gale Wings"
+  },
+  {
+    "nameEn": "Gluttony",
+    "name": "Gluttony"
+  },
+  {
+    "nameEn": "Gooey",
+    "name": "Gooey"
+  },
+  {
+    "nameEn": "Guts",
+    "name": "Guts"
+  },
+  {
+    "nameEn": "Harvest",
+    "name": "Harvest"
+  },
+  {
+    "nameEn": "Healer",
+    "name": "Healer"
+  },
+  {
+    "nameEn": "Heatproof",
+    "name": "Heatproof"
+  },
+  {
+    "nameEn": "Heavy Metal",
+    "name": "Heavy Metal"
+  },
+  {
+    "nameEn": "Honey Gather",
+    "name": "Honey Gather"
+  },
+  {
+    "nameEn": "Huge Power",
+    "name": "Huge Power"
+  },
+  {
+    "nameEn": "Hustle",
+    "name": "Hustle"
+  },
+  {
+    "nameEn": "Hydration",
+    "name": "Hydration"
+  },
+  {
+    "nameEn": "Hyper Cutter",
+    "name": "Hyper Cutter"
+  },
+  {
+    "nameEn": "Ice Body",
+    "name": "Ice Body"
+  },
+  {
+    "nameEn": "Illuminate",
+    "name": "Illuminate"
+  },
+  {
+    "nameEn": "Illusion",
+    "name": "Illusion"
+  },
+  {
+    "nameEn": "Immunity",
+    "name": "Immunity"
+  },
+  {
+    "nameEn": "Infiltrator",
+    "name": "Infiltrator"
+  },
+  {
+    "nameEn": "Inner Focus",
+    "name": "Inner Focus"
+  },
+  {
+    "nameEn": "Insomnia",
+    "name": "Insomnia"
+  },
+  {
+    "nameEn": "Intimidate",
+    "name": "Intimidate"
+  },
+  {
+    "nameEn": "Intrepid Sword",
+    "name": "Intrepid Sword"
+  },
+  {
+    "nameEn": "Iron Barbs",
+    "name": "Iron Barbs"
+  },
+  {
+    "nameEn": "Iron Fist",
+    "name": "Iron Fist"
+  },
+  {
+    "nameEn": "Justified",
+    "name": "Justified"
+  },
+  {
+    "nameEn": "Keen Eye",
+    "name": "Keen Eye"
+  },
+  {
+    "nameEn": "Klutz",
+    "name": "Klutz"
+  },
+  {
+    "nameEn": "Leaf Guard",
+    "name": "Leaf Guard"
+  },
+  {
+    "nameEn": "Levitate",
+    "name": "Levitate"
+  },
+  {
+    "nameEn": "Light Metal",
+    "name": "Light Metal"
+  },
+  {
+    "nameEn": "Lightning Rod",
+    "name": "Lightning Rod"
+  },
+  {
+    "nameEn": "Limber",
+    "name": "Limber"
+  },
+  {
+    "nameEn": "Liquid Voice",
+    "name": "Liquid Voice"
+  },
+  {
+    "nameEn": "Long Reach",
+    "name": "Long Reach"
+  },
+  {
+    "nameEn": "Magic Bounce",
+    "name": "Magic Bounce"
+  },
+  {
+    "nameEn": "Magic Guard",
+    "name": "Magic Guard"
+  },
+  {
+    "nameEn": "Magician",
+    "name": "Magician"
+  },
+  {
+    "nameEn": "Magma Armor",
+    "name": "Magma Armor"
+  },
+  {
+    "nameEn": "Magnet Pull",
+    "name": "Magnet Pull"
+  },
+  {
+    "nameEn": "Marvel Scale",
+    "name": "Marvel Scale"
+  },
+  {
+    "nameEn": "Merciless",
+    "name": "Merciless"
+  },
+  {
+    "nameEn": "Minus",
+    "name": "Minus"
+  },
+  {
+    "nameEn": "Mold Breaker",
+    "name": "Mold Breaker"
+  },
+  {
+    "nameEn": "Moody",
+    "name": "Moody"
+  },
+  {
+    "nameEn": "Motor Drive",
+    "name": "Motor Drive"
+  },
+  {
+    "nameEn": "Moxie",
+    "name": "Moxie"
+  },
+  {
+    "nameEn": "Multiscale",
+    "name": "Multiscale"
+  },
+  {
+    "nameEn": "Mummy",
+    "name": "Mummy"
+  },
+  {
+    "nameEn": "Natural Cure",
+    "name": "Natural Cure"
+  },
+  {
+    "nameEn": "No Guard",
+    "name": "No Guard"
+  },
+  {
+    "nameEn": "Oblivious",
+    "name": "Oblivious"
+  },
+  {
+    "nameEn": "Overcoat",
+    "name": "Overcoat"
+  },
+  {
+    "nameEn": "Overgrow",
+    "name": "Overgrow"
+  },
+  {
+    "nameEn": "Own Tempo",
+    "name": "Own Tempo"
+  },
+  {
+    "nameEn": "Pickpocket",
+    "name": "Pickpocket"
+  },
+  {
+    "nameEn": "Pickup",
+    "name": "Pickup"
+  },
+  {
+    "nameEn": "Pixilate",
+    "name": "Pixilate"
+  },
+  {
+    "nameEn": "Plus",
+    "name": "Plus"
+  },
+  {
+    "nameEn": "Poison Heal",
+    "name": "Poison Heal"
+  },
+  {
+    "nameEn": "Poison Point",
+    "name": "Poison Point"
+  },
+  {
+    "nameEn": "Poison Touch",
+    "name": "Poison Touch"
+  },
+  {
+    "nameEn": "Power Construct",
+    "name": "Power Construct"
+  },
+  {
+    "nameEn": "Prankster",
+    "name": "Prankster"
+  },
+  {
+    "nameEn": "Pressure",
+    "name": "Pressure"
+  },
+  {
+    "nameEn": "Prism Armor",
+    "name": "Prism Armor"
+  },
+  {
+    "nameEn": "Protean",
+    "name": "Protean"
+  },
+  {
+    "nameEn": "Pure Power",
+    "name": "Pure Power"
+  },
+  {
+    "nameEn": "Quark Drive",
+    "name": "Quark Drive"
+  },
+  {
+    "nameEn": "Queenly Majesty",
+    "name": "Queenly Majesty"
+  },
+  {
+    "nameEn": "Quick Feet",
+    "name": "Quick Feet"
+  },
+  {
+    "nameEn": "Rain Dish",
+    "name": "Rain Dish"
+  },
+  {
+    "nameEn": "Rattled",
+    "name": "Rattled"
+  },
+  {
+    "nameEn": "Reckless",
+    "name": "Reckless"
+  },
+  {
+    "nameEn": "Regenerator",
+    "name": "Regenerator"
+  },
+  {
+    "nameEn": "Rivalry",
+    "name": "Rivalry"
+  },
+  {
+    "nameEn": "RKS System",
+    "name": "RKS System"
+  },
+  {
+    "nameEn": "Rock Head",
+    "name": "Rock Head"
+  },
+  {
+    "nameEn": "Rough Skin",
+    "name": "Rough Skin"
+  },
+  {
+    "nameEn": "Run Away",
+    "name": "Run Away"
+  },
+  {
+    "nameEn": "Sand Force",
+    "name": "Sand Force"
+  },
+  {
+    "nameEn": "Sand Rush",
+    "name": "Sand Rush"
+  },
+  {
+    "nameEn": "Sand Stream",
+    "name": "Sand Stream"
+  },
+  {
+    "nameEn": "Sand Veil",
+    "name": "Sand Veil"
+  },
+  {
+    "nameEn": "Sap Sipper",
+    "name": "Sap Sipper"
+  },
+  {
+    "nameEn": "Scrappy",
+    "name": "Scrappy"
+  },
+  {
+    "nameEn": "Serene Grace",
+    "name": "Serene Grace"
+  },
+  {
+    "nameEn": "Shadow Shield",
+    "name": "Shadow Shield"
+  },
+  {
+    "nameEn": "Shadow Tag",
+    "name": "Shadow Tag"
+  },
+  {
+    "nameEn": "Sharpness",
+    "name": "Sharpness"
+  },
+  {
+    "nameEn": "Shed Skin",
+    "name": "Shed Skin"
+  },
+  {
+    "nameEn": "Sheer Force",
+    "name": "Sheer Force"
+  },
+  {
+    "nameEn": "Shell Armor",
+    "name": "Shell Armor"
+  },
+  {
+    "nameEn": "Shield Dust",
+    "name": "Shield Dust"
+  },
+  {
+    "nameEn": "Simple",
+    "name": "Simple"
+  },
+  {
+    "nameEn": "Skill Link",
+    "name": "Skill Link"
+  },
+  {
+    "nameEn": "Slush Rush",
+    "name": "Slush Rush"
+  },
+  {
+    "nameEn": "Sniper",
+    "name": "Sniper"
+  },
+  {
+    "nameEn": "Snow Cloak",
+    "name": "Snow Cloak"
+  },
+  {
+    "nameEn": "Snow Warning",
+    "name": "Snow Warning"
+  },
+  {
+    "nameEn": "Solar Power",
+    "name": "Solar Power"
+  },
+  {
+    "nameEn": "Solid Rock",
+    "name": "Solid Rock"
+  },
+  {
+    "nameEn": "Soundproof",
+    "name": "Soundproof"
+  },
+  {
+    "nameEn": "Speed Boost",
+    "name": "Speed Boost"
+  },
+  {
+    "nameEn": "Stall",
+    "name": "Stall"
+  },
+  {
+    "nameEn": "Stance Change",
+    "name": "Stance Change"
+  },
+  {
+    "nameEn": "Static",
+    "name": "Static"
+  },
+  {
+    "nameEn": "Steadfast",
+    "name": "Steadfast"
+  },
+  {
+    "nameEn": "Sturdy",
+    "name": "Sturdy"
+  },
+  {
+    "nameEn": "Suction Cups",
+    "name": "Suction Cups"
+  },
+  {
+    "nameEn": "Super Luck",
+    "name": "Super Luck"
+  },
+  {
+    "nameEn": "Swarm",
+    "name": "Swarm"
+  },
+  {
+    "nameEn": "Sweet Veil",
+    "name": "Sweet Veil"
+  },
+  {
+    "nameEn": "Swift Swim",
+    "name": "Swift Swim"
+  },
+  {
+    "nameEn": "Symbiosis",
+    "name": "Symbiosis"
+  },
+  {
+    "nameEn": "Synchronize",
+    "name": "Synchronize"
+  },
+  {
+    "nameEn": "Tangled Feet",
+    "name": "Tangled Feet"
+  },
+  {
+    "nameEn": "Technician",
+    "name": "Technician"
+  },
+  {
+    "nameEn": "Telepathy",
+    "name": "Telepathy"
+  },
+  {
+    "nameEn": "Teravolt",
+    "name": "Teravolt"
+  },
+  {
+    "nameEn": "Thick Fat",
+    "name": "Thick Fat"
+  },
+  {
+    "nameEn": "Torrent",
+    "name": "Torrent"
+  },
+  {
+    "nameEn": "Toxic Boost",
+    "name": "Toxic Boost"
+  },
+  {
+    "nameEn": "Trace",
+    "name": "Trace"
+  },
+  {
+    "nameEn": "Truant",
+    "name": "Truant"
+  },
+  {
+    "nameEn": "Turboblaze",
+    "name": "Turboblaze"
+  },
+  {
+    "nameEn": "Unaware",
+    "name": "Unaware"
+  },
+  {
+    "nameEn": "Unburden",
+    "name": "Unburden"
+  },
+  {
+    "nameEn": "Unnerve",
+    "name": "Unnerve"
+  },
+  {
+    "nameEn": "Vital Spirit",
+    "name": "Vital Spirit"
+  },
+  {
+    "nameEn": "Water Absorb",
+    "name": "Water Absorb"
+  },
+  {
+    "nameEn": "Water Bubble",
+    "name": "Water Bubble"
+  },
+  {
+    "nameEn": "Water Veil",
+    "name": "Water Veil"
+  },
+  {
+    "nameEn": "Weak Armor",
+    "name": "Weak Armor"
+  },
+  {
+    "nameEn": "Zen Mode",
+    "name": "Zen Mode"
+  }
+]
