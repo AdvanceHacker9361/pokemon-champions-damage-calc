@@ -28,10 +28,16 @@ export function useDamageCalc() {
     }
 
     const results = attacker.moves
-      .filter((m): m is string => m !== null)
-      .map(moveName => {
-        const move = MoveRepository.findByName(moveName)
+      .map((moveName, slotIdx) => {
+        if (!moveName) return null
+        let move = MoveRepository.findByName(moveName)
         if (!move || move.category === '変化') return null
+
+        // 可変威力技: ユーザーが選択した威力を上書き
+        const powerOverride = attacker.movePowers[slotIdx]
+        if (powerOverride !== null && move.powerOptions?.includes(powerOverride)) {
+          move = { ...move, power: powerOverride }
+        }
 
         try {
           const result = executeDamageCalculation({
@@ -74,7 +80,7 @@ export function useDamageCalc() {
     setResults(results)
   }, [
     attacker.pokemonId, attacker.sp, attacker.statNatures,
-    attacker.effectiveAbility, attacker.itemName, attacker.moves,
+    attacker.effectiveAbility, attacker.itemName, attacker.moves, attacker.movePowers,
     attacker.ranks, attacker.status, attacker.abilityActivated, attacker.proteanType,
     defender.pokemonId, defender.sp, defender.statNatures,
     defender.effectiveAbility, defender.itemName,

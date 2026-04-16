@@ -36,6 +36,8 @@ export interface PokemonStore {
   abilityActivated: boolean
   proteanType: TypeName | null
   moves: [string | null, string | null, string | null, string | null]
+  /** 可変威力技のスロットごとの選択威力（null = 技デフォルト値を使用） */
+  movePowers: [number | null, number | null, number | null, number | null]
   // Derived (cached)
   baseStats: BaseStats
   types: TypeName[]
@@ -57,6 +59,7 @@ export interface PokemonStore {
   setAbilityActivated: (v: boolean) => void
   setProteanType: (type: TypeName | null) => void
   setMove: (slot: 0 | 1 | 2 | 3, moveName: string | null) => void
+  setMovePower: (slot: 0 | 1 | 2 | 3, power: number | null) => void
   reset: () => void
 }
 
@@ -81,6 +84,7 @@ function createPokemonStore() {
     abilityActivated: false,
     proteanType: null,
     moves: [null, null, null, null],
+    movePowers: [null, null, null, null],
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
     weight: 0,
@@ -230,7 +234,16 @@ function createPokemonStore() {
     setMove: (slot, moveName) => set(s => {
       const moves = [...s.moves] as typeof s.moves
       moves[slot] = moveName
-      return { moves }
+      // 技を変更したらその枠の威力選択をリセット
+      const movePowers = [...s.movePowers] as typeof s.movePowers
+      movePowers[slot] = null
+      return { moves, movePowers }
+    }),
+
+    setMovePower: (slot, power) => set(s => {
+      const movePowers = [...s.movePowers] as typeof s.movePowers
+      movePowers[slot] = power
+      return { movePowers }
     }),
 
     reset: () => set({
@@ -241,6 +254,7 @@ function createPokemonStore() {
       isBlade: false, ranks: { ...DEFAULT_RANKS }, status: null,
       abilityActivated: false, proteanType: null,
       moves: [null, null, null, null],
+      movePowers: [null, null, null, null],
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',
     }),

@@ -1696,6 +1696,32 @@
     "special": null
   },
   {
+    "name": "おはかまいり",
+    "nameEn": "Ohakamairi",
+    "type": "ゴースト",
+    "category": "物理",
+    "power": 50,
+    "accuracy": 100,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": null,
+    "powerOptions": [
+      50,
+      100,
+      150
+    ]
+  },
+  {
     "name": "ガードシェア",
     "nameEn": "Guard Split",
     "type": "エスパー",
@@ -6761,6 +6787,30 @@
     "multiHit": null
   },
   {
+    "name": "ドラゴンアロー",
+    "nameEn": "Dragon Arrow",
+    "type": "ドラゴン",
+    "category": "物理",
+    "power": 50,
+    "accuracy": 100,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": {
+      "type": "fixed",
+      "count": 2
+    }
+  },
+  {
     "name": "ドラゴンエール",
     "nameEn": "Dragon Cheer",
     "type": "ドラゴン",
@@ -6800,30 +6850,6 @@
       "slice": true
     },
     "special": null
-  },
-  {
-    "name": "ドラゴンアロー",
-    "nameEn": "Dragon Arrow",
-    "type": "ドラゴン",
-    "category": "物理",
-    "power": 50,
-    "accuracy": 100,
-    "pp": 8,
-    "priority": 0,
-    "flags": {
-      "contact": false,
-      "sound": false,
-      "bullet": false,
-      "pulse": false,
-      "punch": false,
-      "bite": false,
-      "slice": false
-    },
-    "special": null,
-    "multiHit": {
-      "type": "fixed",
-      "count": 2
-    }
   },
   {
     "name": "ドラゴンダイブ",

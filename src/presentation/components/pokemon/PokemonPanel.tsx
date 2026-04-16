@@ -170,7 +170,12 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
           {/* 技（攻撃側のみ） */}
           {showMoves && (
-            <MoveSlots moves={store.moves} setMove={store.setMove} />
+            <MoveSlots
+              moves={store.moves}
+              setMove={store.setMove}
+              movePowers={store.movePowers}
+              setMovePower={store.setMovePower}
+            />
           )}
         </>
       )}

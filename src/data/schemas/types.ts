@@ -43,6 +43,8 @@ export interface MoveRecord {
   }
   special: SpecialMoveTag | null
   multiHit?: MultiHitData | null
+  /** 可変威力の選択肢（おはかまいり等） */
+  powerOptions?: number[]
 }
 
 export interface AbilityRecord {
