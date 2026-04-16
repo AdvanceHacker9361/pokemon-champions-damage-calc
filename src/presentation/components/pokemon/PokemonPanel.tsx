@@ -42,9 +42,8 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
     ? (PokemonRepository.findById(store.pokemonId)?.abilities ?? [])
     : []
 
-  const megaAbility = store.pokemonId
-    ? PokemonRepository.getMegaByBaseId(store.pokemonId)?.ability
-    : undefined
+  // store.effectiveAbility はメガX/Y切り替え済みの正しい特性を保持している
+  const megaAbility = store.isMega ? store.effectiveAbility : undefined
 
   const abilityConditionLabel = ACTIVATABLE_ABILITIES[store.effectiveAbility]
 
