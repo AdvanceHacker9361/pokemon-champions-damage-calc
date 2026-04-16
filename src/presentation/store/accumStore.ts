@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export interface AccumEntry {
   id: string
   label: string      // 例: "ガブリアス のじしん"
-  rolls: number[]    // 16段階ロール（1回分）
+  rolls: number[]    // 15段階ロール（Champions仕様、1回分）
   /** 何回使用するか（1〜5）。累積ダメージ計算に使用 */
   usages: number
   minDmg: number     // 1回分の最小ダメージ

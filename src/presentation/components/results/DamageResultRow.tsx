@@ -279,7 +279,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
             type="button"
             onClick={() => setRollsExpanded(v => !v)}
             className="text-xs text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
-            title="16乱数を表示"
+            title="15乱数を表示"
           >
             {rollsExpanded ? '▲' : '▼'}乱数
           </button>
@@ -298,7 +298,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       {/* 16乱数表示 */}
       {rollsExpanded && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-xs text-slate-600 mb-1">16乱数 (最小〜最大)</div>
+          <div className="text-xs text-slate-600 mb-1">15乱数 (最小〜最大)</div>
           <div className="flex flex-wrap gap-x-1 gap-y-0.5">
             {rolls.map((r, i) => (
               <span key={i} className={`text-xs font-mono ${rollKoClass(r, defenderMaxHp)}`}>
@@ -314,7 +314,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
                 onClick={() => setPbExpanded(v => !v)}
                 className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
-                {pbExpanded ? '▲' : '▼'} おやこあい 16×16乱数表
+                {pbExpanded ? '▲' : '▼'} おやこあい 15×15乱数表
               </button>
               {pbExpanded && (
                 <ParentalBondTable rolls={rolls} defenderHp={defenderMaxHp} />

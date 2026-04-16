@@ -2,7 +2,7 @@ import type { KoResult } from '@/domain/models/DamageResult'
 
 /**
  * n発KO確率を動的計画法で計算する
- * @param rolls - 16段階の乱数ロール（昇順）
+ * @param rolls - Champions仕様: 15段階の乱数ロール（昇順、86〜100）
  * @param defenderHp - 防御側HP実数値
  * @param maxHits - 最大何発まで計算するか
  */

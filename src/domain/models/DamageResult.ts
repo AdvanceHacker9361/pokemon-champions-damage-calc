@@ -4,12 +4,11 @@ export type KoResult =
   | { type: 'no-ko' }
 
 export interface DamageResult {
-  /** 16段階乱数ロール（85%〜100%の各値） */
+  /** Champions仕様: 15段階乱数ロール（86%〜100%の各値、85%は出現しない） */
   rolls: [
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number,
-    number, number, number, number,
+    number, number, number, number, number,
+    number, number, number, number, number,
+    number, number, number, number, number,
   ]
   min: number
   max: number
