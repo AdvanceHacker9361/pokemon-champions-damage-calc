@@ -1,5 +1,6 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
+import { DamageCalcPanel } from './DamageCalcPanel'
 import { DamageAccumPanel } from './DamageAccumPanel'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 
@@ -35,6 +36,7 @@ export function DamageResultArea() {
             <DamageResultRow key={moveName} moveName={moveName} result={result} />
           ))}
         </div>
+        <DamageCalcPanel results={results} />
       </div>
       <DamageAccumPanel />
     </>
