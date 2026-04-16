@@ -59,7 +59,10 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             <MegaToggle
               isMega={store.isMega}
               canMega={store.canMega}
+              availableMegas={store.availableMegas}
+              megaKey={store.megaKey}
               onChange={store.setMega}
+              onFormChange={store.setMegaForm}
             />
           </div>
         )}
