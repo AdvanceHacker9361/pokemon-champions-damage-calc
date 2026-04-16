@@ -28,6 +28,7 @@ const ACTIVATABLE_ABILITIES: Record<string, string> = {
   'マルチスケイル':   'HP満タン',
   'ファントムガード':  'HP満タン',
   'へんげんじざい':   'タイプ変換',
+  'ばけのかわ':   'ばけのかわ有効',
 }
 
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {

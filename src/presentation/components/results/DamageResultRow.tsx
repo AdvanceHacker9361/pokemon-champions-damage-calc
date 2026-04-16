@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import type { DamageResult } from '@/domain/models/DamageResult'
+import type { KoResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
 import {
   calcVariableMultiHitKo,
+  calcKoProbability,
   VARIABLE_MULTI_HIT_DIST,
 } from '@/domain/calculators/KoProbabilityCalc'
 import { useAccumStore } from '@/presentation/store/accumStore'
-import { useAttackerStore } from '@/presentation/store/pokemonStore'
+import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MultiHitData } from '@/domain/models/Move'
 
@@ -15,8 +17,7 @@ interface DamageResultRowProps {
   result: DamageResult
 }
 
-function koLabel(result: DamageResult): string {
-  const { koResult } = result
+function koLabel(koResult: KoResult): string {
   if (koResult.type === 'guaranteed') return `確定${koResult.hits}発`
   if (koResult.type === 'chance') {
     return `乱数${koResult.hits}発 (${(koResult.probability * 100).toFixed(1)}%)`
@@ -24,8 +25,7 @@ function koLabel(result: DamageResult): string {
   return '倒せない'
 }
 
-function koLabelColor(result: DamageResult): string {
-  const { koResult } = result
+function koLabelColor(koResult: KoResult): string {
   if (koResult.type === 'guaranteed') {
     if (koResult.hits === 1) return 'text-red-500 dark:text-red-400'
     if (koResult.hits === 2) return 'text-orange-500 dark:text-orange-400'
@@ -169,7 +169,7 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
 }
 
 export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
-  const { min, max, percentMin, percentMax, defenderMaxHp } = result
+  const { min, max, defenderMaxHp } = result
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
@@ -179,13 +179,75 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const addEntry = useAccumStore(s => s.addEntry)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
+  const defenderAbility = useDefenderStore(s => s.effectiveAbility)
+  const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
+
   const isParentalBond = attackerAbility === 'おやこあい'
+  const isDisguiseIntact = defenderAbility === 'ばけのかわ' && defenderAbilityActivated
 
   const moveRecord = MoveRepository.findByName(moveName)
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
 
   const rolls = Array.from(result.rolls)
 
+  // ── おやこあい: 子ロール (親の25%) と合算ロール ──────────────────
+  const childRollsArr = calcChildRolls(rolls)
+  // 親+子 合算ロール（おやこあい通常時の主表示）
+  const combinedRolls = rolls.map((r, i) => r + childRollsArr[i])
+
+  // ── ばけのかわ: 定数ダメと実効ロール ──────────────────────────────
+  // disguiseFlatDmg: ばけのかわ発動時にミミッキュが受ける固定ダメ（HP/8）
+  const disguiseFlatDmg = isDisguiseIntact ? Math.floor(defenderMaxHp / 8) : 0
+  // ばけのかわ発動時の技ラベル
+  let disguiseLabel = ''
+  // 実効ロール: ばけのかわ・おやこあいを考慮した最終ダメージのロール列
+  let effectiveRolls: number[]
+
+  if (isDisguiseIntact) {
+    if (isParentalBond) {
+      // 親の一撃→ばけのかわ無効、子の一撃が通る
+      effectiveRolls = childRollsArr
+      disguiseLabel = 'ばけのかわ発動（親を無効 → 子ダメのみ）'
+    } else if (multiHit?.type === 'fixed' && multiHit.count > 1) {
+      // 固定複数回: 1発目無効、残り(count-1)発が通る
+      const remaining = multiHit.count - 1
+      effectiveRolls = rolls.map(r => r * remaining)
+      disguiseLabel = `ばけのかわ発動（1発目無効 → 残${remaining}発）`
+    } else {
+      // 単発技: 全て無効
+      effectiveRolls = rolls.map(() => 0)
+      disguiseLabel = 'ばけのかわ発動（全弾無効）'
+    }
+  } else if (isParentalBond) {
+    // おやこあい通常: 親+子 合算
+    effectiveRolls = combinedRolls
+  } else {
+    effectiveRolls = rolls
+  }
+
+  // ── 表示値（主ダメージ表示に使う） ───────────────────────────────
+  const displayMin = effectiveRolls[0]
+  const displayMax = effectiveRolls[effectiveRolls.length - 1]
+  const displayPercentMin = displayMin / defenderMaxHp * 100
+  const displayPercentMax = displayMax / defenderMaxHp * 100
+
+  // KO確率: ばけのかわ定数ダメ分だけ実効HPを減らして再計算
+  const effectiveHpForKo = Math.max(1, defenderMaxHp - disguiseFlatDmg)
+  let displayKoResult: KoResult
+  if (isParentalBond || isDisguiseIntact) {
+    if (displayMin === 0 && displayMax === 0) {
+      // 単発+ばけのかわ無効: 固定ダメのみでKO判定
+      displayKoResult = disguiseFlatDmg >= defenderMaxHp
+        ? { type: 'guaranteed', hits: 1 }
+        : { type: 'no-ko' }
+    } else {
+      displayKoResult = calcKoProbability(effectiveRolls, effectiveHpForKo)
+    }
+  } else {
+    displayKoResult = result.koResult
+  }
+
+  // タイプ無効（元のダメージが0）→ "効果がない" 表示
   if (min === 0 && max === 0) {
     return (
       <div className="py-2 border-b border-slate-200 dark:border-slate-800">
@@ -196,12 +258,13 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   }
 
   function handleAddToAccum() {
+    // 加算には実効ロール（おやこあい合算 / ばけのかわ後）を使う
     addEntry({
-      label: `${attackerName} の${moveName}`,
-      rolls,
+      label: `${attackerName} の${moveName}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
+      rolls: effectiveRolls,
       usages: accumUsages,
-      minDmg: min,
-      maxDmg: max,
+      minDmg: displayMin,
+      maxDmg: displayMax,
       defenderMaxHp,
     })
     setAdded(true)
@@ -210,7 +273,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
 
   return (
     <div className="py-2 border-b border-slate-200 dark:border-slate-800 last:border-0">
-      {/* ヘッダー: 技名 + KOラベル + 加算回数セレクター */}
+      {/* ヘッダー: 技名バッジ + KOラベル + 加算回数セレクター */}
       <div className="flex items-baseline justify-between mb-1">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{moveName}</span>
@@ -219,10 +282,15 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
               {multiHit.type === 'fixed' ? `固定${multiHit.count}回` : '2〜5回'}
             </span>
           )}
+          {isParentalBond && (
+            <span className="text-[10px] px-1 py-0 rounded bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300 font-medium">
+              おやこあい
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={`text-xs font-bold ${koLabelColor(result)}`}>
-            {koLabel(result)}
+          <span className={`text-xs font-bold ${koLabelColor(displayKoResult)}`}>
+            {koLabel(displayKoResult)}
           </span>
           {/* 加算リストへの回数セレクター */}
           <div className="flex items-center gap-0.5">
@@ -257,11 +325,34 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
         </div>
       </div>
 
+      {/* ばけのかわ発動ライン */}
+      {isDisguiseIntact && (
+        <div className="text-[10px] text-purple-600 dark:text-purple-400 mb-1 flex items-center gap-2">
+          <span>🎭 {disguiseLabel}</span>
+          <span className="font-mono">
+            +固定{disguiseFlatDmg}
+            <span className="text-purple-400 dark:text-purple-500 ml-0.5">
+              ({(disguiseFlatDmg / defenderMaxHp * 100).toFixed(1)}%)
+            </span>
+          </span>
+        </div>
+      )}
+
+      {/* おやこあい内訳ライン（ばけのかわなし時のみ） */}
+      {isParentalBond && !isDisguiseIntact && (
+        <div className="text-[10px] text-pink-600 dark:text-pink-400 mb-1 font-mono">
+          親: {rolls[0]}〜{rolls[rolls.length - 1]}
+          <span className="mx-1 text-pink-400">+</span>
+          子: {childRollsArr[0]}〜{childRollsArr[childRollsArr.length - 1]}
+          <span className="ml-1 text-pink-500 dark:text-pink-500">= 合算</span>
+        </div>
+      )}
+
       {/* ダメージ範囲 + トグルボタン群 */}
       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-        <span className="text-sm font-mono text-slate-900 dark:text-slate-100">{min}〜{max}</span>
+        <span className="text-sm font-mono text-slate-900 dark:text-slate-100">{displayMin}〜{displayMax}</span>
         <span className="text-xs text-slate-700 dark:text-slate-400 font-mono">
-          ({percentMin.toFixed(1)}%〜{percentMax.toFixed(1)}%)
+          ({displayPercentMin.toFixed(1)}%〜{displayPercentMax.toFixed(1)}%)
         </span>
         <span className="text-xs text-slate-600 dark:text-slate-600">/{defenderMaxHp}</span>
         <div className="ml-auto flex items-center gap-1">
@@ -286,7 +377,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
         </div>
       </div>
 
-      <DamageBar percentMax={percentMax} koResult={result.koResult} />
+      <DamageBar percentMax={displayPercentMax} koResult={displayKoResult} />
 
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
@@ -295,20 +386,45 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
         </div>
       )}
 
-      {/* 16乱数表示 */}
+      {/* 乱数展開 */}
       {rollsExpanded && (
-        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-xs text-slate-600 mb-1">15乱数 (最小〜最大)</div>
-          <div className="flex flex-wrap gap-x-1 gap-y-0.5">
-            {rolls.map((r, i) => (
-              <span key={i} className={`text-xs font-mono ${rollKoClass(r, defenderMaxHp)}`}>
-                {r}
-              </span>
-            ))}
+        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+          {/* 実効ロール */}
+          <div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">
+              {isParentalBond && !isDisguiseIntact ? '合算15乱数（親+子）'
+                : isDisguiseIntact && isParentalBond ? '子ダメ15乱数'
+                : isDisguiseIntact ? '実効ダメ15乱数'
+                : '15乱数'}
+            </div>
+            <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+              {effectiveRolls.map((r, i) => (
+                <span key={i} className={`text-xs font-mono ${rollKoClass(r, effectiveHpForKo)}`}>
+                  {r}
+                </span>
+              ))}
+            </div>
           </div>
 
+          {/* おやこあい時: 親の素ロールを参考表示 */}
           {isParentalBond && (
-            <div className="mt-2">
+            <div>
+              <div className="text-xs text-slate-500 dark:text-slate-500 mb-0.5">
+                親ロール（参考）
+              </div>
+              <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+                {rolls.map((r, i) => (
+                  <span key={i} className="text-xs font-mono text-slate-500 dark:text-slate-600">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* おやこあい 15×15乱数表（ばけのかわなし時のみ） */}
+          {isParentalBond && !isDisguiseIntact && (
+            <div>
               <button
                 type="button"
                 onClick={() => setPbExpanded(v => !v)}
