@@ -55,6 +55,7 @@ function rollKoClass(roll: number, hp: number): string {
 
 // 定数ダメージのプリセット割合
 const CONST_FRACTIONS = [
+  { label: '1/32', num: 1, den: 32 },
   { label: '1/16', num: 1, den: 16 },
   { label: '1/8',  num: 1, den: 8  },
   { label: '1/6',  num: 1, den: 6  },
