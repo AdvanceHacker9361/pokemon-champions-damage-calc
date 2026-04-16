@@ -235,7 +235,8 @@
       "せいでんき",
       "ひらいしん"
     ],
-    "weight": 30
+    "weight": 30,
+    "megaEvolutionKey": "mega-raichu-x"
   },
   {
     "id": 52,
@@ -773,7 +774,8 @@
       "せいしんりょく",
       "マルチスケイル"
     ],
-    "weight": 210
+    "weight": 210,
+    "megaEvolutionKey": "mega-dragonite"
   },
   {
     "id": 150,
@@ -1769,7 +1771,8 @@
       "いたずらごころ",
       "あとだし"
     ],
-    "weight": 11
+    "weight": 11,
+    "megaEvolutionKey": "mega-sableye"
   },
   {
     "id": 303,
@@ -1839,7 +1842,8 @@
       "ヨガパワー",
       "テレパシー"
     ],
-    "weight": 31.5
+    "weight": 31.5,
+    "megaEvolutionKey": "mega-medicham"
   },
   {
     "id": 310,
@@ -1909,7 +1913,8 @@
       "ハードロック",
       "いかりのツボ"
     ],
-    "weight": 220
+    "weight": 220,
+    "megaEvolutionKey": "mega-camerupt"
   },
   {
     "id": 330,
@@ -2370,7 +2375,8 @@
       "いかく",
       "すてみ"
     ],
-    "weight": 24.9
+    "weight": 24.9,
+    "megaEvolutionKey": "mega-staraptor"
   },
   {
     "id": 400,
@@ -3084,7 +3090,8 @@
       "ゆきがくれ",
       "のろわれボディ"
     ],
-    "weight": 26.6
+    "weight": 26.6,
+    "megaEvolutionKey": "mega-froslass"
   },
   {
     "id": 484,
@@ -3148,7 +3155,8 @@
     "abilities": [
       "ナイトメア"
     ],
-    "weight": 50.5
+    "weight": 50.5,
+    "megaEvolutionKey": "mega-darkrai"
   },
   {
     "id": 492,
@@ -3300,7 +3308,8 @@
       "かたやぶり",
       "サンドフォース"
     ],
-    "weight": 40.4
+    "weight": 40.4,
+    "megaEvolutionKey": "mega-excadrill"
   },
   {
     "id": 534,
@@ -3345,7 +3354,8 @@
       "かそく",
       "むしのしらせ"
     ],
-    "weight": 200.5
+    "weight": 200.5,
+    "megaEvolutionKey": "mega-scolipede"
   },
   {
     "id": 549,
@@ -3411,7 +3421,8 @@
       "いかく",
       "じしんかじょう"
     ],
-    "weight": 30
+    "weight": 30,
+    "megaEvolutionKey": "mega-scrafty"
   },
   {
     "id": 563,
@@ -3675,7 +3686,8 @@
       "すりぬけ",
       "ほのおのからだ"
     ],
-    "weight": 34.3
+    "weight": 34.3,
+    "megaEvolutionKey": "mega-chandelure"
   },
   {
     "id": 612,
@@ -3788,7 +3800,8 @@
       "ノーガード",
       "ぶきよう"
     ],
-    "weight": 330
+    "weight": 330,
+    "megaEvolutionKey": "mega-golurk"
   },
   {
     "id": 625,
@@ -4187,7 +4200,8 @@
       "じしんかじょう",
       "きんちょうかん"
     ],
-    "weight": 81.5
+    "weight": 81.5,
+    "megaEvolutionKey": "mega-pyroar"
   },
   {
     "id": 671,
@@ -4275,7 +4289,8 @@
       "すりぬけ",
       "きゅうばん"
     ],
-    "weight": 47
+    "weight": 47,
+    "megaEvolutionKey": "mega-malamar"
   },
   {
     "id": 695,
@@ -4451,7 +4466,8 @@
       "オーラブレイク",
       "スワームチェンジ"
     ],
-    "weight": 305
+    "weight": 305,
+    "megaEvolutionKey": "mega-zygarde"
   },
   {
     "id": 724,
@@ -4715,7 +4731,8 @@
     "abilities": [
       "ききかいひ"
     ],
-    "weight": 108
+    "weight": 108,
+    "megaEvolutionKey": "mega-golisopod"
   },
   {
     "id": 773,
