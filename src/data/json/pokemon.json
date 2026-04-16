@@ -11154,6 +11154,28 @@
     "weight": 0.9
   },
   {
+    "id": 10670,
+    "name": "フラエッテ(えいえんのはな)",
+    "nameEn": "Floette-Eternal",
+    "types": [
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 74,
+      "atk": 65,
+      "def": 67,
+      "spa": 125,
+      "spd": 128,
+      "spe": 92
+    },
+    "abilities": [
+      "フラワーベール",
+      "きょうせい"
+    ],
+    "megaEvolutionKey": "mega-floette-eternal",
+    "weight": 0.9
+  },
+  {
     "id": 671,
     "name": "フラージェス",
     "nameEn": "Florges",
@@ -16698,7 +16720,7 @@
     },
     "abilities": [
       "まけんき",
-      "Supreme Overlord",
+      "そうだいしょう",
       "プレッシャー"
     ],
     "weight": 120

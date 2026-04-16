@@ -1333,5 +1333,23 @@
       "spe": 50
     },
     "ability": "いやしのこころ"
+  },
+  {
+    "key": "mega-floette-eternal",
+    "basePokemonId": 10670,
+    "name": "メガフラエッテ",
+    "nameEn": "Mega Floette-Eternal",
+    "types": [
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 74,
+      "atk": 85,
+      "def": 87,
+      "spa": 155,
+      "spd": 148,
+      "spe": 102
+    },
+    "ability": "フェアリーオーラ"
   }
 ]

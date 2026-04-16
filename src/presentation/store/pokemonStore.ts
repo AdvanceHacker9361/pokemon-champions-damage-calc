@@ -38,6 +38,8 @@ export interface PokemonStore {
   moves: [string | null, string | null, string | null, string | null]
   /** 可変威力技のスロットごとの選択威力（null = 技デフォルト値を使用） */
   movePowers: [number | null, number | null, number | null, number | null]
+  /** そうだいしょう: 倒れた味方の数 0/1/2 */
+  supremeOverlordBoost: 0 | 1 | 2
   // Derived (cached)
   baseStats: BaseStats
   types: TypeName[]
@@ -60,6 +62,7 @@ export interface PokemonStore {
   setProteanType: (type: TypeName | null) => void
   setMove: (slot: 0 | 1 | 2 | 3, moveName: string | null) => void
   setMovePower: (slot: 0 | 1 | 2 | 3, power: number | null) => void
+  setSupremeOverlordBoost: (v: 0 | 1 | 2) => void
   reset: () => void
 }
 
@@ -85,6 +88,7 @@ function createPokemonStore() {
     proteanType: null,
     moves: [null, null, null, null],
     movePowers: [null, null, null, null],
+    supremeOverlordBoost: 0,
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
     weight: 0,
@@ -131,6 +135,7 @@ function createPokemonStore() {
         status: null,
         abilityActivated: false,
         proteanType: null,
+        supremeOverlordBoost: 0,
       })
     },
 
@@ -246,6 +251,8 @@ function createPokemonStore() {
       return { movePowers }
     }),
 
+    setSupremeOverlordBoost: (v) => set({ supremeOverlordBoost: v }),
+
     reset: () => set({
       pokemonId: null, pokemonName: '',
       statNatures: { ...DEFAULT_STAT_NATURES },
@@ -255,6 +262,7 @@ function createPokemonStore() {
       abilityActivated: false, proteanType: null,
       moves: [null, null, null, null],
       movePowers: [null, null, null, null],
+      supremeOverlordBoost: 0,
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',
     }),

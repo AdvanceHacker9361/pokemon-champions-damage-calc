@@ -14,6 +14,7 @@ export interface DamageCalcInput {
   attackerItem: string | null
   attackerStatus: StatusCondition
   attackerAbilityActivated?: boolean
+  attackerSupremeOverlordBoost?: number  // 0=なし, 1=×1.1, 2=×1.2
   attackerRankModifiers: Record<string, number>
   attackerWeight?: number
   defenderStats: ComputedStats
@@ -105,6 +106,11 @@ function resolveAtk(input: DamageCalcInput): number {
     if (attackerAbility === 'もうか'     && move.type === 'ほのお') atkMod *= 1.5
     if (attackerAbility === 'しんりょく' && move.type === 'くさ') atkMod *= 1.5
     if (attackerAbility === 'むしのしらせ' && move.type === 'むし') atkMod *= 1.5
+  }
+
+  // そうだいしょう: 味方の倒れた数に応じて攻撃・特攻を強化（手動入力）
+  if (attackerAbility === 'そうだいしょう' && input.attackerSupremeOverlordBoost) {
+    atkMod *= 1 + input.attackerSupremeOverlordBoost * 0.1
   }
 
   // 持ち物補正（攻撃側）
@@ -386,6 +392,12 @@ function applyOtherModifiers(
   }
   if (defenderAbility === 'もふもふ' && move.type === 'ほのお') {
     d = pokeRound(d * 2)
+  }
+
+  // フェアリーオーラ: 攻撃側・防御側どちらが持っていてもフェアリー技1.33倍
+  if ((attackerAbility === 'フェアリーオーラ' || defenderAbility === 'フェアリーオーラ') &&
+      moveType === 'フェアリー') {
+    d = pokeRound(d * 4 / 3)
   }
 
   // 攻撃側特性
