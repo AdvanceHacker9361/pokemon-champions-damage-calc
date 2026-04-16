@@ -943,5 +943,30 @@
     "name": "きよめのしお",
     "nameEn": "Purifying Salt",
     "calcTag": "none"
+  },
+  {
+    "name": "ひひいろのこどう",
+    "nameEn": "Guts",
+    "calcTag": "guts"
+  },
+  {
+    "name": "ちょとつもうしん",
+    "nameEn": "Reckless",
+    "calcTag": "reckless"
+  },
+  {
+    "name": "いかりのツボ",
+    "nameEn": "Anger Point",
+    "calcTag": "anger-point"
+  },
+  {
+    "name": "サンドフォース",
+    "nameEn": "Sand Force",
+    "calcTag": "sand-force"
+  },
+  {
+    "name": "てつのとげ",
+    "nameEn": "Iron Barbs",
+    "calcTag": "iron-barbs"
   }
 ]
