@@ -2427,7 +2427,7 @@
     "nameEn": "Reversal",
     "type": "かくとう",
     "category": "物理",
-    "power": 1,
+    "power": 20,
     "accuracy": 100,
     "pp": 16,
     "priority": 0,
@@ -3912,7 +3912,7 @@
     "nameEn": "Flail",
     "type": "ノーマル",
     "category": "物理",
-    "power": null,
+    "power": 20,
     "accuracy": 100,
     "pp": 16,
     "priority": 0,
@@ -3925,7 +3925,7 @@
       "bite": false,
       "slice": false
     },
-    "special": null,
+    "special": "reversal",
     "multiHit": null
   },
   {

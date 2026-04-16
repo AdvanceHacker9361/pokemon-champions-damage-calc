@@ -5,6 +5,8 @@ import { useResultStore } from '@/presentation/store/resultStore'
 import { executeDamageCalculation } from '@/application/usecases/CalculateDamageUseCase'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { createDefaultBattleField } from '@/domain/models/BattleField'
+import { calculateHP } from '@/domain/calculators/StatCalculator'
+import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 
 export function useDamageCalc() {
   const attacker = useAttackerStore()
@@ -33,10 +35,19 @@ export function useDamageCalc() {
         let move = MoveRepository.findByName(moveName)
         if (!move || move.category === '変化') return null
 
-        // 可変威力技: ユーザーが選択した威力を上書き
+        // 可変威力技: ユーザーが選択した威力を上書き（おはかまいり等）
         const powerOverride = attacker.movePowers[slotIdx]
         if (powerOverride !== null && move.powerOptions?.includes(powerOverride)) {
           move = { ...move, power: powerOverride }
+        }
+
+        // きしかいせい / じたばた: HP入力から威力を解決
+        if (move.special === 'reversal') {
+          const maxHP = calculateHP(attacker.baseStats.hp, attacker.sp.hp)
+          // movePowers[slot] に HP入力から計算した威力が格納されている場合はそれを使用
+          // 未入力の場合はデフォルト（満タン=威力20）
+          const resolvedPower = powerOverride ?? resolveReversalPower(maxHP, maxHP)
+          move = { ...move, power: resolvedPower }
         }
 
         try {

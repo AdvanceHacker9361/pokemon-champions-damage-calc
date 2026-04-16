@@ -3,6 +3,21 @@ import type { ComputedStats } from '@/domain/models/Pokemon'
 import type { MoveCategory } from '@/domain/models/Pokemon'
 import type { StatusCondition } from '@/domain/models/Pokemon'
 
+/**
+ * きしかいせい / じたばた の HP別威力を返す
+ * ratio = floor(48 * currentHP / maxHP) で6段階に分類
+ */
+export function resolveReversalPower(currentHP: number, maxHP: number): number {
+  if (maxHP <= 0) return 20
+  const ratio = Math.floor(48 * Math.max(1, currentHP) / maxHP)
+  if (ratio < 2)  return 200  // HP ≈ 4% 以下
+  if (ratio < 5)  return 150  // HP ≈ 9% 以下
+  if (ratio < 9)  return 100  // HP ≈ 17% 以下
+  if (ratio < 17) return 80   // HP ≈ 34% 以下
+  if (ratio < 33) return 40   // HP ≈ 68% 以下
+  return 20                    // それ以上
+}
+
 /** 体重別威力テーブル (くさむすび・けたぐり) */
 const WEIGHT_POWER_TABLE: { maxWeight: number; power: number }[] = [
   { maxWeight: 10,   power: 20 },
