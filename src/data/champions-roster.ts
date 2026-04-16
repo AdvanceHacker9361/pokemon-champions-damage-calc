@@ -11,6 +11,7 @@
 export const CHAMPIONS_POKEMON_IDS: string[] = [
   // Gen 1
   'bulbasaur',
+  'beedrill',
   'ivysaur',
   'venusaur',
   'charmander',
