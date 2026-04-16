@@ -201,7 +201,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
 
   const power = resolvePower(input)
   if (power === 0) {
-    const zeroRolls = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls']
+    const zeroRolls = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls']
     return {
       rolls: zeroRolls, min: 0, max: 0,
       defenderMaxHp: defenderStats.hp,

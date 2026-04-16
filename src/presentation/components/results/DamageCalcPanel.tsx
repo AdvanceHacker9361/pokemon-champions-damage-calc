@@ -71,22 +71,23 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
   )
   const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
 
-  // 実効 HP（定数ダメ・回復を差し引き）
-  const netConst = constDmg - constRec
-  const effectiveHp = Math.max(1, defenderMaxHp - netConst)
+  // 定数合計 = 定数ダメ + もうどく累計 - 定数回復（自動合算）
+  const totalConst = constDmg + poisonTotal - constRec
+  const effectiveHp = Math.max(1, defenderMaxHp - totalConst)
 
   // 選択済みの技のみ総合計算に含める
   const selectedResults = results.filter(({ moveName }) => getHitCount(moveName) !== undefined)
   const hasSelection = selectedResults.length > 0
+  // 技未選択でも定数系がある場合は総合を表示
+  const hasAnything = hasSelection || totalConst !== 0
 
-  const totalMin = hasSelection
-    ? selectedResults.reduce((s, { moveName, result }) =>
-        s + result.min * (getHitCount(moveName) ?? 1), 0) + netConst
-    : 0
-  const totalMax = hasSelection
-    ? selectedResults.reduce((s, { moveName, result }) =>
-        s + result.max * (getHitCount(moveName) ?? 1), 0) + netConst
-    : 0
+  const moveDmgMin = selectedResults.reduce((s, { moveName, result }) =>
+    s + result.min * (getHitCount(moveName) ?? 1), 0)
+  const moveDmgMax = selectedResults.reduce((s, { moveName, result }) =>
+    s + result.max * (getHitCount(moveName) ?? 1), 0)
+
+  const totalMin = moveDmgMin + totalConst
+  const totalMax = moveDmgMax + totalConst
   const totalMinPct = totalMin / defenderMaxHp * 100
   const totalMaxPct = totalMax / defenderMaxHp * 100
 
@@ -99,7 +100,7 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
   }
   const combinedKoProb = hasSelection
     ? calcCombinedKoProbability(rollSets, effectiveHp)
-    : 0
+    : totalConst >= defenderMaxHp ? 1 : 0
   const probDisplay = combinedKoProb >= 1.0 ? '確定KO'
     : combinedKoProb <= 0 ? '倒せない'
     : `${(combinedKoProb * 100).toFixed(1)}%`
@@ -113,7 +114,7 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
         className="w-full flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors py-1"
       >
         <span className="font-medium">{expanded ? '▲' : '▼'} 加算計算</span>
-        {!expanded && hasSelection && (
+        {!expanded && hasAnything && (
           <span className={`text-xs font-bold ${koColor(combinedKoProb)}`}>
             {probDisplay}
           </span>
@@ -326,20 +327,7 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
                       ({(poisonTotal / defenderMaxHp * 100).toFixed(1)}%)
                     </span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setConstDmg(v => v + poisonTotal)}
-                    className="text-[10px] px-1.5 py-0.5 rounded border border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
-                  >
-                    +定数ダメ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConstDmg(poisonTotal)}
-                    className="text-[10px] px-1.5 py-0.5 rounded border border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 transition-colors"
-                  >
-                    =定数ダメ
-                  </button>
+                  <span className="text-[10px] text-purple-500 dark:text-purple-500">→ 総合累積に自動加算</span>
                 </div>
               </div>
             )}
@@ -349,9 +337,9 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
 
           {/* 総合ダメージ結果 */}
           <div className="space-y-2">
-            {!hasSelection ? (
+            {!hasAnything ? (
               <div className="text-xs text-slate-400 dark:text-slate-600 text-center py-1">
-                技の発数を選択すると総合累積が計算されます
+                技の発数または定数ダメ・もうどく等を設定すると総合累積が計算されます
               </div>
             ) : (
               <>
