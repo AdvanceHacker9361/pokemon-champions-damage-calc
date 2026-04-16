@@ -52,9 +52,18 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
 
   const defenderMaxHp = results[0].result.defenderMaxHp
 
-  const getHitCount = (moveName: string) => hitCounts[moveName] ?? 1
-  const setHitCount = (moveName: string, n: number) =>
-    setHitCounts(prev => ({ ...prev, [moveName]: n }))
+  // undefined = 未選択（総合計算に含めない）
+  const getHitCount = (moveName: string): number | undefined => hitCounts[moveName]
+  const toggleHitCount = (moveName: string, n: number) =>
+    setHitCounts(prev => {
+      const next = { ...prev }
+      if (next[moveName] === n) {
+        delete next[moveName]  // 同じボタン再クリック → 解除
+      } else {
+        next[moveName] = n
+      }
+      return next
+    })
 
   // もうどく累積計算
   const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
@@ -66,22 +75,31 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
   const netConst = constDmg - constRec
   const effectiveHp = Math.max(1, defenderMaxHp - netConst)
 
-  // 総合ダメージ計算
-  const totalMin = results.reduce((s, { moveName, result }) =>
-    s + result.min * getHitCount(moveName), 0) + netConst
-  const totalMax = results.reduce((s, { moveName, result }) =>
-    s + result.max * getHitCount(moveName), 0) + netConst
+  // 選択済みの技のみ総合計算に含める
+  const selectedResults = results.filter(({ moveName }) => getHitCount(moveName) !== undefined)
+  const hasSelection = selectedResults.length > 0
+
+  const totalMin = hasSelection
+    ? selectedResults.reduce((s, { moveName, result }) =>
+        s + result.min * (getHitCount(moveName) ?? 1), 0) + netConst
+    : 0
+  const totalMax = hasSelection
+    ? selectedResults.reduce((s, { moveName, result }) =>
+        s + result.max * (getHitCount(moveName) ?? 1), 0) + netConst
+    : 0
   const totalMinPct = totalMin / defenderMaxHp * 100
   const totalMaxPct = totalMax / defenderMaxHp * 100
 
-  // 各技の乱数セットを hitCount 回分展開して結合KO確率を計算
+  // 選択済み技の乱数セットを hitCount 回分展開して結合KO確率を計算
   const rollSets: number[][] = []
-  for (const { moveName, result } of results) {
-    const count = getHitCount(moveName)
+  for (const { moveName, result } of selectedResults) {
+    const count = getHitCount(moveName) ?? 1
     const rolls = Array.from(result.rolls)
     for (let i = 0; i < count; i++) rollSets.push(rolls)
   }
-  const combinedKoProb = calcCombinedKoProbability(rollSets, effectiveHp)
+  const combinedKoProb = hasSelection
+    ? calcCombinedKoProbability(rollSets, effectiveHp)
+    : 0
   const probDisplay = combinedKoProb >= 1.0 ? '確定KO'
     : combinedKoProb <= 0 ? '倒せない'
     : `${(combinedKoProb * 100).toFixed(1)}%`
@@ -95,7 +113,7 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
         className="w-full flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors py-1"
       >
         <span className="font-medium">{expanded ? '▲' : '▼'} 加算計算</span>
-        {!expanded && totalMin > 0 && (
+        {!expanded && hasSelection && (
           <span className={`text-xs font-bold ${koColor(combinedKoProb)}`}>
             {probDisplay}
           </span>
@@ -108,17 +126,19 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
           <div className="space-y-1.5">
             {results.map(({ moveName, result }) => {
               const hc = getHitCount(moveName)
+              const isActive = hc !== undefined
               const rolls = Array.from(result.rolls)
-              const prob = calcKoProbabilityForNHits(rolls, effectiveHp, hc)
-              const hMin = result.min * hc
-              const hMax = result.max * hc
-              const hMinPct = hMin / defenderMaxHp * 100
-              const hMaxPct = hMax / defenderMaxHp * 100
-              const pDisp = prob >= 1 ? '確定' : prob <= 0 ? '不可' : `${(prob * 100).toFixed(1)}%`
-              const pColor = koColor(prob)
+              const prob = isActive ? calcKoProbabilityForNHits(rolls, effectiveHp, hc!) : null
+              const hMin = isActive ? result.min * hc! : null
+              const hMax = isActive ? result.max * hc! : null
+              const hMinPct = hMin !== null ? hMin / defenderMaxHp * 100 : null
+              const hMaxPct = hMax !== null ? hMax / defenderMaxHp * 100 : null
+              const pDisp = prob === null ? null
+                : prob >= 1 ? '確定' : prob <= 0 ? '不可' : `${(prob * 100).toFixed(1)}%`
+              const pColor = prob !== null ? koColor(prob) : ''
               return (
-                <div key={moveName} className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-slate-700 dark:text-slate-300 w-24 truncate flex-shrink-0">
+                <div key={moveName} className={`flex items-center gap-2 flex-wrap rounded px-1 py-0.5 transition-colors ${isActive ? 'bg-slate-100 dark:bg-slate-800' : ''}`}>
+                  <span className={`text-xs w-24 truncate flex-shrink-0 ${isActive ? 'text-slate-800 dark:text-slate-200 font-medium' : 'text-slate-500 dark:text-slate-500'}`}>
                     {moveName}
                   </span>
                   <div className="flex gap-0.5">
@@ -126,24 +146,31 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
                       <button
                         key={n}
                         type="button"
-                        onClick={() => setHitCount(moveName, n)}
+                        onClick={() => toggleHitCount(moveName, n)}
                         className={`w-6 h-6 text-xs rounded transition-colors ${
                           hc === n
                             ? 'bg-blue-600 dark:bg-blue-700 text-white'
                             : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
                         }`}
+                        title={hc === n ? 'クリックで解除' : `${n}発で加算`}
                       >
                         {n}
                       </button>
                     ))}
                   </div>
-                  <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
-                    {hMin}〜{hMax}
-                    <span className="text-slate-500 dark:text-slate-500 ml-1">
-                      ({hMinPct.toFixed(1)}%〜{hMaxPct.toFixed(1)}%)
-                    </span>
-                  </span>
-                  <span className={`text-xs font-bold ml-auto ${pColor}`}>{pDisp}</span>
+                  {isActive && hMin !== null && hMax !== null && hMinPct !== null && hMaxPct !== null ? (
+                    <>
+                      <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
+                        {hMin}〜{hMax}
+                        <span className="text-slate-500 dark:text-slate-500 ml-1">
+                          ({hMinPct.toFixed(1)}%〜{hMaxPct.toFixed(1)}%)
+                        </span>
+                      </span>
+                      <span className={`text-xs font-bold ml-auto ${pColor}`}>{pDisp}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-400 dark:text-slate-600">— 未選択</span>
+                  )}
                 </div>
               )
             })}
@@ -322,42 +349,47 @@ export function DamageCalcPanel({ results }: DamageCalcPanelProps) {
 
           {/* 総合ダメージ結果 */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-slate-600 dark:text-slate-400">総合累積: </span>
-                <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">
-                  {totalMin}〜{totalMax}
-                </span>
-                <span className="text-xs font-mono text-slate-600 dark:text-slate-400 ml-1">
-                  ({totalMinPct.toFixed(1)}%〜{totalMaxPct.toFixed(1)}%)
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-600 ml-1">
-                  /{defenderMaxHp}
-                </span>
+            {!hasSelection ? (
+              <div className="text-xs text-slate-400 dark:text-slate-600 text-center py-1">
+                技の発数を選択すると総合累積が計算されます
               </div>
-              <span className={`text-sm font-bold ${koColor(combinedKoProb)}`}>
-                {probDisplay}
-              </span>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-xs text-slate-600 dark:text-slate-400">総合累積: </span>
+                    <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">
+                      {totalMin}〜{totalMax}
+                    </span>
+                    <span className="text-xs font-mono text-slate-600 dark:text-slate-400 ml-1">
+                      ({totalMinPct.toFixed(1)}%〜{totalMaxPct.toFixed(1)}%)
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-600 ml-1">
+                      /{defenderMaxHp}
+                    </span>
+                  </div>
+                  <span className={`text-sm font-bold ${koColor(combinedKoProb)}`}>
+                    {probDisplay}
+                  </span>
+                </div>
 
-            {/* 防御側 HP バー */}
-            <div className="relative h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              {/* 最大ダメージ（薄い） */}
-              <div
-                className="absolute left-0 h-full bg-red-500 rounded-full transition-all"
-                style={{ width: `${Math.min(100, totalMaxPct)}%`, opacity: 0.35 }}
-              />
-              {/* 最小ダメージ（濃い） */}
-              <div
-                className="absolute left-0 h-full bg-red-500 rounded-full transition-all"
-                style={{ width: `${Math.min(100, totalMinPct)}%` }}
-              />
-              {/* HP=100% のライン */}
-              <div
-                className="absolute top-0 bottom-0 w-px bg-white dark:bg-slate-300 opacity-50"
-                style={{ left: '100%', transform: 'translateX(-1px)' }}
-              />
-            </div>
+                {/* 防御側 HP バー */}
+                <div className="relative h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="absolute left-0 h-full bg-red-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, totalMaxPct)}%`, opacity: 0.35 }}
+                  />
+                  <div
+                    className="absolute left-0 h-full bg-red-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, totalMinPct)}%` }}
+                  />
+                  <div
+                    className="absolute top-0 bottom-0 w-px bg-white dark:bg-slate-300 opacity-50"
+                    style={{ left: '100%', transform: 'translateX(-1px)' }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
