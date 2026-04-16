@@ -196,6 +196,29 @@
     "weight": 85.5
   },
   {
+    "id": 15,
+    "name": "スピアー",
+    "nameEn": "Beedrill",
+    "types": [
+      "むし",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 90,
+      "def": 40,
+      "spa": 45,
+      "spd": 80,
+      "spe": 75
+    },
+    "abilities": [
+      "むしのしらせ",
+      "スナイパー"
+    ],
+    "megaEvolutionKey": "mega-beedrill",
+    "weight": 29.5
+  },
+  {
     "id": 25,
     "name": "ピカチュウ",
     "nameEn": "Pikachu",
