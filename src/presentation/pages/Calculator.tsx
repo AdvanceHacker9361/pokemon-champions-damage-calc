@@ -34,14 +34,14 @@ function swapStores() {
 
 /** 初期ポケモン設定 */
 function initDefaults() {
-  // 攻撃側: ガブリアス A182 (atk SP=32) げきりん/じしん/いわなだれ/ほのおのキバ
+  // 攻撃側: ガブリアス A182 (atk SP=32) げきりん/じしん/いわなだれ/どくづき
   const atk = useAttackerStore.getState()
   atk.setPokemon(445)                  // ガブリアス
   useAttackerStore.getState().setSp('atk', 32)
   useAttackerStore.getState().setMove(0, 'げきりん')
   useAttackerStore.getState().setMove(1, 'じしん')
   useAttackerStore.getState().setMove(2, 'いわなだれ')
-  useAttackerStore.getState().setMove(3, 'ほのおのキバ')
+  useAttackerStore.getState().setMove(3, 'どくづき')
 
   // 防御側: メガガルーラ H207(hp SP=27) B121(def SP=1) D121(spd SP=1)
   // すてみタックル/ねこだまし/じしん/ふいうち
