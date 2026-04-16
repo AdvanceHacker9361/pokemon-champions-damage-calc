@@ -139,6 +139,34 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             </div>
           )}
 
+          {/* そうだいしょう: 倒れた味方の数 */}
+          {store.effectiveAbility === 'そうだいしょう' && (
+            <div>
+              <label className="label block mb-1">倒れた味方</label>
+              <div className="flex gap-1.5">
+                {([0, 1, 2] as const).map(v => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => store.setSupremeOverlordBoost(v)}
+                    className={`flex-1 text-xs px-2 py-0.5 rounded border transition-colors ${
+                      store.supremeOverlordBoost === v
+                        ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white font-semibold'
+                        : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                    }`}
+                  >
+                    {v === 0 ? 'なし' : `×${(1 + v * 0.1).toFixed(1)}`}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                {store.supremeOverlordBoost === 0
+                  ? '補正なし'
+                  : `A・C が ×${(1 + store.supremeOverlordBoost * 0.1).toFixed(1)} になります`}
+              </p>
+            </div>
+          )}
+
           {/* 特性発動トグル（条件付き特性のみ表示） */}
           {abilityConditionLabel && (
             <div className="space-y-2">

@@ -62,6 +62,7 @@ export function useDamageCalc() {
               ranks: attacker.ranks,
               status: attacker.status,
               abilityActivated: attacker.abilityActivated,
+              supremeOverlordBoost: attacker.supremeOverlordBoost,
               proteanType: attacker.proteanType,
               weight: attacker.weight,
             },
@@ -92,7 +93,7 @@ export function useDamageCalc() {
   }, [
     attacker.pokemonId, attacker.sp, attacker.statNatures,
     attacker.effectiveAbility, attacker.itemName, attacker.moves, attacker.movePowers,
-    attacker.ranks, attacker.status, attacker.abilityActivated, attacker.proteanType,
+    attacker.ranks, attacker.status, attacker.abilityActivated, attacker.supremeOverlordBoost, attacker.proteanType,
     defender.pokemonId, defender.sp, defender.statNatures,
     defender.effectiveAbility, defender.itemName,
     defender.ranks, defender.status, defender.abilityActivated, defender.proteanType,
