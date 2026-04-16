@@ -34,18 +34,34 @@ export interface CalculateDamageInput {
 export function executeDamageCalculation(
   input: CalculateDamageInput,
 ): DamageResult {
+  /** かたやぶり系: 相手の特性を無効化する特性 */
+  const MOLD_BREAKER_ABILITIES = new Set(['かたやぶり', 'ターボブレイズ', 'テラボルテージ'])
+  const attackerHasMoldBreaker = MOLD_BREAKER_ABILITIES.has(input.attacker.abilityName)
+
+  // てんねん: 相手の攻撃/防御ランク補正を無効化して実数値を再計算
+  // ただし攻撃側がかたやぶり系の場合はてんねんを無視してランク補正をそのまま採用
+  const attackerRanks =
+    input.defender.abilityName === 'てんねん' && !attackerHasMoldBreaker
+      ? { ...input.attacker.ranks, atk: 0, spa: 0 }
+      : input.attacker.ranks
+
+  const defenderRanks =
+    input.attacker.abilityName === 'てんねん'
+      ? { ...input.defender.ranks, def: 0, spd: 0 }
+      : input.defender.ranks
+
   const attackerStats = calculateStats({
     baseStats: input.attacker.baseStats,
     sp: input.attacker.sp,
     statNatures: input.attacker.statNatures,
-    ranks: input.attacker.ranks,
+    ranks: attackerRanks,
   })
 
   const defenderStats = calculateStats({
     baseStats: input.defender.baseStats,
     sp: input.defender.sp,
     statNatures: input.defender.statNatures,
-    ranks: input.defender.ranks,
+    ranks: defenderRanks,
   })
 
   return calculateDamage({
