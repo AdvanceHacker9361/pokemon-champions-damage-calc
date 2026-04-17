@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
-import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
@@ -71,8 +70,6 @@ export function Calculator() {
 
   return (
     <>
-      <FieldStateBar />
-
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         {/* モバイル: 攻守交代ボタンを最上部に表示 */}
         <div className="flex justify-center mb-3 lg:hidden">
