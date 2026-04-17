@@ -1,6 +1,7 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
 import { DamageAccumPanel } from './DamageAccumPanel'
+import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useAccumStore } from '@/presentation/store/accumStore'
 
@@ -10,27 +11,23 @@ export function DamageResultArea() {
   const defenderName = useDefenderStore(s => s.pokemonName)
   const accumEntries = useAccumStore(s => s.entries)
 
+  const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
+
   if (!attackerName || !defenderName) {
     return (
-      <div className="panel text-center py-8">
-        <p className="text-slate-500 text-sm">攻撃側・防御側のポケモンを選択してください</p>
-      </div>
+      <>
+        <div className="panel text-center py-8">
+          <p className="text-slate-500 text-sm">攻撃側・防御側のポケモンを選択してください</p>
+        </div>
+        <FieldStateBar />
+        <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
+      </>
     )
   }
-
-  if (results.length === 0 && accumEntries.length === 0) {
-    return (
-      <div className="panel text-center py-8">
-        <p className="text-slate-500 text-sm">攻撃側に技を選択するとダメージが計算されます</p>
-      </div>
-    )
-  }
-
-  const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
 
   return (
     <>
-      {results.length > 0 && (
+      {results.length > 0 ? (
         <div className="panel">
           <div className="text-xs text-slate-500 mb-3">
             {attackerName} → {defenderName}
@@ -41,7 +38,12 @@ export function DamageResultArea() {
             ))}
           </div>
         </div>
+      ) : (
+        <div className="panel text-center py-8">
+          <p className="text-slate-500 text-sm">攻撃側に技を選択するとダメージが計算されます</p>
+        </div>
       )}
+      <FieldStateBar />
       <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
     </>
   )
