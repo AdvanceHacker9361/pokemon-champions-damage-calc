@@ -20,6 +20,7 @@ export interface MegaPokemonRecord {
   types: TypeName[]
   baseStats: Record<StatKey, number>
   ability: string
+  weight?: number
 }
 
 export interface MoveRecord {
