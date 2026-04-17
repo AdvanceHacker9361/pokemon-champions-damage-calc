@@ -15,6 +15,7 @@ interface AccumStore {
   entries: AccumEntry[]
   addEntry: (entry: Omit<AccumEntry, 'id'>) => void
   removeEntry: (id: string) => void
+  setEntryUsages: (id: string, usages: number) => void
   clearEntries: () => void
 }
 
@@ -28,5 +29,10 @@ export const useAccumStore = create<AccumStore>(set => ({
     }],
   })),
   removeEntry: (id) => set(s => ({ entries: s.entries.filter(e => e.id !== id) })),
+  setEntryUsages: (id, usages) => set(s => ({
+    entries: s.entries.map(e =>
+      e.id === id ? { ...e, usages: Math.max(1, Math.min(9, Math.floor(usages))) } : e
+    ),
+  })),
   clearEntries: () => set({ entries: [] }),
 }))
