@@ -1,4 +1,4 @@
-import type { TypeName, MoveCategory } from '@/domain/models/Pokemon'
+import type { TypeName, MoveCategory, StatKey } from '@/domain/models/Pokemon'
 
 /**
  * 連続技の回数データ
@@ -52,4 +52,6 @@ export interface MoveData {
   multiHit?: MultiHitData | null
   /** 可変威力の選択肢（おはかまいり等） */
   powerOptions?: number[]
+  /** 使用後の自ステータス低下（りゅうせいぐん=spa-2 等） */
+  selfStatDrop?: { stat: StatKey; stages: number }
 }

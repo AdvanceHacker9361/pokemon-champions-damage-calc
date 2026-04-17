@@ -45,6 +45,8 @@ export interface MoveRecord {
   multiHit?: MultiHitData | null
   /** 可変威力の選択肢（おはかまいり等） */
   powerOptions?: number[]
+  /** 使用後の自ステータス低下（りゅうせいぐん=spa-2 等） */
+  selfStatDrop?: { stat: StatKey; stages: number }
 }
 
 export interface AbilityRecord {
