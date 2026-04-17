@@ -6,6 +6,30 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-04-17
+
+### Added
+- **急所（クリティカルヒット）トグル**: 各ダメージ結果行に「急所」ボタンを追加
+  - `useDamageCalc.ts` で通常・急所の両方を事前計算し `critResult` として保持
+  - 急所時は壁無効・1.5× 補正・ランク補正の扱いを自動調整
+  - 急所モードで "+ 加算" すると急所ダメージが累積される
+- **自己デバフ技の簡易ランク低下ボタン**: りゅうせいぐん・オーバーヒート・リーフストーム等を使用後、攻撃側 C ランクを 2 段階下げるボタンを結果行に追加
+  - `moves.json` に `selfStatDrop: { stat, stages }` フィールドを導入
+  - 現在ランクが既に下限（-6）の場合は disabled
+  - 誤適用防止のため自動ではなく手動ボタン
+- **CLAUDE.md**: プロジェクト概要・アーキテクチャ・V2.1 設計経緯・主要ファイル一覧を追加
+
+### Changed
+- **加算パネルの統合**: 結果行の 1–5 回ボタンと `DamageCalcPanel` の重複 UI を単一 "+ 加算" ボタンに集約
+  - `DamageAccumPanel` に `[−] ×N [+]` 調整 UI を統合（使用回数 1–9）
+  - 異なる攻撃側/防御側の組み合わせを横断した累積ダメージが可能に
+  - `DamageCalcPanel.tsx` を削除し `DamageAccumPanel.tsx` に一本化
+  - `accumStore.ts` に `setEntryUsages` アクションを追加
+- **FieldStateBar の位置変更**: 天候/フィールド/壁パネルをページ上部から「結果行 ↓ FieldStateBar ↓ 加算パネル」の間へ移動
+  - `DamageResultArea.tsx` 内で `<FieldStateBar />` をレンダリング
+  - `Calculator.tsx` から該当セクションを削除
+- `MoveResult` 型に `critResult: DamageResult` を追加（`resultStore.ts`）
+
 ## [2.0.0] - 2026-04-16
 
 ### Added
