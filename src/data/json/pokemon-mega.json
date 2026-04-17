@@ -1370,5 +1370,24 @@
       "spe": 75
     },
     "ability": "とびだすハバネロ"
+  },
+  {
+    "key": "mega-clefable",
+    "basePokemonId": 36,
+    "name": "メガピクシー",
+    "nameEn": "Mega Clefable",
+    "types": [
+      "フェアリー",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 80,
+      "def": 93,
+      "spa": 135,
+      "spd": 110,
+      "spe": 70
+    },
+    "ability": "マジックミラー"
   }
 ]
