@@ -45,6 +45,11 @@ function multiHitKoColor(prob: number): string {
   return 'text-slate-600'
 }
 
+/** StatKey → 日本語ランク表記 (A/B/C/D/S) */
+const STAT_LETTER: Record<string, string> = {
+  hp: 'HP', atk: 'A', def: 'B', spa: 'C', spd: 'D', spe: 'S',
+}
+
 /** 1ロール値をKO判定色でクラス取得 */
 function rollKoClass(roll: number, hp: number): string {
   if (roll >= hp) return 'text-red-500 dark:text-red-400 font-bold'
@@ -180,6 +185,8 @@ export function DamageResultRow({ moveName, result, critResult }: DamageResultRo
   const addEntry = useAccumStore(s => s.addEntry)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
+  const attackerRanks = useAttackerStore(s => s.ranks)
+  const setAttackerRank = useAttackerStore(s => s.setRank)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
 
@@ -321,6 +328,32 @@ export function DamageResultRow({ moveName, result, critResult }: DamageResultRo
           >
             {added ? '✓ 追加' : '+ 加算'}
           </button>
+          {/* 使用後の自ステータス低下ボタン（りゅうせいぐん等） */}
+          {moveRecord?.selfStatDrop && (() => {
+            const { stat, stages } = moveRecord.selfStatDrop
+            const letter = STAT_LETTER[stat] ?? stat
+            const sign = stages >= 0 ? '+' : '−'
+            const abs = Math.abs(stages)
+            const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
+            const targetRank = currentRank + stages
+            const clamped = Math.max(-6, Math.min(6, targetRank))
+            const willApply = clamped !== currentRank
+            return (
+              <button
+                type="button"
+                onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
+                disabled={!willApply}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  willApply
+                    ? 'border-rose-400 dark:border-rose-600 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                }`}
+                title={`攻撃側の${letter}ランクを${abs}段階${stages < 0 ? '下げる' : '上げる'}（現在: ${currentRank} → ${clamped}）`}
+              >
+                ↓{letter}{sign}{abs}
+              </button>
+            )
+          })()}
         </div>
       </div>
 
