@@ -75,6 +75,34 @@ src/
 - `DamageResultRow.tsx` でボタンとして描画、現在ランクが既に -6 の場合は disabled
 - **自動適用ではなく手動ボタン**（意図しない変更を防ぐため）
 
+### 5. 体重依存技の修正（けたぐり・くさむすび・ヘビーボンバー）
+
+#### 5-1. 体重境界の比較演算子修正
+- `SpecialMoveCalc.ts` の `getWeightPower` で `weight <= maxWeight` → `weight < maxWeight` に変更
+- Showdown 準拠の `>= N` 形式と等価に（境界値での判定が正しくなる）
+- 例: 100.0kg のポケモンは従来パワー 80 → 正しくはパワー 100
+  - フシギバナ(100.0)・メガガルーラ(100.0)・メガラグラージ(102.0) など
+
+#### 5-2. メガシンカ時の体重更新
+- `pokemon-mega.json` に全 74 件の `weight` フィールドを追加
+- `MegaPokemonRecord` 型にも `weight?: number` を追加（`schemas/types.ts`）
+- `pokemonStore.ts` の `setPokemon` / `setMega` / `setMegaForm` でメガ時に体重を切り替え
+- 主要な体重変化（パワー帯をまたぐもの）
+  - メガガルーラ: 80 → 100（80 → 100）
+  - メガガブリアス: 95 → 130（80 → 100）
+  - メガヤドラン: 78.5 → 120（80 → 100）
+  - メガミュウツーY: 122 → 33（100 → 60、大幅減量）
+  - メガヤミラミ: 11 → 161.2（40 → 100、大幅増量）
+  - メガピジョット: 39.5 → 50.5（60 → 80）
+  - メガラティアス: 40 → 52（60 → 80）
+
+#### 5-3. ヘビーボンバーの正しい実装
+- 変更前: `special: "low-kick"`（防御側体重のみ）で誤計算
+- 変更後: 新 `heavy-slam` タグを追加し、攻撃側/防御側の体重比で威力決定
+  - 比 ≥ 5 → 120 / ≥ 4 → 100 / ≥ 3 → 80 / ≥ 2 → 60 / それ未満 → 40
+- `SpecialMoveContext` に `attackerWeight?` を追加、`DamageCalculator.resolvePower` から渡す
+- `Move.ts` の `SpecialMoveTag` に `'heavy-slam'` を追加
+
 ---
 
 ## 重要なファイルと役割
@@ -92,6 +120,8 @@ src/
 | `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン |
 | `src/presentation/components/results/DamageAccumPanel.tsx` | 累積ダメージ計算・KO 確率表示 |
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |
+| `src/domain/calculators/SpecialMoveCalc.ts` | 特殊技の威力解決（体重依存・ジャイロボール・ヘビーボンバー等） |
+| `src/data/json/pokemon-mega.json` | メガポケモンデータ（`weight` フィールド含む全 74 件） |
 
 ---
 
