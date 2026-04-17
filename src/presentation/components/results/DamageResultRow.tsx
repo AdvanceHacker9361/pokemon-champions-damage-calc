@@ -15,6 +15,7 @@ import type { MultiHitData } from '@/domain/models/Move'
 interface DamageResultRowProps {
   moveName: string
   result: DamageResult
+  critResult: DamageResult
 }
 
 function koLabel(koResult: KoResult): string {
@@ -168,12 +169,13 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
   )
 }
 
-export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
+export function DamageResultRow({ moveName, result, critResult }: DamageResultRowProps) {
   const { min, max, defenderMaxHp } = result
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
   const [added, setAdded] = useState(false)
+  const [isCritical, setIsCritical] = useState(false)
 
   const addEntry = useAccumStore(s => s.addEntry)
   const attackerName = useAttackerStore(s => s.pokemonName)
@@ -187,7 +189,9 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const moveRecord = MoveRepository.findByName(moveName)
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
 
-  const rolls = Array.from(result.rolls)
+  // 急所時は critResult のロールを使う（1.5倍・壁無効適用済み）
+  const activeResult = isCritical ? critResult : result
+  const rolls = Array.from(activeResult.rolls)
 
   // ── おやこあい: 子ロール (親の25%) と合算ロール ──────────────────
   const childRollsArr = calcChildRolls(rolls)
@@ -243,7 +247,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
       displayKoResult = calcKoProbability(effectiveRolls, effectiveHpForKo)
     }
   } else {
-    displayKoResult = result.koResult
+    displayKoResult = activeResult.koResult
   }
 
   // タイプ無効（元のダメージが0）→ "効果がない" 表示
@@ -258,8 +262,9 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
 
   function handleAddToAccum() {
     // 加算には実効ロール（おやこあい合算 / ばけのかわ後）を使う
+    const critLabel = isCritical ? '(急所)' : ''
     addEntry({
-      label: `${attackerName} の${moveName}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
+      label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
       usages: 1,
       minDmg: displayMin,
@@ -291,6 +296,19 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           <span className={`text-xs font-bold ${koLabelColor(displayKoResult)}`}>
             {koLabel(displayKoResult)}
           </span>
+          {/* 急所トグル */}
+          <button
+            type="button"
+            onClick={() => setIsCritical(v => !v)}
+            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+              isCritical
+                ? 'bg-yellow-500 dark:bg-yellow-600 border-yellow-400 dark:border-yellow-500 text-white font-semibold'
+                : 'border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-yellow-400 dark:hover:border-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400'
+            }`}
+            title="急所ダメージに切り替え"
+          >
+            急所
+          </button>
           <button
             type="button"
             onClick={handleAddToAccum}
