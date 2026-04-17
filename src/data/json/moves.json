@@ -11728,7 +11728,7 @@
     "category": "物理",
     "power": 70,
     "accuracy": null,
-    "pp": 10,
+    "pp": 8,
     "priority": 0,
     "flags": {
       "contact": true,
