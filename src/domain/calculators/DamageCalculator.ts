@@ -15,6 +15,8 @@ export interface DamageCalcInput {
   attackerStatus: StatusCondition
   attackerAbilityActivated?: boolean
   attackerSupremeOverlordBoost?: number  // 0=なし, 1=×1.1, 2=×1.2
+  /** へんげんじざい発動中のタイプ一致補正（true=1.5倍, false=なし）。省略時は true */
+  attackerProteanStab?: boolean
   attackerRankModifiers: Record<string, number>
   attackerWeight?: number
   defenderStats: ComputedStats
@@ -258,8 +260,10 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
 
     // 4. タイプ一致補正 (STAB)
     // へんげんじざい: 技タイプ=自分のタイプになるため常にSTAB
-    const hasSTAB = (attackerAbility === 'へんげんじざい' && input.attackerAbilityActivated)
-      ? true
+    // ただし attackerProteanStab=false のときはSTABを乗せない（可変STAB）
+    const proteanActive = attackerAbility === 'へんげんじざい' && input.attackerAbilityActivated
+    const hasSTAB = proteanActive
+      ? (input.attackerProteanStab ?? true)
       : input.attackerTypes.includes(moveType)
     if (hasSTAB) {
       if (attackerAbility === 'てきおうりょく') {

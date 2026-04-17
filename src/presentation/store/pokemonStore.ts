@@ -35,6 +35,8 @@ export interface PokemonStore {
   status: StatusCondition
   abilityActivated: boolean
   proteanType: TypeName | null
+  /** へんげんじざい発動中のタイプ一致補正（true=1.5倍, false=なし） */
+  proteanStab: boolean
   moves: [string | null, string | null, string | null, string | null]
   /** 可変威力技のスロットごとの選択威力（null = 技デフォルト値を使用） */
   movePowers: [number | null, number | null, number | null, number | null]
@@ -60,6 +62,7 @@ export interface PokemonStore {
   setStatus: (status: StatusCondition) => void
   setAbilityActivated: (v: boolean) => void
   setProteanType: (type: TypeName | null) => void
+  setProteanStab: (v: boolean) => void
   setMove: (slot: 0 | 1 | 2 | 3, moveName: string | null) => void
   setMovePower: (slot: 0 | 1 | 2 | 3, power: number | null) => void
   setSupremeOverlordBoost: (v: 0 | 1 | 2) => void
@@ -86,6 +89,7 @@ function createPokemonStore() {
     status: null,
     abilityActivated: false,
     proteanType: null,
+    proteanStab: true,
     moves: [null, null, null, null],
     movePowers: [null, null, null, null],
     supremeOverlordBoost: 0,
@@ -135,6 +139,7 @@ function createPokemonStore() {
         status: null,
         abilityActivated: false,
         proteanType: null,
+        proteanStab: true,
         supremeOverlordBoost: 0,
       })
     },
@@ -236,6 +241,8 @@ function createPokemonStore() {
 
     setProteanType: (type) => set({ proteanType: type }),
 
+    setProteanStab: (v) => set({ proteanStab: v }),
+
     setMove: (slot, moveName) => set(s => {
       const moves = [...s.moves] as typeof s.moves
       moves[slot] = moveName
@@ -259,7 +266,7 @@ function createPokemonStore() {
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
       isMega: false, canMega: false, availableMegas: [], megaKey: null,
       isBlade: false, ranks: { ...DEFAULT_RANKS }, status: null,
-      abilityActivated: false, proteanType: null,
+      abilityActivated: false, proteanType: null, proteanStab: true,
       moves: [null, null, null, null],
       movePowers: [null, null, null, null],
       supremeOverlordBoost: 0,

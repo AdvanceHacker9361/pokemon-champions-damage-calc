@@ -20,6 +20,7 @@ export interface PokemonBattleState {
   abilityActivated?: boolean
   supremeOverlordBoost?: number
   proteanType?: TypeName | null
+  proteanStab?: boolean
   weight?: number
 }
 
@@ -72,6 +73,7 @@ export function executeDamageCalculation(
     attackerStatus: input.attacker.status,
     attackerAbilityActivated: input.attacker.abilityActivated,
     attackerSupremeOverlordBoost: input.attacker.supremeOverlordBoost,
+    attackerProteanStab: input.attacker.proteanStab,
     attackerRankModifiers: input.attacker.ranks as Record<string, number>,
     attackerWeight: input.attacker.weight,
     defenderStats,
