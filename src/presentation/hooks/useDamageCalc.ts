@@ -51,7 +51,7 @@ export function useDamageCalc() {
         }
 
         try {
-          const result = executeDamageCalculation({
+          const calcInput = {
             attacker: {
               baseStats: attacker.baseStats,
               types: attacker.types,
@@ -82,8 +82,10 @@ export function useDamageCalc() {
             },
             move,
             field: battleField,
-          })
-          return { moveName, result }
+          }
+          const result = executeDamageCalculation(calcInput)
+          const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
+          return { moveName, result, critResult }
         } catch {
           return null
         }
