@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(jq -r '.tool_input.command // \"\"'); if echo \"$CMD\" | grep -qE '(git[[:space:]]+merge|git[[:space:]]+push.*origin.*main)'; then jq -n '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"⚠️ main へのマージ/プッシュ前の確認: このセッションで加えた重要な変更（新機能・アーキテクチャ変更・バグ修正・主要ファイル追加）は CLAUDE.md に反映されていますか？ 未反映の場合は、先に CLAUDE.md を更新 → feature ブランチにコミット・プッシュ → その後このマージ/プッシュコマンドを再実行してください。反映済み、または CLAUDE.md の更新が不要な軽微な変更のみであればそのまま続行してください。\"}}'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
