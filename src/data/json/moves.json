@@ -1528,7 +1528,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "selfStatDrop": { "stat": "spa", "stages": -2 }
   },
   {
     "name": "オーロラビーム",
@@ -11211,7 +11212,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "selfStatDrop": { "stat": "spa", "stages": -2 }
   },
   {
     "name": "リーフブレード",
@@ -11292,7 +11294,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "selfStatDrop": { "stat": "spa", "stages": -2 }
   },
   {
     "name": "りゅうのいぶき",
