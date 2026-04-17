@@ -21,8 +21,8 @@ export function FieldStateBar() {
   const field = useFieldStore()
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 py-2">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
+    <div className="panel">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
         {/* 天候 */}
         <div className="flex items-center gap-1.5">
           <span className="label">天候:</span>
