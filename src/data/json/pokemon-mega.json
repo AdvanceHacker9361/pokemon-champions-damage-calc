@@ -16,7 +16,8 @@
       "spd": 120,
       "spe": 80
     },
-    "ability": "あついしぼう"
+    "ability": "あついしぼう",
+    "weight": 155.5
   },
   {
     "key": "mega-charizard-x",
@@ -35,7 +36,8 @@
       "spd": 85,
       "spe": 100
     },
-    "ability": "かたいツメ"
+    "ability": "かたいツメ",
+    "weight": 110.5
   },
   {
     "key": "mega-charizard-y",
@@ -54,7 +56,8 @@
       "spd": 115,
       "spe": 100
     },
-    "ability": "ひでり"
+    "ability": "ひでり",
+    "weight": 100.5
   },
   {
     "key": "mega-blastoise",
@@ -72,7 +75,8 @@
       "spd": 115,
       "spe": 78
     },
-    "ability": "メガランチャー"
+    "ability": "メガランチャー",
+    "weight": 101.1
   },
   {
     "key": "mega-alakazam",
@@ -90,7 +94,8 @@
       "spd": 105,
       "spe": 150
     },
-    "ability": "トレース"
+    "ability": "トレース",
+    "weight": 48.0
   },
   {
     "key": "mega-slowbro",
@@ -109,7 +114,8 @@
       "spd": 80,
       "spe": 30
     },
-    "ability": "シェルアーマー"
+    "ability": "シェルアーマー",
+    "weight": 120.0
   },
   {
     "key": "mega-gengar",
@@ -128,7 +134,8 @@
       "spd": 95,
       "spe": 130
     },
-    "ability": "かげふみ"
+    "ability": "かげふみ",
+    "weight": 40.5
   },
   {
     "key": "mega-kangaskhan",
@@ -146,7 +153,8 @@
       "spd": 100,
       "spe": 100
     },
-    "ability": "おやこあい"
+    "ability": "おやこあい",
+    "weight": 100.0
   },
   {
     "key": "mega-pinsir",
@@ -165,7 +173,8 @@
       "spd": 90,
       "spe": 105
     },
-    "ability": "スカイスキン"
+    "ability": "スカイスキン",
+    "weight": 59.0
   },
   {
     "key": "mega-gyarados",
@@ -184,7 +193,8 @@
       "spd": 130,
       "spe": 81
     },
-    "ability": "かたやぶり"
+    "ability": "かたやぶり",
+    "weight": 305.0
   },
   {
     "key": "mega-steelix",
@@ -203,7 +213,8 @@
       "spd": 95,
       "spe": 30
     },
-    "ability": "すなのちから"
+    "ability": "すなのちから",
+    "weight": 740.0
   },
   {
     "key": "mega-scizor",
@@ -222,7 +233,8 @@
       "spd": 100,
       "spe": 75
     },
-    "ability": "テクニシャン"
+    "ability": "テクニシャン",
+    "weight": 125.0
   },
   {
     "key": "mega-heracross",
@@ -241,7 +253,8 @@
       "spd": 105,
       "spe": 75
     },
-    "ability": "スキルリンク"
+    "ability": "スキルリンク",
+    "weight": 62.5
   },
   {
     "key": "mega-houndoom",
@@ -260,7 +273,8 @@
       "spd": 90,
       "spe": 115
     },
-    "ability": "サンパワー"
+    "ability": "サンパワー",
+    "weight": 49.0
   },
   {
     "key": "mega-tyranitar",
@@ -279,7 +293,8 @@
       "spd": 120,
       "spe": 71
     },
-    "ability": "すなおこし"
+    "ability": "すなおこし",
+    "weight": 255.0
   },
   {
     "key": "mega-mewtwo-y",
@@ -297,7 +312,8 @@
       "spd": 120,
       "spe": 140
     },
-    "ability": "ふみん"
+    "ability": "ふみん",
+    "weight": 33.0
   },
   {
     "key": "mega-mewtwo-x",
@@ -316,7 +332,8 @@
       "spd": 100,
       "spe": 130
     },
-    "ability": "ふくつのこころ"
+    "ability": "ふくつのこころ",
+    "weight": 127.0
   },
   {
     "key": "mega-ampharos",
@@ -335,7 +352,8 @@
       "spd": 110,
       "spe": 45
     },
-    "ability": "かたやぶり"
+    "ability": "かたやぶり",
+    "weight": 61.5
   },
   {
     "key": "mega-gardevoir",
@@ -354,7 +372,8 @@
       "spd": 135,
       "spe": 100
     },
-    "ability": "フェアリースキン"
+    "ability": "フェアリースキン",
+    "weight": 48.4
   },
   {
     "key": "mega-mawile",
@@ -373,7 +392,8 @@
       "spd": 95,
       "spe": 50
     },
-    "ability": "ちからもち"
+    "ability": "ちからもち",
+    "weight": 23.5
   },
   {
     "key": "mega-aggron",
@@ -391,7 +411,8 @@
       "spd": 80,
       "spe": 50
     },
-    "ability": "フィルター"
+    "ability": "フィルター",
+    "weight": 395.0
   },
   {
     "key": "mega-manectric",
@@ -409,7 +430,8 @@
       "spd": 80,
       "spe": 135
     },
-    "ability": "いかく"
+    "ability": "いかく",
+    "weight": 44.0
   },
   {
     "key": "mega-sharpedo",
@@ -428,7 +450,8 @@
       "spd": 65,
       "spe": 105
     },
-    "ability": "がんじょうあご"
+    "ability": "がんじょうあご",
+    "weight": 130.6
   },
   {
     "key": "mega-altaria",
@@ -447,7 +470,8 @@
       "spd": 105,
       "spe": 80
     },
-    "ability": "フェアリースキン"
+    "ability": "フェアリースキン",
+    "weight": 20.6
   },
   {
     "key": "mega-salamence",
@@ -466,7 +490,8 @@
       "spd": 90,
       "spe": 120
     },
-    "ability": "スカイスキン"
+    "ability": "スカイスキン",
+    "weight": 112.6
   },
   {
     "key": "mega-metagross",
@@ -485,7 +510,8 @@
       "spd": 110,
       "spe": 110
     },
-    "ability": "かたいツメ"
+    "ability": "かたいツメ",
+    "weight": 942.9
   },
   {
     "key": "mega-latias",
@@ -504,7 +530,8 @@
       "spd": 150,
       "spe": 110
     },
-    "ability": "ふゆう"
+    "ability": "ふゆう",
+    "weight": 52.0
   },
   {
     "key": "mega-latios",
@@ -523,7 +550,8 @@
       "spd": 120,
       "spe": 110
     },
-    "ability": "ふゆう"
+    "ability": "ふゆう",
+    "weight": 70.0
   },
   {
     "key": "mega-rayquaza",
@@ -542,7 +570,8 @@
       "spd": 100,
       "spe": 115
     },
-    "ability": "デルタストリーム"
+    "ability": "デルタストリーム",
+    "weight": 392.0
   },
   {
     "key": "mega-sceptile",
@@ -561,7 +590,8 @@
       "spd": 85,
       "spe": 145
     },
-    "ability": "ひらいしん"
+    "ability": "ひらいしん",
+    "weight": 55.2
   },
   {
     "key": "mega-blaziken",
@@ -580,7 +610,8 @@
       "spd": 80,
       "spe": 100
     },
-    "ability": "かそく"
+    "ability": "かそく",
+    "weight": 52.0
   },
   {
     "key": "mega-swampert",
@@ -599,7 +630,8 @@
       "spd": 110,
       "spe": 70
     },
-    "ability": "すいすい"
+    "ability": "すいすい",
+    "weight": 102.0
   },
   {
     "key": "mega-banette",
@@ -617,7 +649,8 @@
       "spd": 83,
       "spe": 75
     },
-    "ability": "いたずらごころ"
+    "ability": "いたずらごころ",
+    "weight": 13.0
   },
   {
     "key": "mega-absol",
@@ -635,7 +668,8 @@
       "spd": 60,
       "spe": 115
     },
-    "ability": "マジックミラー"
+    "ability": "マジックミラー",
+    "weight": 49.0
   },
   {
     "key": "mega-glalie",
@@ -653,7 +687,8 @@
       "spd": 80,
       "spe": 100
     },
-    "ability": "フリーズスキン"
+    "ability": "フリーズスキン",
+    "weight": 350.2
   },
   {
     "key": "mega-lucario",
@@ -672,7 +707,8 @@
       "spd": 70,
       "spe": 112
     },
-    "ability": "てきおうりょく"
+    "ability": "てきおうりょく",
+    "weight": 57.5
   },
   {
     "key": "mega-gallade",
@@ -691,7 +727,8 @@
       "spd": 115,
       "spe": 110
     },
-    "ability": "せいしんりょく"
+    "ability": "せいしんりょく",
+    "weight": 56.4
   },
   {
     "key": "mega-lopunny",
@@ -710,7 +747,8 @@
       "spd": 96,
       "spe": 135
     },
-    "ability": "きもったま"
+    "ability": "きもったま",
+    "weight": 28.4
   },
   {
     "key": "mega-garchomp",
@@ -729,7 +767,8 @@
       "spd": 95,
       "spe": 92
     },
-    "ability": "すなのちから"
+    "ability": "すなのちから",
+    "weight": 130.0
   },
   {
     "key": "mega-abomasnow",
@@ -748,7 +787,8 @@
       "spd": 105,
       "spe": 30
     },
-    "ability": "ゆきふらし"
+    "ability": "ゆきふらし",
+    "weight": 185.0
   },
   {
     "key": "mega-starmie",
@@ -767,7 +807,8 @@
       "spd": 105,
       "spe": 120
     },
-    "ability": "ちからもち"
+    "ability": "ちからもち",
+    "weight": 80.0
   },
   {
     "key": "mega-greninja",
@@ -786,7 +827,8 @@
       "spd": 81,
       "spe": 142
     },
-    "ability": "へんげんじざい"
+    "ability": "へんげんじざい",
+    "weight": 40.0
   },
   {
     "key": "mega-chesnaught",
@@ -805,7 +847,8 @@
       "spd": 115,
       "spe": 44
     },
-    "ability": "ぼうだん"
+    "ability": "ぼうだん",
+    "weight": 90.0
   },
   {
     "key": "mega-delphox",
@@ -824,7 +867,8 @@
       "spd": 125,
       "spe": 134
     },
-    "ability": "ふゆう"
+    "ability": "ふゆう",
+    "weight": 39.0
   },
   {
     "key": "mega-meganium",
@@ -843,7 +887,8 @@
       "spd": 115,
       "spe": 80
     },
-    "ability": "メガソーラー"
+    "ability": "メガソーラー",
+    "weight": 100.5
   },
   {
     "key": "mega-feraligatr",
@@ -862,7 +907,8 @@
       "spd": 93,
       "spe": 78
     },
-    "ability": "ドラゴンスキン"
+    "ability": "ドラゴンスキン",
+    "weight": 88.8
   },
   {
     "key": "mega-emboar",
@@ -881,7 +927,8 @@
       "spd": 110,
       "spe": 75
     },
-    "ability": "かたやぶり"
+    "ability": "かたやぶり",
+    "weight": 150.0
   },
   {
     "key": "mega-meowstic-m",
@@ -899,7 +946,8 @@
       "spd": 101,
       "spe": 124
     },
-    "ability": "トレース"
+    "ability": "トレース",
+    "weight": 8.5
   },
   {
     "key": "mega-raichu-x",
@@ -917,7 +965,8 @@
       "spd": 95,
       "spe": 110
     },
-    "ability": "サージサーファー"
+    "ability": "サージサーファー",
+    "weight": 30.0
   },
   {
     "key": "mega-raichu-y",
@@ -935,7 +984,8 @@
       "spd": 80,
       "spe": 130
     },
-    "ability": "サージサーファー"
+    "ability": "サージサーファー",
+    "weight": 30.0
   },
   {
     "key": "mega-dragonite",
@@ -954,7 +1004,8 @@
       "spd": 125,
       "spe": 100
     },
-    "ability": "マルチスケイル"
+    "ability": "マルチスケイル",
+    "weight": 210.0
   },
   {
     "key": "mega-sableye",
@@ -973,7 +1024,8 @@
       "spd": 115,
       "spe": 20
     },
-    "ability": "マジックミラー"
+    "ability": "マジックミラー",
+    "weight": 161.2
   },
   {
     "key": "mega-medicham",
@@ -992,7 +1044,8 @@
       "spd": 85,
       "spe": 100
     },
-    "ability": "ヨガパワー"
+    "ability": "ヨガパワー",
+    "weight": 31.5
   },
   {
     "key": "mega-camerupt",
@@ -1011,7 +1064,8 @@
       "spd": 105,
       "spe": 20
     },
-    "ability": "ちからずく"
+    "ability": "ちからずく",
+    "weight": 320.5
   },
   {
     "key": "mega-staraptor",
@@ -1030,7 +1084,8 @@
       "spd": 90,
       "spe": 110
     },
-    "ability": "いかく"
+    "ability": "いかく",
+    "weight": 24.9
   },
   {
     "key": "mega-froslass",
@@ -1049,7 +1104,8 @@
       "spd": 100,
       "spe": 120
     },
-    "ability": "ゆきふらし"
+    "ability": "ゆきふらし",
+    "weight": 26.6
   },
   {
     "key": "mega-darkrai",
@@ -1067,7 +1123,8 @@
       "spd": 130,
       "spe": 85
     },
-    "ability": "ナイトメア"
+    "ability": "ナイトメア",
+    "weight": 50.5
   },
   {
     "key": "mega-excadrill",
@@ -1086,7 +1143,8 @@
       "spd": 65,
       "spe": 103
     },
-    "ability": "かんつうドリル"
+    "ability": "かんつうドリル",
+    "weight": 40.4
   },
   {
     "key": "mega-scolipede",
@@ -1105,7 +1163,8 @@
       "spd": 99,
       "spe": 62
     },
-    "ability": "かそく"
+    "ability": "かそく",
+    "weight": 200.5
   },
   {
     "key": "mega-scrafty",
@@ -1124,7 +1183,8 @@
       "spd": 135,
       "spe": 68
     },
-    "ability": "いかく"
+    "ability": "いかく",
+    "weight": 30.0
   },
   {
     "key": "mega-chandelure",
@@ -1143,7 +1203,8 @@
       "spd": 110,
       "spe": 90
     },
-    "ability": "すりぬけ"
+    "ability": "すりぬけ",
+    "weight": 34.3
   },
   {
     "key": "mega-golurk",
@@ -1162,7 +1223,8 @@
       "spd": 105,
       "spe": 55
     },
-    "ability": "みえないこぶし"
+    "ability": "みえないこぶし",
+    "weight": 330.0
   },
   {
     "key": "mega-pyroar",
@@ -1181,7 +1243,8 @@
       "spd": 86,
       "spe": 126
     },
-    "ability": "とうそうしん"
+    "ability": "とうそうしん",
+    "weight": 81.5
   },
   {
     "key": "mega-malamar",
@@ -1200,7 +1263,8 @@
       "spd": 120,
       "spe": 88
     },
-    "ability": "あまのじゃく"
+    "ability": "あまのじゃく",
+    "weight": 47.0
   },
   {
     "key": "mega-zygarde",
@@ -1219,7 +1283,8 @@
       "spd": 85,
       "spe": 100
     },
-    "ability": "オーラブレイク"
+    "ability": "オーラブレイク",
+    "weight": 305.0
   },
   {
     "key": "mega-golisopod",
@@ -1238,7 +1303,8 @@
       "spd": 120,
       "spe": 40
     },
-    "ability": "ききかいひ"
+    "ability": "ききかいひ",
+    "weight": 108.0
   },
   {
     "key": "mega-beedrill",
@@ -1257,7 +1323,8 @@
       "spd": 80,
       "spe": 145
     },
-    "ability": "てきおうりょく"
+    "ability": "てきおうりょく",
+    "weight": 40.5
   },
   {
     "key": "mega-meowstic-f",
@@ -1275,7 +1342,8 @@
       "spd": 101,
       "spe": 124
     },
-    "ability": "トレース"
+    "ability": "トレース",
+    "weight": 8.5
   },
   {
     "key": "mega-pidgeot",
@@ -1294,7 +1362,8 @@
       "spd": 80,
       "spe": 121
     },
-    "ability": "ノーガード"
+    "ability": "ノーガード",
+    "weight": 50.5
   },
   {
     "key": "mega-aerodactyl",
@@ -1313,7 +1382,8 @@
       "spd": 95,
       "spe": 150
     },
-    "ability": "かたいツメ"
+    "ability": "かたいツメ",
+    "weight": 79.0
   },
   {
     "key": "mega-audino",
@@ -1332,7 +1402,8 @@
       "spd": 126,
       "spe": 50
     },
-    "ability": "いやしのこころ"
+    "ability": "いやしのこころ",
+    "weight": 32.0
   },
   {
     "key": "mega-floette-eternal",
@@ -1350,7 +1421,8 @@
       "spd": 148,
       "spe": 102
     },
-    "ability": "フェアリーオーラ"
+    "ability": "フェアリーオーラ",
+    "weight": 0.9
   },
   {
     "key": "mega-scovillain",
@@ -1369,7 +1441,8 @@
       "spd": 85,
       "spe": 75
     },
-    "ability": "とびだすハバネロ"
+    "ability": "とびだすハバネロ",
+    "weight": 15.0
   },
   {
     "key": "mega-clefable",
@@ -1388,6 +1461,7 @@
       "spd": 110,
       "spe": 70
     },
-    "ability": "マジックミラー"
+    "ability": "マジックミラー",
+    "weight": 40.0
   }
 ]

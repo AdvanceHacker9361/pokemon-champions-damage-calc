@@ -39,13 +39,14 @@ function pokeRound(n: number): number {
 
 /** 技の基本威力を解決（特殊技を含む） */
 function resolvePower(input: DamageCalcInput): number {
-  const { move, attackerStats, defenderStats, defenderWeight, attackerStatus } = input
+  const { move, attackerStats, defenderStats, defenderWeight, attackerWeight, attackerStatus } = input
 
   if (move.special) {
     const result = resolveSpecialMove({
       tag: move.special,
       attackerStats,
       defenderStats,
+      attackerWeight,
       defenderWeight,
       attackerStatus,
       originalPower: move.power ?? 0,

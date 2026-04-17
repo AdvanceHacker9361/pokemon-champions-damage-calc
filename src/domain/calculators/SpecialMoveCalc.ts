@@ -29,13 +29,14 @@ const WEIGHT_POWER_TABLE: { maxWeight: number; power: number }[] = [
 ]
 
 export function getWeightPower(weight: number): number {
-  return WEIGHT_POWER_TABLE.find(t => weight <= t.maxWeight)?.power ?? 120
+  return WEIGHT_POWER_TABLE.find(t => weight < t.maxWeight)?.power ?? 120
 }
 
 export interface SpecialMoveContext {
   tag: SpecialMoveTag
   attackerStats: ComputedStats
   defenderStats: ComputedStats
+  attackerWeight?: number
   defenderWeight?: number
   attackerStatus?: StatusCondition
   originalPower?: number
@@ -53,7 +54,7 @@ export interface SpecialMoveResult {
 }
 
 export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMoveResult> {
-  const { tag, attackerStats, defenderStats, defenderWeight, attackerStatus } = ctx
+  const { tag, attackerStats, defenderStats, attackerWeight, defenderWeight, attackerStatus } = ctx
 
   switch (tag) {
     case 'foul-play':
@@ -102,6 +103,17 @@ export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMove
         return { effectivePower: 140 }
       }
       return {}
+
+    case 'heavy-slam': {
+      const atkW = attackerWeight ?? 0
+      const defW = defenderWeight ?? 1
+      const ratio = defW > 0 ? atkW / defW : 0
+      if (ratio >= 5) return { effectivePower: 120 }
+      if (ratio >= 4) return { effectivePower: 100 }
+      if (ratio >= 3) return { effectivePower: 80 }
+      if (ratio >= 2) return { effectivePower: 60 }
+      return { effectivePower: 40 }
+    }
 
     case 'stealth-rock':
       // ステルスロックはダメージ計算とは別扱い（DamageCalculatorで処理）

@@ -38,6 +38,7 @@ const VALID_SPECIAL_TAGS = new Set([
   null, 'foul-play', 'body-press', 'photon-geyser', 'psyshock', 'gyro-ball',
   'grass-knot', 'low-kick', 'hex', 'facade', 'stealth-rock',
   'freeze-dry', 'weather-ball', 'knock-off', 'stored-power', 'reversal',
+  'heavy-slam',
 ])
 
 // ────────────────────────────────────────────────
