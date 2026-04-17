@@ -1529,7 +1529,10 @@
       "slice": false
     },
     "special": null,
-    "selfStatDrop": { "stat": "spa", "stages": -2 }
+    "selfStatDrop": {
+      "stat": "spa",
+      "stages": -2
+    }
   },
   {
     "name": "オーロラビーム",
@@ -11213,7 +11216,10 @@
       "slice": false
     },
     "special": null,
-    "selfStatDrop": { "stat": "spa", "stages": -2 }
+    "selfStatDrop": {
+      "stat": "spa",
+      "stages": -2
+    }
   },
   {
     "name": "リーフブレード",
@@ -11295,7 +11301,10 @@
       "slice": false
     },
     "special": null,
-    "selfStatDrop": { "stat": "spa", "stages": -2 }
+    "selfStatDrop": {
+      "stat": "spa",
+      "stages": -2
+    }
   },
   {
     "name": "りゅうのいぶき",
@@ -11711,5 +11720,26 @@
     },
     "special": null,
     "multiHit": null
+  },
+  {
+    "name": "トリックフラワー",
+    "nameEn": "Trick Flower",
+    "type": "くさ",
+    "category": "物理",
+    "power": 70,
+    "accuracy": null,
+    "pp": 10,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "alwaysCrit": true
   }
 ]
