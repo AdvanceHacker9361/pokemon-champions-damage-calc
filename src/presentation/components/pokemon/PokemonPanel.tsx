@@ -193,6 +193,36 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                   onChange={store.setProteanType}
                 />
               )}
+              {/* へんげんじざい: 攻撃側はSTAB可変トグル（なし / 1.5倍） */}
+              {store.effectiveAbility === 'へんげんじざい' && store.abilityActivated && label === '攻撃側' && (
+                <div>
+                  <label className="label block mb-1">タイプ一致補正</label>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => store.setProteanStab(false)}
+                      className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                        !store.proteanStab
+                          ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
+                          : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400'
+                      }`}
+                    >
+                      なし
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => store.setProteanStab(true)}
+                      className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                        store.proteanStab
+                          ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white'
+                          : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400'
+                      }`}
+                    >
+                      ×1.5
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
