@@ -48,6 +48,8 @@ export interface MoveRecord {
   powerOptions?: number[]
   /** 使用後の自ステータス低下（りゅうせいぐん=spa-2 等） */
   selfStatDrop?: { stat: StatKey; stages: number }
+  /** 確定急所技（常に急所補正で計算） */
+  alwaysCrit?: boolean
 }
 
 export interface AbilityRecord {

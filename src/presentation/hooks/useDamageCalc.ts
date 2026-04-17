@@ -83,7 +83,9 @@ export function useDamageCalc() {
             move,
             field: battleField,
           }
-          const result = executeDamageCalculation(calcInput)
+          // 確定急所技は常に急所補正で計算
+          const alwaysCrit = move.alwaysCrit === true
+          const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
           const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
           return { moveName, result, critResult }
         } catch {
