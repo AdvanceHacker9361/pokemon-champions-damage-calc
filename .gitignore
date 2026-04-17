@@ -5,4 +5,5 @@ dist
 *.local
 .DS_Store
 coverage
-.claude/
+.claude/*
+!.claude/settings.json
