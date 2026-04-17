@@ -4,6 +4,7 @@ import type { DamageResult } from '@/domain/models/DamageResult'
 export interface MoveResult {
   moveName: string
   result: DamageResult
+  critResult: DamageResult
 }
 
 interface ResultStore {
