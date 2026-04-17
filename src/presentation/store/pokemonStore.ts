@@ -117,7 +117,7 @@ function createPokemonStore() {
         baseStats = mega.baseStats as BaseStats
         types = mega.types as TypeName[]
         effectiveAbility = mega.ability
-        weight = record.weight
+        weight = mega.weight !== undefined ? mega.weight : record.weight
         megaKey = mega.key
       }
 
@@ -181,12 +181,14 @@ function createPokemonStore() {
       if (enable) {
         const mega = availableMegas[0]
         if (!mega) return
+        const base = PokemonRepository.findById(pokemonId)
         set({
           isMega: true,
           megaKey: mega.key,
           baseStats: mega.baseStats as BaseStats,
           types: mega.types as TypeName[],
           effectiveAbility: mega.ability,
+          weight: mega.weight !== undefined ? mega.weight : (base?.weight ?? 0),
         })
       } else {
         const base = PokemonRepository.findById(pokemonId)
@@ -197,6 +199,7 @@ function createPokemonStore() {
           baseStats: base.baseStats as BaseStats,
           types: base.types as TypeName[],
           effectiveAbility: abilityName,
+          weight: base.weight,
         })
       }
     },
@@ -206,11 +209,13 @@ function createPokemonStore() {
       if (!pokemonId || !isMega) return
       const mega = availableMegas.find(m => m.key === key)
       if (!mega) return
+      const base = PokemonRepository.findById(pokemonId)
       set({
         megaKey: mega.key,
         baseStats: mega.baseStats as BaseStats,
         types: mega.types as TypeName[],
         effectiveAbility: mega.ability,
+        weight: mega.weight !== undefined ? mega.weight : (base?.weight ?? 0),
       })
     },
 

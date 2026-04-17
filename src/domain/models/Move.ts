@@ -25,6 +25,7 @@ export type SpecialMoveTag =
   | 'knock-off'     // はたきおとす: 相手が持ち物を持っている場合威力1.5倍
   | 'stored-power'  // アシストパワー: ランク上昇分で威力増加
   | 'reversal'      // きしかいせい: HPが少ないほど威力増加
+  | 'heavy-slam'    // ヘビーボンバー: 攻撃側/防御側の体重比で威力変化
 
 export interface MoveFlags {
   contact: boolean
