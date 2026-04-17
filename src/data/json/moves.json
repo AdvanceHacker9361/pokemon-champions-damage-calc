@@ -11728,7 +11728,7 @@
     "category": "物理",
     "power": 70,
     "accuracy": null,
-    "pp": 8,
+    "pp": 12,
     "priority": 0,
     "flags": {
       "contact": true,
@@ -11741,5 +11741,29 @@
     },
     "special": null,
     "alwaysCrit": true
+  },
+  {
+    "name": "フレアソング",
+    "nameEn": "Flare Song",
+    "type": "ほのお",
+    "category": "特殊",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": true,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "selfStatDrop": {
+      "stat": "spa",
+      "stages": 1
+    }
   }
 ]
