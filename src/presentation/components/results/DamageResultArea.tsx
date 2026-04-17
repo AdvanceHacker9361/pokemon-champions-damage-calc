@@ -1,13 +1,14 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
-import { DamageCalcPanel } from './DamageCalcPanel'
 import { DamageAccumPanel } from './DamageAccumPanel'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useAccumStore } from '@/presentation/store/accumStore'
 
 export function DamageResultArea() {
   const results = useResultStore(s => s.results)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const defenderName = useDefenderStore(s => s.pokemonName)
+  const accumEntries = useAccumStore(s => s.entries)
 
   if (!attackerName || !defenderName) {
     return (
@@ -17,7 +18,7 @@ export function DamageResultArea() {
     )
   }
 
-  if (results.length === 0) {
+  if (results.length === 0 && accumEntries.length === 0) {
     return (
       <div className="panel text-center py-8">
         <p className="text-slate-500 text-sm">攻撃側に技を選択するとダメージが計算されます</p>
@@ -25,20 +26,23 @@ export function DamageResultArea() {
     )
   }
 
+  const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
+
   return (
     <>
-      <div className="panel">
-        <div className="text-xs text-slate-500 mb-3">
-          {attackerName} → {defenderName}
+      {results.length > 0 && (
+        <div className="panel">
+          <div className="text-xs text-slate-500 mb-3">
+            {attackerName} → {defenderName}
+          </div>
+          <div>
+            {results.map(({ moveName, result }) => (
+              <DamageResultRow key={moveName} moveName={moveName} result={result} />
+            ))}
+          </div>
         </div>
-        <div>
-          {results.map(({ moveName, result }) => (
-            <DamageResultRow key={moveName} moveName={moveName} result={result} />
-          ))}
-        </div>
-        <DamageCalcPanel results={results} />
-      </div>
-      <DamageAccumPanel />
+      )}
+      <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
     </>
   )
 }

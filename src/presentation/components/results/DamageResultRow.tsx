@@ -174,7 +174,6 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
   const [added, setAdded] = useState(false)
-  const [accumUsages, setAccumUsages] = useState(1)
 
   const addEntry = useAccumStore(s => s.addEntry)
   const attackerName = useAttackerStore(s => s.pokemonName)
@@ -262,7 +261,7 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
     addEntry({
       label: `${attackerName} の${moveName}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
-      usages: accumUsages,
+      usages: 1,
       minDmg: displayMin,
       maxDmg: displayMax,
       defenderMaxHp,
@@ -292,35 +291,17 @@ export function DamageResultRow({ moveName, result }: DamageResultRowProps) {
           <span className={`text-xs font-bold ${koLabelColor(displayKoResult)}`}>
             {koLabel(displayKoResult)}
           </span>
-          {/* 加算リストへの回数セレクター */}
-          <div className="flex items-center gap-0.5">
-            {[1, 2, 3, 4, 5].map(n => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setAccumUsages(n)}
-                className={`w-5 h-5 text-[10px] rounded transition-colors ${
-                  accumUsages === n
-                    ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
-                }`}
-                title={`${n}回加算`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
           <button
             type="button"
             onClick={handleAddToAccum}
-            className={`text-xs px-1.5 py-0.5 rounded border transition-colors ${
+            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
               added
                 ? 'bg-blue-600 dark:bg-blue-700 border-blue-500 dark:border-blue-600 text-white'
                 : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-400'
             }`}
-            title={`${accumUsages}回分を加算リストに追加`}
+            title="加算リストに追加"
           >
-            {added ? '✓' : `+${accumUsages > 1 ? `×${accumUsages}` : ''}`}
+            {added ? '✓ 追加' : '+ 加算'}
           </button>
         </div>
       </div>
