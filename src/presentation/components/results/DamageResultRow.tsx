@@ -347,7 +347,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
           >
             {added ? '✓ 追加' : '+ 加算'}
           </button>
-          {/* 使用後の自ステータス変化ボタン（りゅうせいぐん・フレアソング等） */}
+          {/* 使用後の自ステータス変化ボタン（りゅうせいぐん・フレアソング等: 単一） */}
           {moveRecord?.selfStatDrop && (() => {
             const { stat, stages } = moveRecord.selfStatDrop
             const letter = STAT_LETTER[stat] ?? stat
@@ -361,6 +361,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
             const willApply = clamped !== currentRank
             return (
               <button
+                key={stat}
                 type="button"
                 onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
                 disabled={!willApply}
@@ -377,6 +378,36 @@ export function DamageResultRow(props: DamageResultRowProps) {
               </button>
             )
           })()}
+          {/* 使用後の自ステータス変化ボタン（アーマーキャノン等: 複数） */}
+          {moveRecord?.selfStatDrops?.map(({ stat, stages }) => {
+            const letter = STAT_LETTER[stat] ?? stat
+            const isBoost = stages > 0
+            const sign = isBoost ? '+' : '−'
+            const abs = Math.abs(stages)
+            const arrow = isBoost ? '↑' : '↓'
+            const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
+            const targetRank = currentRank + stages
+            const clamped = Math.max(-6, Math.min(6, targetRank))
+            const willApply = clamped !== currentRank
+            return (
+              <button
+                key={stat}
+                type="button"
+                onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
+                disabled={!willApply}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  willApply
+                    ? isBoost
+                      ? 'border-blue-400 dark:border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950'
+                      : 'border-rose-400 dark:border-rose-600 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                }`}
+                title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
+              >
+                {arrow}{letter}{sign}{abs}
+              </button>
+            )
+          })}
         </div>
       </div>
 
