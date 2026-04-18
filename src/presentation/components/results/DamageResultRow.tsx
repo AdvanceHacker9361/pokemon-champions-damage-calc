@@ -11,6 +11,8 @@ import { useAccumStore } from '@/presentation/store/accumStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MultiHitData } from '@/domain/models/Move'
+import { TypeBadge } from '@/presentation/components/shared/Badge'
+import type { TypeName } from '@/domain/models/Pokemon'
 
 interface DamageResultRowProps {
   moveName: string
@@ -302,6 +304,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       <div className="flex items-baseline justify-between mb-1">
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{moveName}</span>
+          {moveRecord?.type && <TypeBadge type={moveRecord.type as TypeName} size="sm" />}
           {multiHit && (
             <span className="text-[10px] px-1 py-0 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium">
               {multiHit.type === 'fixed' ? `固定${multiHit.count}回`
