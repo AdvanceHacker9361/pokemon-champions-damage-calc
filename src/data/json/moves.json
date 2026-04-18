@@ -11837,5 +11837,89 @@
       "slice": true
     },
     "special": null
+  },
+  {
+    "name": "ジェットパンチ",
+    "nameEn": "Jet Punch",
+    "type": "みず",
+    "category": "物理",
+    "power": 60,
+    "accuracy": 100,
+    "pp": 16,
+    "priority": 1,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": true,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "アクセルロック",
+    "nameEn": "Accelerock",
+    "type": "いわ",
+    "category": "物理",
+    "power": 40,
+    "accuracy": 100,
+    "pp": 20,
+    "priority": 1,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "ルミナコリジョン",
+    "nameEn": "Lumina Crash",
+    "type": "エスパー",
+    "category": "特殊",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "アイスハンマー",
+    "nameEn": "Ice Hammer",
+    "type": "こおり",
+    "category": "物理",
+    "power": 100,
+    "accuracy": 90,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": true,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "selfStatDrop": {
+      "stat": "spe",
+      "stages": -1
+    }
   }
 ]
