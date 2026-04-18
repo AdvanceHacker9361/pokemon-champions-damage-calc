@@ -459,6 +459,28 @@
     "weight": 19.9
   },
   {
+    "id": 10038,
+    "name": "アローラキュウコン",
+    "nameEn": "Ninetales-Alola",
+    "types": [
+      "こおり",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 73,
+      "atk": 67,
+      "def": 75,
+      "spa": 81,
+      "spd": 100,
+      "spe": 109
+    },
+    "abilities": [
+      "ゆきがくれ",
+      "ゆきふらし"
+    ],
+    "weight": 19.9
+  },
+  {
     "id": 39,
     "name": "プリン",
     "nameEn": "Jigglypuff",
@@ -3381,6 +3403,29 @@
     },
     "abilities": [
       "どんかん",
+      "マイペース",
+      "さいせいりょく"
+    ],
+    "weight": 79.5
+  },
+  {
+    "id": 10199,
+    "name": "ガラルヤドキング",
+    "nameEn": "Slowking-Galar",
+    "types": [
+      "どく",
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 65,
+      "def": 80,
+      "spa": 110,
+      "spd": 110,
+      "spe": 30
+    },
+    "abilities": [
+      "ふしぎなくすり",
       "マイペース",
       "さいせいりょく"
     ],
