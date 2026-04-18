@@ -7,6 +7,9 @@ import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { createDefaultBattleField } from '@/domain/models/BattleField'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
+import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
+import { calcRollPercent } from '@/domain/models/DamageResult'
+import type { DamageResult } from '@/domain/models/DamageResult'
 
 export function useDamageCalc() {
   const attacker = useAttackerStore()
@@ -85,6 +88,37 @@ export function useDamageCalc() {
           }
           // 確定急所技は常に急所補正で計算
           const alwaysCrit = move.alwaysCrit === true
+
+          // 段階威力型（escalating）: 各発を個別計算して合算
+          if (move.multiHit?.type === 'escalating') {
+            const powers = move.multiHit.powers
+            const baseMove = move  // 型ナロウイングのためキャプチャ
+
+            function calcEscalating(isCrit: boolean) {
+              const hitResults = powers.map(power =>
+                executeDamageCalculation({ ...calcInput, move: { ...baseMove, power }, isCritical: isCrit })
+              )
+              const defHp = hitResults[0].defenderMaxHp
+              const summedRolls = hitResults[0].rolls.map((_, i) =>
+                hitResults.reduce((sum, r) => sum + r.rolls[i], 0)
+              ) as DamageResult['rolls']
+              const totalResult: DamageResult = {
+                rolls: summedRolls,
+                min: summedRolls[0],
+                max: summedRolls[14],
+                defenderMaxHp: defHp,
+                percentMin: calcRollPercent(summedRolls[0], defHp),
+                percentMax: calcRollPercent(summedRolls[14], defHp),
+                koResult: calcKoProbability(Array.from(summedRolls), defHp),
+              }
+              return { totalResult, hitResults }
+            }
+
+            const { totalResult: result, hitResults: perHitResults } = calcEscalating(alwaysCrit)
+            const { totalResult: critResult, hitResults: critPerHitResults } = calcEscalating(true)
+            return { moveName, result, critResult, perHitResults, critPerHitResults }
+          }
+
           const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
           const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
           return { moveName, result, critResult }
