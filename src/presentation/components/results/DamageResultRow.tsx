@@ -16,6 +16,9 @@ interface DamageResultRowProps {
   moveName: string
   result: DamageResult
   critResult: DamageResult
+  /** 段階威力型の各発個別結果 */
+  perHitResults?: DamageResult[]
+  critPerHitResults?: DamageResult[]
 }
 
 function koLabel(koResult: KoResult): string {
@@ -174,7 +177,8 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
   )
 }
 
-export function DamageResultRow({ moveName, result, critResult }: DamageResultRowProps) {
+export function DamageResultRow(props: DamageResultRowProps) {
+  const { moveName, result, critResult } = props
   const { min, max, defenderMaxHp } = result
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
@@ -195,6 +199,8 @@ export function DamageResultRow({ moveName, result, critResult }: DamageResultRo
 
   const moveRecord = MoveRepository.findByName(moveName)
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
+  // 段階威力型の各発個別結果（ばけのかわ等）
+  const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
 
   // 急所時は critResult のロールを使う（1.5倍・壁無効適用済み）
   const activeResult = isCritical ? critResult : result
@@ -218,6 +224,14 @@ export function DamageResultRow({ moveName, result, critResult }: DamageResultRo
       // 親の一撃→ばけのかわ無効、子の一撃が通る
       effectiveRolls = childRollsArr
       disguiseLabel = 'ばけのかわ発動（親を無効 → 子ダメのみ）'
+    } else if (multiHit?.type === 'escalating' && perHitResults && perHitResults.length > 1) {
+      // 段階威力: 1発目無効、残り発の合計
+      const remainingRolls = perHitResults.slice(1).reduce(
+        (acc, r) => acc.map((v, i) => v + r.rolls[i]),
+        Array(15).fill(0) as number[]
+      )
+      effectiveRolls = remainingRolls
+      disguiseLabel = `ばけのかわ発動（1発目無効 → 残${perHitResults.length - 1}発）`
     } else if (multiHit?.type === 'fixed' && multiHit.count > 1) {
       // 固定複数回: 1発目無効、残り(count-1)発が通る
       const remaining = multiHit.count - 1
@@ -290,7 +304,9 @@ export function DamageResultRow({ moveName, result, critResult }: DamageResultRo
           <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{moveName}</span>
           {multiHit && (
             <span className="text-[10px] px-1 py-0 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium">
-              {multiHit.type === 'fixed' ? `固定${multiHit.count}回` : '2〜5回'}
+              {multiHit.type === 'fixed' ? `固定${multiHit.count}回`
+                : multiHit.type === 'escalating' ? multiHit.powers.join('→')
+                : '2〜5回'}
             </span>
           )}
           {isParentalBond && (
@@ -441,6 +457,20 @@ export function DamageResultRow({ moveName, result, critResult }: DamageResultRo
               ))}
             </div>
           </div>
+
+          {/* 段階威力型: 各発の内訳 */}
+          {multiHit?.type === 'escalating' && perHitResults && perHitResults.map((hr, idx) => (
+            <div key={idx}>
+              <div className="text-xs text-slate-500 dark:text-slate-500 mb-0.5">
+                {idx + 1}発目（威力{(multiHit as { type: 'escalating'; powers: number[] }).powers[idx]}）
+              </div>
+              <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+                {Array.from(hr.rolls).map((r, i) => (
+                  <span key={i} className={`text-xs font-mono ${rollKoClass(r, defenderMaxHp)}`}>{r}</span>
+                ))}
+              </div>
+            </div>
+          ))}
 
           {/* おやこあい時: 親の素ロールを参考表示 */}
           {isParentalBond && (

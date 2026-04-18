@@ -229,12 +229,15 @@ describe('moves.json integrity', () => {
     const errors: string[] = []
     for (const m of moves) {
       if (m.multiHit !== undefined && m.multiHit !== null) {
-        const mh = m.multiHit as { type: string; count?: number }
-        if (mh.type !== 'fixed' && mh.type !== 'variable') {
+        const mh = m.multiHit as { type: string; count?: number; powers?: number[] }
+        if (mh.type !== 'fixed' && mh.type !== 'variable' && mh.type !== 'escalating') {
           errors.push(`${m.nameEn}: invalid multiHit.type=${mh.type}`)
         }
         if (mh.type === 'fixed' && (typeof mh.count !== 'number' || mh.count < 2)) {
           errors.push(`${m.nameEn}: fixed multiHit should have count >= 2`)
+        }
+        if (mh.type === 'escalating' && (!Array.isArray(mh.powers) || mh.powers.length < 2)) {
+          errors.push(`${m.nameEn}: escalating multiHit should have powers array with >= 2 entries`)
         }
       }
     }

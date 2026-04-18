@@ -5,6 +5,9 @@ export interface MoveResult {
   moveName: string
   result: DamageResult
   critResult: DamageResult
+  /** 段階威力型（escalating）の各発個別結果（ばけのかわ等で使用） */
+  perHitResults?: DamageResult[]
+  critPerHitResults?: DamageResult[]
 }
 
 interface ResultStore {

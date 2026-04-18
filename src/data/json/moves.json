@@ -6976,8 +6976,12 @@
     },
     "special": null,
     "multiHit": {
-      "type": "fixed",
-      "count": 3
+      "type": "escalating",
+      "powers": [
+        20,
+        40,
+        60
+      ]
     }
   },
   {

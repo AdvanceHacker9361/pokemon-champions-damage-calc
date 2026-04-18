@@ -8,6 +8,8 @@ import type { TypeName, MoveCategory, StatKey } from '@/domain/models/Pokemon'
 export type MultiHitData =
   | { type: 'fixed'; count: number }
   | { type: 'variable' }
+  /** 段階威力型（トリプルアクセル等）: 発ごとに威力が変わる */
+  | { type: 'escalating'; powers: number[] }
 
 export type SpecialMoveTag =
   | 'foul-play'     // イカサマ: 相手のAを使用
