@@ -55,8 +55,10 @@ export interface MoveData {
   multiHit?: MultiHitData | null
   /** 可変威力の選択肢（おはかまいり等） */
   powerOptions?: number[]
-  /** 使用後の自ステータス低下（りゅうせいぐん=spa-2 等） */
+  /** 使用後の自ステータス変化（単一ステータス: りゅうせいぐん=spa-2 等） */
   selfStatDrop?: { stat: StatKey; stages: number }
+  /** 使用後の自ステータス変化（複数ステータス: アーマーキャノン=def-1&spd-1 等） */
+  selfStatDrops?: { stat: StatKey; stages: number }[]
   /** 確定急所技（常に急所補正で計算） */
   alwaysCrit?: boolean
 }
