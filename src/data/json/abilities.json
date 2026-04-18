@@ -1488,5 +1488,10 @@
     "name": "ミミクリー",
     "nameEn": "Mimicry",
     "calcTag": "mimicry"
+  },
+  {
+    "name": "ふしぎなくすり",
+    "nameEn": "Curious Medicine",
+    "calcTag": "none"
   }
 ]
