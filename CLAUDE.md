@@ -103,6 +103,31 @@ src/
 - `SpecialMoveContext` に `attackerWeight?` を追加、`DamageCalculator.resolvePower` から渡す
 - `Move.ts` の `SpecialMoveTag` に `'heavy-slam'` を追加
 
+### 6. 技データスキーマ拡張（V2.1 追加分）
+
+#### 6-1. 複数ステータス変化 `selfStatDrops`
+- 単一の `selfStatDrop` に加え、複数ステータスを同時変化させる `selfStatDrops: { stat, stages }[]` を追加
+- 例: アーマーキャノン・むねんのつるぎ（使用後 def -1 かつ spd -1）
+- `schemas/types.ts` と `domain/models/Move.ts` の両方に定義
+- `DamageResultRow.tsx` のボタン表示は両フィールドに対応（単一 + 複数両方）
+- 自ステータス上昇（stages > 0）もサポート
+
+#### 6-2. 確定急所技 `alwaysCrit`
+- `alwaysCrit?: boolean` フィールドを追加（トリックフラワー等）
+- 計算時は常に急所補正で評価される（急所トグル不要）
+
+#### 6-3. 段階威力型連続技 `MultiHitData: { type: 'escalating' }`
+- 連続技の発ごとに威力が変化するタイプ（例: トリプルアクセル = 20→40→60）
+- 既存の `fixed` / `variable` に加え `escalating: { powers: number[] }` を新設
+- `MoveResult` に `perHitResults`・`critPerHitResults` を追加し、発ごと個別結果を保持（ばけのかわ処理に使用）
+
+### 7. UI 追加（デスクトップ PC 作業分）
+
+- **技名横のタイプバッジ**: `DamageResultRow.tsx` にタイプ色付きバッジを表示
+- **自ステータス上昇ボタン**: `selfStatDrops` と同ロジックで正方向（+1/+2）にも対応
+- **新技の実装**: トリックフラワー（確定急所）・アクアステップ・フレアソング・アーマーキャノン・むねんのつるぎ・ジェットパンチ・アクセルロック・ルミナコリジョン・アイスハンマー 等
+- **新ポケモン**: アローラキュウコン・ガラルヤドキング（特性「きみょうなくすり」）
+
 ---
 
 ## 重要なファイルと役割
@@ -110,8 +135,8 @@ src/
 | ファイル | 役割 |
 |----------|------|
 | `src/domain/calculators/DamageCalculator.ts` | コアダメージ計算（タイプ相性・STAB・特性等） |
-| `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` フィールドを含む |
-| `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に `selfStatDrop` あり） |
+| `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `escalating` フィールドを含む |
+| `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に `selfStatDrop` / `selfStatDrops` / `alwaysCrit` あり） |
 | `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ等） |
 | `src/presentation/hooks/useDamageCalc.ts` | 計算実行、`result` と `critResult` を返す |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
