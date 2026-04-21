@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **2.1.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **2.2.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -153,20 +153,87 @@ src/
 
 ---
 
+## V2.2〜V2.5 で実装した主要機能
+
+### V2.2: HPバー可視化 + 最上部サマリーパネル
+
+#### DamageBar の 2 トーン化
+- `DamageBar.tsx` に `percentMin` prop を追加
+- 淡色（0→percentMax）= 乱数帯、濃色（0→percentMin）= 確定ダメージ帯を重ねて描画
+- `getSolidColor()` / `getLightColor()` ヘルパーで KO 状況に応じた色分け
+
+#### 最上部サマリーパネル（DamageSummaryHeader）
+- `src/presentation/components/results/DamageSummaryHeader.tsx` を新規作成
+- `Calculator.tsx` の 3 カラムグリッド上部に常時表示
+- 全技中で `result.max` が最大の技を自動選択して表示
+- レイアウト: `攻撃側名 A/C{stat} ── 技名 ──▶ 防御側名 B/D{stat} / HP{hp}`
+- DamageBar・残HP範囲・KO ラベルを表示
+
+### V2.3: 乱数ヒストグラム + 実数値視認性向上
+
+#### 乱数ヒストグラム（RollHistogram）
+- `DamageResultRow.tsx` 内の `▼乱数` 展開セクションに `RollHistogram` コンポーネントを追加
+- 15 段階ロールを縦棒グラフで可視化（赤=確定KO・橙=2発圏・黄=3発圏・グレー=安全）
+- KO閾値を破線で表示、右上に「確定1発: X/15」「2発圏: X/15」を表示
+- X 軸ラベル: 86% / 92% / 100%
+
+#### SpSlider 実数値の視認性向上
+- `SpSlider.tsx` の実数値表示を `text-xs w-9` → `text-sm w-10 font-semibold` に変更
+
+### V2.4: 耐久調整（逆算）機能
+
+#### FindOptimalSpUseCase
+- `src/application/usecases/FindOptimalSpUseCase.ts` を新規作成
+- H + B（物理）または H + D（特殊）の SP 最適配分を全列挙する
+- アルゴリズム: spDef(0〜32) × defNature(0.9/1.0/1.1) の全組み合わせをイテレート
+  - `calculateDamage(HP=9999)` で最大ダメージを算出
+  - 二分探索で「HP > maxDmg × hitsToSurvive」を満たす最小 spH を算出
+  - `spH + spDef ≤ budget`（budget = 66 − 他ステのSP合計）を満たすものだけ採用
+- 結果は totalSp 昇順・remainHp 降順でソート
+
+#### DurabilityPanel
+- `src/presentation/components/results/DurabilityPanel.tsx` を新規作成
+- `DamageResultRow` の `▼耐久` ボタンで展開
+- 1発耐え / 2発耐えトグル
+- 現在設定の HP・最大被ダメ・耐え判定（✓/✗）を表示
+- 結果テーブル: 計SP・H SP・B/D SP・性格・HP実数・B/D実数・被ダメ・残HP（上位 20 件、最上位を緑ハイライト）
+
+### V2.5: 期待ダメージ表示 + 高急所技データ
+
+#### critChance フィールド追加
+- `src/domain/models/Move.ts` と `src/data/schemas/types.ts` に `critChance?: number` を追加
+  - 0（省略）= 通常急所 1/16, 1 = 高急所 1/8
+- `moves.json` に `critChance: 1` を付与した高急所技 15 件:
+  - アクアカッター・エアカッター・エアスラッシュ・クラブハンマー・クロスポイズン
+  - ドリルライナー・つじぎり・サイコカッター・はっぱカッター・リーフブレード
+  - シャドークロー・ストーンエッジ・あくうせつだん・れんぞくぎり・ブレイズキック
+
+#### 期待ダメージ表示（DamageResultRow）
+- DamageBar 直下に「期待: XX.X」行を常時表示
+- 命中率 × 急所率加重平均: `hitRate × (critRate × avgCrit + (1−critRate) × avgNormal)`
+- 命中 < 100% の場合: 「XX%命中」を右側に表示
+- 高急所技の場合: 「急所1/8」バッジ（黄色）を表示
+- 変動連続技パネル（VariableMultiHitPanel）の期待ダメ・KO確率にも命中率を反映
+
+---
+
 ## 重要なファイルと役割
 
 | ファイル | 役割 |
 |----------|------|
 | `src/domain/calculators/DamageCalculator.ts` | コアダメージ計算（タイプ相性・STAB・特性等） |
-| `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `escalating` フィールドを含む |
-| `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に `selfStatDrop` / `selfStatDrops` / `alwaysCrit` あり） |
-| `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ等） |
+| `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `critChance` / `escalating` フィールドを含む |
+| `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に上記フィールドすべてあり） |
+| `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ・`critChance` 等） |
 | `src/presentation/hooks/useDamageCalc.ts` | 計算実行、`result` と `critResult` を返す |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
 | `src/presentation/store/accumStore.ts` | 累積計算、`setEntryUsages` アクション |
 | `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageAccumPanel の配置 |
-| `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン |
+| `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン・期待ダメ表示・耐久調整トグル |
+| `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（最大ダメージ技を自動選択して表示） |
+| `src/presentation/components/results/DurabilityPanel.tsx` | 耐久調整パネル（H+B/D最適SP配分テーブル） |
 | `src/presentation/components/results/DamageAccumPanel.tsx` | 累積ダメージ計算・KO 確率表示 |
+| `src/application/usecases/FindOptimalSpUseCase.ts` | 耐久調整ロジック（二分探索 + 全組み合わせ列挙） |
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |
 | `src/domain/calculators/SpecialMoveCalc.ts` | 特殊技の威力解決（体重依存・ジャイロボール・ヘビーボンバー等） |
 | `src/data/json/pokemon-mega.json` | メガポケモンデータ（`weight` フィールド含む全 74 件） |
