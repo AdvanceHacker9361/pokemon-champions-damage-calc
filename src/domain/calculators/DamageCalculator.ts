@@ -50,6 +50,7 @@ function resolvePower(input: DamageCalcInput): number {
       defenderWeight,
       attackerStatus,
       originalPower: move.power ?? 0,
+      attackerRankModifiers: input.attackerRankModifiers,
     })
     if (result.effectivePower !== undefined) return result.effectivePower
   }
