@@ -55,6 +55,70 @@ const STAT_LETTER: Record<string, string> = {
   hp: 'HP', atk: 'A', def: 'B', spa: 'C', spd: 'D', spe: 'S',
 }
 
+/** 乱数ヒストグラム: 15段階ロールを縦棒で可視化 */
+function RollHistogram({ rolls, defenderHp }: { rolls: number[]; defenderHp: number }) {
+  const koCount = rolls.filter(r => r >= defenderHp).length
+  const twoShotCount = rolls.filter(r => r * 2 >= defenderHp && r < defenderHp).length
+  const maxVal = Math.max(defenderHp, ...rolls)
+
+  function barColor(roll: number): string {
+    if (roll >= defenderHp)        return 'bg-red-500 dark:bg-red-400'
+    if (roll * 2 >= defenderHp)    return 'bg-orange-400 dark:bg-orange-400'
+    if (roll * 3 >= defenderHp)    return 'bg-yellow-400 dark:bg-yellow-400'
+    return 'bg-slate-400 dark:bg-slate-500'
+  }
+
+  const thresholdPct = (defenderHp / maxVal) * 100
+
+  return (
+    <div className="mt-1.5">
+      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-500 mb-0.5">
+        <span>15乱数分布</span>
+        <span>
+          {koCount > 0 && (
+            <span className="text-red-500 dark:text-red-400 mr-1.5">確定1発: {koCount}/15</span>
+          )}
+          {twoShotCount > 0 && !koCount && (
+            <span className="text-orange-400 mr-1.5">2発圏: {twoShotCount}/15</span>
+          )}
+          KO閾値: {defenderHp}
+        </span>
+      </div>
+      <div className="relative" style={{ height: '40px' }}>
+        {/* KO閾値の横線 */}
+        <div
+          className="absolute left-0 right-0 border-t border-dashed border-red-400 dark:border-red-600 z-10 pointer-events-none"
+          style={{ top: `${100 - thresholdPct}%` }}
+        />
+        {/* 棒グラフ */}
+        <div className="flex items-end gap-px h-full">
+          {rolls.map((roll, i) => {
+            const heightPct = (roll / maxVal) * 100
+            return (
+              <div
+                key={i}
+                className="flex-1 flex flex-col justify-end"
+                title={`乱数${86 + i}%: ${roll} (${(roll / defenderHp * 100).toFixed(1)}%)`}
+              >
+                <div
+                  className={`w-full rounded-t-sm ${barColor(roll)}`}
+                  style={{ height: `${heightPct}%` }}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      {/* x軸: 乱数% ラベル */}
+      <div className="flex justify-between text-[9px] text-slate-400 dark:text-slate-600 mt-0.5 px-0">
+        <span>86%</span>
+        <span>92%</span>
+        <span>100%</span>
+      </div>
+    </div>
+  )
+}
+
 /** 1ロール値をKO判定色でクラス取得 */
 function rollKoClass(roll: number, hp: number): string {
   if (roll >= hp) return 'text-red-500 dark:text-red-400 font-bold'
@@ -478,6 +542,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {/* 乱数展開 */}
       {rollsExpanded && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+          {/* ヒストグラム */}
+          <RollHistogram rolls={effectiveRolls} defenderHp={effectiveHpForKo} />
+
           {/* 実効ロール */}
           <div>
             <div className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">

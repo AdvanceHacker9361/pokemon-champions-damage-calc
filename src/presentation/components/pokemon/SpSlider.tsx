@@ -55,7 +55,7 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
           }}
           className="input-base w-10 text-center text-xs px-1 flex-shrink-0"
         />
-        <span className={`text-xs w-9 text-right font-mono flex-shrink-0 ${hasNature ? natureColor(nature!) : 'text-slate-700 dark:text-slate-300'}`}>
+        <span className={`text-sm w-10 text-right font-mono font-semibold flex-shrink-0 ${hasNature ? natureColor(nature!) : 'text-slate-800 dark:text-slate-200'}`}>
           {statValue}
         </span>
       </div>
