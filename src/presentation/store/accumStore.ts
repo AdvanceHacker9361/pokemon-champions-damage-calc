@@ -2,22 +2,30 @@ import { create } from 'zustand'
 
 export interface AccumEntry {
   id: string
-  label: string      // 例: "ガブリアス のじしん"
-  rolls: number[]    // 15段階ロール（Champions仕様、1回分）
-  /** 何回使用するか（1〜5）。累積ダメージ計算に使用 */
+  label: string
+  /** マルチスケイル等が発動した状態のロール（1回分） */
+  rolls: number[]
+  /**
+   * HP満タン特性（マルチスケイル/ファントムガード）なしの素ダメロール。
+   * hadMultiscale=false のときは rolls と同値。
+   */
+  rawRolls: number[]
   usages: number
-  minDmg: number     // 1回分の最小ダメージ
-  maxDmg: number     // 1回分の最大ダメージ
+  minDmg: number
+  maxDmg: number
+  /** 素ダメ最小（hadMultiscale=false のときは minDmg と同値） */
+  rawMin: number
+  /** 素ダメ最大（hadMultiscale=false のときは maxDmg と同値） */
+  rawMax: number
   defenderMaxHp: number
+  /** 加算時に HP満タン特性（マルチスケイル/ファントムガード）が発動していたか */
+  hadMultiscale: boolean
 }
 
 interface AccumStore {
   entries: AccumEntry[]
-  /** 定数ダメージ（砂/毒/やけど等） */
   constDmg: number
-  /** 定数回復（残飯/黒ヘド等） */
   constRec: number
-  /** もうどく累積ターン数（0〜10） */
   poisonTurns: number
 
   addEntry: (entry: Omit<AccumEntry, 'id'>) => void

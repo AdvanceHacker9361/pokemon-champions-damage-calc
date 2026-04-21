@@ -38,14 +38,46 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const hasEntries = entries.length > 0
     const hasAnything = hasEntries || totalConst !== 0
 
-    const moveMin = entries.reduce((s, e) => s + e.minDmg * e.usages, 0)
-    const moveMax = entries.reduce((s, e) => s + e.maxDmg * e.usages, 0)
+    // 最初のエントリがマルチスケイル半減済みの場合、2発目以降は素ダメを使う
+    const firstHadMultiscale = entries.length > 0 && entries[0].hadMultiscale
+
+    let moveMin = 0, moveMax = 0
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i]
+      if (firstHadMultiscale) {
+        if (i === 0) {
+          // 最初のエントリ: 1発目は半減済み、2発目以降は素ダメ
+          moveMin += e.minDmg + e.rawMin * (e.usages - 1)
+          moveMax += e.maxDmg + e.rawMax * (e.usages - 1)
+        } else {
+          // 2エントリ目以降: HP満タンでないので常に素ダメ
+          moveMin += e.rawMin * e.usages
+          moveMax += e.rawMax * e.usages
+        }
+      } else {
+        moveMin += e.minDmg * e.usages
+        moveMax += e.maxDmg * e.usages
+      }
+    }
+
     const totalMin = moveMin + totalConst
     const totalMax = moveMax + totalConst
     const totalMinPct = defenderMaxHp > 0 ? totalMin / defenderMaxHp * 100 : 0
     const totalMaxPct = defenderMaxHp > 0 ? totalMax / defenderMaxHp * 100 : 0
 
-    const rollSets = entries.flatMap(e => Array<number[]>(e.usages).fill(e.rolls))
+    // ロールセット: 最初エントリがマルチスケイル発動時は、先頭1発だけ半減ロール、残りは素ダメロール
+    const rollSets: number[][] = []
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i]
+      for (let u = 0; u < e.usages; u++) {
+        const isVeryFirst = i === 0 && u === 0
+        if (isVeryFirst || !firstHadMultiscale) {
+          rollSets.push(e.rolls)
+        } else {
+          rollSets.push(e.rawRolls)
+        }
+      }
+    }
     const combinedProb = hasEntries
       ? calcCombinedKoProbability(rollSets, effectiveHp)
       : totalConst >= defenderMaxHp ? 1 : 0

@@ -302,13 +302,27 @@ export function DamageResultRow(props: DamageResultRowProps) {
   function handleAddToAccum() {
     // 加算には実効ロール（おやこあい合算 / ばけのかわ後）を使う
     const critLabel = isCritical ? '(急所)' : ''
+
+    // HP満タン特性（マルチスケイル/ファントムガード）が発動中か判定
+    const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
+    const hadMultiscale = HP_FULL_ABILITIES.has(defenderAbility) && defenderAbilityActivated
+
+    // 素ダメ（マルチスケイルなし）はロール×2で近似（pokeRound の誤差は最大1HPのみ）
+    const rawRolls = hadMultiscale ? effectiveRolls.map(r => r * 2) : effectiveRolls
+    const rawMin   = hadMultiscale ? displayMin * 2 : displayMin
+    const rawMax   = hadMultiscale ? displayMax * 2 : displayMax
+
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
+      rawRolls,
       usages: 1,
       minDmg: displayMin,
       maxDmg: displayMax,
+      rawMin,
+      rawMax,
       defenderMaxHp,
+      hadMultiscale,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1200)
