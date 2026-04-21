@@ -224,7 +224,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "アクアジェット",
@@ -326,7 +327,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "あくのはどう",
@@ -1280,7 +1282,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "エアスラッシュ",
@@ -1300,7 +1303,8 @@
       "bite": false,
       "slice": true
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "エアロブラスト",
@@ -2714,7 +2718,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "クリアスモッグ",
@@ -2880,7 +2885,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "げきりん",
@@ -3455,7 +3461,8 @@
       "bite": false,
       "slice": true
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "サイコキネシス",
@@ -3994,7 +4001,10 @@
     },
     "special": null,
     "multiHit": null,
-    "powerOptions": [50, 100]
+    "powerOptions": [
+      50,
+      100
+    ]
   },
   {
     "name": "しっぽきり",
@@ -4199,7 +4209,8 @@
       "bite": false,
       "slice": true
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "シャドーダイブ",
@@ -4724,7 +4735,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "すなあらし",
@@ -5364,7 +5376,10 @@
       "slice": false
     },
     "special": null,
-    "powerOptions": [65, 130]
+    "powerOptions": [
+      65,
+      130
+    ]
   },
   {
     "name": "たつまき",
@@ -5767,7 +5782,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "つつく",
@@ -7048,7 +7064,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "ドレインキッス",
@@ -8290,7 +8307,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "ハッピータイム",
@@ -9242,7 +9260,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "ブレイブバード",
@@ -11245,7 +11264,8 @@
       "bite": false,
       "slice": true
     },
-    "special": null
+    "special": null,
+    "critChance": 1
   },
   {
     "name": "リサイクル",
@@ -11494,7 +11514,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "critChance": 1
   },
   {
     "name": "ローキック",
@@ -11816,8 +11837,14 @@
     },
     "special": null,
     "selfStatDrops": [
-      { "stat": "def", "stages": -1 },
-      { "stat": "spd", "stages": -1 }
+      {
+        "stat": "def",
+        "stages": -1
+      },
+      {
+        "stat": "spd",
+        "stages": -1
+      }
     ]
   },
   {
