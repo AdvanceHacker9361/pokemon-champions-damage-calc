@@ -121,7 +121,25 @@ src/
 - 既存の `fixed` / `variable` に加え `escalating: { powers: number[] }` を新設
 - `MoveResult` に `perHitResults`・`critPerHitResults` を追加し、発ごと個別結果を保持（ばけのかわ処理に使用）
 
-### 7. UI 追加（デスクトップ PC 作業分）
+### 7. バグ修正・技仕様追加（V2.1 追加分）
+
+#### 7-1. ギルガルド攻守交代バグ修正
+- `Calculator.tsx` の `swapStores()` で `pick` 関数に不足フィールドを追加
+  - 追加: `isBlade`, `availableMegas`, `megaKey`, `abilityActivated`, `proteanType`, `proteanStab`, `movePowers`, `supremeOverlordBoost`
+- バトルスイッチでブレードフォルムにした後に攻守交代すると種族値が逆転する不具合を解消
+
+#### 7-2. アシストパワー・つけあがるの威力計算実装
+- `stored-power` タグの実装が未完だったため修正
+- `SpecialMoveContext` に `attackerRankModifiers?` を追加
+- `resolveSpecialMove` の `stored-power` ケースで `20 + 20 × Σ(正のランク補正)` を計算
+- `DamageCalculator.resolvePower` から `attackerRankModifiers` を渡すよう修正
+- `moves.json` の「つけあがる」に `special: "stored-power"` を設定（アシストパワーは設定済みだった）
+
+#### 7-3. しっぺがえしの可変威力対応
+- `moves.json` の「しっぺがえし」に `powerOptions: [50, 100]` を追加
+- 後攻時の威力2倍（50→100）を UI から選択できるようにした
+
+### 8. UI 追加（デスクトップ PC 作業分）
 
 - **技名横のタイプバッジ**: `DamageResultRow.tsx` にタイプ色付きバッジを表示
 - **自ステータス上昇ボタン**: `selfStatDrops` と同ロジックで正方向（+1/+2）にも対応
