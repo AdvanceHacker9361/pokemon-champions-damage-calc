@@ -139,6 +139,11 @@ src/
 - `moves.json` の「しっぺがえし」に `powerOptions: [50, 100]` を追加
 - 後攻時の威力2倍（50→100）を UI から選択できるようにした
 
+#### 7-4. たたりめの可変威力対応
+- `hex` 特殊ケースは `SpecialMoveContext` に `defenderStatus` がなく常に130を返すバグがあった
+- `special: "hex"` → `special: null` に変更し、`powerOptions: [65, 130]` を追加
+- 相手の状態異常時の威力2倍（65→130）を UI から手動選択できるようにした
+
 ### 8. UI 追加（デスクトップ PC 作業分）
 
 - **技名横のタイプバッジ**: `DamageResultRow.tsx` にタイプ色付きバッジを表示
