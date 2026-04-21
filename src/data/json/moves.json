@@ -3993,7 +3993,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "powerOptions": [50, 100]
   },
   {
     "name": "しっぽきり",
