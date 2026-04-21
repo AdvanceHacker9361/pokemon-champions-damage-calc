@@ -252,6 +252,19 @@ src/
   - range=600 → binSize=15, 41 bins
 - ヒストグラムのラベルに「有効 bin 数 / 全 bin 数」を表示
 
+#### ヒストグラム視認性の大幅改善
+- コンテナ高さ 48px → 80px
+- 線形スケール → **√スケーリング**（小確率 bin も視認可能に）
+  - `heightPct = sqrt(prob / maxProb) * 100`
+  - ダイナミックレンジが大きい分布（ピーク7% / エッジ0.4% など）でも全 bin が見える
+- KO ゾーン背景を淡赤、耐えゾーン背景を淡青で着色（視覚的に境界を即時判別）
+- HP閾値線: 破線 → **実線2px + ラベルバッジ** に強化
+- **累積KO確率曲線 P(damage ≥ X)** をSVG実線でオーバーレイ
+  - 任意の damage 以上となる確率が一目で読める（競プロ向け）
+  - 右に進むほど単調減少、HP閾値で KO確率に一致
+- バー色: 耐えゾーンを slate → sky に変更（青=耐え、赤=KO で統一）
+- 凡例: 色スウォッチ付きで明示
+
 #### 状態管理のリファクタ
 - `accumStore` に `constDmg`/`constRec`/`poisonTurns` を追加（以前は DamageAccumPanel のローカル state）
 - `useAccumulatedDamage(defenderMaxHp)` フックを新設
