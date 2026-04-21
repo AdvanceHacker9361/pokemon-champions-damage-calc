@@ -13,6 +13,21 @@ import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
 /** 性格倍率 3択 */
 export type StatNatureVal = 0.9 | 1.0 | 1.1
 
+/**
+ * 「計算開始時点の状態」で既に発動している条件付き特性。
+ * 防御側が HP 満タン前提のため、満タン条件の特性はデフォルト ON、
+ * HP 減少が必要な特性は OFF とする。
+ */
+const INITIALLY_ACTIVATED_ABILITIES = new Set([
+  'マルチスケイル',   // HP満タン
+  'ファントムガード', // HP満タン
+  'ばけのかわ',       // 戦闘開始時は有効
+])
+
+function defaultAbilityActivated(ability: string): boolean {
+  return INITIALLY_ACTIVATED_ABILITIES.has(ability)
+}
+
 const NATURE_STATS: Exclude<StatKey, 'hp'>[] = ['atk', 'def', 'spa', 'spd', 'spe']
 const DEFAULT_STAT_NATURES: StatNatures = Object.fromEntries(
   NATURE_STATS.map(s => [s, 1.0])
@@ -137,7 +152,7 @@ function createPokemonStore() {
         sp: createSpDistribution(),
         ranks: { ...DEFAULT_RANKS },
         status: null,
-        abilityActivated: false,
+        abilityActivated: defaultAbilityActivated(effectiveAbility),
         proteanType: null,
         proteanStab: true,
         supremeOverlordBoost: 0,
@@ -169,7 +184,7 @@ function createPokemonStore() {
         const mega = PokemonRepository.getMegaByBaseId(pokemonId)
         if (mega) return
       }
-      set({ abilityName: name, effectiveAbility: name })
+      set({ abilityName: name, effectiveAbility: name, abilityActivated: defaultAbilityActivated(name) })
     },
 
     setItem: (name) => set({ itemName: name }),
@@ -188,6 +203,7 @@ function createPokemonStore() {
           baseStats: mega.baseStats as BaseStats,
           types: mega.types as TypeName[],
           effectiveAbility: mega.ability,
+          abilityActivated: defaultAbilityActivated(mega.ability),
           weight: mega.weight !== undefined ? mega.weight : (base?.weight ?? 0),
         })
       } else {
@@ -199,6 +215,7 @@ function createPokemonStore() {
           baseStats: base.baseStats as BaseStats,
           types: base.types as TypeName[],
           effectiveAbility: abilityName,
+          abilityActivated: defaultAbilityActivated(abilityName),
           weight: base.weight,
         })
       }
@@ -215,6 +232,7 @@ function createPokemonStore() {
         baseStats: mega.baseStats as BaseStats,
         types: mega.types as TypeName[],
         effectiveAbility: mega.ability,
+        abilityActivated: defaultAbilityActivated(mega.ability),
         weight: mega.weight !== undefined ? mega.weight : (base?.weight ?? 0),
       })
     },
