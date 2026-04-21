@@ -19,8 +19,8 @@ export function DamageResultArea() {
         <div className="panel text-center py-8">
           <p className="text-slate-500 text-sm">攻撃側・防御側のポケモンを選択してください</p>
         </div>
-        <FieldStateBar />
         <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
+        <FieldStateBar />
       </>
     )
   }
@@ -43,8 +43,8 @@ export function DamageResultArea() {
           <p className="text-slate-500 text-sm">攻撃側に技を選択するとダメージが計算されます</p>
         </div>
       )}
-      <FieldStateBar />
       <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
+      <FieldStateBar />
     </>
   )
 }
