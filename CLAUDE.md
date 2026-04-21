@@ -235,6 +235,30 @@ src/
   - DP で累積ダメージの完全分布を算出し `Map<number, number>` で返す
   - `offset` に定数ダメージ（毒・砂嵐・残飯等の相殺済み値）を渡せる
 
+### V2.7: 総合累積をサマリーヘッダーに統合 + ヒストグラム修正
+
+#### 総合累積の表示位置を移設
+- `DamageAccumPanel` の「総合累積」セクション（HPバー・残HP・ヒストグラム）を
+  `DamageSummaryHeader` に統合
+- 加算パネル側は入力UI（加算リスト・定数ダメ/回復・もうどく）専用に
+- サマリーヘッダー内の構造: 技名情報 / 最大ダメ技バー / 総合累積バー + ヒストグラム
+
+#### ヒストグラムの整数 bin 化（バグ修正）
+- 旧実装: `binSize = range / 30`（小数）→ range=14 のような離散分布では
+  bin が 0.47 幅になり、15個の値が飛び飛びで 15/30 の空 bin が出て描画が崩れる
+- 新実装: `binSize = max(1, round(range / 40))` で整数化
+  - range=14 → binSize=1, 15 bins（各値が独自の bin）
+  - range=140 → binSize=4, 36 bins
+  - range=600 → binSize=15, 41 bins
+- ヒストグラムのラベルに「有効 bin 数 / 全 bin 数」を表示
+
+#### 状態管理のリファクタ
+- `accumStore` に `constDmg`/`constRec`/`poisonTurns` を追加（以前は DamageAccumPanel のローカル state）
+- `useAccumulatedDamage(defenderMaxHp)` フックを新設
+  - totals（min/max/pct）/ distribution / combinedProb / accumKoResult を一元計算
+  - `DamageSummaryHeader` と `DamageAccumPanel` の両方から利用可能に
+- `AccumHistogram.tsx` を独立ファイル化
+
 ---
 
 ## 重要なファイルと役割
@@ -247,12 +271,14 @@ src/
 | `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ・`critChance` 等） |
 | `src/presentation/hooks/useDamageCalc.ts` | 計算実行、`result` と `critResult` を返す |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
-| `src/presentation/store/accumStore.ts` | 累積計算、`setEntryUsages` アクション |
+| `src/presentation/store/accumStore.ts` | 累積計算、entries + `constDmg`/`constRec`/`poisonTurns` 状態 |
+| `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージの totals/分布/KO確率を一元計算するフック |
 | `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageAccumPanel の配置 |
 | `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン・期待ダメ表示・耐久調整トグル |
-| `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（最大ダメージ技を自動選択して表示） |
+| `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（最大ダメ技＋総合累積バー＋ヒストグラム） |
 | `src/presentation/components/results/DurabilityPanel.tsx` | 耐久調整パネル（H+B/D最適SP配分テーブル） |
-| `src/presentation/components/results/DamageAccumPanel.tsx` | 累積ダメージ計算・KO 確率表示 |
+| `src/presentation/components/results/DamageAccumPanel.tsx` | 加算リスト・定数ダメ/回復・もうどく入力 UI |
+| `src/presentation/components/results/AccumHistogram.tsx` | 累積ダメージ分布ヒストグラム（整数 bin 化で離散分布対応） |
 | `src/application/usecases/FindOptimalSpUseCase.ts` | 耐久調整ロジック（二分探索 + 全組み合わせ列挙） |
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |
 | `src/domain/calculators/SpecialMoveCalc.ts` | 特殊技の威力解決（体重依存・ジャイロボール・ヘビーボンバー等） |
