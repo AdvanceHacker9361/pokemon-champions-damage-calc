@@ -74,6 +74,13 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           value={store.pokemonName}
           onSelect={handleSelectPokemon}
         />
+        {store.pokemonId && (
+          <div className="flex gap-2 mt-1 text-[10px] font-mono text-slate-500 dark:text-slate-500">
+            {([['H', store.baseStats.hp], ['A', store.baseStats.atk], ['B', store.baseStats.def], ['C', store.baseStats.spa], ['D', store.baseStats.spd], ['S', store.baseStats.spe]] as [string, number][]).map(([label, val]) => (
+              <span key={label}><span className="text-slate-400 dark:text-slate-600">{label}</span>{val}</span>
+            ))}
+          </div>
+        )}
       </div>
 
       {store.pokemonId && (
