@@ -5743,7 +5743,7 @@
       "bite": false,
       "slice": false
     },
-    "special": null,
+    "special": "stored-power",
     "multiHit": null
   },
   {

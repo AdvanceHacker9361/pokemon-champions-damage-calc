@@ -40,6 +40,7 @@ export interface SpecialMoveContext {
   defenderWeight?: number
   attackerStatus?: StatusCondition
   originalPower?: number
+  attackerRankModifiers?: Record<string, number>
 }
 
 export interface SpecialMoveResult {
@@ -54,7 +55,8 @@ export interface SpecialMoveResult {
 }
 
 export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMoveResult> {
-  const { tag, attackerStats, defenderStats, attackerWeight, defenderWeight, attackerStatus } = ctx
+  const { tag, attackerStats, defenderStats, attackerWeight, defenderWeight, attackerStatus,
+          attackerRankModifiers } = ctx
 
   switch (tag) {
     case 'foul-play':
@@ -113,6 +115,13 @@ export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMove
       if (ratio >= 3) return { effectivePower: 80 }
       if (ratio >= 2) return { effectivePower: 60 }
       return { effectivePower: 40 }
+    }
+
+    case 'stored-power': {
+      // アシストパワー・つけあがる: 20 + 20 × Σ(自分の正のランク補正)
+      const positiveSum = Object.values(attackerRankModifiers ?? {})
+        .reduce((sum, v) => sum + Math.max(0, v), 0)
+      return { effectivePower: 20 + 20 * positiveSum }
     }
 
     case 'stealth-rock':
