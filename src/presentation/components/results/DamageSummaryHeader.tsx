@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useResultStore } from '@/presentation/store/resultStore'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
 import { useAccumStore } from '@/presentation/store/accumStore'
 import { DamageBar } from './DamageBar'
 import { AccumHistogram } from './AccumHistogram'
+import { AccumDurabilityPanel } from './AccumDurabilityPanel'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 function koLabelColor(koResult: KoResult): string {
@@ -21,6 +23,7 @@ export function DamageSummaryHeader() {
   const accumEntries = useAccumStore(s => s.entries)
   const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
   const accum = useAccumulatedDamage(defenderMaxHp)
+  const [durabilityExpanded, setDurabilityExpanded] = useState(false)
 
   const accumProbDisplay = accum.combinedProb >= 1.0
     ? '確定KO'
@@ -69,6 +72,19 @@ export function DamageSummaryHeader() {
               totalMax={accum.totalMax}
             />
           )}
+
+          {/* 耐久調整トグル */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setDurabilityExpanded(v => !v)}
+              className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+            >
+              {durabilityExpanded ? '▲ 耐久調整を閉じる' : '▼ 耐久調整（HP投資）'}
+            </button>
+          </div>
+
+          {durabilityExpanded && <AccumDurabilityPanel />}
         </div>
       )}
     </div>

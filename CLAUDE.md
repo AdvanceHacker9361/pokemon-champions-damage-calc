@@ -274,6 +274,16 @@ src/
   - `DamageSummaryHeader` と `DamageAccumPanel` の両方から利用可能に
 - `AccumHistogram.tsx` を独立ファイル化
 
+### V3.0: 総合累積の耐久調整（HP投資最適化）
+
+#### AccumDurabilityPanel
+- `DamageSummaryHeader` 下部のトグル（`▼ 耐久調整（HP投資）`）で展開
+- **HP SP のみを探索**: 加算リストの技は個別に再計算できない（エントリが攻撃側コンテキストを保持しない）ため、B/D 最適化は行わず H 投資のみ最適化
+- もうどく累計は HP に比例するため、spH ごとに再計算（10ターン積みなど極端な場合は「HP増で総被ダメも増える」逆転現象も正しく扱える）
+- 表示: 現在の判定 / 必要最小 H SP（緑ハイライト）/ 一定間隔の H 投資量での比較テーブル
+- `findOptimalAccumDurability()` ユースケースで列挙
+- 備考: B/D 最適化は従来通り個別技の耐久調整パネルを使用
+
 ---
 
 ## 重要なファイルと役割
@@ -291,7 +301,9 @@ src/
 | `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageAccumPanel の配置 |
 | `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン・期待ダメ表示・耐久調整トグル |
 | `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（総合累積バー＋ヒストグラムのみ。加算なし時はプレースホルダー表示） |
-| `src/presentation/components/results/DurabilityPanel.tsx` | 耐久調整パネル（H+B/D最適SP配分テーブル） |
+| `src/presentation/components/results/DurabilityPanel.tsx` | 耐久調整パネル（個別技・H+B/D最適SP配分テーブル） |
+| `src/presentation/components/results/AccumDurabilityPanel.tsx` | 耐久調整パネル（総合累積・HP投資のみ最適化） |
+| `src/application/usecases/FindOptimalAccumDurability.ts` | 総合累積用の耐久調整ロジック（HP のみ列挙、もうどく再計算込み） |
 | `src/presentation/components/results/DamageAccumPanel.tsx` | 加算リスト・定数ダメ/回復・もうどく入力 UI |
 | `src/presentation/components/results/AccumHistogram.tsx` | 累積ダメージ分布ヒストグラム（整数 bin 化で離散分布対応） |
 | `src/application/usecases/FindOptimalSpUseCase.ts` | 耐久調整ロジック（二分探索 + 全組み合わせ列挙） |
