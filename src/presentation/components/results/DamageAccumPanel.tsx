@@ -50,9 +50,10 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           <button
             type="button"
             onClick={clearEntries}
-            className="text-xs text-slate-600 hover:text-red-500 dark:hover:text-red-400 dark:text-slate-500 transition-colors"
+            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-red-300 dark:border-red-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
           >
-            クリア
+            <span>✕</span>
+            <span>全クリア</span>
           </button>
         )}
       </div>
