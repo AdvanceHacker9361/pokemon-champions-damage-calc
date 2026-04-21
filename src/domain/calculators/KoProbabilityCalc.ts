@@ -161,3 +161,28 @@ export function calcCombinedKoProbability(
   }
   return Math.min(1, koProb)
 }
+
+/**
+ * 複数の技・ポケモンによる複合ダメージの分布をDPで計算
+ * @param rollSets 各技の乱数ロール配列（15段階）
+ * @param offset 定数ダメージ（毒・砂嵐・残飯等の減算済み値）
+ * @returns 累積ダメージ値 -> 確率 のMap
+ */
+export function calcCombinedDamageDistribution(
+  rollSets: number[][],
+  offset = 0,
+): Map<number, number> {
+  let dp: Map<number, number> = new Map([[offset, 1.0]])
+  for (const rolls of rollSets) {
+    const n = rolls.length
+    const next: Map<number, number> = new Map()
+    for (const [dmg, prob] of dp) {
+      for (const roll of rolls) {
+        const newDmg = dmg + roll
+        next.set(newDmg, (next.get(newDmg) ?? 0) + prob / n)
+      }
+    }
+    dp = next
+  }
+  return dp
+}

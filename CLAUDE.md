@@ -215,6 +215,26 @@ src/
 - 高急所技の場合: 「急所1/8」バッジ（黄色）を表示
 - 変動連続技パネル（VariableMultiHitPanel）の期待ダメ・KO確率にも命中率を反映
 
+### V2.6: 加算パネルのHPバー統合 + ダメージ分布ヒストグラム
+
+#### 総合累積エリアの刷新
+- `DamageAccumPanel.tsx` の独自赤バー → `DamageBar` コンポーネントに置き換え
+  - KO 状況に応じた 2 トーン配色（`accumKoResult` を `combinedProb` から構築）
+- バー直下に残HP行を追加（個別結果行と同じスタイル）
+
+#### 累積ダメージ分布ヒストグラム（AccumHistogram）
+- `DamageAccumPanel.tsx` 内に `AccumHistogram` コンポーネントを新設
+- 30 bin で確率密度を可視化
+  - HP閾値を赤い破線で表示し、超過 bin は赤、境界 bin は橙、それ以下はグレーで着色
+  - 上部に「耐え XX.X%」「KO XX.X%」のサマリ
+  - X 軸ラベル: `totalMin` / `HP{value}`（閾値位置）/ `totalMax`
+- `totalMin === totalMax`（変動なし）の場合はヒストグラム非表示
+
+#### 新規ドメイン関数
+- `KoProbabilityCalc.calcCombinedDamageDistribution(rollSets, offset)` を追加
+  - DP で累積ダメージの完全分布を算出し `Map<number, number>` で返す
+  - `offset` に定数ダメージ（毒・砂嵐・残飯等の相殺済み値）を渡せる
+
 ---
 
 ## 重要なファイルと役割

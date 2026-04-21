@@ -1,9 +1,112 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAccumStore } from '@/presentation/store/accumStore'
-import { calcCombinedKoProbability } from '@/domain/calculators/KoProbabilityCalc'
+import {
+  calcCombinedKoProbability,
+  calcCombinedDamageDistribution,
+} from '@/domain/calculators/KoProbabilityCalc'
+import type { KoResult } from '@/domain/models/DamageResult'
+import { DamageBar } from './DamageBar'
 
 interface DamageAccumPanelProps {
   defenderMaxHp: number
+}
+
+/** 累積ダメージ分布ヒストグラム */
+function AccumHistogram({
+  distribution,
+  defenderMaxHp,
+  totalMin,
+  totalMax,
+}: {
+  distribution: Map<number, number>
+  defenderMaxHp: number
+  totalMin: number
+  totalMax: number
+}) {
+  const range = totalMax - totalMin
+  if (range <= 0) return null
+
+  const BIN_COUNT = 30
+  const binSize = range / BIN_COUNT
+  const bins = Array.from({ length: BIN_COUNT }, (_, i) => ({
+    lo: totalMin + i * binSize,
+    hi: totalMin + (i + 1) * binSize,
+    prob: 0,
+  }))
+  for (const [dmg, p] of distribution) {
+    const idx = Math.min(BIN_COUNT - 1, Math.max(0, Math.floor((dmg - totalMin) / binSize)))
+    bins[idx].prob += p
+  }
+
+  const maxBinProb = Math.max(...bins.map(b => b.prob), 0.00001)
+  const hpInRange = defenderMaxHp >= totalMin && defenderMaxHp <= totalMax
+  const hpThresholdPct = hpInRange ? ((defenderMaxHp - totalMin) / range) * 100 : -1
+
+  // 累積確率の集計（KO確率・耐え確率）
+  let koProb = 0
+  for (const [dmg, p] of distribution) {
+    if (dmg >= defenderMaxHp) koProb += p
+  }
+  const survivalProb = 1 - koProb
+
+  function binColor(b: { lo: number; hi: number }): string {
+    if (b.lo >= defenderMaxHp) return 'bg-red-500 dark:bg-red-400'
+    if (b.hi > defenderMaxHp) return 'bg-orange-400 dark:bg-orange-400'
+    return 'bg-slate-400 dark:bg-slate-500'
+  }
+
+  return (
+    <div className="mt-1.5">
+      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-500 mb-0.5">
+        <span>ダメ分布</span>
+        <span>
+          <span className="text-slate-500 dark:text-slate-500 mr-1.5">耐え {(survivalProb * 100).toFixed(1)}%</span>
+          <span className="text-red-500 dark:text-red-400">KO {(koProb * 100).toFixed(1)}%</span>
+        </span>
+      </div>
+      <div className="relative" style={{ height: '48px' }}>
+        {/* HP閾値の縦線 */}
+        {hpThresholdPct >= 0 && hpThresholdPct <= 100 && (
+          <div
+            className="absolute top-0 bottom-0 border-l border-dashed border-red-500 dark:border-red-400 z-10 pointer-events-none"
+            style={{ left: `${hpThresholdPct}%` }}
+            title={`HP ${defenderMaxHp}`}
+          />
+        )}
+        {/* 棒グラフ */}
+        <div className="flex items-end gap-px h-full">
+          {bins.map((b, i) => {
+            const heightPct = (b.prob / maxBinProb) * 100
+            return (
+              <div
+                key={i}
+                className="flex-1 flex flex-col justify-end"
+                title={`${Math.round(b.lo)}〜${Math.round(b.hi)} : ${(b.prob * 100).toFixed(2)}%`}
+              >
+                <div
+                  className={`w-full rounded-t-sm ${binColor(b)}`}
+                  style={{ height: `${heightPct}%`, minHeight: b.prob > 0 ? '1px' : 0 }}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      {/* X軸ラベル */}
+      <div className="relative text-[9px] text-slate-400 dark:text-slate-600 mt-0.5 font-mono" style={{ height: '12px' }}>
+        <span className="absolute left-0">{totalMin}</span>
+        {hpInRange && (
+          <span
+            className="absolute text-red-500 dark:text-red-400"
+            style={{ left: `${hpThresholdPct}%`, transform: 'translateX(-50%)' }}
+          >
+            HP{defenderMaxHp}
+          </span>
+        )}
+        <span className="absolute right-0">{totalMax}</span>
+      </div>
+    </div>
+  )
 }
 
 const CONST_FRACTIONS = [
@@ -70,6 +173,21 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
     : combinedProb <= 0
     ? '倒せない'
     : `${(combinedProb * 100).toFixed(1)}%`
+
+  // 累積ダメージ分布（定数分は offset として先に加算）
+  const distribution = useMemo(
+    () => hasEntries
+      ? calcCombinedDamageDistribution(rollSets, totalConst)
+      : new Map<number, number>([[totalConst, 1.0]]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hasEntries, totalConst, JSON.stringify(rollSets)],
+  )
+
+  // KoResult を combinedProb から構築（DamageBar の色分けに使用）
+  const accumKoResult: KoResult =
+    combinedProb >= 1.0 ? { type: 'guaranteed', hits: 1 }
+    : combinedProb > 0 ? { type: 'chance', hits: 1, probability: combinedProb }
+    : { type: 'no-ko' }
 
   return (
     <div className="panel space-y-3">
@@ -325,20 +443,20 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           </div>
 
           {defenderMaxHp > 0 && (
-            <div className="relative h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div
-                className="absolute left-0 h-full bg-red-500 rounded-full transition-all"
-                style={{ width: `${Math.min(100, totalMaxPct)}%`, opacity: 0.35 }}
-              />
-              <div
-                className="absolute left-0 h-full bg-red-500 rounded-full transition-all"
-                style={{ width: `${Math.min(100, totalMinPct)}%` }}
-              />
-              <div
-                className="absolute top-0 bottom-0 w-px bg-white dark:bg-slate-300 opacity-50"
-                style={{ left: '100%', transform: 'translateX(-1px)' }}
-              />
-            </div>
+            <>
+              <DamageBar percentMin={totalMinPct} percentMax={totalMaxPct} koResult={accumKoResult} />
+              <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
+                残HP {Math.max(0, defenderMaxHp - totalMax)}〜{Math.max(0, defenderMaxHp - totalMin)}/{defenderMaxHp}
+              </div>
+              {totalMax > totalMin && (
+                <AccumHistogram
+                  distribution={distribution}
+                  defenderMaxHp={defenderMaxHp}
+                  totalMin={totalMin}
+                  totalMax={totalMax}
+                />
+              )}
+            </>
           )}
         </div>
       )}
