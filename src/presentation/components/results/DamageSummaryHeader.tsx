@@ -1,8 +1,11 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useStatCalc } from '@/presentation/hooks/useStatCalc'
+import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
+import { useAccumStore } from '@/presentation/store/accumStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { DamageBar } from './DamageBar'
+import { AccumHistogram } from './AccumHistogram'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 function koLabel(koResult: KoResult): string {
@@ -40,6 +43,11 @@ export function DamageSummaryHeader() {
   const attackerStats = useStatCalc(attackerBase, attackerSp, attackerNatures, attackerRanks)
   const defenderStats = useStatCalc(defenderBase, defenderSp, defenderNatures, defenderRanks)
 
+  // 累積情報
+  const accumEntries = useAccumStore(s => s.entries)
+  const defenderMaxHpForAccum = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
+  const accum = useAccumulatedDamage(defenderMaxHpForAccum)
+
   if (!attackerName || !defenderName || results.length === 0) return null
 
   // 最大ダメージの技を選択
@@ -59,10 +67,16 @@ export function DamageSummaryHeader() {
   const attackLabel = isSpecial ? 'C' : 'A'
   const defenseLabel = isSpecial ? 'D' : 'B'
 
+  const accumProbDisplay = accum.combinedProb >= 1.0
+    ? '確定KO'
+    : accum.combinedProb <= 0
+    ? '倒せない'
+    : `${(accum.combinedProb * 100).toFixed(1)}%`
+
   return (
-    <div className="panel mb-3 sm:mb-4">
+    <div className="panel mb-3 sm:mb-4 space-y-2">
       {/* 上段: ポケモン名 + ステータス */}
-      <div className="flex items-center gap-2 text-sm mb-2 flex-wrap">
+      <div className="flex items-center gap-2 text-sm flex-wrap">
         <span className="font-semibold text-slate-800 dark:text-slate-200">{attackerName}</span>
         <span className="text-xs font-mono text-slate-500 dark:text-slate-500">
           {attackLabel}{attackStat}
@@ -78,27 +92,68 @@ export function DamageSummaryHeader() {
         </span>
       </div>
 
-      {/* 下段: ダメージ数値 + バー + KO判定 */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div>
-          <span className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100">
-            {min}〜{max}
-          </span>
-          <span className="text-sm font-mono text-slate-600 dark:text-slate-400 ml-2">
-            ({percentMin.toFixed(1)}〜{percentMax.toFixed(1)}%)
+      {/* 中段: 最大ダメ技のダメージ表示 */}
+      <div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div>
+            <span className="text-xl font-bold font-mono text-slate-900 dark:text-slate-100">
+              {min}〜{max}
+            </span>
+            <span className="text-sm font-mono text-slate-600 dark:text-slate-400 ml-2">
+              ({percentMin.toFixed(1)}〜{percentMax.toFixed(1)}%)
+            </span>
+          </div>
+          <span className={`text-base font-bold ml-auto ${koLabelColor(koResult)}`}>
+            {koLabel(koResult)}
           </span>
         </div>
-        <span className={`text-base font-bold ml-auto ${koLabelColor(koResult)}`}>
-          {koLabel(koResult)}
-        </span>
+
+        <div className="mt-1.5">
+          <DamageBar percentMin={percentMin} percentMax={percentMax} koResult={koResult} />
+          <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
+            残HP {remainingMin}〜{remainingMax}/{defenderMaxHp}
+          </div>
+        </div>
       </div>
 
-      <div className="mt-1.5">
-        <DamageBar percentMin={percentMin} percentMax={percentMax} koResult={koResult} />
-        <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
-          残HP {remainingMin}〜{remainingMax}/{defenderMaxHp}
+      {/* 下段: 総合累積（加算リストまたは定数が設定されている場合のみ） */}
+      {accum.hasAnything && defenderMaxHp > 0 && (
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">総合累積</span>
+            <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">
+              {accum.totalMin}〜{accum.totalMax}
+            </span>
+            <span className="text-xs font-mono text-slate-600 dark:text-slate-400">
+              ({accum.totalMinPct.toFixed(1)}〜{accum.totalMaxPct.toFixed(1)}%)
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-600">/{defenderMaxHp}</span>
+            <span className={`text-sm font-bold ml-auto ${koLabelColor(accum.accumKoResult)}`}>
+              {accumProbDisplay}
+            </span>
+          </div>
+
+          <div className="mt-1.5">
+            <DamageBar
+              percentMin={accum.totalMinPct}
+              percentMax={accum.totalMaxPct}
+              koResult={accum.accumKoResult}
+            />
+            <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
+              残HP {Math.max(0, defenderMaxHp - accum.totalMax)}〜{Math.max(0, defenderMaxHp - accum.totalMin)}/{defenderMaxHp}
+            </div>
+          </div>
+
+          {accum.totalMax > accum.totalMin && (
+            <AccumHistogram
+              distribution={accum.distribution}
+              defenderMaxHp={defenderMaxHp}
+              totalMin={accum.totalMin}
+              totalMax={accum.totalMax}
+            />
+          )}
         </div>
-      </div>
+      )}
     </div>
   )
 }

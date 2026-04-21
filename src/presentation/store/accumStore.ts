@@ -13,14 +13,28 @@ export interface AccumEntry {
 
 interface AccumStore {
   entries: AccumEntry[]
+  /** 定数ダメージ（砂/毒/やけど等） */
+  constDmg: number
+  /** 定数回復（残飯/黒ヘド等） */
+  constRec: number
+  /** もうどく累積ターン数（0〜10） */
+  poisonTurns: number
+
   addEntry: (entry: Omit<AccumEntry, 'id'>) => void
   removeEntry: (id: string) => void
   setEntryUsages: (id: string, usages: number) => void
   clearEntries: () => void
+  setConstDmg: (v: number) => void
+  setConstRec: (v: number) => void
+  setPoisonTurns: (n: number) => void
 }
 
 export const useAccumStore = create<AccumStore>(set => ({
   entries: [],
+  constDmg: 0,
+  constRec: 0,
+  poisonTurns: 0,
+
   addEntry: (entry) => set(s => ({
     entries: [...s.entries, {
       ...entry,
@@ -35,4 +49,7 @@ export const useAccumStore = create<AccumStore>(set => ({
     ),
   })),
   clearEntries: () => set({ entries: [] }),
+  setConstDmg: (v) => set({ constDmg: Math.max(0, Math.floor(v)) }),
+  setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
+  setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
 }))
