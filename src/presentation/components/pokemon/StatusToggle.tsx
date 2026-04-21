@@ -11,6 +11,7 @@ const STATUS_OPTIONS: { value: StatusCondition; label: string; color: string }[]
   { value: 'まひ',    label: 'まひ',     color: 'text-yellow-600 dark:text-yellow-400' },
   { value: 'どく',    label: 'どく',     color: 'text-purple-500 dark:text-purple-400' },
   { value: 'もうどく',label: 'もうどく', color: 'text-purple-700 dark:text-purple-600' },
+  { value: 'ねむり',  label: 'ねむり',   color: 'text-blue-500 dark:text-blue-400' },
 ]
 
 export function StatusToggle({ value, onChange }: StatusToggleProps) {
