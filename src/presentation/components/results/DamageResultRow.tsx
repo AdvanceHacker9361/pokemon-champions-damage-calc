@@ -463,7 +463,10 @@ export function DamageResultRow(props: DamageResultRowProps) {
         </div>
       </div>
 
-      <DamageBar percentMax={displayPercentMax} koResult={displayKoResult} />
+      <DamageBar percentMin={displayPercentMin} percentMax={displayPercentMax} koResult={displayKoResult} />
+      <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
+        残HP {Math.max(0, defenderMaxHp - displayMax)}〜{Math.max(0, defenderMaxHp - displayMin)}/{defenderMaxHp}
+      </div>
 
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (

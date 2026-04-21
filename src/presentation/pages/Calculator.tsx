@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
+import { DamageSummaryHeader } from '@/presentation/components/results/DamageSummaryHeader'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
 
 /** 攻守交代 */
@@ -79,6 +80,9 @@ export function Calculator() {
   return (
     <>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+        {/* サマリーヘッダー: 最大ダメージ技の概要 */}
+        <DamageSummaryHeader />
+
         {/* モバイル: 攻守交代ボタンを最上部に表示 */}
         <div className="flex justify-center mb-3 lg:hidden">
           <button
