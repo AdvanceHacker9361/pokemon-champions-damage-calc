@@ -41,16 +41,18 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
   const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
 
   const hasEntries = entries.length > 0
+  const hasAnything = hasEntries || constDmg > 0 || constRec > 0 || poisonTurns > 0
 
   return (
     <div className="panel space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">加算計算リスト</h3>
-        {hasEntries && (
+        {hasAnything && (
           <button
             type="button"
             onClick={clearEntries}
             className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-red-300 dark:border-red-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            title="加算リスト・定数ダメ・定数回復・もうどくをすべてクリア"
           >
             <span>✕</span>
             <span>全クリア</span>

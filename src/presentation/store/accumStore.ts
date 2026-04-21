@@ -48,7 +48,7 @@ export const useAccumStore = create<AccumStore>(set => ({
       e.id === id ? { ...e, usages: Math.max(1, Math.min(9, Math.floor(usages))) } : e
     ),
   })),
-  clearEntries: () => set({ entries: [] }),
+  clearEntries: () => set({ entries: [], constDmg: 0, constRec: 0, poisonTurns: 0 }),
   setConstDmg: (v) => set({ constDmg: Math.max(0, Math.floor(v)) }),
   setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
   setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
