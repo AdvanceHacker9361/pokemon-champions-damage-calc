@@ -13,6 +13,7 @@ import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MultiHitData } from '@/domain/models/Move'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { TypeName } from '@/domain/models/Pokemon'
+import { DurabilityPanel } from './DurabilityPanel'
 
 interface DamageResultRowProps {
   moveName: string
@@ -249,6 +250,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
+  const [durabilityExpanded, setDurabilityExpanded] = useState(false)
   const [added, setAdded] = useState(false)
   const [isCritical, setIsCritical] = useState(false)
 
@@ -524,6 +526,18 @@ export function DamageResultRow(props: DamageResultRowProps) {
           >
             {rollsExpanded ? '▲' : '▼'}乱数
           </button>
+          <button
+            type="button"
+            onClick={() => setDurabilityExpanded(v => !v)}
+            className={`text-xs transition-colors ${
+              durabilityExpanded
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-slate-600 hover:text-slate-800 dark:hover:text-slate-300'
+            }`}
+            title="耐久調整（H+B/Dの最適SP配分）"
+          >
+            {durabilityExpanded ? '▲' : '▼'}耐久
+          </button>
         </div>
       </div>
 
@@ -531,6 +545,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
       <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
         残HP {Math.max(0, defenderMaxHp - displayMax)}〜{Math.max(0, defenderMaxHp - displayMin)}/{defenderMaxHp}
       </div>
+
+      {/* 耐久調整パネル */}
+      {durabilityExpanded && (
+        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <DurabilityPanel moveName={moveName} />
+        </div>
+      )}
 
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
