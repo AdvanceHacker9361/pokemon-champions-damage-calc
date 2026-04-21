@@ -197,8 +197,9 @@ function ParentalBondKoInfo({ rolls, childRolls, defenderHp }: { rolls: number[]
 }
 
 /** 変動連続技（2〜5回）の確率計算パネル */
-function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defenderHp: number }) {
+function VariableMultiHitPanel({ rolls, defenderHp, hitRate }: { rolls: number[]; defenderHp: number; hitRate: number }) {
   const res = calcVariableMultiHitKo(rolls, defenderHp)
+  const expectedWithAcc = res.expectedDmg * hitRate
 
   return (
     <div className="space-y-1.5">
@@ -231,13 +232,14 @@ function VariableMultiHitPanel({ rolls, defenderHp }: { rolls: number[]; defende
         <div className="text-xs text-slate-700 dark:text-slate-400">
           期待KO確率（加重平均）
           <span className="ml-2 text-slate-500 dark:text-slate-500 text-[10px]">
-            期待ダメ: {res.expectedDmg.toFixed(1)}
+            期待ダメ: {expectedWithAcc.toFixed(1)}
+            {hitRate < 1 && <span className="ml-1 text-slate-400">({Math.round(hitRate * 100)}%命中込)</span>}
           </span>
         </div>
-        <span className={`text-sm font-bold ${multiHitKoColor(res.totalKoProb)}`}>
-          {res.totalKoProb >= 1 ? '確定KO'
-            : res.totalKoProb <= 0 ? '倒せない'
-            : `${(res.totalKoProb * 100).toFixed(1)}%`}
+        <span className={`text-sm font-bold ${multiHitKoColor(res.totalKoProb * hitRate)}`}>
+          {res.totalKoProb * hitRate >= 1 ? '確定KO'
+            : res.totalKoProb * hitRate <= 0 ? '倒せない'
+            : `${(res.totalKoProb * hitRate * 100).toFixed(1)}%`}
         </span>
       </div>
     </div>
@@ -322,6 +324,18 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const displayMax = effectiveRolls[effectiveRolls.length - 1]
   const displayPercentMin = displayMin / defenderMaxHp * 100
   const displayPercentMax = displayMax / defenderMaxHp * 100
+
+  // ── 期待ダメージ（命中率 × 急所加重平均） ──────────────────────────
+  const hitRate = moveRecord?.accuracy != null ? moveRecord.accuracy / 100 : 1.0
+  const isAlwaysCrit = moveRecord?.alwaysCrit === true
+  const critRate = isAlwaysCrit ? 1.0 : ((moveRecord?.critChance ?? 0) >= 1 ? 1 / 8 : 1 / 16)
+  const avgNormal = (displayMin + displayMax) / 2
+  // 急所倍率スケール: 通常result vs critResultの比率から算出
+  const baseRollSum = result.max + result.min
+  const critRollSum = critResult.max + critResult.min
+  const critScaleFactor = baseRollSum > 0 ? critRollSum / baseRollSum : 1.5
+  const avgCrit = avgNormal * critScaleFactor
+  const expectedDmg = hitRate * (critRate * avgCrit + (1 - critRate) * avgNormal)
 
   // KO確率: ばけのかわ定数ダメ分だけ実効HPを減らして再計算
   const effectiveHpForKo = Math.max(1, defenderMaxHp - disguiseFlatDmg)
@@ -542,8 +556,22 @@ export function DamageResultRow(props: DamageResultRowProps) {
       </div>
 
       <DamageBar percentMin={displayPercentMin} percentMax={displayPercentMax} koResult={displayKoResult} />
-      <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
-        残HP {Math.max(0, defenderMaxHp - displayMax)}〜{Math.max(0, defenderMaxHp - displayMin)}/{defenderMaxHp}
+      <div className="flex items-center justify-between text-[10px] font-mono mt-0.5">
+        <span className="text-slate-500 dark:text-slate-500">
+          期待:
+          <span className="ml-0.5 font-semibold text-slate-600 dark:text-slate-400">{expectedDmg.toFixed(1)}</span>
+          {hitRate < 1 && (
+            <span className="ml-1 text-slate-400 dark:text-slate-600">
+              {Math.round(hitRate * 100)}%命中
+            </span>
+          )}
+          {!isAlwaysCrit && (moveRecord?.critChance ?? 0) >= 1 && (
+            <span className="ml-1 text-yellow-600 dark:text-yellow-500">急所1/8</span>
+          )}
+        </span>
+        <span className="text-slate-400 dark:text-slate-600">
+          残HP {Math.max(0, defenderMaxHp - displayMax)}〜{Math.max(0, defenderMaxHp - displayMin)}/{defenderMaxHp}
+        </span>
       </div>
 
       {/* 耐久調整パネル */}
@@ -556,7 +584,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <VariableMultiHitPanel rolls={rolls} defenderHp={defenderMaxHp} />
+          <VariableMultiHitPanel rolls={rolls} defenderHp={defenderMaxHp} hitRate={hitRate} />
         </div>
       )}
 

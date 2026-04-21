@@ -52,6 +52,8 @@ export interface MoveRecord {
   selfStatDrops?: { stat: StatKey; stages: number }[]
   /** 確定急所技（常に急所補正で計算） */
   alwaysCrit?: boolean
+  /** 急所ランク加算値 (1 = 高急所 1/8, 省略 = 通常 1/16) */
+  critChance?: number
 }
 
 export interface AbilityRecord {
