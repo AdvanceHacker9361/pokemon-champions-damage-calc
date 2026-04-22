@@ -73,8 +73,7 @@ function calcChildRolls(parentRolls: number[]): number[] {
 }
 
 /** おやこあい 16×16 テーブル */
-function ParentalBondTable({ rolls, defenderHp }: { rolls: number[]; defenderHp: number }) {
-  const childRolls = calcChildRolls(rolls)
+function ParentalBondTable({ rolls, childRolls, defenderHp }: { rolls: number[]; childRolls: number[]; defenderHp: number }) {
 
   return (
     <div className="mt-1 overflow-x-auto">
@@ -234,7 +233,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
     : rolls
 
   // ── おやこあい: 子ロール (親の25%) と合算ロール ──────────────────
-  const childRollsArr = calcChildRolls(rolls)
+  // マルチスケイル発動時は「親=半減(1発目), 子=素ダメの25%(2発目)」とする。
+  // 無発動時は rawRolls === rolls なので結果は同じ。
+  const childRollsArr = calcChildRolls(rawRolls)
   // 親+子 合算ロール（おやこあい通常時の主表示）
   const combinedRolls = rolls.map((r, i) => r + childRollsArr[i])
 
@@ -272,6 +273,12 @@ export function DamageResultRow(props: DamageResultRowProps) {
   } else if (isParentalBond) {
     // おやこあい通常: 親+子 合算
     effectiveRolls = combinedRolls
+  } else if (multiHit?.type === 'fixed' && multiHit.count > 1) {
+    // 固定連続技: 合計表示（1発目 rolls + 2発目以降 rawRolls）
+    // マルチスケイル発動時: 1発目半減 + (count-1)発分の素ダメ
+    // 発動なし時: rawRolls === rolls なので単純な count 倍
+    const count = multiHit.count
+    effectiveRolls = rolls.map((r, i) => r + rawRolls[i] * (count - 1))
   } else {
     effectiveRolls = rolls
   }
@@ -619,7 +626,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
                 {pbExpanded ? '▲' : '▼'} おやこあい 15×15乱数表
               </button>
               {pbExpanded && (
-                <ParentalBondTable rolls={rolls} defenderHp={defenderMaxHp} />
+                <ParentalBondTable rolls={rolls} childRolls={childRollsArr} defenderHp={defenderMaxHp} />
               )}
             </div>
           )}
