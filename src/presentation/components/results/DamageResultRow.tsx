@@ -22,6 +22,9 @@ interface DamageResultRowProps {
   /** 段階威力型の各発個別結果 */
   perHitResults?: DamageResult[]
   critPerHitResults?: DamageResult[]
+  /** マルチスケイル無効時（2発目以降用）の素ダメ結果 */
+  rawResult?: DamageResult
+  rawCritResult?: DamageResult
 }
 
 function koLabel(koResult: KoResult): string {
@@ -133,7 +136,15 @@ function ParentalBondKoInfo({ rolls, childRolls, defenderHp }: { rolls: number[]
 }
 
 /** 変動連続技（2〜5回）の確率計算パネル */
-function VariableMultiHitPanel({ rolls, defenderHp, hitRate }: { rolls: number[]; defenderHp: number; hitRate: number }) {
+function VariableMultiHitPanel({
+  rolls, rawRolls, defenderHp, hitRate,
+}: {
+  rolls: number[]
+  /** マルチスケイル無効時（2発目以降用）の素ダメロール。通常時は rolls と同値 */
+  rawRolls: number[]
+  defenderHp: number
+  hitRate: number
+}) {
   const res = calcVariableMultiHitKo(rolls, defenderHp)
   const expectedWithAcc = res.expectedDmg * hitRate
 
@@ -144,8 +155,9 @@ function VariableMultiHitPanel({ rolls, defenderHp, hitRate }: { rolls: number[]
       </div>
       <div className="grid grid-cols-4 gap-x-2 text-xs font-mono">
         {res.perHit.map(({ hits, prob, koProbForHits }) => {
-          const hitMin = rolls[0] * hits
-          const hitMax = rolls[rolls.length - 1] * hits
+          // マルチスケイル発動時: 1発目 rolls + 2発目以降 rawRolls
+          const hitMin = rolls[0] + rawRolls[0] * (hits - 1)
+          const hitMax = rolls[rolls.length - 1] + rawRolls[rawRolls.length - 1] * (hits - 1)
           const hitMinPct = hitMin / defenderHp * 100
           const hitMaxPct = hitMax / defenderHp * 100
           const distPct = (prob * 100).toFixed(0)
@@ -212,6 +224,15 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const activeResult = isCritical ? critResult : result
   const rolls = Array.from(activeResult.rolls)
 
+  // マルチスケイル/ファントムガード 2発目以降用の素ダメロール（fixed/variable 多段技用）
+  // rawResult がない場合（単発技・マルチスケイル無効時）は rolls と同値
+  const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
+  const hadMultiscale = HP_FULL_ABILITIES.has(defenderAbility) && defenderAbilityActivated
+  const activeRawResult = isCritical ? props.rawCritResult : props.rawResult
+  const rawRolls = hadMultiscale && activeRawResult
+    ? Array.from(activeRawResult.rolls)
+    : rolls
+
   // ── おやこあい: 子ロール (親の25%) と合算ロール ──────────────────
   const childRollsArr = calcChildRolls(rolls)
   // 親+子 合算ロール（おやこあい通常時の主表示）
@@ -239,7 +260,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       effectiveRolls = remainingRolls
       disguiseLabel = `ばけのかわ発動（1発目無効 → 残${perHitResults.length - 1}発）`
     } else if (multiHit?.type === 'fixed' && multiHit.count > 1) {
-      // 固定複数回: 1発目無効、残り(count-1)発が通る
+      // 固定複数回: 1発目無効、残り(count-1)発が通る（ばけのかわで HP 満タン維持 → マルチスケイル適用）
       const remaining = multiHit.count - 1
       effectiveRolls = rolls.map(r => r * remaining)
       disguiseLabel = `ばけのかわ発動（1発目無効 → 残${remaining}発）`
@@ -303,24 +324,23 @@ export function DamageResultRow(props: DamageResultRowProps) {
     // 加算には実効ロール（おやこあい合算 / ばけのかわ後）を使う
     const critLabel = isCritical ? '(急所)' : ''
 
-    // HP満タン特性（マルチスケイル/ファントムガード）が発動中か判定
-    const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
-    const hadMultiscale = HP_FULL_ABILITIES.has(defenderAbility) && defenderAbilityActivated
-
-    // 素ダメ（マルチスケイルなし）はロール×2で近似（pokeRound の誤差は最大1HPのみ）
-    const rawRolls = hadMultiscale ? effectiveRolls.map(r => r * 2) : effectiveRolls
-    const rawMin   = hadMultiscale ? displayMin * 2 : displayMin
-    const rawMax   = hadMultiscale ? displayMax * 2 : displayMax
+    // 素ダメ（マルチスケイルなし）: useDamageCalc が計算した activeRawResult を使う。
+    // フォールバックはロール×2 近似（pokeRound の誤差は最大1HP）。
+    const accumRawRolls = hadMultiscale
+      ? (activeRawResult ? Array.from(activeRawResult.rolls) : effectiveRolls.map(r => r * 2))
+      : effectiveRolls
+    const accumRawMin = accumRawRolls[0]
+    const accumRawMax = accumRawRolls[accumRawRolls.length - 1]
 
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
-      rawRolls,
+      rawRolls: accumRawRolls,
       usages: 1,
       minDmg: displayMin,
       maxDmg: displayMax,
-      rawMin,
-      rawMax,
+      rawMin: accumRawMin,
+      rawMax: accumRawMax,
       defenderMaxHp,
       hadMultiscale,
     })
@@ -534,7 +554,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <VariableMultiHitPanel rolls={rolls} defenderHp={defenderMaxHp} hitRate={hitRate} />
+          <VariableMultiHitPanel rolls={rolls} rawRolls={rawRolls} defenderHp={defenderMaxHp} hitRate={hitRate} />
         </div>
       )}
 

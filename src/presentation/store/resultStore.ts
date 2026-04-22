@@ -8,6 +8,9 @@ export interface MoveResult {
   /** 段階威力型（escalating）の各発個別結果（ばけのかわ等で使用） */
   perHitResults?: DamageResult[]
   critPerHitResults?: DamageResult[]
+  /** マルチスケイル無効化後の素ダメ結果（fixed/variable多段の2発目以降用） */
+  rawResult?: DamageResult
+  rawCritResult?: DamageResult
 }
 
 interface ResultStore {

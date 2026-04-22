@@ -33,8 +33,8 @@ export function DamageResultArea() {
             {attackerName} → {defenderName}
           </div>
           <div>
-            {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults }) => (
-              <DamageResultRow key={moveName} moveName={moveName} result={result} critResult={critResult} perHitResults={perHitResults} critPerHitResults={critPerHitResults} />
+            {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult }) => (
+              <DamageResultRow key={moveName} moveName={moveName} result={result} critResult={critResult} perHitResults={perHitResults} critPerHitResults={critPerHitResults} rawResult={rawResult} rawCritResult={rawCritResult} />
             ))}
           </div>
         </div>

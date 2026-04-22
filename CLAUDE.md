@@ -298,6 +298,16 @@ src/
 - `useAccumulatedDamage` で「最初のエントリの最初の1撃のみ半減、2発目以降は素ダメ」に変更
   - 以前は全攻撃が半減されてしまい、総合累積が過小評価されるバグがあった
 
+#### 多段技のマルチスケイル無効化（単一技内の2発目以降）
+- `useDamageCalc.ts` の `calcEscalating`: 段階威力型（トリプルアクセル等）で
+  2発目以降の `executeDamageCalculation` 呼び出しに `abilityActivated: false` を渡し
+  マルチスケイルを無効化
+- `useDamageCalc.ts` の通常パス: マルチスケイル発動中なら素ダメ版 `rawResult/rawCritResult` を
+  同時計算して `MoveResult` に含める
+- `VariableMultiHitPanel`: 変動連続技（つららばり・スケイルショット等）の 2〜5 ヒット表示で
+  `hitMin = rolls[0] + rawRolls[0] × (hits - 1)` と「1発目半減 + 2発目以降素ダメ」で計算
+- 加算ボタン: `rawResult` を使えるときはそれを素ダメとして採用（×2 近似よりも正確）
+
 ---
 
 ## 重要なファイルと役割

@@ -90,14 +90,23 @@ export function useDamageCalc() {
           const alwaysCrit = move.alwaysCrit === true
 
           // 段階威力型（escalating）: 各発を個別計算して合算
+          // マルチスケイル/ファントムガード: 1発目のみ半減、2発目以降は素ダメ
+          const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
+          const defenderHadMultiscale =
+            HP_FULL_ABILITIES.has(defender.effectiveAbility) && defender.abilityActivated === true
+
           if (move.multiHit?.type === 'escalating') {
             const powers = move.multiHit.powers
             const baseMove = move  // 型ナロウイングのためキャプチャ
 
             function calcEscalating(isCrit: boolean) {
-              const hitResults = powers.map(power =>
-                executeDamageCalculation({ ...calcInput, move: { ...baseMove, power }, isCritical: isCrit })
-              )
+              const hitResults = powers.map((power, idx) => {
+                // 2発目以降はマルチスケイル無効化（HP満タンでないため）
+                const hitInput = idx === 0 || !defenderHadMultiscale
+                  ? calcInput
+                  : { ...calcInput, defender: { ...calcInput.defender, abilityActivated: false } }
+                return executeDamageCalculation({ ...hitInput, move: { ...baseMove, power }, isCritical: isCrit })
+              })
               const defHp = hitResults[0].defenderMaxHp
               const summedRolls = hitResults[0].rolls.map((_, i) =>
                 hitResults.reduce((sum, r) => sum + r.rolls[i], 0)
@@ -121,6 +130,15 @@ export function useDamageCalc() {
 
           const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
           const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
+
+          // 素ダメ版（マルチスケイル無効化）: 加算リストの2発目以降 / 多段技の2発目以降 で使用
+          if (defenderHadMultiscale) {
+            const rawInput = { ...calcInput, defender: { ...calcInput.defender, abilityActivated: false } }
+            const rawResult = executeDamageCalculation({ ...rawInput, isCritical: alwaysCrit })
+            const rawCritResult = executeDamageCalculation({ ...rawInput, isCritical: true })
+            return { moveName, result, critResult, rawResult, rawCritResult }
+          }
+
           return { moveName, result, critResult }
         } catch {
           return null
