@@ -377,6 +377,20 @@ src/
   - 通常KO確率・ダメージ分布は合算ロール（`e.rolls`）のまま変更なし
 - 急所率が高い（きあいだめ等）場合ほど補正効果が大きい
 
+#### スキルリンク特性 + いかさまダイス（準備）
+- `KoProbabilityCalc.ts` に新分布定数を追加:
+  - `VARIABLE_MULTI_HIT_DIST_SKILL_LINK`: 確定5発（確率1.0）
+  - `VARIABLE_MULTI_HIT_DIST_LOADED_DICE`: 4発50% / 5発50%
+- `getVariableMultiHitDist(attackerAbility, attackerItem)` helper を追加
+  - スキルリンク → 確定5発分布、いかさまダイス → 4/5発分布、それ以外 → 通常2〜5発分布
+- `calcVariableMultiHitKo` に `dist` パラメータを追加（デフォルト: 通常分布）
+  - `minDmg/maxDmg` を分布の最小・最大ヒット数から動的に算出
+- `VariableMultiHitPanel` が `dist` prop を受け取り列数を動的に変更（1/2/4列）
+- 技名バッジ: スキルリンク→「確定5回」、いかさまダイス→「4〜5回」
+- 加算ボタンのデフォルト回数: 変動連続技は分布の最大ヒット数（スキルリンク=5）
+- `items.json` に「いかさまダイス」（`loaded-dice`）を追加
+- 急所込みKO確率: `usages` 分だけ独立スロットを生成する既存ロジックで正しく処理される（スキルリンク5発=5スロット独立急所判定）
+
 #### エアスラッシュの critChance 誤設定を修正
 - エアスラッシュは高怯み技（30%怯み）であり高急所技ではないため `critChance: 1` を削除
 - 飛行タイプ高急所技はエアカッターが正しい（設定済み）

@@ -5,7 +5,7 @@ import { DamageBar } from './DamageBar'
 import {
   calcVariableMultiHitKo,
   calcKoProbability,
-  VARIABLE_MULTI_HIT_DIST,
+  getVariableMultiHitDist,
 } from '@/domain/calculators/KoProbabilityCalc'
 import { calcCritChance } from '@/domain/calculators/CritRank'
 import { useAccumStore } from '@/presentation/store/accumStore'
@@ -173,25 +173,29 @@ function computeEffectiveRolls(params: {
   return rolls
 }
 
-/** 変動連続技（2〜5回）の確率計算パネル */
+/** 変動連続技の確率計算パネル */
 function VariableMultiHitPanel({
-  rolls, rawRolls, defenderHp, hitRate,
+  rolls, rawRolls, defenderHp, hitRate, dist,
 }: {
   rolls: number[]
   /** マルチスケイル無効時（2発目以降用）の素ダメロール。通常時は rolls と同値 */
   rawRolls: number[]
   defenderHp: number
   hitRate: number
+  dist: { hits: number; prob: number }[]
 }) {
-  const res = calcVariableMultiHitKo(rolls, defenderHp)
+  const res = calcVariableMultiHitKo(rolls, defenderHp, dist)
   const expectedWithAcc = res.expectedDmg * hitRate
+  const gridCols = dist.length === 1 ? 'grid-cols-1'
+    : dist.length === 2 ? 'grid-cols-2'
+    : 'grid-cols-4'
 
   return (
     <div className="space-y-1.5">
       <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-        連続技 KO確率（2〜5回ランダム）
+        連続技 KO確率
       </div>
-      <div className="grid grid-cols-4 gap-x-2 text-xs font-mono">
+      <div className={`grid ${gridCols} gap-x-2 text-xs font-mono`}>
         {res.perHit.map(({ hits, prob, koProbForHits }) => {
           // マルチスケイル発動時: 1発目 rolls + 2発目以降 rawRolls
           const hitMin = rolls[0] + rawRolls[0] * (hits - 1)
@@ -257,6 +261,8 @@ export function DamageResultRow(props: DamageResultRowProps) {
 
   const moveRecord = MoveRepository.findByName(moveName)
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
+  // 変動連続技のヒット分布（スキルリンク / いかさまダイス で変化）
+  const variableMultiHitDist = getVariableMultiHitDist(attackerAbility, attackerItem)
   // 段階威力型の各発個別結果（ばけのかわ等）
   const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
 
@@ -397,11 +403,16 @@ export function DamageResultRow(props: DamageResultRowProps) {
       pbChildCritRolls = calcChildRolls(rawCritRollsBase)  // 急所子ロール
     }
 
+    // 変動連続技: スキルリンク=確定5発, いかさまダイス=5発デフォルト, 通常=1発
+    const defaultUsages = multiHit?.type === 'variable'
+      ? variableMultiHitDist[variableMultiHitDist.length - 1].hits
+      : 1
+
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
       rawRolls: accumRawRolls,
-      usages: 1,
+      usages: defaultUsages,
       minDmg: displayMin,
       maxDmg: displayMax,
       rawMin: accumRawMin,
@@ -438,6 +449,8 @@ export function DamageResultRow(props: DamageResultRowProps) {
             <span className="text-[10px] px-1 py-0 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium">
               {multiHit.type === 'fixed' ? `固定${multiHit.count}回`
                 : multiHit.type === 'escalating' ? multiHit.powers.join('→')
+                : attackerAbility === 'スキルリンク' ? '確定5回'
+                : attackerItem === 'いかさまダイス' ? '4〜5回'
                 : '2〜5回'}
             </span>
           )}
@@ -639,7 +652,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <VariableMultiHitPanel rolls={rolls} rawRolls={rawRolls} defenderHp={defenderMaxHp} hitRate={hitRate} />
+          <VariableMultiHitPanel rolls={rolls} rawRolls={rawRolls} defenderHp={defenderMaxHp} hitRate={hitRate} dist={variableMultiHitDist} />
         </div>
       )}
 
@@ -714,5 +727,3 @@ export function DamageResultRow(props: DamageResultRowProps) {
   )
 }
 
-// 未使用変数の警告を防ぐ
-void VARIABLE_MULTI_HIT_DIST

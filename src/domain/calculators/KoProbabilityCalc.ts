@@ -97,6 +97,7 @@ export interface VariableMultiHitResult {
   expectedDmg: number
 }
 
+/** 標準: 2〜5回ランダム（P(2)=1/3, P(3)=1/3, P(4)=1/6, P(5)=1/6） */
 export const VARIABLE_MULTI_HIT_DIST: { hits: number; prob: number }[] = [
   { hits: 2, prob: 1 / 3 },
   { hits: 3, prob: 1 / 3 },
@@ -104,11 +105,37 @@ export const VARIABLE_MULTI_HIT_DIST: { hits: number; prob: number }[] = [
   { hits: 5, prob: 1 / 6 },
 ]
 
+/** スキルリンク: 確定5発 */
+export const VARIABLE_MULTI_HIT_DIST_SKILL_LINK: { hits: number; prob: number }[] = [
+  { hits: 5, prob: 1.0 },
+]
+
+/** いかさまダイス: 4発/5発 各50% */
+export const VARIABLE_MULTI_HIT_DIST_LOADED_DICE: { hits: number; prob: number }[] = [
+  { hits: 4, prob: 0.5 },
+  { hits: 5, prob: 0.5 },
+]
+
+/**
+ * 特性・持ち物に応じた変動連続技ヒット分布を返す
+ * @param attackerAbility 攻撃側の特性名
+ * @param attackerItem    攻撃側の持ち物名
+ */
+export function getVariableMultiHitDist(
+  attackerAbility: string,
+  attackerItem: string | null,
+): { hits: number; prob: number }[] {
+  if (attackerAbility === 'スキルリンク') return VARIABLE_MULTI_HIT_DIST_SKILL_LINK
+  if (attackerItem === 'いかさまダイス') return VARIABLE_MULTI_HIT_DIST_LOADED_DICE
+  return VARIABLE_MULTI_HIT_DIST
+}
+
 export function calcVariableMultiHitKo(
   rolls: number[],
   defenderHp: number,
+  dist = VARIABLE_MULTI_HIT_DIST,
 ): VariableMultiHitResult {
-  const perHit = VARIABLE_MULTI_HIT_DIST.map(({ hits, prob }) => ({
+  const perHit = dist.map(({ hits, prob }) => ({
     hits,
     prob,
     koProbForHits: calcKoProbabilityForNHits(rolls, defenderHp, hits),
@@ -121,9 +148,11 @@ export function calcVariableMultiHitKo(
 
   const minRoll = rolls[0]
   const maxRoll = rolls[rolls.length - 1]
-  const minDmg = minRoll * 2
-  const maxDmg = maxRoll * 5
-  const expectedDmg = VARIABLE_MULTI_HIT_DIST.reduce(
+  const minHits = dist[0].hits
+  const maxHits = dist[dist.length - 1].hits
+  const minDmg = minRoll * minHits
+  const maxDmg = maxRoll * maxHits
+  const expectedDmg = dist.reduce(
     (sum, { hits, prob }) => sum + ((minRoll + maxRoll) / 2) * hits * prob,
     0,
   )
