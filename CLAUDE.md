@@ -340,12 +340,40 @@ src/
 - 通常と急所の両方で使うようリファクタ
 - `handleAddToAccum` で両者を計算して `AccumEntry` に保存
 
+### 急所ランクシステム（V3.0 以降）
+
+#### CritRank.ts
+- `src/domain/calculators/CritRank.ts` を新規作成
+- `calcCritChance({ moveCritBonus, attackerAbility, attackerItem, focusEnergyActive })` で急所率を統合計算
+- ランクテーブル: 0→1/16, +1→1/8, +2→1/2, +3→確定
+- ランク加算要素:
+  - 高急所技（`move.critChance >= 1`）: +1
+  - 特性「きょううん」: +1
+  - ピントレンズ / するどいツメ: +1
+  - きあいだめ状態（`focusEnergyActive`）: +2
+- これらは累積（例: 高急所技 + きあいだめ = ランク3 = 確定急所）
+
+#### pokemonStore に focusEnergyActive 追加
+- `focusEnergyActive: boolean`（攻撃側のみ）をストアに追加
+- `setFocusEnergyActive(v: boolean)` アクション
+- `setPokemon` / `reset` 時に `false` にリセット
+
+#### アイテムデータ追加
+- `items.json` に「ピントレンズ」(`scope-lens`) と「するどいツメ」(`razor-claw`) を追加
+
+#### UI
+- `PokemonPanel.tsx` の攻撃側に「急所ランク」トグルボタン（きあいだめ +2）を追加
+- `DamageResultRow.tsx` のハードコード `1/16` or `1/8` を `calcCritChance()` に置き換え
+- 期待ダメージの `critRate` も `calcCritChance()` ベースに統一
+- 急所率バッジ: 1/8→黄色「急所1/8」、1/2→橙「急所1/2」、確定→赤「確定急所」
+
 ---
 
 ## 重要なファイルと役割
 
 | ファイル | 役割 |
 |----------|------|
+| `src/domain/calculators/CritRank.ts` | 急所ランク計算（技・特性・アイテム・きあいだめを統合して急所率を返す） |
 | `src/domain/calculators/DamageCalculator.ts` | コアダメージ計算（タイプ相性・STAB・特性等） |
 | `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `critChance` / `escalating` フィールドを含む |
 | `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に上記フィールドすべてあり） |
