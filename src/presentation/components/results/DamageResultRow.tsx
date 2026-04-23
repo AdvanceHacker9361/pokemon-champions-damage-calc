@@ -379,6 +379,24 @@ export function DamageResultRow(props: DamageResultRowProps) {
     const rawCritRollsStored = isForcedCrit ? accumRawRolls : effectiveCritRolls
     const thisCritChance = isForcedCrit ? 1.0 : moveCritChance
 
+    // おやこあい（ばけのかわ未発動時）: 親・子を独立スロットで急所込み計算するために
+    // 親単体ロールと子単体ロールを個別に保存する。
+    // rolls（合算）は通常KO確率・ダメージ分布の計算には引き続き使用。
+    let pbParentRolls: number[] | undefined
+    let pbParentCritRolls: number[] | undefined
+    let pbParentRawRolls: number[] | undefined
+    let pbParentRawCritRolls: number[] | undefined
+    let pbChildRolls: number[] | undefined
+    let pbChildCritRolls: number[] | undefined
+    if (isParentalBond && !isDisguiseIntact) {
+      pbParentRolls = rolls                         // activeResult の親ロール
+      pbParentCritRolls = critRollsBase             // 急所時の親ロール
+      pbParentRawRolls = rawRolls                   // マルチスケイル無効の親ロール
+      pbParentRawCritRolls = rawCritRollsBase       // マルチスケイル無効の急所親ロール
+      pbChildRolls = childRollsArr                  // 子ロール = rawRolls * 25%
+      pbChildCritRolls = calcChildRolls(rawCritRollsBase)  // 急所子ロール
+    }
+
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
@@ -398,6 +416,12 @@ export function DamageResultRow(props: DamageResultRowProps) {
       rawCritMax: rawCritRollsStored[rawCritRollsStored.length - 1],
       critChance: thisCritChance,
       isForcedCrit,
+      pbParentRolls,
+      pbParentCritRolls,
+      pbParentRawRolls,
+      pbParentRawCritRolls,
+      pbChildRolls,
+      pbChildCritRolls,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1200)

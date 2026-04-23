@@ -80,7 +80,22 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         const normalRolls = useRaw ? e.rawRolls : e.rolls
         const critRolls  = useRaw ? e.rawCritRolls : e.critRolls
         rollSets.push(normalRolls)
-        if (e.isForcedCrit) {
+
+        if (e.pbChildRolls !== undefined) {
+          // おやこあい: 親と子を独立スロットに分割して急所込み計算
+          // 通常KO確率（rollSets）は合算ロール（e.rolls）のまま変えない
+          const parentNorm = useRaw ? (e.pbParentRawRolls ?? normalRolls) : (e.pbParentRolls ?? normalRolls)
+          const parentCrit = useRaw ? (e.pbParentRawCritRolls ?? critRolls) : (e.pbParentCritRolls ?? critRolls)
+          const childNorm = e.pbChildRolls
+          const childCrit = e.pbChildCritRolls ?? childNorm
+          if (e.isForcedCrit) {
+            attackRollsWithCrit.push({ rolls: parentNorm, critChance: 0 })
+            attackRollsWithCrit.push({ rolls: childNorm, critChance: 0 })
+          } else {
+            attackRollsWithCrit.push({ rolls: parentNorm, critRolls: parentCrit, critChance: e.critChance })
+            attackRollsWithCrit.push({ rolls: childNorm, critRolls: childCrit, critChance: e.critChance })
+          }
+        } else if (e.isForcedCrit) {
           // 急所強制エントリは再混合せず normalRolls をそのまま
           attackRollsWithCrit.push({ rolls: normalRolls, critChance: 0 })
         } else {

@@ -33,6 +33,17 @@ export interface AccumEntry {
   critChance: number
   /** このエントリは急所強制（確定急所技 or 急所モードで追加）。急所込み計算で混合せず rolls をそのまま使う */
   isForcedCrit: boolean
+  /**
+   * おやこあい専用: 親単体ロール（急所込みKO計算で親・子を独立スロットに分割するために使用）
+   * 設定されている場合、急所込み計算は rolls（合算）の単一スロットではなく
+   * 親スロット + 子スロットの2スロットとして処理する。
+   */
+  pbParentRolls?: number[]
+  pbParentCritRolls?: number[]
+  pbParentRawRolls?: number[]
+  pbParentRawCritRolls?: number[]
+  pbChildRolls?: number[]
+  pbChildCritRolls?: number[]
 }
 
 interface AccumStore {
