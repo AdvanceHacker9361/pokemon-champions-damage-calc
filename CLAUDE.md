@@ -401,6 +401,16 @@ src/
 - エアスラッシュは高怯み技（30%怯み）であり高急所技ではないため `critChance: 1` を削除
 - 飛行タイプ高急所技はエアカッターが正しい（設定済み）
 
+#### ハラバリー特性の和訳化
+- `abilities.json` / `pokemon.json` の `Electromorphosis` → `でんきにかえる` に変更
+
+#### じゅうでん状態の手動トグル
+- 攻撃側パネルに「じゅうでん (×2)」トグルボタンを追加（攻撃側のみ表示）
+- `pokemonStore.chargeActive: boolean` / `setChargeActive(v)` を追加
+- `DamageCalculator.resolvePower` で `attackerChargeActive && moveType === 'でんき'` のとき威力を 2 倍化
+  - エレキスキンによるノーマル→でんき変換後の技にも対応（`resolveMoveType()` 経由で判定）
+- `CalculateDamageUseCase` / `FindOptimalSpUseCase` / `DurabilityPanel` / `useDamageCalc` / 攻守交代 `swapStores` すべてに `chargeActive` を伝搬
+
 ---
 
 ## 重要なファイルと役割
