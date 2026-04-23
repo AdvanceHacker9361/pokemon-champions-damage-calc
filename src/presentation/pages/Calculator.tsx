@@ -30,6 +30,7 @@ function swapStores() {
     moves: s.moves,
     movePowers: s.movePowers,
     supremeOverlordBoost: s.supremeOverlordBoost,
+    chargeActive: s.chargeActive,
     baseStats: s.baseStats,
     types: s.types,
     weight: s.weight,

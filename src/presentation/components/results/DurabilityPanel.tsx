@@ -38,6 +38,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
   const attackerProteanStab       = useAttackerStore(s => s.proteanStab)
   const attackerSupremeOverlordBoost = useAttackerStore(s => s.supremeOverlordBoost)
   const attackerWeight            = useAttackerStore(s => s.weight)
+  const attackerChargeActive      = useAttackerStore(s => s.chargeActive)
 
   const defenderBaseStats         = useDefenderStore(s => s.baseStats)
   const defenderSp                = useDefenderStore(s => s.sp)
@@ -81,6 +82,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
       attackerSupremeOverlordBoost,
       attackerRankModifiers: attackerRanks as Record<string, number>,
       attackerWeight,
+      attackerChargeActive,
       move: moveRecord,
       field: { weather, terrain, isReflect, isLightScreen, isAuroraVeil, isTrickRoom },
       defenderBaseStats,
@@ -100,7 +102,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
     moveRecord, hitsToSurvive,
     attackerBaseStats, attackerSp, attackerNatures, attackerRanks,
     attackerTypes, attackerAbility, attackerItem, attackerStatus,
-    attackerAbilityActivated, attackerProteanStab, attackerSupremeOverlordBoost, attackerWeight,
+    attackerAbilityActivated, attackerProteanStab, attackerSupremeOverlordBoost, attackerWeight, attackerChargeActive,
     defenderBaseStats, defenderSp, defenderNatures, defenderRanks,
     defenderTypes, defenderAbility, defenderItem, defenderStatus,
     defenderAbilityActivated, defenderProteanType, defenderWeight,

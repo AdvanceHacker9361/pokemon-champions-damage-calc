@@ -59,6 +59,8 @@ export interface PokemonStore {
   supremeOverlordBoost: 0 | 1 | 2
   /** きあいだめ状態（急所ランク+2） */
   focusEnergyActive: boolean
+  /** じゅうでん状態（次の電気技の威力2倍） */
+  chargeActive: boolean
   // Derived (cached)
   baseStats: BaseStats
   types: TypeName[]
@@ -84,6 +86,7 @@ export interface PokemonStore {
   setMovePower: (slot: 0 | 1 | 2 | 3, power: number | null) => void
   setSupremeOverlordBoost: (v: 0 | 1 | 2) => void
   setFocusEnergyActive: (v: boolean) => void
+  setChargeActive: (v: boolean) => void
   reset: () => void
 }
 
@@ -112,6 +115,7 @@ function createPokemonStore() {
     movePowers: [null, null, null, null],
     supremeOverlordBoost: 0,
     focusEnergyActive: false,
+    chargeActive: false,
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
     weight: 0,
@@ -161,6 +165,7 @@ function createPokemonStore() {
         proteanStab: true,
         supremeOverlordBoost: 0,
         focusEnergyActive: false,
+        chargeActive: false,
       })
     },
 
@@ -290,6 +295,8 @@ function createPokemonStore() {
 
     setFocusEnergyActive: (v) => set({ focusEnergyActive: v }),
 
+    setChargeActive: (v) => set({ chargeActive: v }),
+
     reset: () => set({
       pokemonId: null, pokemonName: '',
       statNatures: { ...DEFAULT_STAT_NATURES },
@@ -301,6 +308,7 @@ function createPokemonStore() {
       movePowers: [null, null, null, null],
       supremeOverlordBoost: 0,
       focusEnergyActive: false,
+      chargeActive: false,
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',
     }),

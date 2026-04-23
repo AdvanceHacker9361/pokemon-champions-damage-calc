@@ -19,6 +19,7 @@ export interface DurabilitySearchInput {
   attackerProteanStab?: boolean
   attackerRankModifiers: Record<string, number>
   attackerWeight?: number
+  attackerChargeActive?: boolean
   // 技・フィールド
   move: MoveData
   field: BattleField
@@ -156,6 +157,7 @@ function buildCalcInput(
     attackerProteanStab:        input.attackerProteanStab,
     attackerRankModifiers:      input.attackerRankModifiers,
     attackerWeight:             input.attackerWeight,
+    attackerChargeActive:       input.attackerChargeActive,
     defenderStats,
     defenderTypes:              input.defenderTypes,
     defenderAbility:            input.defenderAbility,

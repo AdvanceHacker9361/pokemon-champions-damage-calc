@@ -133,6 +133,27 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             </div>
           )}
 
+          {/* じゅうでん（攻撃側のみ）: 次の電気技の威力2倍 */}
+          {label === '攻撃側' && (
+            <div>
+              <label className="label block mb-1">じゅうでん</label>
+              <button
+                type="button"
+                onClick={() => store.setChargeActive(!store.chargeActive)}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  store.chargeActive
+                    ? 'text-amber-700 border-amber-500 bg-amber-50 dark:text-amber-400 dark:border-amber-600 dark:bg-amber-950'
+                    : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                }`}
+              >
+                {store.chargeActive ? '✓ じゅうでん (×2)' : 'じゅうでん (×2)'}
+              </button>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                {store.chargeActive ? '次の電気技の威力を2倍' : '電気技を撃つ前にじゅうでんを使用した状態'}
+              </p>
+            </div>
+          )}
+
           {/* バトルスイッチ: シールド/ブレードフォルム切り替え */}
           {store.effectiveAbility === 'バトルスイッチ' && (
             <div>

@@ -22,6 +22,8 @@ export interface PokemonBattleState {
   proteanType?: TypeName | null
   proteanStab?: boolean
   weight?: number
+  /** じゅうでん状態: 次の電気技の威力2倍 */
+  chargeActive?: boolean
 }
 
 export interface CalculateDamageInput {
@@ -76,6 +78,7 @@ export function executeDamageCalculation(
     attackerProteanStab: input.attacker.proteanStab,
     attackerRankModifiers: input.attacker.ranks as Record<string, number>,
     attackerWeight: input.attacker.weight,
+    attackerChargeActive: input.attacker.chargeActive,
     defenderStats,
     defenderTypes: input.defender.types,
     defenderAbility: input.defender.abilityName,
