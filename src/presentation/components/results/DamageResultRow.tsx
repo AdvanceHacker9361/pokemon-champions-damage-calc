@@ -134,6 +134,44 @@ function ParentalBondKoInfo({ rolls, childRolls, defenderHp }: { rolls: number[]
   )
 }
 
+/**
+ * rolls/rawRolls と各種フラグから、メイン表示用の実効ロール列を算出する
+ * （おやこあい合算・ばけのかわ無効化・固定多段合計 等を統一的に処理）
+ */
+function computeEffectiveRolls(params: {
+  rolls: number[]
+  rawRolls: number[]
+  multiHit: MultiHitData | null | undefined
+  isParentalBond: boolean
+  isDisguiseIntact: boolean
+  perHitResults?: DamageResult[]
+}): number[] {
+  const { rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults } = params
+  const childRollsArr = calcChildRolls(rawRolls)
+  const combinedRolls = rolls.map((r, i) => r + childRollsArr[i])
+
+  if (isDisguiseIntact) {
+    if (isParentalBond) return childRollsArr
+    if (multiHit?.type === 'escalating' && perHitResults && perHitResults.length > 1) {
+      return perHitResults.slice(1).reduce(
+        (acc, r) => acc.map((v, i) => v + r.rolls[i]),
+        Array(15).fill(0) as number[],
+      )
+    }
+    if (multiHit?.type === 'fixed' && multiHit.count > 1) {
+      const remaining = multiHit.count - 1
+      return rolls.map(r => r * remaining)
+    }
+    return rolls.map(() => 0)
+  }
+  if (isParentalBond) return combinedRolls
+  if (multiHit?.type === 'fixed' && multiHit.count > 1) {
+    const count = multiHit.count
+    return rolls.map((r, i) => r + rawRolls[i] * (count - 1))
+  }
+  return rolls
+}
+
 /** 変動連続技（2〜5回）の確率計算パネル */
 function VariableMultiHitPanel({
   rolls, rawRolls, defenderHp, hitRate,
@@ -232,56 +270,45 @@ export function DamageResultRow(props: DamageResultRowProps) {
     ? Array.from(activeRawResult.rolls)
     : rolls
 
+  // 確定急所技 / 急所モードで加算された場合は、急所込み計算で再混合しないため isForcedCrit とマーク
+  const isForcedCrit = (moveRecord?.alwaysCrit === true) || isCritical
+  // 技本来の急所率（1/16 or 1/8）: 急所込み累積 KO 計算で混合時に使用
+  const moveCritChance = (moveRecord?.critChance ?? 0) >= 1 ? 1 / 8 : 1 / 16
+
   // ── おやこあい: 子ロール (親の25%) と合算ロール ──────────────────
   // マルチスケイル発動時は「親=半減(1発目), 子=素ダメの25%(2発目)」とする。
   // 無発動時は rawRolls === rolls なので結果は同じ。
   const childRollsArr = calcChildRolls(rawRolls)
-  // 親+子 合算ロール（おやこあい通常時の主表示）
-  const combinedRolls = rolls.map((r, i) => r + childRollsArr[i])
 
   // ── ばけのかわ: 定数ダメと実効ロール ──────────────────────────────
   // disguiseFlatDmg: ばけのかわ発動時にミミッキュが受ける固定ダメ（HP/8）
   const disguiseFlatDmg = isDisguiseIntact ? Math.floor(defenderMaxHp / 8) : 0
   // ばけのかわ発動時の技ラベル
   let disguiseLabel = ''
-  // 実効ロール: ばけのかわ・おやこあいを考慮した最終ダメージのロール列
-  let effectiveRolls: number[]
-
   if (isDisguiseIntact) {
-    if (isParentalBond) {
-      // 親の一撃→ばけのかわ無効、子の一撃が通る
-      effectiveRolls = childRollsArr
-      disguiseLabel = 'ばけのかわ発動（親を無効 → 子ダメのみ）'
-    } else if (multiHit?.type === 'escalating' && perHitResults && perHitResults.length > 1) {
-      // 段階威力: 1発目無効、残り発の合計
-      const remainingRolls = perHitResults.slice(1).reduce(
-        (acc, r) => acc.map((v, i) => v + r.rolls[i]),
-        Array(15).fill(0) as number[]
-      )
-      effectiveRolls = remainingRolls
+    if (isParentalBond) disguiseLabel = 'ばけのかわ発動（親を無効 → 子ダメのみ）'
+    else if (multiHit?.type === 'escalating' && perHitResults && perHitResults.length > 1)
       disguiseLabel = `ばけのかわ発動（1発目無効 → 残${perHitResults.length - 1}発）`
-    } else if (multiHit?.type === 'fixed' && multiHit.count > 1) {
-      // 固定複数回: 1発目無効、残り(count-1)発が通る（ばけのかわで HP 満タン維持 → マルチスケイル適用）
-      const remaining = multiHit.count - 1
-      effectiveRolls = rolls.map(r => r * remaining)
-      disguiseLabel = `ばけのかわ発動（1発目無効 → 残${remaining}発）`
-    } else {
-      // 単発技: 全て無効
-      effectiveRolls = rolls.map(() => 0)
-      disguiseLabel = 'ばけのかわ発動（全弾無効）'
-    }
-  } else if (isParentalBond) {
-    // おやこあい通常: 親+子 合算
-    effectiveRolls = combinedRolls
-  } else if (multiHit?.type === 'fixed' && multiHit.count > 1) {
-    // 固定連続技: 合計表示（1発目 rolls + 2発目以降 rawRolls）
-    // マルチスケイル発動時: 1発目半減 + (count-1)発分の素ダメ
-    // 発動なし時: rawRolls === rolls なので単純な count 倍
-    const count = multiHit.count
-    effectiveRolls = rolls.map((r, i) => r + rawRolls[i] * (count - 1))
-  } else {
-    effectiveRolls = rolls
+    else if (multiHit?.type === 'fixed' && multiHit.count > 1)
+      disguiseLabel = `ばけのかわ発動（1発目無効 → 残${multiHit.count - 1}発）`
+    else disguiseLabel = 'ばけのかわ発動（全弾無効）'
   }
+
+  // 実効ロール: ばけのかわ・おやこあい・固定多段合計 を考慮した最終ダメージのロール列
+  const effectiveRolls = computeEffectiveRolls({
+    rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults,
+  })
+
+  // 急所ロール（メイン表示では使わない / 加算時と急所込みKO計算で使用）
+  const critRollsBase = Array.from(critResult.rolls)
+  const rawCritRollsBase = hadMultiscale && props.rawCritResult
+    ? Array.from(props.rawCritResult.rolls)
+    : critRollsBase
+  const critPerHitResults = props.critPerHitResults
+  const effectiveCritRolls = computeEffectiveRolls({
+    rolls: critRollsBase, rawRolls: rawCritRollsBase, multiHit, isParentalBond, isDisguiseIntact,
+    perHitResults: critPerHitResults,
+  })
 
   // ── 表示値（主ダメージ表示に使う） ───────────────────────────────
   const displayMin = effectiveRolls[0]
@@ -339,6 +366,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
     const accumRawMin = accumRawRolls[0]
     const accumRawMax = accumRawRolls[accumRawRolls.length - 1]
 
+    // 急所ロール: 急所モードで加算または確定急所技の場合は rolls と同じ（急所込み計算で再混合しない）
+    const critRolls = isForcedCrit ? effectiveRolls : effectiveCritRolls
+    const rawCritRollsStored = isForcedCrit ? accumRawRolls : effectiveCritRolls
+    const thisCritChance = isForcedCrit ? 1.0 : moveCritChance
+
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
@@ -350,6 +382,14 @@ export function DamageResultRow(props: DamageResultRowProps) {
       rawMax: accumRawMax,
       defenderMaxHp,
       hadMultiscale,
+      critRolls,
+      rawCritRolls: rawCritRollsStored,
+      critMin: critRolls[0],
+      critMax: critRolls[critRolls.length - 1],
+      rawCritMin: rawCritRollsStored[0],
+      rawCritMax: rawCritRollsStored[rawCritRollsStored.length - 1],
+      critChance: thisCritChance,
+      isForcedCrit,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1200)

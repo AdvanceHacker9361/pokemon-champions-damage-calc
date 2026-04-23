@@ -3,7 +3,9 @@ import { useAccumStore } from '@/presentation/store/accumStore'
 import {
   calcCombinedKoProbability,
   calcCombinedDamageDistribution,
+  calcCombinedKoProbabilityWithCrit,
 } from '@/domain/calculators/KoProbabilityCalc'
+import type { AttackRollsWithCrit } from '@/domain/calculators/KoProbabilityCalc'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -17,6 +19,8 @@ export interface AccumulatedDamage {
   poisonTotal: number
   poisonPerTurn: number[]
   combinedProb: number
+  /** 急所込み（各エントリの急所率で混合）KO確率 */
+  combinedProbWithCrit: number
   distribution: Map<number, number>
   accumKoResult: KoResult
 }
@@ -67,19 +71,33 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
 
     // ロールセット: 最初エントリがマルチスケイル発動時は、先頭1発だけ半減ロール、残りは素ダメロール
     const rollSets: number[][] = []
+    const attackRollsWithCrit: AttackRollsWithCrit[] = []
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i]
       for (let u = 0; u < e.usages; u++) {
         const isVeryFirst = i === 0 && u === 0
-        if (isVeryFirst || !firstHadMultiscale) {
-          rollSets.push(e.rolls)
+        const useRaw = !isVeryFirst && firstHadMultiscale
+        const normalRolls = useRaw ? e.rawRolls : e.rolls
+        const critRolls  = useRaw ? e.rawCritRolls : e.critRolls
+        rollSets.push(normalRolls)
+        if (e.isForcedCrit) {
+          // 急所強制エントリは再混合せず normalRolls をそのまま
+          attackRollsWithCrit.push({ rolls: normalRolls, critChance: 0 })
         } else {
-          rollSets.push(e.rawRolls)
+          attackRollsWithCrit.push({
+            rolls: normalRolls,
+            critRolls,
+            critChance: e.critChance,
+          })
         }
       }
     }
     const combinedProb = hasEntries
       ? calcCombinedKoProbability(rollSets, effectiveHp)
+      : totalConst >= defenderMaxHp ? 1 : 0
+
+    const combinedProbWithCrit = hasEntries
+      ? calcCombinedKoProbabilityWithCrit(attackRollsWithCrit, effectiveHp)
       : totalConst >= defenderMaxHp ? 1 : 0
 
     const distribution = hasEntries
@@ -95,7 +113,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       hasEntries, hasAnything,
       totalMin, totalMax, totalMinPct, totalMaxPct,
       totalConst, poisonTotal, poisonPerTurn,
-      combinedProb, distribution, accumKoResult,
+      combinedProb, combinedProbWithCrit,
+      distribution, accumKoResult,
     }
   }, [entries, constDmg, constRec, poisonTurns, defenderMaxHp])
 }

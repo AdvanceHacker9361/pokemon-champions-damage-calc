@@ -31,6 +31,15 @@ export function DamageSummaryHeader() {
     ? '倒せない'
     : `${(accum.combinedProb * 100).toFixed(1)}%`
 
+  const accumProbWithCritDisplay = accum.combinedProbWithCrit >= 1.0
+    ? '確定KO'
+    : accum.combinedProbWithCrit <= 0
+    ? '倒せない'
+    : `${(accum.combinedProbWithCrit * 100).toFixed(1)}%`
+
+  // 急所込みと通常で値が変わるかどうか（確定急所エントリのみ・単発 等で同値ならバッジ非表示）
+  const critAffects = Math.abs(accum.combinedProbWithCrit - accum.combinedProb) > 1e-6
+
   return (
     <div className="panel mb-3 sm:mb-4">
       {!accum.hasAnything ? (
@@ -51,6 +60,11 @@ export function DamageSummaryHeader() {
             <span className={`text-sm font-bold ml-auto ${koLabelColor(accum.accumKoResult)}`}>
               {accumProbDisplay}
             </span>
+            {critAffects && (
+              <span className="text-xs font-mono text-amber-600 dark:text-amber-400 whitespace-nowrap" title="各エントリの急所率（1/16 or 1/8）で混合した撃破率。確定急所・急所モード加算分はそのまま扱う">
+                急所込み <span className="font-bold">{accumProbWithCritDisplay}</span>
+              </span>
+            )}
           </div>
 
           <div>

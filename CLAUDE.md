@@ -318,6 +318,28 @@ src/
   - 親=1発目半減、子=2発目素ダメの25% で正確に表現
   - `ParentalBondTable` も外から `childRolls` を受け取る形に変更
 
+### V3.1: 総合累積に「急所込み撃破率」を追加
+
+#### 概要
+- `DamageSummaryHeader` の総合累積欄に、通常 KO 確率の横に「急所込み X%」を併記
+- 各エントリの急所率（1/16 or 1/8）を使って、通常ロールと急所ロールを確率的に混合した KO 確率を算出
+- 値が通常と変わらない場合（確定急所エントリのみ・構成により差が出ない等）は非表示
+
+#### データモデル拡張（`AccumEntry`）
+- `critRolls` / `rawCritRolls` — 急所ロール（ばけのかわ・おやこあい・固定多段 反映済み / マルチスケイル無効版）
+- `critMin/Max` / `rawCritMin/Max` — 急所ロールの上下端
+- `critChance` — そのエントリの急所率（0.0625 / 0.125 / 1.0）
+- `isForcedCrit` — 急所モードで加算 or 確定急所技（`alwaysCrit`）。急所込み計算で再混合せず `rolls` をそのまま使う
+
+#### 新規計算関数（`KoProbabilityCalc.ts`）
+- `AttackRollsWithCrit` 型と `calcCombinedDamageDistributionWithCrit` / `calcCombinedKoProbabilityWithCrit`
+- 各攻撃スロットで `(1 - critChance) × 通常ロール分布 + critChance × 急所ロール分布` を畳み込む
+
+#### 実効ロール計算の関数化（`DamageResultRow.tsx`）
+- `computeEffectiveRolls()` ヘルパー新設：`rolls/rawRolls` からばけのかわ・おやこあい・固定多段合計を統一適用
+- 通常と急所の両方で使うようリファクタ
+- `handleAddToAccum` で両者を計算して `AccumEntry` に保存
+
 ---
 
 ## 重要なファイルと役割

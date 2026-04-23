@@ -186,3 +186,67 @@ export function calcCombinedDamageDistribution(
   }
   return dp
 }
+
+/**
+ * 急所込みの攻撃スロット。
+ * 通常ロールと急所ロールを急所率で混合する。
+ * critRolls を省略または critChance=0 のときは通常ロールのみ採用（確定急所技や急所強制エントリ向け）。
+ */
+export interface AttackRollsWithCrit {
+  rolls: number[]
+  critRolls?: number[]
+  /** 急所率 0〜1（例: 1/16 ≒ 0.0625, 1/8 = 0.125）。critRolls なしなら無視 */
+  critChance: number
+}
+
+/**
+ * 急所を確率的に混合した複合ダメージ分布をDPで計算
+ */
+export function calcCombinedDamageDistributionWithCrit(
+  attacks: AttackRollsWithCrit[],
+  offset = 0,
+): Map<number, number> {
+  let dp: Map<number, number> = new Map([[offset, 1.0]])
+  for (const atk of attacks) {
+    const { rolls, critRolls, critChance } = atk
+    const useCrit = critRolls != null && critChance > 0
+    const pNormal = useCrit ? 1 - critChance : 1
+    const pCrit = useCrit ? critChance : 0
+    const nNormal = rolls.length
+    const nCrit = critRolls?.length ?? 0
+
+    const next: Map<number, number> = new Map()
+    for (const [dmg, prob] of dp) {
+      if (pNormal > 0) {
+        for (const roll of rolls) {
+          const newDmg = dmg + roll
+          next.set(newDmg, (next.get(newDmg) ?? 0) + (prob * pNormal) / nNormal)
+        }
+      }
+      if (pCrit > 0 && critRolls) {
+        for (const roll of critRolls) {
+          const newDmg = dmg + roll
+          next.set(newDmg, (next.get(newDmg) ?? 0) + (prob * pCrit) / nCrit)
+        }
+      }
+    }
+    dp = next
+  }
+  return dp
+}
+
+/**
+ * 急所込み複合KO確率（分布から直接算出）
+ */
+export function calcCombinedKoProbabilityWithCrit(
+  attacks: AttackRollsWithCrit[],
+  defenderHp: number,
+  offset = 0,
+): number {
+  const dist = calcCombinedDamageDistributionWithCrit(attacks, offset)
+  let koProb = 0
+  for (const [dmg, prob] of dist) {
+    if (dmg >= defenderHp) koProb += prob
+  }
+  return Math.min(1, koProb)
+}
