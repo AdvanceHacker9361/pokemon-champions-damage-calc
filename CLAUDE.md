@@ -369,6 +369,12 @@ src/
 
 ### バグ修正（V3.1 以降）
 
+#### ギルガルド バトルスイッチ: 防御側でフォルム切替時にダメージ計算が更新されないバグ
+- `useDamageCalc` の `useEffect` 依存配列に `baseStats` / `types` / `weight` が含まれていなかった
+- `setBlade` は `baseStats` を入れ替えるが `effectiveAbility` は `'バトルスイッチ'` のまま変わらないため、旧依存配列ではどのキーも変化せず useEffect が再実行されなかった
+- 攻守交代後に防御側でシールド⇔ブレード切替をすると計算が古い baseStats のままになっていた
+- 修正: 攻撃側/防御側それぞれに `baseStats` / `types` / `weight` を deps に追加
+
 #### おやこあい: 急所込みKO確率の親・子独立スロット化
 - **変更前**: 親+子の合算ロールを1スロットとして急所混合していたため、「片方だけ急所」(約11.7%) が未考慮
 - **変更後**: `AccumEntry` に `pbParentRolls/pbParentCritRolls/pbParentRawRolls/pbParentRawCritRolls/pbChildRolls/pbChildCritRolls` を追加
