@@ -112,6 +112,27 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           {/* 状態異常 */}
           <StatusToggle value={store.status} onChange={store.setStatus} />
 
+          {/* きあいだめ（攻撃側のみ）: 急所ランク+2 */}
+          {label === '攻撃側' && (
+            <div>
+              <label className="label block mb-1">急所ランク</label>
+              <button
+                type="button"
+                onClick={() => store.setFocusEnergyActive(!store.focusEnergyActive)}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  store.focusEnergyActive
+                    ? 'text-yellow-700 border-yellow-500 bg-yellow-50 dark:text-yellow-400 dark:border-yellow-600 dark:bg-yellow-950'
+                    : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                }`}
+              >
+                {store.focusEnergyActive ? '✓ きあいだめ (+2)' : 'きあいだめ (+2)'}
+              </button>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                {store.focusEnergyActive ? '急所ランク+2（基本1/2、高急所技なら確定）' : '特性・アイテムと累積して急所率を決定'}
+              </p>
+            </div>
+          )}
+
           {/* バトルスイッチ: シールド/ブレードフォルム切り替え */}
           {store.effectiveAbility === 'バトルスイッチ' && (
             <div>

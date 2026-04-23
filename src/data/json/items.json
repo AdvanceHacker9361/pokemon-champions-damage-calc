@@ -25,6 +25,8 @@
   { "name": "くろいめがね",       "nameEn": "Black Glasses",      "calcTag": "black-glasses" },
   { "name": "メタルコート",       "nameEn": "Metal Coat",         "calcTag": "metal-coat" },
   { "name": "ようせいのはね",     "nameEn": "Fairy Feather",      "calcTag": "fairy-feather" },
+  { "name": "ピントレンズ",       "nameEn": "Scope Lens",         "calcTag": "scope-lens" },
+  { "name": "するどいツメ",       "nameEn": "Razor Claw",         "calcTag": "razor-claw" },
   { "name": "オッカのみ",         "nameEn": "Occa Berry",         "calcTag": "occa-berry" },
   { "name": "イトケのみ",         "nameEn": "Passho Berry",       "calcTag": "passho-berry" },
   { "name": "ソクノのみ",         "nameEn": "Wacan Berry",        "calcTag": "wacan-berry" },

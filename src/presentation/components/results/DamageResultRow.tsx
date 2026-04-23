@@ -7,6 +7,7 @@ import {
   calcKoProbability,
   VARIABLE_MULTI_HIT_DIST,
 } from '@/domain/calculators/KoProbabilityCalc'
+import { calcCritChance } from '@/domain/calculators/CritRank'
 import { useAccumStore } from '@/presentation/store/accumStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
@@ -244,6 +245,8 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const addEntry = useAccumStore(s => s.addEntry)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
+  const attackerItem = useAttackerStore(s => s.itemName)
+  const focusEnergyActive = useAttackerStore(s => s.focusEnergyActive)
   const attackerRanks = useAttackerStore(s => s.ranks)
   const setAttackerRank = useAttackerStore(s => s.setRank)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
@@ -272,8 +275,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
 
   // 確定急所技 / 急所モードで加算された場合は、急所込み計算で再混合しないため isForcedCrit とマーク
   const isForcedCrit = (moveRecord?.alwaysCrit === true) || isCritical
-  // 技本来の急所率（1/16 or 1/8）: 急所込み累積 KO 計算で混合時に使用
-  const moveCritChance = (moveRecord?.critChance ?? 0) >= 1 ? 1 / 8 : 1 / 16
+  // 急所率: 技・特性・アイテム・きあいだめを統合したランクベース計算
+  const moveCritChance = calcCritChance({
+    moveCritBonus: moveRecord?.critChance ?? 0,
+    attackerAbility,
+    attackerItem,
+    focusEnergyActive,
+  })
 
   // ── おやこあい: 子ロール (親の25%) と合算ロール ──────────────────
   // マルチスケイル発動時は「親=半減(1発目), 子=素ダメの25%(2発目)」とする。
@@ -319,7 +327,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   // ── 期待ダメージ（命中率 × 急所加重平均） ──────────────────────────
   const hitRate = moveRecord?.accuracy != null ? moveRecord.accuracy / 100 : 1.0
   const isAlwaysCrit = moveRecord?.alwaysCrit === true
-  const critRate = isAlwaysCrit ? 1.0 : ((moveRecord?.critChance ?? 0) >= 1 ? 1 / 8 : 1 / 16)
+  const critRate = isAlwaysCrit ? 1.0 : moveCritChance
   const avgNormal = (displayMin + displayMax) / 2
   // 急所倍率スケール: 通常result vs critResultの比率から算出
   const baseRollSum = result.max + result.min
@@ -582,7 +590,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
               {Math.round(hitRate * 100)}%命中
             </span>
           )}
-          {!isAlwaysCrit && (moveRecord?.critChance ?? 0) >= 1 && (
+          {!isAlwaysCrit && critRate >= 1.0 && (
+            <span className="ml-1 text-red-500 dark:text-red-400">確定急所</span>
+          )}
+          {!isAlwaysCrit && critRate >= 0.5 && critRate < 1.0 && (
+            <span className="ml-1 text-orange-500 dark:text-orange-400">急所1/2</span>
+          )}
+          {!isAlwaysCrit && critRate >= 0.12 && critRate < 0.5 && (
             <span className="ml-1 text-yellow-600 dark:text-yellow-500">急所1/8</span>
           )}
         </span>

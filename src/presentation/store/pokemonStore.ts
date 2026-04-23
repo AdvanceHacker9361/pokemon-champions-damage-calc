@@ -57,6 +57,8 @@ export interface PokemonStore {
   movePowers: [number | null, number | null, number | null, number | null]
   /** そうだいしょう: 倒れた味方の数 0/1/2 */
   supremeOverlordBoost: 0 | 1 | 2
+  /** きあいだめ状態（急所ランク+2） */
+  focusEnergyActive: boolean
   // Derived (cached)
   baseStats: BaseStats
   types: TypeName[]
@@ -81,6 +83,7 @@ export interface PokemonStore {
   setMove: (slot: 0 | 1 | 2 | 3, moveName: string | null) => void
   setMovePower: (slot: 0 | 1 | 2 | 3, power: number | null) => void
   setSupremeOverlordBoost: (v: 0 | 1 | 2) => void
+  setFocusEnergyActive: (v: boolean) => void
   reset: () => void
 }
 
@@ -108,6 +111,7 @@ function createPokemonStore() {
     moves: [null, null, null, null],
     movePowers: [null, null, null, null],
     supremeOverlordBoost: 0,
+    focusEnergyActive: false,
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
     weight: 0,
@@ -156,6 +160,7 @@ function createPokemonStore() {
         proteanType: null,
         proteanStab: true,
         supremeOverlordBoost: 0,
+        focusEnergyActive: false,
       })
     },
 
@@ -283,6 +288,8 @@ function createPokemonStore() {
 
     setSupremeOverlordBoost: (v) => set({ supremeOverlordBoost: v }),
 
+    setFocusEnergyActive: (v) => set({ focusEnergyActive: v }),
+
     reset: () => set({
       pokemonId: null, pokemonName: '',
       statNatures: { ...DEFAULT_STAT_NATURES },
@@ -293,6 +300,7 @@ function createPokemonStore() {
       moves: [null, null, null, null],
       movePowers: [null, null, null, null],
       supremeOverlordBoost: 0,
+      focusEnergyActive: false,
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',
     }),
