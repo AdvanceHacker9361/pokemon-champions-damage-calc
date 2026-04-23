@@ -1303,8 +1303,7 @@
       "bite": false,
       "slice": true
     },
-    "special": null,
-    "critChance": 1
+    "special": null
   },
   {
     "name": "エアロブラスト",
