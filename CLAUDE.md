@@ -367,6 +367,20 @@ src/
 - 期待ダメージの `critRate` も `calcCritChance()` ベースに統一
 - 急所率バッジ: 1/8→黄色「急所1/8」、1/2→橙「急所1/2」、確定→赤「確定急所」
 
+### バグ修正（V3.1 以降）
+
+#### おやこあい: 急所込みKO確率の親・子独立スロット化
+- **変更前**: 親+子の合算ロールを1スロットとして急所混合していたため、「片方だけ急所」(約11.7%) が未考慮
+- **変更後**: `AccumEntry` に `pbParentRolls/pbParentCritRolls/pbParentRawRolls/pbParentRawCritRolls/pbChildRolls/pbChildCritRolls` を追加
+  - `handleAddToAccum` (isParentalBond && !isDisguiseIntact 時) で親・子の単体ロールを個別保存
+  - `useAccumulatedDamage` で `pbChildRolls` が存在する場合に2スロット（親・子）へ展開
+  - 通常KO確率・ダメージ分布は合算ロール（`e.rolls`）のまま変更なし
+- 急所率が高い（きあいだめ等）場合ほど補正効果が大きい
+
+#### エアスラッシュの critChance 誤設定を修正
+- エアスラッシュは高怯み技（30%怯み）であり高急所技ではないため `critChance: 1` を削除
+- 飛行タイプ高急所技はエアカッターが正しい（設定済み）
+
 ---
 
 ## 重要なファイルと役割
