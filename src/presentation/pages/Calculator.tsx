@@ -52,14 +52,12 @@ function initDefaults() {
   useAttackerStore.getState().setMove(2, 'いわなだれ')
   useAttackerStore.getState().setMove(3, 'どくづき')
 
-  // 防御側: メガガルーラ H207(hp SP=27) B121(def SP=1) D121(spd SP=1)
+  // 防御側: メガガルーラ H207(hp SP=27) B120/D120(無振り)
   // すてみタックル/ねこだまし/じしん/ふいうち
   const def = useDefenderStore.getState()
   def.setPokemon(115)                  // ガルーラ
   useDefenderStore.getState().setMega(true)
   useDefenderStore.getState().setSp('hp',  27)
-  useDefenderStore.getState().setSp('def',  1)
-  useDefenderStore.getState().setSp('spd',  1)
   useDefenderStore.getState().setMove(0, 'すてみタックル')
   useDefenderStore.getState().setMove(1, 'ねこだまし')
   useDefenderStore.getState().setMove(2, 'じしん')
