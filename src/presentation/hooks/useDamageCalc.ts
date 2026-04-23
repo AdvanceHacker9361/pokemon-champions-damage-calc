@@ -148,10 +148,12 @@ export function useDamageCalc() {
 
     setResults(results)
   }, [
-    attacker.pokemonId, attacker.sp, attacker.statNatures,
+    attacker.pokemonId, attacker.baseStats, attacker.types, attacker.weight,
+    attacker.sp, attacker.statNatures,
     attacker.effectiveAbility, attacker.itemName, attacker.moves, attacker.movePowers,
     attacker.ranks, attacker.status, attacker.abilityActivated, attacker.supremeOverlordBoost, attacker.proteanType, attacker.proteanStab,
-    defender.pokemonId, defender.sp, defender.statNatures,
+    defender.pokemonId, defender.baseStats, defender.types, defender.weight,
+    defender.sp, defender.statNatures,
     defender.effectiveAbility, defender.itemName,
     defender.ranks, defender.status, defender.abilityActivated, defender.proteanType,
     field.weather, field.terrain,
