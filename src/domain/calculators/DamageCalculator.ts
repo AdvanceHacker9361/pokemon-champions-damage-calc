@@ -19,6 +19,8 @@ export interface DamageCalcInput {
   attackerProteanStab?: boolean
   attackerRankModifiers: Record<string, number>
   attackerWeight?: number
+  /** じゅうでん状態: 次の電気技の威力2倍 */
+  attackerChargeActive?: boolean
   defenderStats: ComputedStats
   defenderTypes: TypeName[]
   defenderAbility: string
@@ -39,6 +41,17 @@ function pokeRound(n: number): number {
 
 /** 技の基本威力を解決（特殊技を含む） */
 function resolvePower(input: DamageCalcInput): number {
+  const power = resolveBasePower(input)
+
+  // じゅうでん: 次の電気技の威力2倍（エレキスキン変換後の判定も含む）
+  if (input.attackerChargeActive && resolveMoveType(input) === 'でんき') {
+    return power * 2
+  }
+
+  return power
+}
+
+function resolveBasePower(input: DamageCalcInput): number {
   const { move, attackerStats, defenderStats, defenderWeight, attackerWeight, attackerStatus } = input
 
   if (move.special) {
