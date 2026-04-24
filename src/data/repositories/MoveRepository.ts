@@ -19,13 +19,21 @@ export const MoveRepository = {
     return moves.find(m => m.name === name)
   },
 
-  /** JP/EN 両対応サーチ（ひらがな↔カタカナ変換対応） */
-  search(query: string, limit = 20): MoveRecord[] {
-    if (!query.trim()) return moves.slice(0, limit)
+  /**
+   * JP/EN 両対応サーチ（ひらがな↔カタカナ変換対応）
+   * allowedNames: 指定されていれば、その集合に含まれる技のみ返す
+   */
+  search(query: string, limit = 20, allowedNames?: Set<string> | null): MoveRecord[] {
+    const filtered = allowedNames
+      ? searchIndex.filter(m => allowedNames.has(m.name))
+      : searchIndex
     const q = query.trim()
-    const qKata = toKatakana(q)   // ひらがな・カタカナ両対応
+    if (!q) {
+      return filtered.slice(0, limit).map(r => moves.find(m => m.name === r.name)!)
+    }
+    const qKata = toKatakana(q)
     const ql = q.toLowerCase()
-    const results = searchIndex
+    const results = filtered
       .filter(m => m.name.includes(q) || m.nameKata.includes(qKata) || m.en.includes(ql))
       .slice(0, limit)
     return results.map(r => moves.find(m => m.name === r.name)!)

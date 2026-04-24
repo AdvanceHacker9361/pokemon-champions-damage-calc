@@ -420,6 +420,48 @@ src/
 - ゼロロール配列（無効タイプ・威力0）を 15 → 16 要素に拡張
 - 検証テスト・ラベル・コメントをすべて 16 段階仕様に更新
 
+### V3.1.5 以降: 学習技フィルタ + pkdx クロスチェック
+
+#### 習得可能技フィルタ
+- ポケモンごとの習得可能技データ（`src/data/json/learnableMoves.json`、197匹分）を追加
+- 攻撃側の技選択プルダウンが習得可能技のみに絞り込まれる（タイピング検索はそのまま）
+- `LearnsetRepository.getMoves(pokemonId)` が `Set<string> | null` を返す
+  - `null` のとき（= 未収録ポケモン）はフィルタ無効でフォールバック
+- `MoveSelect` に「全技表示」切替トグルを追加（データが古い/不足しているとき用）
+- データ源: pkdx v0.4.12 の `pkdx_patch/004_champions_learnset/data.json`
+  - `scripts/build-learnable-moves.ts` で整形・フィルタし `learnableMoves.json` を生成
+  - 入力 JSON は gitignore（`scripts/pkdx-learnset.json`、約 6.5MB）
+
+#### pkdx クロスチェックで発見・修正したバグ
+
+**バグ1: フィールド補正が乱数より後に適用されていた**
+- 修正前: `applyOtherModifiers` 内で各ロールに `pokeRound(d * 1.3)` を適用（乱数 r=89/90/91/95/97/99 で 1 ダメージ低く出る）
+- 修正後: `applyFieldModifier()` を新設し、乱数より前に damage_base へ round5(5325) で適用
+- 修正により Gen8+ / Showdown の canonical 挙動と一致
+- 影響: エレキ/グラス/サイコ（+30%）と グラス×じしん/サイコ×ドラゴン/ミスト×ドラゴン（-50%）
+
+**バグ2: はたきおとすの`special: "knock-off"`が未実装**
+- `SpecialMoveCalc.ts` に `'knock-off'` ケースが存在せず、`powerOptions` も未設定
+- 修正: `special` タグを `null` に戻し、`powerOptions: [65, 97]` を追加
+- 相手の持ち物有無に応じてユーザーが手動で選択できるように
+
+**バグ3: やけっぱち / アクロバットで条件付き威力が UI から選択不可**
+- やけっぱち: HP半分以下で威力2倍 → `powerOptions: [75, 150]` を追加
+- アクロバット: 持ち物なしで威力2倍 → `powerOptions: [55, 110]` を追加
+
+#### pkdx クロスチェックテスト
+- `tests/domain/pkdxCrossCheck.test.ts` を新設
+- pkdx v0.4.12 の e2e_scenarios_test.mbt に記載された golden 値を
+  このプロジェクトの `calculateDamage()` に通した結果と比較
+- ウェザーボール in はれ: min=114 / max=135（pkdx と完全一致）
+- エレキフィールド中のでんき技: 16 ロール全てが pkdx と一致
+- STAB / タイプ相性 / 急所 / 壁 / いろめがね もすべて一致
+
+#### pkdx との既知の差分
+- **つけあがる の基準**: pkdx は `def_rank_up_count`（相手のランク）、
+  このプロジェクトは `attackerRankModifiers`（自分のランク）で計算
+  → このプロジェクト側が canonical（Stored Power / Power Trip は Gen7+ で「自分のランク上昇数」基準）
+
 ---
 
 ## 重要なファイルと役割
@@ -447,6 +489,10 @@ src/
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |
 | `src/domain/calculators/SpecialMoveCalc.ts` | 特殊技の威力解決（体重依存・ジャイロボール・ヘビーボンバー等） |
 | `src/data/json/pokemon-mega.json` | メガポケモンデータ（`weight` フィールド含む全 74 件） |
+| `src/data/json/learnableMoves.json` | ポケモンID → 習得可能技リストのマッピング（197匹、pkdx由来） |
+| `src/data/repositories/LearnsetRepository.ts` | 習得可能技の読み込み・検索（フィルタ無効フォールバック付き） |
+| `scripts/build-learnable-moves.ts` | pkdx の learnset data から `learnableMoves.json` を生成するビルドスクリプト |
+| `tests/domain/pkdxCrossCheck.test.ts` | pkdx v0.4.12 の damage engine との挙動一致テスト |
 
 ---
 

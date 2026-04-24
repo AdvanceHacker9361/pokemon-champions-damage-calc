@@ -37,7 +37,7 @@ const VALID_CATEGORIES = new Set(['物理', '特殊', '変化'])
 const VALID_SPECIAL_TAGS = new Set([
   null, 'foul-play', 'body-press', 'photon-geyser', 'psyshock', 'gyro-ball',
   'grass-knot', 'low-kick', 'hex', 'facade', 'stealth-rock',
-  'freeze-dry', 'weather-ball', 'knock-off', 'stored-power', 'reversal',
+  'freeze-dry', 'weather-ball', 'stored-power', 'reversal',
   'heavy-slam',
 ])
 

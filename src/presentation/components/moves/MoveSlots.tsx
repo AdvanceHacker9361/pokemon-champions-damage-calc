@@ -11,9 +11,11 @@ interface MoveSlotsProps {
   setMovePower: PokemonStore['setMovePower']
   /** 攻撃側の実数値HP（きしかいせい / じたばた の最大HPとして使用） */
   maxHP?: number
+  /** 習得可能技の集合（null の場合はフィルタ無効） */
+  learnableMoves?: Set<string> | null
 }
 
-export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: MoveSlotsProps) {
+export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP, learnableMoves = null }: MoveSlotsProps) {
   // きしかいせい / じたばた 用の HP テキスト入力（スロットごと）
   const [hpInputs, setHpInputs] = useState<[string, string, string, string]>(['', '', '', ''])
 
@@ -68,6 +70,7 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
                 value={moveName}
                 onChange={name => setMove(slot, name)}
                 placeholder={`技${slot + 1}`}
+                learnableMoves={learnableMoves}
               />
 
               {/* ── きしかいせい / じたばた: HP入力 ── */}

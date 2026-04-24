@@ -388,7 +388,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "powerOptions": [55, 110]
   },
   {
     "name": "あさのひざし",
@@ -8243,7 +8244,8 @@
       "bite": false,
       "slice": false
     },
-    "special": "knock-off"
+    "special": null,
+    "powerOptions": [65, 97]
   },
   {
     "name": "はたく",
@@ -10992,7 +10994,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "powerOptions": [75, 150]
   },
   {
     "name": "やどりぎのタネ",

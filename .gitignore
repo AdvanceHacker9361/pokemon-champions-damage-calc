@@ -8,3 +8,6 @@ coverage
 .claude/*
 !.claude/settings.json
 
+# build-learnable-moves.ts の入力（pkdx v0.4.12 pkdx_patch/004_champions_learnset/data.json を配置）
+scripts/pkdx-learnset.json
+

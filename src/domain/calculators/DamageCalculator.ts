@@ -258,7 +258,10 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   // 1. 天候補正
   damage = applyWeatherModifier(damage, moveType, field.weather, defenderAbility)
 
-  // 2. 急所補正（1.5倍）
+  // 2. フィールド補正（乱数より前に適用: Gen8+ / Showdown 準拠）
+  damage = applyFieldModifier(damage, moveType, field.terrain, move.name)
+
+  // 3. 急所補正（1.5倍）
   if (isCritical) {
     damage = pokeRound(damage * 1.5)
   }
@@ -361,6 +364,28 @@ function applyWeatherModifier(
   return damage
 }
 
+/** 5325/4096 (≒1.3002) による五捨五超入 — Gen8+ フィールド倍率のShowdown準拠値 */
+function applyField13x(damage: number): number {
+  return Math.floor((damage * 5325 + 2047) / 4096)
+}
+
+function applyFieldModifier(
+  damage: number,
+  moveType: TypeName,
+  terrain: 'エレキ' | 'グラス' | 'サイコ' | 'ミスト' | null,
+  moveName: string,
+): number {
+  if (terrain === 'エレキ' && moveType === 'でんき') return applyField13x(damage)
+  if (terrain === 'グラス' && moveType === 'くさ')   return applyField13x(damage)
+  if (terrain === 'グラス' &&
+      (moveName === 'じしん' || moveName === 'じならし' || moveName === 'マグニチュード')) {
+    return pokeRound(damage * 0.5)
+  }
+  if (terrain === 'サイコ' && moveType === 'エスパー') return applyField13x(damage)
+  if (terrain === 'ミスト' && moveType === 'ドラゴン') return pokeRound(damage * 0.5)
+  return damage
+}
+
 function applyOtherModifiers(
   damage: number,
   input: DamageCalcInput,
@@ -370,24 +395,6 @@ function applyOtherModifiers(
   let d = damage
   const { attackerAbility, attackerItem, defenderAbility, defenderItem,
           move, field, isCritical = false } = input
-
-  // フィールド補正（地面にいるポケモン前提）
-  if (field.terrain === 'エレキ' && moveType === 'でんき') {
-    d = pokeRound(d * 1.3)
-  }
-  if (field.terrain === 'グラス' && moveType === 'くさ') {
-    d = pokeRound(d * 1.3)
-  }
-  if (field.terrain === 'グラス' &&
-      (move.name === 'じしん' || move.name === 'じならし' || move.name === 'マグニチュード')) {
-    d = pokeRound(d * 0.5)
-  }
-  if (field.terrain === 'サイコ' && moveType === 'エスパー') {
-    d = pokeRound(d * 1.3)
-  }
-  if (field.terrain === 'ミスト' && moveType === 'ドラゴン') {
-    d = pokeRound(d * 0.5)
-  }
 
   // 壁補正（急所時は壁無効）
   if (!isCritical) {
