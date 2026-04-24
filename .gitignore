@@ -7,3 +7,8 @@ dist
 coverage
 .claude/*
 !.claude/settings.json
+
+# ローカル専用ファイル（公開リポジトリには含めない）
+scripts/fetch-pokechamdb-usage.ts
+src/data/raw/pokechamdb-html/
+src/data/json/pokemonDefaultMoves.json
