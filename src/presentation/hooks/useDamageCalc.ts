@@ -159,7 +159,7 @@ export function useDamageCalc() {
     defender.effectiveAbility, defender.itemName,
     defender.ranks, defender.status, defender.abilityActivated, defender.proteanType,
     field.weather, field.terrain,
-    field.isReflect, field.isLightScreen, field.isAuroraVeil,
+    field.isReflect, field.isLightScreen, field.isAuroraVeil, field.isTrickRoom,
     setResults,
   ])
 }

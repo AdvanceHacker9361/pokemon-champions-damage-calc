@@ -67,9 +67,9 @@ export function AccumDurabilityPanel() {
         <span>
           現在 H
           <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentSpH}</span>
-          　HP
+          {'　'}HP
           <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentHp}</span>
-          　最大被ダメ
+          {'　'}最大被ダメ
           <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentMaxDmg}</span>
         </span>
         <span className={`font-semibold ${currentSurvives ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
@@ -141,7 +141,7 @@ export function AccumDurabilityPanel() {
             </tbody>
           </table>
           <div className="text-[10px] text-slate-400 dark:text-slate-600 mt-1">
-            * = 現在の設定　｜　B/D の最適化は個別技の耐久調整を使用してください
+            * = 現在の設定{'　｜　'}B/D の最適化は個別技の耐久調整を使用してください
           </div>
         </div>
       )}

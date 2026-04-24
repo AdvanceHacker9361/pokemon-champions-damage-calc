@@ -150,9 +150,9 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
         <span>
           現在 HP
           <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentHp}</span>
-          　最大被ダメ
+          {'　'}最大被ダメ
           <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentMaxDmg}</span>
-          　予算
+          {'　'}予算
           <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{budget}</span>SP
         </span>
         <span className={`font-semibold ${currentSurvives ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>

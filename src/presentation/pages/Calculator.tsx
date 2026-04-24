@@ -73,7 +73,6 @@ export function Calculator() {
   // 初回マウント時にデフォルトポケモンを設定
   useEffect(() => {
     initDefaults()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

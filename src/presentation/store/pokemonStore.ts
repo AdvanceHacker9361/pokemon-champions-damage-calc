@@ -130,7 +130,7 @@ function createPokemonStore() {
 
       let baseStats = record.baseStats as BaseStats
       let types = record.types as TypeName[]
-      let abilityName = record.abilities[0] ?? 'なし'
+      const abilityName = record.abilities[0] ?? 'なし'
       let effectiveAbility = abilityName
       let weight = record.weight
       let megaKey: string | null = null
