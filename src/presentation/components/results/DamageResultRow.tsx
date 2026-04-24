@@ -156,7 +156,7 @@ function computeEffectiveRolls(params: {
     if (multiHit?.type === 'escalating' && perHitResults && perHitResults.length > 1) {
       return perHitResults.slice(1).reduce(
         (acc, r) => acc.map((v, i) => v + r.rolls[i]),
-        Array(15).fill(0) as number[],
+        Array(16).fill(0) as number[],
       )
     }
     if (multiHit?.type === 'fixed' && multiHit.count > 1) {
@@ -598,7 +598,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
             type="button"
             onClick={() => setRollsExpanded(v => !v)}
             className="text-xs text-slate-600 hover:text-slate-800 dark:hover:text-slate-300 transition-colors"
-            title="15乱数を表示"
+            title="16乱数を表示"
           >
             {rollsExpanded ? '▲' : '▼'}乱数
           </button>
@@ -663,9 +663,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
           <div>
             <div className="text-xs text-slate-600 dark:text-slate-400 mb-0.5">
               {isParentalBond && !isDisguiseIntact ? '合算15乱数（親+子）'
-                : isDisguiseIntact && isParentalBond ? '子ダメ15乱数'
-                : isDisguiseIntact ? '実効ダメ15乱数'
-                : '15乱数'}
+                : isDisguiseIntact && isParentalBond ? '子ダメ16乱数'
+                : isDisguiseIntact ? '実効ダメ16乱数'
+                : '16乱数'}
             </div>
             <div className="flex flex-wrap gap-x-1 gap-y-0.5">
               {effectiveRolls.map((r, i) => (
@@ -706,7 +706,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
             </div>
           )}
 
-          {/* おやこあい 15×15乱数表（ばけのかわなし時のみ） */}
+          {/* おやこあい 16×16乱数表（ばけのかわなし時のみ） */}
           {isParentalBond && !isDisguiseIntact && (
             <div>
               <button
@@ -714,7 +714,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
                 onClick={() => setPbExpanded(v => !v)}
                 className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
-                {pbExpanded ? '▲' : '▼'} おやこあい 15×15乱数表
+                {pbExpanded ? '▲' : '▼'} おやこあい 16×16乱数表
               </button>
               {pbExpanded && (
                 <ParentalBondTable rolls={rolls} childRolls={childRollsArr} defenderHp={defenderMaxHp} />

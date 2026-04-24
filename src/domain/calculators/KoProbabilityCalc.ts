@@ -2,7 +2,7 @@ import type { KoResult } from '@/domain/models/DamageResult'
 
 /**
  * n発KO確率を動的計画法で計算する
- * @param rolls - Champions仕様: 15段階の乱数ロール（昇順、86〜100）
+ * @param rolls - Champions仕様: 16段階の乱数ロール（昇順、85〜100）
  * @param defenderHp - 防御側HP実数値
  * @param maxHits - 最大何発まで計算するか
  */
@@ -193,7 +193,7 @@ export function calcCombinedKoProbability(
 
 /**
  * 複数の技・ポケモンによる複合ダメージの分布をDPで計算
- * @param rollSets 各技の乱数ロール配列（15段階）
+ * @param rollSets 各技の乱数ロール配列（16段階）
  * @param offset 定数ダメージ（毒・砂嵐・残飯等の減算済み値）
  * @returns 累積ダメージ値 -> 確率 のMap
  */

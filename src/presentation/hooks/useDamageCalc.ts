@@ -115,10 +115,10 @@ export function useDamageCalc() {
               const totalResult: DamageResult = {
                 rolls: summedRolls,
                 min: summedRolls[0],
-                max: summedRolls[14],
+                max: summedRolls[15],
                 defenderMaxHp: defHp,
                 percentMin: calcRollPercent(summedRolls[0], defHp),
-                percentMax: calcRollPercent(summedRolls[14], defHp),
+                percentMax: calcRollPercent(summedRolls[15], defHp),
                 koResult: calcKoProbability(Array.from(summedRolls), defHp),
               }
               return { totalResult, hitResults }

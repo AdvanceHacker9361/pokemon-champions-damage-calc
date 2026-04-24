@@ -75,12 +75,12 @@ describe('DamageCalculator', () => {
       expect(result.min).toBeGreaterThan(0)
     })
 
-    it('Champions仕様: 15段階の乱数ロールを返す（86〜100、85は出現しない）', () => {
+    it('Champions仕様: 16段階の乱数ロールを返す（85〜100）', () => {
       const move = makePhysicalMove('じしん', 'じめん', 100)
       const result = calculateDamage({ ...baseInput, move })
-      expect(result.rolls).toHaveLength(15)
+      expect(result.rolls).toHaveLength(16)
       // ロールは昇順
-      for (let i = 1; i < 15; i++) {
+      for (let i = 1; i < 16; i++) {
         expect(result.rolls[i]).toBeGreaterThanOrEqual(result.rolls[i - 1])
       }
     })
@@ -92,14 +92,14 @@ describe('DamageCalculator', () => {
     })
   })
 
-  // ── Champions仕様の乱数15段階 検証テスト ──────────────────────────────
-  // 参照: https://saburoh326.hatenablog.com/entry/2026/04/15/220949
+  // ── Champions仕様の乱数16段階 検証テスト ──────────────────────────────
+  // 最新パッチで 15段階（86〜100）→ 16段階（85〜100）に修正
   describe('Champions乱数仕様 検証', () => {
-    it('検証1: ガブリアス ドラゴンクロー → ラウドボーン (STAB一致、15段階ロール)', () => {
+    it('検証1: ガブリアス ドラゴンクロー → ラウドボーン (STAB一致、16段階ロール)', () => {
       // 攻撃側: ガブリアス A=182 (無補正32振り)
       // 防御側: ラウドボーン B=120 (無補正無振り)
       // 技: ドラゴンクロー 威力80 タイプ一致
-      // 期待: [70,70,72,72,73,75,75,76,76,78,78,79,79,81,82]（85乱数は出現しない）
+      // 期待: [69,70,70,72,72,73,75,75,76,76,78,78,79,79,81,82]
       const attacker = makeStats(184, 182, 125, 101, 111, 154)
       const defender = makeStats(185, 70, 120, 70, 70, 70)
       const move = makePhysicalMove('ドラゴンクロー', 'ドラゴン', 80)
@@ -111,9 +111,9 @@ describe('DamageCalculator', () => {
         defenderTypes: ['ノーマル'],
         move,
       })
-      expect(Array.from(result.rolls)).toEqual([70, 70, 72, 72, 73, 75, 75, 76, 76, 78, 78, 79, 79, 81, 82])
-      expect(result.rolls).toHaveLength(15)
-      expect(result.min).toBe(70)
+      expect(Array.from(result.rolls)).toEqual([69, 70, 70, 72, 72, 73, 75, 75, 76, 76, 78, 78, 79, 79, 81, 82])
+      expect(result.rolls).toHaveLength(16)
+      expect(result.min).toBe(69)
       expect(result.max).toBe(82)
     })
 
@@ -121,7 +121,7 @@ describe('DamageCalculator', () => {
       // 攻撃側: ボスゴドラ A=158 (いじっぱり14振り相当)
       // 防御側: ランクルス B=85 (無補正無振り)
       // 技: すてみタックル 威力120 タイプ不一致
-      // 乱数前の値=100 → 期待: [86,87,...,100]（15段階、85は出現しない）
+      // 乱数前の値=100 → 期待: [85,86,87,...,100]（16段階）
       const attacker = makeStats(180, 158, 100, 60, 80, 100)
       const defender = makeStats(160, 60, 85, 160, 120, 70)
       const move: import('@/domain/models/Move').MoveData = {
@@ -139,9 +139,9 @@ describe('DamageCalculator', () => {
         defenderTypes: ['エスパー'],
         move,
       })
-      expect(Array.from(result.rolls)).toEqual([86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100])
-      expect(result.rolls).toHaveLength(15)
-      expect(result.min).toBe(86)
+      expect(Array.from(result.rolls)).toEqual([85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100])
+      expect(result.rolls).toHaveLength(16)
+      expect(result.min).toBe(85)
       expect(result.max).toBe(100)
     })
   })

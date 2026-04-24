@@ -173,9 +173,9 @@ src/
 
 #### 乱数ヒストグラム（RollHistogram）
 - `DamageResultRow.tsx` 内の `▼乱数` 展開セクションに `RollHistogram` コンポーネントを追加
-- 15 段階ロールを縦棒グラフで可視化（赤=確定KO・橙=2発圏・黄=3発圏・グレー=安全）
+- 16 段階ロール（85〜100%）を縦棒グラフで可視化（赤=確定KO・橙=2発圏・黄=3発圏・グレー=安全）
 - KO閾値を破線で表示、右上に「確定1発: X/15」「2発圏: X/15」を表示
-- X 軸ラベル: 86% / 92% / 100%
+- X 軸ラベル: 85% / 92% / 100%
 
 #### SpSlider 実数値の視認性向上
 - `SpSlider.tsx` の実数値表示を `text-xs w-9` → `text-sm w-10 font-semibold` に変更
@@ -410,6 +410,15 @@ src/
 - `DamageCalculator.resolvePower` で `attackerChargeActive && moveType === 'でんき'` のとき威力を 2 倍化
   - エレキスキンによるノーマル→でんき変換後の技にも対応（`resolveMoveType()` 経由で判定）
 - `CalculateDamageUseCase` / `FindOptimalSpUseCase` / `DurabilityPanel` / `useDamageCalc` / 攻守交代 `swapStores` すべてに `chargeActive` を伝搬
+
+#### ダメージ乱数を 15 段階 (86〜100%) → 16 段階 (85〜100%) に変更
+- 最新パッチで過去作通りの 16 段階乱数へ修正された仕様に追従
+- `DamageCalculator.calculateDamage`: ロール生成ループを `r=86..100` → `r=85..100` に変更
+- `DamageResult.rolls` のタプル型を 15 要素 → 16 要素に更新
+- `useDamageCalc` の段階威力型合算で `summedRolls[14]` → `summedRolls[15]`
+- `DamageCalculator` の `max = effectiveRolls[14]` → `effectiveRolls[15]`
+- ゼロロール配列（無効タイプ・威力0）を 15 → 16 要素に拡張
+- 検証テスト・ラベル・コメントをすべて 16 段階仕様に更新
 
 ---
 
