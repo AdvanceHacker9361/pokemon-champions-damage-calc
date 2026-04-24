@@ -11971,7 +11971,6 @@
       "bite": false,
       "slice": true
     },
-    "special": null,
-    "alwaysCrit": true
+    "special": null
   }
 ]
