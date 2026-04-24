@@ -420,17 +420,7 @@ src/
 - ゼロロール配列（無効タイプ・威力0）を 15 → 16 要素に拡張
 - 検証テスト・ラベル・コメントをすべて 16 段階仕様に更新
 
-### V3.1.5 以降: 学習技フィルタ + pkdx クロスチェック
-
-#### 習得可能技フィルタ
-- ポケモンごとの習得可能技データ（`src/data/json/learnableMoves.json`、197匹分）を追加
-- 攻撃側の技選択プルダウンが習得可能技のみに絞り込まれる（タイピング検索はそのまま）
-- `LearnsetRepository.getMoves(pokemonId)` が `Set<string> | null` を返す
-  - `null` のとき（= 未収録ポケモン）はフィルタ無効でフォールバック
-- `MoveSelect` に「全技表示」切替トグルを追加（データが古い/不足しているとき用）
-- データ源: pkdx v0.4.12 の `pkdx_patch/004_champions_learnset/data.json`
-  - `scripts/build-learnable-moves.ts` で整形・フィルタし `learnableMoves.json` を生成
-  - 入力 JSON は gitignore（`scripts/pkdx-learnset.json`、約 6.5MB）
+### V3.1.5 以降: pkdx クロスチェック
 
 #### pkdx クロスチェックで発見・修正したバグ
 
@@ -489,9 +479,6 @@ src/
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |
 | `src/domain/calculators/SpecialMoveCalc.ts` | 特殊技の威力解決（体重依存・ジャイロボール・ヘビーボンバー等） |
 | `src/data/json/pokemon-mega.json` | メガポケモンデータ（`weight` フィールド含む全 74 件） |
-| `src/data/json/learnableMoves.json` | ポケモンID → 習得可能技リストのマッピング（197匹、pkdx由来） |
-| `src/data/repositories/LearnsetRepository.ts` | 習得可能技の読み込み・検索（フィルタ無効フォールバック付き） |
-| `scripts/build-learnable-moves.ts` | pkdx の learnset data から `learnableMoves.json` を生成するビルドスクリプト |
 | `tests/domain/pkdxCrossCheck.test.ts` | pkdx v0.4.12 の damage engine との挙動一致テスト |
 
 ---
