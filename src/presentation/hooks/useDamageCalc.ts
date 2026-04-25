@@ -9,6 +9,8 @@ import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { calcRollPercent } from '@/domain/models/DamageResult'
+import { wouldHalfBerryActivate } from '@/domain/calculators/DamageCalculator'
+import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import type { DamageResult } from '@/domain/models/DamageResult'
 
 export function useDamageCalc() {
@@ -92,9 +94,33 @@ export function useDamageCalc() {
 
           // 段階威力型（escalating）: 各発を個別計算して合算
           // マルチスケイル/ファントムガード: 1発目のみ半減、2発目以降は素ダメ
+          // 半減実: 1発目で消費 → 2発目以降は無効
           const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
           const defenderHadMultiscale =
             HP_FULL_ABILITIES.has(defender.effectiveAbility) && defender.abilityActivated === true
+
+          // 半減実が今回の技に対して発動するか
+          // 技タイプ: スキン特性 / ウェザーボール は本来 DamageCalculator 内部で解決されるが、
+          // 半減実検知は近似で十分（UI 表示用の rawResult 生成判定）
+          const moveTypeForBerry = move.type
+          // へんげんじざいで変換中ならその単タイプ、そうでなければ元タイプを使用
+          const defenderEffTypes =
+            (defender.effectiveAbility === 'へんげんじざい' &&
+             defender.abilityActivated &&
+             defender.proteanType)
+              ? [defender.proteanType]
+              : defender.types
+          const typeEffForBerry = getTypeEffectiveness(moveTypeForBerry, defenderEffTypes)
+          const halfBerryActive = wouldHalfBerryActivate(defender.itemName, moveTypeForBerry, typeEffForBerry)
+
+          // 2発目以降の入力（マルチスケイル無効 + 半減実消費済み）
+          const subsequentInput = (defenderHadMultiscale || halfBerryActive)
+            ? {
+                ...calcInput,
+                defender: { ...calcInput.defender, abilityActivated: defenderHadMultiscale ? false : calcInput.defender.abilityActivated },
+                skipHalfBerry: halfBerryActive ? true : undefined,
+              }
+            : calcInput
 
           if (move.multiHit?.type === 'escalating') {
             const powers = move.multiHit.powers
@@ -102,10 +128,8 @@ export function useDamageCalc() {
 
             function calcEscalating(isCrit: boolean) {
               const hitResults = powers.map((power, idx) => {
-                // 2発目以降はマルチスケイル無効化（HP満タンでないため）
-                const hitInput = idx === 0 || !defenderHadMultiscale
-                  ? calcInput
-                  : { ...calcInput, defender: { ...calcInput.defender, abilityActivated: false } }
+                // 2発目以降: マルチスケイル無効化 / 半減実消費済み
+                const hitInput = idx === 0 ? calcInput : subsequentInput
                 return executeDamageCalculation({ ...hitInput, move: { ...baseMove, power }, isCritical: isCrit })
               })
               const defHp = hitResults[0].defenderMaxHp
@@ -132,11 +156,11 @@ export function useDamageCalc() {
           const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
           const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
 
-          // 素ダメ版（マルチスケイル無効化）: 加算リストの2発目以降 / 多段技の2発目以降 で使用
-          if (defenderHadMultiscale) {
-            const rawInput = { ...calcInput, defender: { ...calcInput.defender, abilityActivated: false } }
-            const rawResult = executeDamageCalculation({ ...rawInput, isCritical: alwaysCrit })
-            const rawCritResult = executeDamageCalculation({ ...rawInput, isCritical: true })
+          // 素ダメ版（マルチスケイル無効化 + 半減実消費済み）:
+          // 加算リストの2発目以降 / 多段技の2発目以降 / おやこあいの子 で使用
+          if (defenderHadMultiscale || halfBerryActive) {
+            const rawResult = executeDamageCalculation({ ...subsequentInput, isCritical: alwaysCrit })
+            const rawCritResult = executeDamageCalculation({ ...subsequentInput, isCritical: true })
             return { moveName, result, critResult, rawResult, rawCritResult }
           }
 

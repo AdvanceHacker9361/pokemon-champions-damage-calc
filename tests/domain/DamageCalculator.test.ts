@@ -262,4 +262,60 @@ describe('DamageCalculator', () => {
       expect(result.percentMax).toBeCloseTo(expected, 1)
     })
   })
+
+  describe('半減実の skipHalfBerry', () => {
+    // ヤチェのみ（こおり半減）を持つドラゴンタイプに対し、こおり技は効果抜群（×2）
+    // → 半減実発動で 0.5 倍されるはず
+    const move = makeSpecialMove('れいとうビーム', 'こおり', 90)
+    const dragon = makeStats(185, 100, 100, 100, 100, 100)
+    const dragonInput = {
+      ...baseInput,
+      defenderStats: dragon,
+      defenderTypes: ['ドラゴン' as const],
+      defenderItem: 'ヤチェのみ',
+      move,
+    }
+
+    it('1発目: ヤチェのみで半減ダメージとなる', () => {
+      const noBerry = calculateDamage({ ...dragonInput, defenderItem: null })
+      const withBerry = calculateDamage(dragonInput)
+      // 半減実が発動している（≒ 0.5 倍）
+      expect(withBerry.max).toBeLessThan(noBerry.max)
+      expect(withBerry.max).toBeLessThanOrEqual(Math.ceil(noBerry.max * 0.55))
+      expect(withBerry.max).toBeGreaterThanOrEqual(Math.floor(noBerry.max * 0.45))
+    })
+
+    it('2発目以降（skipHalfBerry=true）: 半減せず素ダメージとなる', () => {
+      const noBerry = calculateDamage({ ...dragonInput, defenderItem: null })
+      const skipped = calculateDamage({ ...dragonInput, skipHalfBerry: true })
+      // 半減実なし時とほぼ同一（pokeRound 誤差を許容）
+      expect(skipped.max).toBe(noBerry.max)
+      expect(skipped.min).toBe(noBerry.min)
+    })
+
+    it('skipHalfBerry を渡しても、半減実を持っていない場合は無影響', () => {
+      const noItem = calculateDamage({ ...dragonInput, defenderItem: null })
+      const skipped = calculateDamage({ ...dragonInput, defenderItem: null, skipHalfBerry: true })
+      expect(skipped.max).toBe(noItem.max)
+    })
+
+    it('ホズのみ（ノーマル半減）は等倍でも skipHalfBerry で無効化される', () => {
+      const normalMove = makeSpecialMove('はかいこうせん', 'ノーマル', 150)
+      const target = makeStats(185, 100, 100, 100, 100, 100)
+      const target2 = {
+        ...baseInput,
+        defenderStats: target,
+        defenderTypes: ['ほのお' as const],  // ノーマルは等倍
+        defenderItem: 'ホズのみ',
+        move: normalMove,
+      }
+      const withBerry = calculateDamage(target2)
+      const skipped = calculateDamage({ ...target2, skipHalfBerry: true })
+      const noItem = calculateDamage({ ...target2, defenderItem: null })
+      // ホズのみ発動時は等倍タイプでも 0.5 倍される
+      expect(withBerry.max).toBeLessThan(noItem.max)
+      // skipHalfBerry で半減を回避
+      expect(skipped.max).toBe(noItem.max)
+    })
+  })
 })

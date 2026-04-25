@@ -32,6 +32,37 @@ export interface DamageCalcInput {
   move: MoveData
   field: BattleField
   isCritical?: boolean
+  /**
+   * 連続技・おやこあいの2発目以降では半減実が消費済みとなり発動しないため、
+   * 2発目以降の計算にこのフラグを true で渡す。
+   */
+  skipHalfBerry?: boolean
+}
+
+/**
+ * 防御側の所持アイテムが現在の技に対して半減実として発動するかを判定する
+ * （2発目以降の計算が必要かを useDamageCalc 側で判別する用途）
+ */
+export function wouldHalfBerryActivate(
+  defenderItem: string | null,
+  moveType: TypeName,
+  typeEff: number,
+): boolean {
+  if (!defenderItem) return false
+  const map = HALF_BERRIES
+  if (map[defenderItem] !== moveType) return false
+  return defenderItem === 'ホズのみ' || typeEff > 1
+}
+
+/** 半減実→対応タイプ */
+const HALF_BERRIES: Record<string, TypeName> = {
+  'オッカのみ': 'ほのお', 'イトケのみ': 'みず', 'ソクノのみ': 'でんき',
+  'リンドのみ': 'くさ', 'ヤチェのみ': 'こおり', 'ヨプのみ': 'かくとう',
+  'ビアーのみ': 'どく', 'シュカのみ': 'じめん', 'バコウのみ': 'ひこう',
+  'ウタンのみ': 'エスパー', 'タンガのみ': 'むし', 'ヨロギのみ': 'いわ',
+  'カシブのみ': 'ゴースト', 'ハバンのみ': 'ドラゴン', 'ナモのみ': 'あく',
+  'リリバのみ': 'はがね', 'ロゼルのみ': 'フェアリー',
+  'ホズのみ': 'ノーマル',
 }
 
 /** 五捨五超入（pokeRound）: 0.5を切り上げる四捨五入 */
@@ -480,19 +511,9 @@ function applyOtherModifiers(
   // 半減実
   // - 通常: 該当タイプ かつ 効果抜群（typeEff > 1）のとき 0.5 倍
   // - ホズのみ（ノーマル半減）のみ例外: 効果抜群でなくても発動
-  const halfBerries: Record<string, TypeName> = {
-    'オッカのみ': 'ほのお', 'イトケのみ': 'みず', 'ソクノのみ': 'でんき',
-    'リンドのみ': 'くさ', 'ヤチェのみ': 'こおり', 'ヨプのみ': 'かくとう',
-    'ビアーのみ': 'どく', 'シュカのみ': 'じめん', 'バコウのみ': 'ひこう',
-    'ウタンのみ': 'エスパー', 'タンガのみ': 'むし', 'ヨロギのみ': 'いわ',
-    'カシブのみ': 'ゴースト', 'ハバンのみ': 'ドラゴン', 'ナモのみ': 'あく',
-    'リリバのみ': 'はがね', 'ロゼルのみ': 'フェアリー',
-    'ホズのみ': 'ノーマル',
-  }
-  if (defenderItem && halfBerries[defenderItem] === moveType) {
-    if (defenderItem === 'ホズのみ' || typeEff > 1) {
-      d = pokeRound(d * 0.5)
-    }
+  // - skipHalfBerry: 連続技・おやこあいの2発目以降は消費済みのためスキップ
+  if (!input.skipHalfBerry && wouldHalfBerryActivate(defenderItem, moveType, typeEff)) {
+    d = pokeRound(d * 0.5)
   }
 
   return d
