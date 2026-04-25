@@ -452,6 +452,12 @@ src/
   このプロジェクトは `attackerRankModifiers`（自分のランク）で計算
   → このプロジェクト側が canonical（Stored Power / Power Trip は Gen7+ で「自分のランク上昇数」基準）
 
+#### データ修正（V3.1.5 以降）
+- **ドゲザン** を `moves.json` に追加（あく物理・威力85・必中・切る属性）
+- **英語表記の特性を日本語化**: `Stamina` → `じきゅうりょく`、`Stalwart` → `すじがねいり`
+  - 影響ポケモン: ブリジュラス・ドンカラス・バンバドロ・ジュラルドン
+  - `abilities.json` の `name` フィールドと `pokemon.json` の `abilities` 配列の両方を修正
+
 ---
 
 ## 重要なファイルと役割
