@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MoveRecord } from '@/data/schemas/types'
 
@@ -6,33 +6,23 @@ interface MoveSelectProps {
   value: string | null
   onChange: (moveName: string | null) => void
   placeholder?: string
-  /** 習得可能技の集合（null の場合はフィルタを適用しない） */
-  learnableMoves?: Set<string> | null
 }
 
-export function MoveSelect({ value, onChange, placeholder = '技を選択...', learnableMoves = null }: MoveSelectProps) {
+export function MoveSelect({ value, onChange, placeholder = '技を選択...' }: MoveSelectProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<MoveRecord[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
-  /** true: 習得可能技のみ表示 / false: 全技表示 */
-  const [filterEnabled, setFilterEnabled] = useState(true)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const activeItemRef = useRef<HTMLButtonElement>(null)
 
-  // 実効フィルタ: learnableMoves が null なら常に無効
-  const effectiveFilter = useMemo(
-    () => (filterEnabled && learnableMoves ? learnableMoves : null),
-    [filterEnabled, learnableMoves],
-  )
-
   useEffect(() => {
     const timer = setTimeout(() => {
-      setResults(MoveRepository.search(query, 12, effectiveFilter))
+      setResults(MoveRepository.search(query, 12))
     }, 80)
     return () => clearTimeout(timer)
-  }, [query, effectiveFilter])
+  }, [query])
 
   // 結果変化時にアクティブ選択リセット
   useEffect(() => { setActiveIndex(-1) }, [results])
@@ -97,8 +87,6 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', l
     '変化': 'text-slate-600 dark:text-slate-400',
   }
 
-  const showFilterToggle = learnableMoves !== null
-
   return (
     <div className="relative">
       <input
@@ -132,28 +120,10 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', l
           ref={dropdownRef}
           className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded shadow-xl max-h-60 overflow-hidden flex flex-col"
         >
-          {showFilterToggle && (
-            <div className="flex items-center justify-between px-2 py-1 text-[10px] border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
-              <span className="text-slate-500 dark:text-slate-400">
-                {filterEnabled ? '習得可能技のみ' : '全技表示'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setFilterEnabled(v => !v)}
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline"
-              >
-                {filterEnabled ? '全技表示に切替' : '習得可能のみに戻す'}
-              </button>
-            </div>
-          )}
           <div className="overflow-y-auto">
             {results.length === 0 ? (
               <div className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-                {query
-                  ? (filterEnabled && showFilterToggle
-                    ? '習得可能技の中に該当がありません'
-                    : '該当する技がありません')
-                  : '該当する技がありません'}
+                {query ? '該当する技がありません' : '該当する技がありません'}
               </div>
             ) : (
               results.map((m, i) => (

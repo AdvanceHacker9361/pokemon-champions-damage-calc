@@ -11952,5 +11952,25 @@
       "stat": "spe",
       "stages": -1
     }
+  },
+  {
+    "name": "ドゲザン",
+    "nameEn": "Kowtow Cleave",
+    "type": "あく",
+    "category": "物理",
+    "power": 85,
+    "accuracy": null,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": true
+    },
+    "special": null
   }
 ]

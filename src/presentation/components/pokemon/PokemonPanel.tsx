@@ -10,7 +10,6 @@ import { ProteanTypePicker } from './ProteanTypePicker'
 import { MoveSlots } from '@/presentation/components/moves/MoveSlots'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
-import { LearnsetRepository } from '@/data/repositories/LearnsetRepository'
 import type { PokemonRecord } from '@/data/schemas/types'
 import type { TypeName, StatKey } from '@/domain/models/Pokemon'
 
@@ -282,7 +281,6 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
               movePowers={store.movePowers}
               setMovePower={store.setMovePower}
               maxHP={computedStats.hp}
-              learnableMoves={LearnsetRepository.getMoves(store.pokemonId)}
             />
           )}
         </>
