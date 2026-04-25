@@ -39,12 +39,12 @@
   { "name": "バコウのみ",         "nameEn": "Coba Berry",         "calcTag": "coba-berry" },
   { "name": "ウタンのみ",         "nameEn": "Payapa Berry",       "calcTag": "payapa-berry" },
   { "name": "タンガのみ",         "nameEn": "Tanga Berry",        "calcTag": "tanga-berry" },
-  { "name": "ヨアギのみ",         "nameEn": "Charti Berry",       "calcTag": "charti-berry" },
+  { "name": "ヨロギのみ",         "nameEn": "Charti Berry",       "calcTag": "charti-berry" },
   { "name": "カシブのみ",         "nameEn": "Kasib Berry",        "calcTag": "kasib-berry" },
   { "name": "ハバンのみ",         "nameEn": "Haban Berry",        "calcTag": "haban-berry" },
   { "name": "ナモのみ",           "nameEn": "Colbur Berry",       "calcTag": "colbur-berry" },
-  { "name": "ホズのみ",           "nameEn": "Babiri Berry",       "calcTag": "babiri-berry" },
+  { "name": "リリバのみ",         "nameEn": "Babiri Berry",       "calcTag": "babiri-berry" },
   { "name": "ロゼルのみ",         "nameEn": "Roseli Berry",       "calcTag": "roseli-berry" },
-  { "name": "ジャポのみ",         "nameEn": "Chilan Berry",       "calcTag": "chilan-berry" },
+  { "name": "ホズのみ",           "nameEn": "Chilan Berry",       "calcTag": "chilan-berry" },
   { "name": "なし",               "nameEn": "None",               "calcTag": "none" }
 ]
