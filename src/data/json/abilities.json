@@ -1105,7 +1105,7 @@
     "calcTag": "dancer"
   },
   {
-    "name": "Stamina",
+    "name": "じきゅうりょく",
     "nameEn": "Stamina",
     "calcTag": "stamina"
   },
@@ -1225,7 +1225,7 @@
     "calcTag": "power-spot"
   },
   {
-    "name": "Stalwart",
+    "name": "すじがねいり",
     "nameEn": "Stalwart",
     "calcTag": "stalwart"
   },
