@@ -270,14 +270,19 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const activeResult = isCritical ? critResult : result
   const rolls = Array.from(activeResult.rolls)
 
-  // マルチスケイル/ファントムガード 2発目以降用の素ダメロール（fixed/variable 多段技用）
-  // rawResult がない場合（単発技・マルチスケイル無効時）は rolls と同値
+  // 2発目以降用の素ダメロール（fixed/variable 多段技 / おやこあいの子 / 累積2発目以降 で使用）
+  // - マルチスケイル/ファントムガード 発動時: 2発目以降は無効（HP満タンでないため）
+  // - 半減実 発動時: 2発目以降は消費済みで効果なし
+  // rawResult がない場合（単発技 / どちらも非該当時）は rolls と同値
   const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
-  const hadMultiscale = HP_FULL_ABILITIES.has(defenderAbility) && defenderAbilityActivated
   const activeRawResult = isCritical ? props.rawCritResult : props.rawResult
-  const rawRolls = hadMultiscale && activeRawResult
+  const rawRolls = activeRawResult
     ? Array.from(activeRawResult.rolls)
     : rolls
+  // 「1発目限定効果」が発動中か（マルチスケイル/ファントムガード or 半減実）
+  // useDamageCalc は両方に対し rawResult を生成するため、その有無で判定
+  const hadHpFullAbility = HP_FULL_ABILITIES.has(defenderAbility) && defenderAbilityActivated
+  const hadMultiscale = hadHpFullAbility || !!props.rawResult
 
   // 確定急所技 / 急所モードで加算された場合は、急所込み計算で再混合しないため isForcedCrit とマーク
   const isForcedCrit = (moveRecord?.alwaysCrit === true) || isCritical
@@ -315,7 +320,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
 
   // 急所ロール（メイン表示では使わない / 加算時と急所込みKO計算で使用）
   const critRollsBase = Array.from(critResult.rolls)
-  const rawCritRollsBase = hadMultiscale && props.rawCritResult
+  const rawCritRollsBase = props.rawCritResult
     ? Array.from(props.rawCritResult.rolls)
     : critRollsBase
   const critPerHitResults = props.critPerHitResults
