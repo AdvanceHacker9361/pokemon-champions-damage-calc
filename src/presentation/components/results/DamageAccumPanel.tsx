@@ -4,13 +4,23 @@ interface DamageAccumPanelProps {
   defenderMaxHp: number
 }
 
-const CONST_FRACTIONS = [
+const CONST_DMG_FRACTIONS = [
   { label: '1/32', num: 1, den: 32 },
   { label: '1/16', num: 1, den: 16 },
   { label: '1/8',  num: 1, den: 8  },
   { label: '1/6',  num: 1, den: 6  },
   { label: '1/4',  num: 1, den: 4  },
   { label: '1/2',  num: 1, den: 2  },
+]
+
+const CONST_REC_FRACTIONS = [
+  { label: '1/16', num: 1, den: 16 },
+  { label: '1/8',  num: 1, den: 8  },
+  { label: '1/6',  num: 1, den: 6  },
+  { label: '1/4',  num: 1, den: 4  },
+  { label: '1/3',  num: 1, den: 3  },
+  { label: '1/2',  num: 1, den: 2  },
+  { label: '2/3',  num: 2, den: 3  },
 ]
 
 function ConstBar({ value, maxHp, color = 'bg-amber-500' }: { value: number; maxHp: number; color?: string }) {
@@ -143,7 +153,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           <span className="text-xs text-slate-600 dark:text-slate-600">砂/毒/やけど等</span>
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
-          {CONST_FRACTIONS.map(f => {
+          {CONST_DMG_FRACTIONS.map(f => {
             const val = Math.floor(defenderMaxHp * f.num / f.den)
             return (
               <button
@@ -194,7 +204,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           <span className="text-xs text-slate-600 dark:text-slate-600">残飯/黒ヘド等</span>
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
-          {CONST_FRACTIONS.map(f => {
+          {CONST_REC_FRACTIONS.map(f => {
             const val = Math.floor(defenderMaxHp * f.num / f.den)
             return (
               <button
