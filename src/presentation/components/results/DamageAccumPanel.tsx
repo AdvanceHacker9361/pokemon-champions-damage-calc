@@ -149,15 +149,11 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
               <button
                 key={f.label}
                 type="button"
-                onClick={() => setConstDmg(val)}
-                className={`text-xs px-1 py-0.5 rounded border transition-colors ${
-                  constDmg === val
-                    ? 'bg-amber-600 dark:bg-amber-700 border-amber-500 dark:border-amber-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
-                }`}
-                title={`${f.label} = ${val}`}
+                onClick={() => setConstDmg(constDmg + val)}
+                className="text-xs px-1 py-0.5 rounded border transition-colors bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-amber-500 dark:hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                title={`+${val} (${f.label})`}
               >
-                {f.label}<span className="ml-0.5 opacity-60">{val}</span>
+                +{f.label}<span className="ml-0.5 opacity-60">{val}</span>
               </button>
             )
           })}
@@ -204,15 +200,11 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
               <button
                 key={f.label}
                 type="button"
-                onClick={() => setConstRec(val)}
-                className={`text-xs px-1 py-0.5 rounded border transition-colors ${
-                  constRec === val
-                    ? 'bg-teal-600 dark:bg-teal-700 border-teal-500 dark:border-teal-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-slate-500 dark:hover:border-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
-                }`}
-                title={`${f.label} = ${val}`}
+                onClick={() => setConstRec(constRec + val)}
+                className="text-xs px-1 py-0.5 rounded border transition-colors bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-teal-500 dark:hover:border-teal-500 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                title={`+${val} (${f.label})`}
               >
-                {f.label}<span className="ml-0.5 opacity-60">{val}</span>
+                +{f.label}<span className="ml-0.5 opacity-60">{val}</span>
               </button>
             )
           })}
