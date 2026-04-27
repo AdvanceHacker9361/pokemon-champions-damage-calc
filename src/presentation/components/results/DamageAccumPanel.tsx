@@ -16,7 +16,6 @@ const CONST_DMG_FRACTIONS = [
 const CONST_REC_FRACTIONS = [
   { label: '1/16', num: 1, den: 16 },
   { label: '1/8',  num: 1, den: 8  },
-  { label: '1/6',  num: 1, den: 6  },
   { label: '1/4',  num: 1, den: 4  },
   { label: '1/3',  num: 1, den: 3  },
   { label: '1/2',  num: 1, den: 2  },
