@@ -439,6 +439,10 @@ src/
 - やけっぱち: HP半分以下で威力2倍 → `powerOptions: [75, 150]` を追加
 - アクロバット: 持ち物なしで威力2倍 → `powerOptions: [55, 110]` を追加
 
+**バグ4: ハードプレスの威力が `null` で計算に乗っていなかった**
+- HP満タンの相手で威力100、相手のHP割合に応じて減少する鋼タイプ技
+- `power: 100`（デフォルト = 満タン基準）に修正し、`powerOptions: [25, 50, 75, 100]` を追加
+
 #### pkdx クロスチェックテスト
 - `tests/domain/pkdxCrossCheck.test.ts` を新設
 - pkdx v0.4.12 の e2e_scenarios_test.mbt に記載された golden 値を
