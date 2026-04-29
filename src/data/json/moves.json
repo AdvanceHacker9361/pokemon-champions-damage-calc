@@ -7963,7 +7963,7 @@
     "nameEn": "Hard Press",
     "type": "はがね",
     "category": "物理",
-    "power": null,
+    "power": 100,
     "accuracy": 100,
     "pp": 12,
     "priority": 0,
@@ -7977,7 +7977,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "powerOptions": [25, 50, 75, 100]
   },
   {
     "name": "ハイドロカノン",
