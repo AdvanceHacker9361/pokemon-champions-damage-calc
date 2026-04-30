@@ -1483,5 +1483,25 @@
     },
     "ability": "マジックミラー",
     "weight": 40.0
+  },
+  {
+    "key": "mega-glimmora",
+    "basePokemonId": 970,
+    "name": "メガキラフロル",
+    "nameEn": "Mega Glimmora",
+    "types": [
+      "いわ",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 83,
+      "atk": 90,
+      "def": 105,
+      "spa": 150,
+      "spd": 96,
+      "spe": 101
+    },
+    "ability": "てきおうりょく",
+    "weight": 45.0
   }
 ]
