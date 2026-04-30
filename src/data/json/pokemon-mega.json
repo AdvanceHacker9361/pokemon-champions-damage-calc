@@ -653,6 +653,26 @@
     "weight": 13.0
   },
   {
+    "key": "mega-chimecho",
+    "basePokemonId": 358,
+    "name": "メガチリーン",
+    "nameEn": "Mega Chimecho",
+    "types": [
+      "エスパー",
+      "はがね"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 50,
+      "def": 110,
+      "spa": 135,
+      "spd": 120,
+      "spe": 65
+    },
+    "ability": "ふゆう",
+    "weight": 8.0
+  },
+  {
     "key": "mega-absol",
     "basePokemonId": 359,
     "name": "メガアブソル",
