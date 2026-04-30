@@ -8458,6 +8458,28 @@
     "multiHit": null
   },
   {
+    "name": "はめつのひかり",
+    "nameEn": "Light of Ruin",
+    "type": "フェアリー",
+    "category": "特殊",
+    "power": 140,
+    "accuracy": 90,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false,
+      "recoil": true
+    },
+    "special": null,
+    "multiHit": null
+  },
+  {
     "name": "バブルこうせん",
     "nameEn": "Bubble Beam",
     "type": "みず",
