@@ -450,6 +450,10 @@ function applyOtherModifiers(
   if (defenderAbility === 'もふもふ' && move.type === 'ほのお') {
     d = pokeRound(d * 2)
   }
+  // あついしぼう: ほのお/こおり技を0.5倍
+  if (defenderAbility === 'あついしぼう' && (moveType === 'ほのお' || moveType === 'こおり')) {
+    d = pokeRound(d * 0.5)
+  }
 
   // フェアリーオーラ: 攻撃側・防御側どちらが持っていてもフェアリー技1.33倍
   if ((attackerAbility === 'フェアリーオーラ' || defenderAbility === 'フェアリーオーラ') &&
