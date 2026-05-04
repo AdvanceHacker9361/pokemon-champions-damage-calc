@@ -17774,6 +17774,28 @@
     "weight": 334.1
   },
   {
+    "id": 10503,
+    "name": "ヒスイダイケンキ",
+    "nameEn": "Samurott-Hisui",
+    "types": [
+      "みず",
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 90,
+      "atk": 108,
+      "def": 80,
+      "spa": 100,
+      "spd": 65,
+      "spe": 85
+    },
+    "abilities": [
+      "げきりゅう",
+      "きれあじ"
+    ],
+    "weight": 58.2
+  },
+  {
     "id": 10876,
     "name": "イエッサンメス",
     "nameEn": "Indeedee-F",
