@@ -269,12 +269,19 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   const moveType = resolveMoveType(input)
 
   // へんげんじざい: 防御側タイプを変換済みタイプで上書き
-  const effectiveDefenderTypes: TypeName[] =
+  const baseDefenderTypes: TypeName[] =
     (defenderAbility === 'へんげんじざい' &&
      input.defenderAbilityActivated &&
      input.defenderProteanType != null)
       ? [input.defenderProteanType]
       : input.defenderTypes
+
+  // きもったま: ノーマル/かくとう技がゴーストタイプに対しても等倍以上で当たる
+  const scrappyActive = attackerAbility === 'きもったま' &&
+    (moveType === 'ノーマル' || moveType === 'かくとう')
+  const effectiveDefenderTypes: TypeName[] = scrappyActive
+    ? baseDefenderTypes.filter(t => t !== 'ゴースト')
+    : baseDefenderTypes
 
   // ===== 基本ダメージ =====
   // floor((レベル×2÷5+2)) = floor((50×2÷5+2)) = floor(22) = 22
