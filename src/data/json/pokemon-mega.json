@@ -1485,6 +1485,86 @@
     "weight": 40.0
   },
   {
+    "key": "mega-victreebel",
+    "basePokemonId": 71,
+    "name": "メガウツボット",
+    "nameEn": "Mega Victreebel",
+    "types": [
+      "くさ",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 125,
+      "def": 85,
+      "spa": 135,
+      "spd": 95,
+      "spe": 70
+    },
+    "ability": "とびだすなかみ",
+    "weight": 125.5
+  },
+  {
+    "key": "mega-skarmory",
+    "basePokemonId": 227,
+    "name": "メガエアームド",
+    "nameEn": "Mega Skarmory",
+    "types": [
+      "はがね",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 140,
+      "def": 110,
+      "spa": 40,
+      "spd": 100,
+      "spe": 110
+    },
+    "ability": "すじがねいり",
+    "weight": 40.4
+  },
+  {
+    "key": "mega-hawlucha",
+    "basePokemonId": 701,
+    "name": "メガルチャブル",
+    "nameEn": "Mega Hawlucha",
+    "types": [
+      "かくとう",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 78,
+      "atk": 137,
+      "def": 100,
+      "spa": 74,
+      "spd": 93,
+      "spe": 118
+    },
+    "ability": "ノーガード",
+    "weight": 25.0
+  },
+  {
+    "key": "mega-drampa",
+    "basePokemonId": 780,
+    "name": "メガジジーロン",
+    "nameEn": "Mega Drampa",
+    "types": [
+      "ノーマル",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 78,
+      "atk": 85,
+      "def": 110,
+      "spa": 160,
+      "spd": 116,
+      "spe": 36
+    },
+    "ability": "ぎゃくじょう",
+    "weight": 240.5
+  },
+  {
     "key": "mega-glimmora",
     "basePokemonId": 970,
     "name": "メガキラフロル",

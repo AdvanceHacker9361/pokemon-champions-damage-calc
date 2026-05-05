@@ -1034,7 +1034,8 @@
       "ようりょくそ",
       "くいしんぼう"
     ],
-    "weight": 15.5
+    "weight": 15.5,
+    "megaEvolutionKey": "mega-victreebel"
   },
   {
     "id": 72,
@@ -3924,7 +3925,8 @@
       "がんじょう",
       "くだけるよろい"
     ],
-    "weight": 50.5
+    "weight": 50.5,
+    "megaEvolutionKey": "mega-skarmory"
   },
   {
     "id": 228,
@@ -11677,7 +11679,8 @@
       "かるわざ",
       "かたやぶり"
     ],
-    "weight": 21.5
+    "weight": 21.5,
+    "megaEvolutionKey": "mega-hawlucha"
   },
   {
     "id": 702,
@@ -13215,8 +13218,32 @@
     "weight": 19
   },
   {
-    "id": 781,
+    "id": 780,
     "name": "ジジーロン",
+    "nameEn": "Drampa",
+    "types": [
+      "ノーマル",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 78,
+      "atk": 60,
+      "def": 85,
+      "spa": 135,
+      "spd": 91,
+      "spe": 36
+    },
+    "abilities": [
+      "ぎゃくじょう",
+      "そうしょく",
+      "ノーてんき"
+    ],
+    "weight": 185.0,
+    "megaEvolutionKey": "mega-drampa"
+  },
+  {
+    "id": 781,
+    "name": "ダダリン",
     "nameEn": "Dhelmise",
     "types": [
       "ゴースト",

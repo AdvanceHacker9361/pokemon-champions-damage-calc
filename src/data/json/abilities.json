@@ -1493,5 +1493,15 @@
     "name": "きみょうなくすり",
     "nameEn": "Curious Medicine",
     "calcTag": "none"
+  },
+  {
+    "name": "ぎゃくじょう",
+    "nameEn": "Berserk",
+    "calcTag": "berserk"
+  },
+  {
+    "name": "とびだすなかみ",
+    "nameEn": "Innards Out",
+    "calcTag": "innards-out"
   }
 ]
