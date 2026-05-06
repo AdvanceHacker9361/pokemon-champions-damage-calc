@@ -2492,6 +2492,27 @@
     "special": null
   },
   {
+    "name": "キラースピン",
+    "nameEn": "Mortal Spin",
+    "type": "どく",
+    "category": "物理",
+    "power": 30,
+    "accuracy": 100,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": null
+  },
+  {
     "name": "きりさく",
     "nameEn": "Slash",
     "type": "ノーマル",
