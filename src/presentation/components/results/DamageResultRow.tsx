@@ -194,7 +194,9 @@ function VariableMultiHitPanel({
   hitRate: number
   dist: { hits: number; prob: number }[]
 }) {
-  const res = calcVariableMultiHitKo(rolls, defenderHp, dist)
+  // rawRolls が rolls と異なる場合（くだけるよろい等）は2発目以降の計算に反映
+  const effectiveRawRolls = rawRolls !== rolls ? rawRolls : undefined
+  const res = calcVariableMultiHitKo(rolls, defenderHp, dist, effectiveRawRolls)
   const expectedWithAcc = res.expectedDmg * hitRate
   const gridCols = dist.length === 1 ? 'grid-cols-1'
     : dist.length === 2 ? 'grid-cols-2'

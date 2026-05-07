@@ -48,21 +48,24 @@ export function calcKoProbability(
 /**
  * n発でKOできる確率をDP計算（各乱数は等確率 1/16）
  * 外部から直接呼び出せるよう export
+ * @param rawRolls - 2発目以降に使うロール列（くだけるよろい等で1発目と異なる場合）
  */
 export function calcKoProbabilityForNHits(
   rolls: number[],
   defenderHp: number,
   hits: number,
+  rawRolls?: number[],
 ): number {
-  const n = rolls.length
   // dp[i] = i 発目までの累積ダメージが各値になる確率
   // キーは累積ダメージ、値は確率
   let dp: Map<number, number> = new Map([[0, 1.0]])
 
   for (let hit = 0; hit < hits; hit++) {
+    const hitRolls = hit === 0 ? rolls : (rawRolls ?? rolls)
+    const n = hitRolls.length
     const next: Map<number, number> = new Map()
     for (const [dmg, prob] of dp) {
-      for (const roll of rolls) {
+      for (const roll of hitRolls) {
         const newDmg = dmg + roll
         const rollProb = 1 / n
         next.set(newDmg, (next.get(newDmg) ?? 0) + prob * rollProb)
@@ -134,11 +137,13 @@ export function calcVariableMultiHitKo(
   rolls: number[],
   defenderHp: number,
   dist = VARIABLE_MULTI_HIT_DIST,
+  /** 2発目以降に使うロール列（くだけるよろい等で1発目と異なる場合） */
+  rawRolls?: number[],
 ): VariableMultiHitResult {
   const perHit = dist.map(({ hits, prob }) => ({
     hits,
     prob,
-    koProbForHits: calcKoProbabilityForNHits(rolls, defenderHp, hits),
+    koProbForHits: calcKoProbabilityForNHits(rolls, defenderHp, hits, rawRolls),
   }))
 
   const totalKoProb = Math.min(
@@ -148,12 +153,17 @@ export function calcVariableMultiHitKo(
 
   const minRoll = rolls[0]
   const maxRoll = rolls[rolls.length - 1]
+  const rawMinRoll = rawRolls?.[0] ?? minRoll
+  const rawMaxRoll = rawRolls?.[rawRolls.length - 1] ?? maxRoll
   const minHits = dist[0].hits
   const maxHits = dist[dist.length - 1].hits
-  const minDmg = minRoll * minHits
-  const maxDmg = maxRoll * maxHits
+  // 1発目は rolls、2発目以降は rawRolls で min/max/期待値を算出
+  const minDmg = minRoll + rawMinRoll * (minHits - 1)
+  const maxDmg = maxRoll + rawMaxRoll * (maxHits - 1)
+  const avgFirst = (minRoll + maxRoll) / 2
+  const avgSubsequent = (rawMinRoll + rawMaxRoll) / 2
   const expectedDmg = dist.reduce(
-    (sum, { hits, prob }) => sum + ((minRoll + maxRoll) / 2) * hits * prob,
+    (sum, { hits, prob }) => sum + (avgFirst + avgSubsequent * (hits - 1)) * prob,
     0,
   )
 
