@@ -11,6 +11,9 @@ export interface MoveResult {
   /** マルチスケイル無効化後の素ダメ結果（fixed/variable多段の2発目以降用） */
   rawResult?: DamageResult
   rawCritResult?: DamageResult
+  /** くだけるよろい発動時の固定多段技の各発個別結果（ヒットごとにBランク-1） */
+  weakArmorPerHitResults?: DamageResult[]
+  weakArmorCritPerHitResults?: DamageResult[]
 }
 
 interface ResultStore {

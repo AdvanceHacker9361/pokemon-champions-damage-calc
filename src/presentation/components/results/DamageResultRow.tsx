@@ -26,6 +26,9 @@ interface DamageResultRowProps {
   /** マルチスケイル無効時（2発目以降用）の素ダメ結果 */
   rawResult?: DamageResult
   rawCritResult?: DamageResult
+  /** くだけるよろい発動時の固定多段技の各発個別結果 */
+  weakArmorPerHitResults?: DamageResult[]
+  weakArmorCritPerHitResults?: DamageResult[]
 }
 
 function koLabel(koResult: KoResult): string {
@@ -146,8 +149,9 @@ function computeEffectiveRolls(params: {
   isParentalBond: boolean
   isDisguiseIntact: boolean
   perHitResults?: DamageResult[]
+  weakArmorPerHitResults?: DamageResult[]
 }): number[] {
-  const { rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults } = params
+  const { rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults, weakArmorPerHitResults } = params
   const childRollsArr = calcChildRolls(rawRolls)
   const combinedRolls = rolls.map((r, i) => r + childRollsArr[i])
 
@@ -166,6 +170,12 @@ function computeEffectiveRolls(params: {
     return rolls.map(() => 0)
   }
   if (isParentalBond) return combinedRolls
+  // くだけるよろい: 固定多段技の各発でBランク低下を反映した個別結果を合算
+  if (weakArmorPerHitResults && multiHit?.type === 'fixed') {
+    return weakArmorPerHitResults[0].rolls.map((_, i) =>
+      weakArmorPerHitResults.reduce((sum, r) => sum + r.rolls[i], 0)
+    )
+  }
   if (multiHit?.type === 'fixed' && multiHit.count > 1) {
     const count = multiHit.count
     return rolls.map((r, i) => r + rawRolls[i] * (count - 1))
@@ -237,7 +247,7 @@ function VariableMultiHitPanel({
 }
 
 export function DamageResultRow(props: DamageResultRowProps) {
-  const { moveName, result, critResult } = props
+  const { moveName, result, critResult, weakArmorPerHitResults: weakArmorPerHitResultsNormal, weakArmorCritPerHitResults } = props
   const { min, max, defenderMaxHp } = result
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
@@ -265,6 +275,8 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const variableMultiHitDist = getVariableMultiHitDist(attackerAbility, attackerItem)
   // 段階威力型の各発個別結果（ばけのかわ等）
   const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
+  // くだけるよろい: 固定多段の各発個別結果（急所モードで切り替え）
+  const weakArmorPerHitResults = isCritical ? weakArmorCritPerHitResults : weakArmorPerHitResultsNormal
 
   // 急所時は critResult のロールを使う（1.5倍・壁無効適用済み）
   const activeResult = isCritical ? critResult : result
@@ -313,9 +325,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
     else disguiseLabel = 'ばけのかわ発動（全弾無効）'
   }
 
-  // 実効ロール: ばけのかわ・おやこあい・固定多段合計 を考慮した最終ダメージのロール列
+  // 実効ロール: ばけのかわ・おやこあい・固定多段合計・くだけるよろい を考慮した最終ダメージのロール列
   const effectiveRolls = computeEffectiveRolls({
-    rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults,
+    rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults, weakArmorPerHitResults,
   })
 
   // 急所ロール（メイン表示では使わない / 加算時と急所込みKO計算で使用）
@@ -326,7 +338,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const critPerHitResults = props.critPerHitResults
   const effectiveCritRolls = computeEffectiveRolls({
     rolls: critRollsBase, rawRolls: rawCritRollsBase, multiHit, isParentalBond, isDisguiseIntact,
-    perHitResults: critPerHitResults,
+    perHitResults: critPerHitResults, weakArmorPerHitResults: weakArmorCritPerHitResults,
   })
 
   // ── 表示値（主ダメージ表示に使う） ───────────────────────────────
@@ -359,6 +371,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
     } else {
       displayKoResult = calcKoProbability(effectiveRolls, effectiveHpForKo)
     }
+  } else if (weakArmorPerHitResults && multiHit?.type === 'fixed') {
+    // くだけるよろい + 固定多段技: 合算ロールからKO確率を計算
+    displayKoResult = calcKoProbability(effectiveRolls, effectiveHpForKo)
   } else {
     displayKoResult = activeResult.koResult
   }

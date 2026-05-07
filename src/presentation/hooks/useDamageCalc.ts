@@ -113,6 +113,11 @@ export function useDamageCalc() {
           const typeEffForBerry = getTypeEffectiveness(moveTypeForBerry, defenderEffTypes)
           const halfBerryActive = wouldHalfBerryActivate(defender.itemName, moveTypeForBerry, typeEffForBerry)
 
+          // くだけるよろい: 物理技のヒットごとに防御側Bランクが-1される
+          const defenderWeakArmor =
+            defender.effectiveAbility === 'くだけるよろい' &&
+            move.category === '物理'
+
           // 2発目以降の入力（マルチスケイル無効 + 半減実消費済み）
           const subsequentInput = (defenderHadMultiscale || halfBerryActive)
             ? {
@@ -122,6 +127,19 @@ export function useDamageCalc() {
               }
             : calcInput
 
+          // くだけるよろい: N発目の入力にBランク累積低下を適用するヘルパー
+          // drops: 1発目=0, 2発目=1, 3発目=2 ... (現在ランクから引く段数)
+          function withWeakArmorDrop(input: typeof calcInput, drops: number): typeof calcInput {
+            if (!defenderWeakArmor || drops === 0) return input
+            const currentDef = input.defender.ranks.def ?? 0
+            const newDef = Math.max(-6, currentDef - drops)
+            if (newDef === currentDef) return input
+            return {
+              ...input,
+              defender: { ...input.defender, ranks: { ...input.defender.ranks, def: newDef } },
+            }
+          }
+
           if (move.multiHit?.type === 'escalating') {
             const powers = move.multiHit.powers
             const baseMove = move  // 型ナロウイングのためキャプチャ
@@ -129,7 +147,9 @@ export function useDamageCalc() {
             function calcEscalating(isCrit: boolean) {
               const hitResults = powers.map((power, idx) => {
                 // 2発目以降: マルチスケイル無効化 / 半減実消費済み
-                const hitInput = idx === 0 ? calcInput : subsequentInput
+                // くだけるよろい: idx発目はBランクをidx段階下げる（1発目=0段, 2発目=1段, ...）
+                const baseInput = idx === 0 ? calcInput : subsequentInput
+                const hitInput = withWeakArmorDrop(baseInput, idx)
                 return executeDamageCalculation({ ...hitInput, move: { ...baseMove, power }, isCritical: isCrit })
               })
               const defHp = hitResults[0].defenderMaxHp
@@ -156,15 +176,32 @@ export function useDamageCalc() {
           const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
           const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
 
-          // 素ダメ版（マルチスケイル無効化 + 半減実消費済み）:
-          // 加算リストの2発目以降 / 多段技の2発目以降 / おやこあいの子 で使用
-          if (defenderHadMultiscale || halfBerryActive) {
-            const rawResult = executeDamageCalculation({ ...subsequentInput, isCritical: alwaysCrit })
-            const rawCritResult = executeDamageCalculation({ ...subsequentInput, isCritical: true })
-            return { moveName, result, critResult, rawResult, rawCritResult }
+          // くだけるよろい + 固定多段技: 各発ごとにBランク低下を適用して個別計算
+          let weakArmorPerHitResults: DamageResult[] | undefined
+          let weakArmorCritPerHitResults: DamageResult[] | undefined
+          if (move.multiHit?.type === 'fixed' && move.multiHit.count > 1 && defenderWeakArmor) {
+            const count = move.multiHit.count
+            weakArmorPerHitResults = Array.from({ length: count }, (_, idx) => {
+              const hitInput = withWeakArmorDrop(idx === 0 ? calcInput : subsequentInput, idx)
+              return executeDamageCalculation({ ...hitInput, isCritical: alwaysCrit })
+            })
+            weakArmorCritPerHitResults = Array.from({ length: count }, (_, idx) => {
+              const hitInput = withWeakArmorDrop(idx === 0 ? calcInput : subsequentInput, idx)
+              return executeDamageCalculation({ ...hitInput, isCritical: true })
+            })
           }
 
-          return { moveName, result, critResult }
+          // 素ダメ版（マルチスケイル無効化 + 半減実消費済み + くだけるよろいBランク-1）:
+          // 加算リストの2発目以降 / 多段技の2発目以降 / おやこあいの子 で使用
+          if (defenderHadMultiscale || halfBerryActive || defenderWeakArmor) {
+            // おやこあい子・加算2発目以降はBランク-1（くだけるよろい発動後のダメージを反映）
+            const rawSubsequentInput = withWeakArmorDrop(subsequentInput, 1)
+            const rawResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: alwaysCrit })
+            const rawCritResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: true })
+            return { moveName, result, critResult, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults }
+          }
+
+          return { moveName, result, critResult, weakArmorPerHitResults, weakArmorCritPerHitResults }
         } catch {
           return null
         }
