@@ -509,6 +509,21 @@ src/
 - **シルクのスカーフ** (silk-scarf, ノーマル+20%) を `items.json` に追加し、`DamageCalculator` の `typeBoostItems` にも登録
 - 既存バグ修正: `typeBoostItems` の みずタイプ強化キーが `'しんかいのキバ'` になっていたが、`items.json` には `しんぴのしずく` しか登録されていないため、みず強化アイテムの効果が常時不発だった → `'しんぴのしずく': 'みず'` に修正
 
+#### くだけるよろい: 連続技・おやこあいの Bランク累積低下対応
+- **仕様**: 物理技が当たるたびに防御側 B ランクが -1（最大 -6 まで）
+- **escalating 連続技**（トリプルアクセル等）: `useDamageCalc` の `calcEscalating` 内で
+  `withWeakArmorDrop(hitInput, idx)` を適用（idx発目にBランクをidx段階下げる）
+- **fixed 連続技**（ドラゴンアロー等）: `useDamageCalc` が各発個別結果 `weakArmorPerHitResults` /
+  `weakArmorCritPerHitResults` を計算して `MoveResult` に格納
+  - `DamageResultRow.tsx` の `computeEffectiveRolls` でこれを優先使用して合算
+  - KO確率も合算ロールから `calcKoProbability` で再計算
+- **おやこあい** (おやこあい): `rawResult`（子ヒット用素ダメ）を
+  `withWeakArmorDrop(subsequentInput, 1)` で計算 → 子ロールが自動的に Bランク-1 を反映
+- **単発技**: 変化なし（1発目はランク低下前のBで計算するのが正しい仕様）
+- **abilityActivated トグルは不要**: くだけるよろいはHP条件がないため、特性名の一致と
+  `move.category === '物理'` のみで発動判定する
+- 実装ファイル: `useDamageCalc.ts`、`resultStore.ts`、`DamageResultRow.tsx`、`DamageResultArea.tsx`
+
 ---
 
 ## 重要なファイルと役割
