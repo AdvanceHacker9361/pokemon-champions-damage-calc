@@ -582,6 +582,17 @@ src/
   `MoveResult` 側の `weakArmorPerHitResults` 等のフィールド名は両特性共用のまま据え置き
   （内部実装が両ケースを生成）
 
+#### 固定多段技の加算バグ修正（ドラゴンアロー等）
+- **バグ**: `handleAddToAccum` が `effectiveRolls`（N発合算）を `usages=1` で加算していたため、
+  累積DPが「合算ダメージ1回分」として扱い、分布が不正確だった
+- **修正**: `multiHit.type === 'fixed' && count > 1 && !isDisguiseIntact` を検出し、
+  - `rolls`（1発分の per-hit ロール）を加算エントリの `rolls` として使用
+  - `usages = multiHit.count`（ヒット数）を設定（ドラゴンアローなら2）
+  - じきゅうりょく/くだけるよろい発動時: `activeRawResult.rolls`（B±1の2発目ロール）を
+    `rawRolls` として保存し、`hadMultiscale=true` でDPに伝達
+    → 1発目はB±0、2発目はB±1で各スロットを独立計算
+  - ばけのかわ発動時は従来通り合算（効果なし発を除いた残発分）で保存
+
 ---
 
 ## 重要なファイルと役割
