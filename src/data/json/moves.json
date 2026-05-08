@@ -8838,7 +8838,7 @@
     "nameEn": "Infernal Parade",
     "type": "ゴースト",
     "category": "特殊",
-    "power": 60,
+    "power": 65,
     "accuracy": 100,
     "pp": 16,
     "priority": 0,
@@ -8851,7 +8851,9 @@
       "bite": false,
       "slice": false
     },
-    "special": "hex"
+    "special": null,
+    "powerOptions": [65, 130],
+    "multiHit": null
   },
   {
     "name": "ひやみず",
