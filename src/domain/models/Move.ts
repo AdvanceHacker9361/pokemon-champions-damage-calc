@@ -62,7 +62,7 @@ export interface MoveData {
   alwaysCrit?: boolean
   /**
    * 急所ランク加算値（技固有）
-   * 0 = 通常 (1/16), 1 = 高急所 (1/8)
+   * 0 = 通常 (1/24), 1 = 高急所 (1/8)
    */
   critChance?: number
 }

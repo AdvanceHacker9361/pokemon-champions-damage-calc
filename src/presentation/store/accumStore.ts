@@ -29,7 +29,7 @@ export interface AccumEntry {
   critMax: number
   rawCritMin: number
   rawCritMax: number
-  /** 急所率 (0=1/16, 1/8=高急所技, 1.0=確定急所/急所強制) */
+  /** 急所率 (0=1/24, 1/8=高急所技, 1.0=確定急所/急所強制) */
   critChance: number
   /** このエントリは急所強制（確定急所技 or 急所モードで追加）。急所込み計算で混合せず rolls をそのまま使う */
   isForcedCrit: boolean

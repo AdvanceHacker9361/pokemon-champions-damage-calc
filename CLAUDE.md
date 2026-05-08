@@ -345,7 +345,8 @@ src/
 #### CritRank.ts
 - `src/domain/calculators/CritRank.ts` を新規作成
 - `calcCritChance({ moveCritBonus, attackerAbility, attackerItem, focusEnergyActive })` で急所率を統合計算
-- ランクテーブル: 0→1/16, +1→1/8, +2→1/2, +3→確定
+- ランクテーブル（Pokemon Champions = Gen 7+ 仕様）: **0→1/24**, +1→1/8, +2→1/2, +3→確定
+  - Gen 6 までは 1/16 だったが Gen 7 以降 1/24 に引き下げられた仕様に追従
 - ランク加算要素:
   - 高急所技（`move.critChance >= 1`）: +1
   - 特性「きょううん」: +1

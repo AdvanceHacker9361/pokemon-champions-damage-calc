@@ -61,7 +61,7 @@ export function DamageSummaryHeader() {
               {accumProbDisplay}
             </span>
             {critAffects && (
-              <span className="text-xs font-mono text-amber-600 dark:text-amber-400 whitespace-nowrap" title="各エントリの急所率（1/16 or 1/8）で混合した撃破率。確定急所・急所モード加算分はそのまま扱う">
+              <span className="text-xs font-mono text-amber-600 dark:text-amber-400 whitespace-nowrap" title="各エントリの急所率（1/24 or 1/8）で混合した撃破率。確定急所・急所モード加算分はそのまま扱う">
                 急所込み <span className="font-bold">{accumProbWithCritDisplay}</span>
               </span>
             )}
