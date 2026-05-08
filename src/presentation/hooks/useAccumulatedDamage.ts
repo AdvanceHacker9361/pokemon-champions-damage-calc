@@ -4,8 +4,6 @@ import {
   calcCombinedKoProbability,
   calcCombinedDamageDistribution,
   calcCombinedKoProbabilityWithCrit,
-  calcVariableHitsSingleUsageDist,
-  calcVariableHitsSingleUsageDistWithCrit,
 } from '@/domain/calculators/KoProbabilityCalc'
 import type { AttackSlot } from '@/domain/calculators/KoProbabilityCalc'
 import type { KoResult } from '@/domain/models/DamageResult'
@@ -82,25 +80,6 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         const useRaw = !isVeryFirst && firstHadMultiscale
         const normalRolls = useRaw ? e.rawRolls : e.rolls
         const critRolls  = useRaw ? e.rawCritRolls : e.critRolls
-
-        if (e.variableHitDist !== undefined) {
-          // 変動連続技: 1使用分の完全分布を計算してスロットに格納
-          // isVeryFirst && firstHadMultiscale のとき: 1発目は normalRolls（半減）、2発目以降は e.rawRolls
-          const rawRollsForHit = (isVeryFirst && firstHadMultiscale) ? e.rawRolls : undefined
-          const rawCritRollsForHit = (isVeryFirst && firstHadMultiscale) ? e.rawCritRolls : undefined
-          const singleUsageDist = calcVariableHitsSingleUsageDist(normalRolls, e.variableHitDist, rawRollsForHit)
-          rollSets.push(singleUsageDist)
-
-          if (e.isForcedCrit) {
-            attackRollsWithCrit.push({ precomputed: singleUsageDist })
-          } else {
-            const singleUsageDistWithCrit = calcVariableHitsSingleUsageDistWithCrit(
-              normalRolls, critRolls, e.critChance, e.variableHitDist, rawRollsForHit, rawCritRollsForHit,
-            )
-            attackRollsWithCrit.push({ precomputed: singleUsageDistWithCrit })
-          }
-          continue
-        }
 
         rollSets.push(normalRolls)
 
