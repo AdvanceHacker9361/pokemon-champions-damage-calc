@@ -510,7 +510,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       pbChildCritRolls = calcChildRolls(rawCritRollsBase)  // 急所子ロール
     }
 
-    // 変動連続技: スキルリンク=確定5発, いかさまダイス=5発デフォルト, 通常=1発
+    // 変動連続技: ×N はヒット数を表す（個別に加算可能）。デフォルトは最大ヒット数。
     const defaultUsages = multiHit?.type === 'variable'
       ? variableMultiHitDist[variableMultiHitDist.length - 1].hits
       : 1

@@ -5,7 +5,7 @@ import {
   calcCombinedDamageDistribution,
   calcCombinedKoProbabilityWithCrit,
 } from '@/domain/calculators/KoProbabilityCalc'
-import type { AttackRollsWithCrit } from '@/domain/calculators/KoProbabilityCalc'
+import type { AttackSlot } from '@/domain/calculators/KoProbabilityCalc'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -70,8 +70,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const totalMaxPct = defenderMaxHp > 0 ? totalMax / defenderMaxHp * 100 : 0
 
     // ロールセット: 最初エントリがマルチスケイル発動時は、先頭1発だけ半減ロール、残りは素ダメロール
-    const rollSets: number[][] = []
-    const attackRollsWithCrit: AttackRollsWithCrit[] = []
+    // 変動連続技（variableHitDist あり）は1使用分の分布を事前計算してスロットに入れる
+    const rollSets: (number[] | Map<number, number>)[] = []
+    const attackRollsWithCrit: AttackSlot[] = []
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i]
       for (let u = 0; u < e.usages; u++) {
@@ -79,6 +80,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         const useRaw = !isVeryFirst && firstHadMultiscale
         const normalRolls = useRaw ? e.rawRolls : e.rolls
         const critRolls  = useRaw ? e.rawCritRolls : e.critRolls
+
         rollSets.push(normalRolls)
 
         if (e.pbChildRolls !== undefined) {

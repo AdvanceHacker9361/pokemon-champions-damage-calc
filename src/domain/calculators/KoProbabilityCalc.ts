@@ -203,30 +203,17 @@ export function calcVariableMultiHitKo(
 
 /**
  * 複数の技・ポケモンによる複合ダメージのKO確率をDP計算
- * 各rollSetから1ロールずつ独立に選んだ合計がdefenderHp以上になる確率
+ * 各スロットは `number[]`（一様乱数）か `Map<number, number>`（事前計算済み分布）を受け付ける。
+ * 変動連続技の1使用分は `calcVariableHitsSingleUsageDist` で事前計算して渡す。
  */
 export function calcCombinedKoProbability(
-  rollSets: number[][],
+  rollSets: (number[] | Map<number, number>)[],
   defenderHp: number,
 ): number {
   if (rollSets.length === 0) return 0
-
-  let dp: Map<number, number> = new Map([[0, 1.0]])
-
-  for (const rolls of rollSets) {
-    const n = rolls.length
-    const next: Map<number, number> = new Map()
-    for (const [dmg, prob] of dp) {
-      for (const roll of rolls) {
-        const newDmg = dmg + roll
-        next.set(newDmg, (next.get(newDmg) ?? 0) + prob / n)
-      }
-    }
-    dp = next
-  }
-
+  const dist = calcCombinedDamageDistribution(rollSets)
   let koProb = 0
-  for (const [dmg, prob] of dp) {
+  for (const [dmg, prob] of dist) {
     if (dmg >= defenderHp) koProb += prob
   }
   return Math.min(1, koProb)
@@ -234,22 +221,31 @@ export function calcCombinedKoProbability(
 
 /**
  * 複数の技・ポケモンによる複合ダメージの分布をDPで計算
- * @param rollSets 各技の乱数ロール配列（16段階）
+ * @param rollSets 各スロット: `number[]`（一様乱数）か `Map<number, number>`（事前計算済み分布）
  * @param offset 定数ダメージ（毒・砂嵐・残飯等の減算済み値）
  * @returns 累積ダメージ値 -> 確率 のMap
  */
 export function calcCombinedDamageDistribution(
-  rollSets: number[][],
+  rollSets: (number[] | Map<number, number>)[],
   offset = 0,
 ): Map<number, number> {
   let dp: Map<number, number> = new Map([[offset, 1.0]])
-  for (const rolls of rollSets) {
-    const n = rolls.length
+  for (const slot of rollSets) {
     const next: Map<number, number> = new Map()
-    for (const [dmg, prob] of dp) {
-      for (const roll of rolls) {
-        const newDmg = dmg + roll
-        next.set(newDmg, (next.get(newDmg) ?? 0) + prob / n)
+    if (slot instanceof Map) {
+      for (const [dmg, prob] of dp) {
+        for (const [addDmg, addProb] of slot) {
+          const newDmg = dmg + addDmg
+          next.set(newDmg, (next.get(newDmg) ?? 0) + prob * addProb)
+        }
+      }
+    } else {
+      const n = slot.length
+      for (const [dmg, prob] of dp) {
+        for (const roll of slot) {
+          const newDmg = dmg + roll
+          next.set(newDmg, (next.get(newDmg) ?? 0) + prob / n)
+        }
       }
     }
     dp = next
@@ -265,38 +261,52 @@ export function calcCombinedDamageDistribution(
 export interface AttackRollsWithCrit {
   rolls: number[]
   critRolls?: number[]
-  /** 急所率 0〜1（例: 1/16 ≒ 0.0625, 1/8 = 0.125）。critRolls なしなら無視 */
+  /** 急所率 0〜1（例: 1/24 ≒ 0.0417, 1/8 = 0.125）。critRolls なしなら無視 */
   critChance: number
 }
 
 /**
- * 急所を確率的に混合した複合ダメージ分布をDPで計算
+ * 急所込みDP用スロット。通常の攻撃スロットか、変動連続技など事前計算済み分布。
+ */
+export type AttackSlot = AttackRollsWithCrit | { precomputed: Map<number, number> }
+
+/**
+ * 急所を確率的に混合した複合ダメージ分布をDPで計算。
+ * `AttackRollsWithCrit` スロットと事前計算済み `precomputed` 分布を混在可能。
  */
 export function calcCombinedDamageDistributionWithCrit(
-  attacks: AttackRollsWithCrit[],
+  attacks: AttackSlot[],
   offset = 0,
 ): Map<number, number> {
   let dp: Map<number, number> = new Map([[offset, 1.0]])
   for (const atk of attacks) {
-    const { rolls, critRolls, critChance } = atk
-    const useCrit = critRolls != null && critChance > 0
-    const pNormal = useCrit ? 1 - critChance : 1
-    const pCrit = useCrit ? critChance : 0
-    const nNormal = rolls.length
-    const nCrit = critRolls?.length ?? 0
-
     const next: Map<number, number> = new Map()
-    for (const [dmg, prob] of dp) {
-      if (pNormal > 0) {
-        for (const roll of rolls) {
-          const newDmg = dmg + roll
-          next.set(newDmg, (next.get(newDmg) ?? 0) + (prob * pNormal) / nNormal)
+    if ('precomputed' in atk) {
+      for (const [dmg, prob] of dp) {
+        for (const [addDmg, addProb] of atk.precomputed) {
+          const newDmg = dmg + addDmg
+          next.set(newDmg, (next.get(newDmg) ?? 0) + prob * addProb)
         }
       }
-      if (pCrit > 0 && critRolls) {
-        for (const roll of critRolls) {
-          const newDmg = dmg + roll
-          next.set(newDmg, (next.get(newDmg) ?? 0) + (prob * pCrit) / nCrit)
+    } else {
+      const { rolls, critRolls, critChance } = atk
+      const useCrit = critRolls != null && critChance > 0
+      const pNormal = useCrit ? 1 - critChance : 1
+      const pCrit = useCrit ? critChance : 0
+      const nNormal = rolls.length
+      const nCrit = critRolls?.length ?? 0
+      for (const [dmg, prob] of dp) {
+        if (pNormal > 0) {
+          for (const roll of rolls) {
+            const newDmg = dmg + roll
+            next.set(newDmg, (next.get(newDmg) ?? 0) + (prob * pNormal) / nNormal)
+          }
+        }
+        if (pCrit > 0 && critRolls) {
+          for (const roll of critRolls) {
+            const newDmg = dmg + roll
+            next.set(newDmg, (next.get(newDmg) ?? 0) + (prob * pCrit) / nCrit)
+          }
         }
       }
     }
@@ -309,7 +319,7 @@ export function calcCombinedDamageDistributionWithCrit(
  * 急所込み複合KO確率（分布から直接算出）
  */
 export function calcCombinedKoProbabilityWithCrit(
-  attacks: AttackRollsWithCrit[],
+  attacks: AttackSlot[],
   defenderHp: number,
   offset = 0,
 ): number {
@@ -319,6 +329,66 @@ export function calcCombinedKoProbabilityWithCrit(
     if (dmg >= defenderHp) koProb += prob
   }
   return Math.min(1, koProb)
+}
+
+/**
+ * 変動連続技 1使用分のダメージ分布（通常版）。
+ * @param rolls 1発目のロール（マルチスケイル適用済み等）
+ * @param dist ヒット数分布（例: VARIABLE_MULTI_HIT_DIST）
+ * @param rawRolls 2発目以降のロール（マルチスケイル無効版）。省略時は rolls を全発に使用
+ */
+export function calcVariableHitsSingleUsageDist(
+  rolls: number[],
+  dist: { hits: number; prob: number }[],
+  rawRolls?: number[],
+): Map<number, number> {
+  const result = new Map<number, number>()
+  for (const { hits, prob } of dist) {
+    let dp: Map<number, number> = new Map([[0, 1.0]])
+    for (let h = 0; h < hits; h++) {
+      const hitRolls = h === 0 ? rolls : (rawRolls ?? rolls)
+      const n = hitRolls.length
+      const next = new Map<number, number>()
+      for (const [dmg, p] of dp) {
+        for (const roll of hitRolls) {
+          const newDmg = dmg + roll
+          next.set(newDmg, (next.get(newDmg) ?? 0) + p / n)
+        }
+      }
+      dp = next
+    }
+    for (const [dmg, p] of dp) {
+      result.set(dmg, (result.get(dmg) ?? 0) + p * prob)
+    }
+  }
+  return result
+}
+
+/**
+ * 変動連続技 1使用分のダメージ分布（急所込み版）。
+ * 各発で独立に急所判定して通常/急所ロールを critChance で混合する。
+ */
+export function calcVariableHitsSingleUsageDistWithCrit(
+  rolls: number[],
+  critRolls: number[],
+  critChance: number,
+  dist: { hits: number; prob: number }[],
+  rawRolls?: number[],
+  rawCritRolls?: number[],
+): Map<number, number> {
+  const result = new Map<number, number>()
+  for (const { hits, prob } of dist) {
+    const attacks: AttackRollsWithCrit[] = Array.from({ length: hits }, (_, i) => ({
+      rolls: i === 0 ? rolls : (rawRolls ?? rolls),
+      critRolls: i === 0 ? critRolls : (rawCritRolls ?? critRolls),
+      critChance,
+    }))
+    const hitsDist = calcCombinedDamageDistributionWithCrit(attacks)
+    for (const [dmg, p] of hitsDist) {
+      result.set(dmg, (result.get(dmg) ?? 0) + p * prob)
+    }
+  }
+  return result
 }
 
 /**
