@@ -562,6 +562,26 @@ src/
 - 実装ファイル: `useDamageCalc.ts`、`resultStore.ts`、`DamageResultRow.tsx`、
   `DamageResultArea.tsx`、`KoProbabilityCalc.ts`
 
+#### じきゅうりょく: 連続技・おやこあいの Bランク累積上昇対応
+- **仕様**: 攻撃を受けるたびに防御側 B ランクが +1（最大 +6 まで）
+- Defランク上昇は物理ダメージにのみ影響するため、ダメージ計算には**物理技のみ**反映
+  （特殊技でも本来の特性は発動するが、ダメージは変わらない）
+- くだけるよろいと同じ多段技対応経路（escalating / fixed / variable / おやこあい）に**符号反転**で乗せる
+  - `defenderStamina = effectiveAbility === 'じきゅうりょく' && category === '物理'`
+  - 共通フラグ `hasPerHitDefShift = defenderWeakArmor || defenderStamina`
+  - 共通ヘルパー `withPerHitDefShift(input, drops)` が `defender.ranks.def` に
+    `defenderWeakArmor → -drops`、`defenderStamina → +drops` を加算
+- **escalating**（トリプルアクセル等）: 1発目=B+0, 2発目=B+1, 3発目=B+2 で
+  威力上昇とランク上昇が同時進行 → 後発の威力増加が部分的にランク上昇で打ち消される
+- **fixed**（ドラゴンアロー: 3発）: 各発 B+0 / +1 / +2 で計算し合算
+- **variable**（スケイルショット 等）: B+0 〜 B+4 までの per-hit 結果を生成
+  - 既存の `weakArmorVariableRawResults` 配列に B+2/+3/+4 が入る形で再利用
+- **おやこあい**: 子ヒットは `withPerHitDefShift(subsequentInput, 1)` 経由で B+1 反映
+- **abilityActivated トグルは不要**: HP条件がないため特性名一致と物理判定だけで発動
+- リファクタ: 元の `withWeakArmorDrop` を `withPerHitDefShift` にリネーム。
+  `MoveResult` 側の `weakArmorPerHitResults` 等のフィールド名は両特性共用のまま据え置き
+  （内部実装が両ケースを生成）
+
 ---
 
 ## 重要なファイルと役割
