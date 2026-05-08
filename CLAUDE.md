@@ -525,6 +525,11 @@ src/
     `number[] | number[][]` に拡張し、per-hit ロールを受け取れるよう改修
   - `VariableMultiHitPanel` が `weakArmorRawRollsByHit` を受け取り、ヒット数別ダメージ範囲・
     KO確率・期待ダメをすべて段階低下込みで再計算
+  - **急所込み加重平均**: `calcVariableMultiHitKoWithCrit` を新設し、各発で独立に
+    `critChance` で通常/急所ロールを加重混合 → ヒット数分布で加重平均。
+    `VariableMultiHitPanel` が `critRolls` / `rawCritRolls` / `weakArmorRawCritRollsByHit` /
+    `critChance` を受け取り、急所率が `0 < critChance < 1` のとき
+    「期待KO確率（急所込み）」行を追加表示する
 - **おやこあい** (おやこあい): `rawResult`（子ヒット用素ダメ）を
   `withWeakArmorDrop(subsequentInput, 1)` で計算 → 子ロールが自動的に Bランク-1 を反映
 - **単発技**: 変化なし（1発目はランク低下前のBで計算するのが正しい仕様）

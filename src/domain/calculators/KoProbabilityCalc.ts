@@ -320,3 +320,81 @@ export function calcCombinedKoProbabilityWithCrit(
   }
   return Math.min(1, koProb)
 }
+
+/**
+ * 変動連続技の急所込みKO確率と期待ダメージ。
+ * - ヒット数分布で重み付け
+ * - 各発で独立に急所判定（critChance）して通常/急所ロールを混合
+ * - rawRolls / rawCritRolls が `number[][]` の場合はヒット番号ごとの個別ロール
+ *   （くだけるよろい段階低下: B-1, B-2, B-3, B-4）に対応
+ */
+export function calcVariableMultiHitKoWithCrit(
+  rolls: number[],
+  critRolls: number[],
+  critChance: number,
+  defenderHp: number,
+  dist = VARIABLE_MULTI_HIT_DIST,
+  rawRolls?: number[] | number[][],
+  rawCritRolls?: number[] | number[][],
+): VariableMultiHitResult {
+  function isPerHit(r?: number[] | number[][]): boolean {
+    return Array.isArray(r) && r.length > 0 && Array.isArray(r[0])
+  }
+  function getHitRolls(
+    base: number[],
+    raw: number[] | number[][] | undefined,
+    hitNum: number,
+  ): number[] {
+    if (hitNum === 1) return base
+    if (!raw) return base
+    if (isPerHit(raw)) {
+      const arr = raw as number[][]
+      const idx = Math.min(hitNum - 2, arr.length - 1)
+      return arr[idx]
+    }
+    return raw as number[]
+  }
+
+  const perHit = dist.map(({ hits, prob }) => {
+    const attacks: AttackRollsWithCrit[] = Array.from({ length: hits }, (_, i) => ({
+      rolls: getHitRolls(rolls, rawRolls, i + 1),
+      critRolls: getHitRolls(critRolls, rawCritRolls, i + 1),
+      critChance,
+    }))
+    const koProbForHits = calcCombinedKoProbabilityWithCrit(attacks, defenderHp)
+    return { hits, prob, koProbForHits }
+  })
+
+  const totalKoProb = Math.min(
+    1,
+    perHit.reduce((sum, { prob, koProbForHits }) => sum + prob * koProbForHits, 0),
+  )
+
+  // 期待ダメ・min/max は急所込み（critChance で通常/急所を加重平均）
+  function avgPerHit(hitNum: number): number {
+    const r = getHitRolls(rolls, rawRolls, hitNum)
+    const cr = getHitRolls(critRolls, rawCritRolls, hitNum)
+    const avgNormal = (r[0] + r[r.length - 1]) / 2
+    const avgCrit = (cr[0] + cr[cr.length - 1]) / 2
+    return critChance * avgCrit + (1 - critChance) * avgNormal
+  }
+
+  const minHits = dist[0].hits
+  const maxHits = dist[dist.length - 1].hits
+  // min/max は通常ロール基準（pessimistic）/ 急所最大ロール基準（optimistic）
+  let minDmg = 0
+  for (let h = 1; h <= minHits; h++) minDmg += getHitRolls(rolls, rawRolls, h)[0]
+  let maxDmg = 0
+  for (let h = 1; h <= maxHits; h++) {
+    const cr = getHitRolls(critRolls, rawCritRolls, h)
+    maxDmg += cr[cr.length - 1]
+  }
+
+  const expectedDmg = dist.reduce((sum, { hits, prob }) => {
+    let avgTotal = 0
+    for (let h = 1; h <= hits; h++) avgTotal += avgPerHit(h)
+    return sum + avgTotal * prob
+  }, 0)
+
+  return { perHit, totalKoProb, minDmg, maxDmg, expectedDmg }
+}

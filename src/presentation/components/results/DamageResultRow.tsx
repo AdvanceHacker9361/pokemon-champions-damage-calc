@@ -4,6 +4,7 @@ import type { KoResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
 import {
   calcVariableMultiHitKo,
+  calcVariableMultiHitKoWithCrit,
   calcKoProbability,
   getVariableMultiHitDist,
 } from '@/domain/calculators/KoProbabilityCalc'
@@ -189,6 +190,7 @@ function computeEffectiveRolls(params: {
 /** 変動連続技の確率計算パネル */
 function VariableMultiHitPanel({
   rolls, rawRolls, defenderHp, hitRate, dist, weakArmorRawRollsByHit,
+  critRolls, rawCritRolls, weakArmorRawCritRollsByHit, critChance,
 }: {
   rolls: number[]
   /** マルチスケイル無効時（2発目以降用）の素ダメロール。通常時は rolls と同値 */
@@ -198,6 +200,14 @@ function VariableMultiHitPanel({
   dist: { hits: number; prob: number }[]
   /** くだけるよろい用: 3発目以降の段階的Bランク低下ロール（[B-2, B-3, B-4]）*/
   weakArmorRawRollsByHit?: number[][]
+  /** 急所ロール（1発目用）*/
+  critRolls: number[]
+  /** 急所ロール（2発目用、マルチスケイル無効・くだけるよろいB-1反映）*/
+  rawCritRolls: number[]
+  /** くだけるよろい用: 3発目以降の急所ロール（[B-2 急所, B-3 急所, B-4 急所]）*/
+  weakArmorRawCritRollsByHit?: number[][]
+  /** 急所率 0〜1（確定急所 / 急所モードトグル時は 1）*/
+  critChance: number
 }) {
   // 2発目以降のロールを構築:
   //   - くだけるよろいで3+発目用が指定されていれば [rawRolls(B-1), B-2, B-3, B-4]
@@ -210,6 +220,22 @@ function VariableMultiHitPanel({
   }
   const res = calcVariableMultiHitKo(rolls, defenderHp, dist, effectiveRawRolls)
   const expectedWithAcc = res.expectedDmg * hitRate
+
+  // 急所込み計算用の rawCritRolls (per-hit 構造を含む)
+  let effectiveRawCritRolls: number[] | number[][] | undefined
+  if (weakArmorRawCritRollsByHit && weakArmorRawCritRollsByHit.length > 0) {
+    effectiveRawCritRolls = [rawCritRolls, ...weakArmorRawCritRollsByHit]
+  } else if (rawCritRolls !== critRolls) {
+    effectiveRawCritRolls = rawCritRolls
+  }
+  // 急所込み版: 各発で独立に critChance で通常/急所を加重平均
+  const resCrit = calcVariableMultiHitKoWithCrit(
+    rolls, critRolls, critChance, defenderHp, dist,
+    effectiveRawRolls, effectiveRawCritRolls,
+  )
+  const expectedDmgCrit = resCrit.expectedDmg * hitRate
+  const koCritWithAcc = resCrit.totalKoProb * hitRate
+
   const gridCols = dist.length === 1 ? 'grid-cols-1'
     : dist.length === 2 ? 'grid-cols-2'
     : 'grid-cols-4'
@@ -272,6 +298,24 @@ function VariableMultiHitPanel({
             : `${(res.totalKoProb * hitRate * 100).toFixed(1)}%`}
         </span>
       </div>
+      {/* 急所込み版: 各発を critChance で混合した期待KO確率 */}
+      {critChance > 0 && critChance < 1 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded px-2 py-1.5 flex items-center justify-between">
+          <div className="text-xs text-amber-700 dark:text-amber-400">
+            期待KO確率（急所込み）
+            <span className="ml-2 text-amber-600 dark:text-amber-500 text-[10px]">
+              急所率: {(critChance * 100).toFixed(1)}%
+              <span className="ml-1">期待ダメ: {expectedDmgCrit.toFixed(1)}</span>
+              {hitRate < 1 && <span className="ml-1 text-amber-500">({Math.round(hitRate * 100)}%命中込)</span>}
+            </span>
+          </div>
+          <span className={`text-sm font-bold ${multiHitKoColor(koCritWithAcc)}`}>
+            {koCritWithAcc >= 1 ? '確定KO'
+              : koCritWithAcc <= 0 ? '倒せない'
+              : `${(koCritWithAcc * 100).toFixed(1)}%`}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
@@ -315,6 +359,10 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const weakArmorVariableRawActive = isCritical ? weakArmorVariableRawCritResults : weakArmorVariableRawResults
   const weakArmorVariableRawRollsByHit: number[][] | undefined = weakArmorVariableRawActive
     ? weakArmorVariableRawActive.map(r => Array.from(r.rolls))
+    : undefined
+  // 急所込み計算用: 常に急所版のロール列（トグル状態に関わらず）
+  const weakArmorVariableRawCritRollsByHit: number[][] | undefined = weakArmorVariableRawCritResults
+    ? weakArmorVariableRawCritResults.map(r => Array.from(r.rolls))
     : undefined
 
   // 急所時は critResult のロールを使う（1.5倍・壁無効適用済み）
@@ -718,6 +766,10 @@ export function DamageResultRow(props: DamageResultRowProps) {
             hitRate={hitRate}
             dist={variableMultiHitDist}
             weakArmorRawRollsByHit={weakArmorVariableRawRollsByHit}
+            critRolls={critRollsBase}
+            rawCritRolls={rawCritRollsBase}
+            weakArmorRawCritRollsByHit={weakArmorVariableRawCritRollsByHit}
+            critChance={isForcedCrit ? 1.0 : moveCritChance}
           />
         </div>
       )}
