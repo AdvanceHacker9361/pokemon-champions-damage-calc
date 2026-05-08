@@ -408,20 +408,41 @@ export function DamageResultRow(props: DamageResultRowProps) {
       pbChildCritRolls = calcChildRolls(rawCritRollsBase)  // 急所子ロール
     }
 
-    // 変動連続技: スキルリンク=確定5発, いかさまダイス=5発デフォルト, 通常=1発
-    const defaultUsages = multiHit?.type === 'variable'
-      ? variableMultiHitDist[variableMultiHitDist.length - 1].hits
-      : 1
+    // 変動連続技: usages は「技の使用回数」（1回 = 2〜5発のランダム使用）。
+    // min/max はヒット数分布全体の範囲をあらかじめ計算して保存する。
+    let entryMinDmg = displayMin
+    let entryMaxDmg = displayMax
+    let entryRawMin = accumRawMin
+    let entryRawMax = accumRawMax
+    let entryVariableHitDist: { hits: number; prob: number }[] | undefined
+    const defaultUsages = 1
+
+    if (multiHit?.type === 'variable') {
+      const minHits = variableMultiHitDist[0].hits
+      const maxHits = variableMultiHitDist[variableMultiHitDist.length - 1].hits
+      if (hadMultiscale) {
+        // 1発目: マルチスケイル半減ロール。2発目以降: 素ダメロール
+        entryMinDmg = displayMin + accumRawMin * (minHits - 1)
+        entryMaxDmg = displayMax + accumRawMax * (maxHits - 1)
+      } else {
+        entryMinDmg = displayMin * minHits
+        entryMaxDmg = displayMax * maxHits
+      }
+      // 2使用目以降はすべて素ダメ
+      entryRawMin = accumRawMin * minHits
+      entryRawMax = accumRawMax * maxHits
+      entryVariableHitDist = variableMultiHitDist
+    }
 
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: effectiveRolls,
       rawRolls: accumRawRolls,
       usages: defaultUsages,
-      minDmg: displayMin,
-      maxDmg: displayMax,
-      rawMin: accumRawMin,
-      rawMax: accumRawMax,
+      minDmg: entryMinDmg,
+      maxDmg: entryMaxDmg,
+      rawMin: entryRawMin,
+      rawMax: entryRawMax,
       defenderMaxHp,
       hadMultiscale,
       critRolls,
@@ -438,6 +459,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       pbParentRawCritRolls,
       pbChildRolls,
       pbChildCritRolls,
+      variableHitDist: entryVariableHitDist,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 1200)

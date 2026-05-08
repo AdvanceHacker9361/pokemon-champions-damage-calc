@@ -44,6 +44,11 @@ export interface AccumEntry {
   pbParentRawCritRolls?: number[]
   pbChildRolls?: number[]
   pbChildCritRolls?: number[]
+  /**
+   * 変動連続技（variable）のヒット数分布。設定されている場合、KO確率の DP でヒット数の
+   * ランダム性を考慮する（2〜5回など）。usages は「技の使用回数」を表す。
+   */
+  variableHitDist?: { hits: number; prob: number }[]
 }
 
 interface AccumStore {

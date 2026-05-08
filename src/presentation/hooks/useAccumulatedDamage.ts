@@ -4,8 +4,10 @@ import {
   calcCombinedKoProbability,
   calcCombinedDamageDistribution,
   calcCombinedKoProbabilityWithCrit,
+  calcVariableHitsSingleUsageDist,
+  calcVariableHitsSingleUsageDistWithCrit,
 } from '@/domain/calculators/KoProbabilityCalc'
-import type { AttackRollsWithCrit } from '@/domain/calculators/KoProbabilityCalc'
+import type { AttackSlot } from '@/domain/calculators/KoProbabilityCalc'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -70,8 +72,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const totalMaxPct = defenderMaxHp > 0 ? totalMax / defenderMaxHp * 100 : 0
 
     // ロールセット: 最初エントリがマルチスケイル発動時は、先頭1発だけ半減ロール、残りは素ダメロール
-    const rollSets: number[][] = []
-    const attackRollsWithCrit: AttackRollsWithCrit[] = []
+    // 変動連続技（variableHitDist あり）は1使用分の分布を事前計算してスロットに入れる
+    const rollSets: (number[] | Map<number, number>)[] = []
+    const attackRollsWithCrit: AttackSlot[] = []
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i]
       for (let u = 0; u < e.usages; u++) {
@@ -79,6 +82,26 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         const useRaw = !isVeryFirst && firstHadMultiscale
         const normalRolls = useRaw ? e.rawRolls : e.rolls
         const critRolls  = useRaw ? e.rawCritRolls : e.critRolls
+
+        if (e.variableHitDist !== undefined) {
+          // 変動連続技: 1使用分の完全分布を計算してスロットに格納
+          // isVeryFirst && firstHadMultiscale のとき: 1発目は normalRolls（半減）、2発目以降は e.rawRolls
+          const rawRollsForHit = (isVeryFirst && firstHadMultiscale) ? e.rawRolls : undefined
+          const rawCritRollsForHit = (isVeryFirst && firstHadMultiscale) ? e.rawCritRolls : undefined
+          const singleUsageDist = calcVariableHitsSingleUsageDist(normalRolls, e.variableHitDist, rawRollsForHit)
+          rollSets.push(singleUsageDist)
+
+          if (e.isForcedCrit) {
+            attackRollsWithCrit.push({ precomputed: singleUsageDist })
+          } else {
+            const singleUsageDistWithCrit = calcVariableHitsSingleUsageDistWithCrit(
+              normalRolls, critRolls, e.critChance, e.variableHitDist, rawRollsForHit, rawCritRollsForHit,
+            )
+            attackRollsWithCrit.push({ precomputed: singleUsageDistWithCrit })
+          }
+          continue
+        }
+
         rollSets.push(normalRolls)
 
         if (e.pbChildRolls !== undefined) {
