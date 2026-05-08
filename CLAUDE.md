@@ -517,12 +517,21 @@ src/
   `weakArmorCritPerHitResults` を計算して `MoveResult` に格納
   - `DamageResultRow.tsx` の `computeEffectiveRolls` でこれを優先使用して合算
   - KO確率も合算ロールから `calcKoProbability` で再計算
+- **variable 連続技**（つららばり・スケイルショット・ロックブラスト等）:
+  最大5発の各発で B-0 / B-1 / B-2 / B-3 / B-4 と段階的にランク低下を反映
+  - `useDamageCalc` が `rawResult`（B-1）に加え `weakArmorVariableRawResults`（B-2, B-3, B-4）
+    を追加計算して `MoveResult` に格納
+  - `KoProbabilityCalc.calcKoProbabilityForNHits` と `calcVariableMultiHitKo` の `rawRolls` を
+    `number[] | number[][]` に拡張し、per-hit ロールを受け取れるよう改修
+  - `VariableMultiHitPanel` が `weakArmorRawRollsByHit` を受け取り、ヒット数別ダメージ範囲・
+    KO確率・期待ダメをすべて段階低下込みで再計算
 - **おやこあい** (おやこあい): `rawResult`（子ヒット用素ダメ）を
   `withWeakArmorDrop(subsequentInput, 1)` で計算 → 子ロールが自動的に Bランク-1 を反映
 - **単発技**: 変化なし（1発目はランク低下前のBで計算するのが正しい仕様）
 - **abilityActivated トグルは不要**: くだけるよろいはHP条件がないため、特性名の一致と
   `move.category === '物理'` のみで発動判定する
-- 実装ファイル: `useDamageCalc.ts`、`resultStore.ts`、`DamageResultRow.tsx`、`DamageResultArea.tsx`
+- 実装ファイル: `useDamageCalc.ts`、`resultStore.ts`、`DamageResultRow.tsx`、
+  `DamageResultArea.tsx`、`KoProbabilityCalc.ts`
 
 ---
 
