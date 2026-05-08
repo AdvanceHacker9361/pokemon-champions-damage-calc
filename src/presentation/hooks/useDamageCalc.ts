@@ -191,6 +191,23 @@ export function useDamageCalc() {
             })
           }
 
+          // くだけるよろい + 変動連続技: 3〜5発目用に追加でBランク-2,-3,-4 のロールを生成
+          // （rawResult が B-1 を担うので、ここでは B-2 以降を計算）
+          let weakArmorVariableRawResults: DamageResult[] | undefined
+          let weakArmorVariableRawCritResults: DamageResult[] | undefined
+          if (defenderWeakArmor && move.multiHit?.type === 'variable') {
+            weakArmorVariableRawResults = Array.from({ length: 3 }, (_, i) => {
+              const drops = i + 2  // i=0: B-2, i=1: B-3, i=2: B-4
+              const hitInput = withWeakArmorDrop(subsequentInput, drops)
+              return executeDamageCalculation({ ...hitInput, isCritical: alwaysCrit })
+            })
+            weakArmorVariableRawCritResults = Array.from({ length: 3 }, (_, i) => {
+              const drops = i + 2
+              const hitInput = withWeakArmorDrop(subsequentInput, drops)
+              return executeDamageCalculation({ ...hitInput, isCritical: true })
+            })
+          }
+
           // 素ダメ版（マルチスケイル無効化 + 半減実消費済み + くだけるよろいBランク-1）:
           // 加算リストの2発目以降 / 多段技の2発目以降 / おやこあいの子 で使用
           if (defenderHadMultiscale || halfBerryActive || defenderWeakArmor) {
@@ -198,10 +215,18 @@ export function useDamageCalc() {
             const rawSubsequentInput = withWeakArmorDrop(subsequentInput, 1)
             const rawResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: alwaysCrit })
             const rawCritResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: true })
-            return { moveName, result, critResult, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults }
+            return {
+              moveName, result, critResult, rawResult, rawCritResult,
+              weakArmorPerHitResults, weakArmorCritPerHitResults,
+              weakArmorVariableRawResults, weakArmorVariableRawCritResults,
+            }
           }
 
-          return { moveName, result, critResult, weakArmorPerHitResults, weakArmorCritPerHitResults }
+          return {
+            moveName, result, critResult,
+            weakArmorPerHitResults, weakArmorCritPerHitResults,
+            weakArmorVariableRawResults, weakArmorVariableRawCritResults,
+          }
         } catch {
           return null
         }

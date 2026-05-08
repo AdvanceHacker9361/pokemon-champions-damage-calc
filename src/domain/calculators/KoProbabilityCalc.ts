@@ -48,20 +48,35 @@ export function calcKoProbability(
 /**
  * n発でKOできる確率をDP計算（各乱数は等確率 1/16）
  * 外部から直接呼び出せるよう export
- * @param rawRolls - 2発目以降に使うロール列（くだけるよろい等で1発目と異なる場合）
+ * @param rawRolls - 2発目以降に使うロール列。
+ *   - `number[]`: 全ての2発目以降に同じロールを使用
+ *   - `number[][]`: ヒット番号ごとの個別ロール（[hit2, hit3, hit4, ...]）。
+ *     エントリ数が足りない場合は最後のエントリを再利用する。
  */
 export function calcKoProbabilityForNHits(
   rolls: number[],
   defenderHp: number,
   hits: number,
-  rawRolls?: number[],
+  rawRolls?: number[] | number[][],
 ): number {
+  // 与えられた hit 番号（1-indexed）に対応するロール列を返す
+  const isPerHit = Array.isArray(rawRolls) && rawRolls.length > 0 && Array.isArray(rawRolls[0])
+  function getHitRolls(hitNum: number): number[] {
+    if (hitNum === 1) return rolls
+    if (!rawRolls) return rolls
+    if (isPerHit) {
+      const arr = rawRolls as number[][]
+      const idx = Math.min(hitNum - 2, arr.length - 1)
+      return arr[idx]
+    }
+    return rawRolls as number[]
+  }
+
   // dp[i] = i 発目までの累積ダメージが各値になる確率
-  // キーは累積ダメージ、値は確率
   let dp: Map<number, number> = new Map([[0, 1.0]])
 
   for (let hit = 0; hit < hits; hit++) {
-    const hitRolls = hit === 0 ? rolls : (rawRolls ?? rolls)
+    const hitRolls = getHitRolls(hit + 1)
     const n = hitRolls.length
     const next: Map<number, number> = new Map()
     for (const [dmg, prob] of dp) {
@@ -137,8 +152,13 @@ export function calcVariableMultiHitKo(
   rolls: number[],
   defenderHp: number,
   dist = VARIABLE_MULTI_HIT_DIST,
-  /** 2発目以降に使うロール列（くだけるよろい等で1発目と異なる場合） */
-  rawRolls?: number[],
+  /**
+   * 2発目以降に使うロール列。
+   * - `number[]`: 全ての2発目以降に同じロールを使用
+   * - `number[][]`: ヒット番号ごとの個別ロール（[hit2, hit3, hit4, ...]）。
+   *   くだけるよろい段階低下のように、各発で異なるロールが必要な場合に使用。
+   */
+  rawRolls?: number[] | number[][],
 ): VariableMultiHitResult {
   const perHit = dist.map(({ hits, prob }) => ({
     hits,
@@ -151,19 +171,30 @@ export function calcVariableMultiHitKo(
     perHit.reduce((sum, { prob, koProbForHits }) => sum + prob * koProbForHits, 0),
   )
 
-  const minRoll = rolls[0]
-  const maxRoll = rolls[rolls.length - 1]
-  const rawMinRoll = rawRolls?.[0] ?? minRoll
-  const rawMaxRoll = rawRolls?.[rawRolls.length - 1] ?? maxRoll
+  const isPerHit = Array.isArray(rawRolls) && rawRolls.length > 0 && Array.isArray(rawRolls[0])
+  function getHitRolls(hitNum: number): number[] {
+    if (hitNum === 1) return rolls
+    if (!rawRolls) return rolls
+    if (isPerHit) {
+      const arr = rawRolls as number[][]
+      const idx = Math.min(hitNum - 2, arr.length - 1)
+      return arr[idx]
+    }
+    return rawRolls as number[]
+  }
+
+  function sumOverHits(numHits: number, picker: (rolls: number[]) => number): number {
+    let total = 0
+    for (let h = 1; h <= numHits; h++) total += picker(getHitRolls(h))
+    return total
+  }
+
   const minHits = dist[0].hits
   const maxHits = dist[dist.length - 1].hits
-  // 1発目は rolls、2発目以降は rawRolls で min/max/期待値を算出
-  const minDmg = minRoll + rawMinRoll * (minHits - 1)
-  const maxDmg = maxRoll + rawMaxRoll * (maxHits - 1)
-  const avgFirst = (minRoll + maxRoll) / 2
-  const avgSubsequent = (rawMinRoll + rawMaxRoll) / 2
+  const minDmg = sumOverHits(minHits, r => r[0])
+  const maxDmg = sumOverHits(maxHits, r => r[r.length - 1])
   const expectedDmg = dist.reduce(
-    (sum, { hits, prob }) => sum + (avgFirst + avgSubsequent * (hits - 1)) * prob,
+    (sum, { hits, prob }) => sum + sumOverHits(hits, r => (r[0] + r[r.length - 1]) / 2) * prob,
     0,
   )
 

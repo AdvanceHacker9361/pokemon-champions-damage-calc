@@ -29,6 +29,9 @@ interface DamageResultRowProps {
   /** くだけるよろい発動時の固定多段技の各発個別結果 */
   weakArmorPerHitResults?: DamageResult[]
   weakArmorCritPerHitResults?: DamageResult[]
+  /** くだけるよろい + 変動連続技用: B-2,-3,-4 の追加素ダメ（3〜5発目用）*/
+  weakArmorVariableRawResults?: DamageResult[]
+  weakArmorVariableRawCritResults?: DamageResult[]
 }
 
 function koLabel(koResult: KoResult): string {
@@ -185,7 +188,7 @@ function computeEffectiveRolls(params: {
 
 /** 変動連続技の確率計算パネル */
 function VariableMultiHitPanel({
-  rolls, rawRolls, defenderHp, hitRate, dist,
+  rolls, rawRolls, defenderHp, hitRate, dist, weakArmorRawRollsByHit,
 }: {
   rolls: number[]
   /** マルチスケイル無効時（2発目以降用）の素ダメロール。通常時は rolls と同値 */
@@ -193,14 +196,39 @@ function VariableMultiHitPanel({
   defenderHp: number
   hitRate: number
   dist: { hits: number; prob: number }[]
+  /** くだけるよろい用: 3発目以降の段階的Bランク低下ロール（[B-2, B-3, B-4]）*/
+  weakArmorRawRollsByHit?: number[][]
 }) {
-  // rawRolls が rolls と異なる場合（くだけるよろい等）は2発目以降の計算に反映
-  const effectiveRawRolls = rawRolls !== rolls ? rawRolls : undefined
+  // 2発目以降のロールを構築:
+  //   - くだけるよろいで3+発目用が指定されていれば [rawRolls(B-1), B-2, B-3, B-4]
+  //   - そうでなければ rawRolls（rolls と異なる場合のみ） を全2+発目に適用
+  let effectiveRawRolls: number[] | number[][] | undefined
+  if (weakArmorRawRollsByHit && weakArmorRawRollsByHit.length > 0) {
+    effectiveRawRolls = [rawRolls, ...weakArmorRawRollsByHit]
+  } else if (rawRolls !== rolls) {
+    effectiveRawRolls = rawRolls
+  }
   const res = calcVariableMultiHitKo(rolls, defenderHp, dist, effectiveRawRolls)
   const expectedWithAcc = res.expectedDmg * hitRate
   const gridCols = dist.length === 1 ? 'grid-cols-1'
     : dist.length === 2 ? 'grid-cols-2'
     : 'grid-cols-4'
+
+  // ヒット番号 (1-indexed) に対応するロール列を返す
+  function getRollsForHit(hitNum: number): number[] {
+    if (hitNum === 1) return rolls
+    if (weakArmorRawRollsByHit && weakArmorRawRollsByHit.length > 0) {
+      if (hitNum === 2) return rawRolls
+      const idx = Math.min(hitNum - 3, weakArmorRawRollsByHit.length - 1)
+      return weakArmorRawRollsByHit[idx]
+    }
+    return rawRolls
+  }
+  function sumOverHits(numHits: number, picker: (rolls: number[]) => number): number {
+    let total = 0
+    for (let h = 1; h <= numHits; h++) total += picker(getRollsForHit(h))
+    return total
+  }
 
   return (
     <div className="space-y-1.5">
@@ -209,9 +237,9 @@ function VariableMultiHitPanel({
       </div>
       <div className={`grid ${gridCols} gap-x-2 text-xs font-mono`}>
         {res.perHit.map(({ hits, prob, koProbForHits }) => {
-          // マルチスケイル発動時: 1発目 rolls + 2発目以降 rawRolls
-          const hitMin = rolls[0] + rawRolls[0] * (hits - 1)
-          const hitMax = rolls[rolls.length - 1] + rawRolls[rawRolls.length - 1] * (hits - 1)
+          // 1発目 rolls + 2発目以降は段階低下を反映したロールを合算
+          const hitMin = sumOverHits(hits, r => r[0])
+          const hitMax = sumOverHits(hits, r => r[r.length - 1])
           const hitMinPct = hitMin / defenderHp * 100
           const hitMaxPct = hitMax / defenderHp * 100
           const distPct = (prob * 100).toFixed(0)
@@ -249,7 +277,11 @@ function VariableMultiHitPanel({
 }
 
 export function DamageResultRow(props: DamageResultRowProps) {
-  const { moveName, result, critResult, weakArmorPerHitResults: weakArmorPerHitResultsNormal, weakArmorCritPerHitResults } = props
+  const {
+    moveName, result, critResult,
+    weakArmorPerHitResults: weakArmorPerHitResultsNormal, weakArmorCritPerHitResults,
+    weakArmorVariableRawResults, weakArmorVariableRawCritResults,
+  } = props
   const { min, max, defenderMaxHp } = result
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
@@ -279,6 +311,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
   // くだけるよろい: 固定多段の各発個別結果（急所モードで切り替え）
   const weakArmorPerHitResults = isCritical ? weakArmorCritPerHitResults : weakArmorPerHitResultsNormal
+  // くだけるよろい + 変動連続技: 3〜5発目用のロール（B-2,-3,-4）。急所モードで切替
+  const weakArmorVariableRawActive = isCritical ? weakArmorVariableRawCritResults : weakArmorVariableRawResults
+  const weakArmorVariableRawRollsByHit: number[][] | undefined = weakArmorVariableRawActive
+    ? weakArmorVariableRawActive.map(r => Array.from(r.rolls))
+    : undefined
 
   // 急所時は critResult のロールを使う（1.5倍・壁無効適用済み）
   const activeResult = isCritical ? critResult : result
@@ -674,7 +711,14 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
         <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-          <VariableMultiHitPanel rolls={rolls} rawRolls={rawRolls} defenderHp={defenderMaxHp} hitRate={hitRate} dist={variableMultiHitDist} />
+          <VariableMultiHitPanel
+            rolls={rolls}
+            rawRolls={rawRolls}
+            defenderHp={defenderMaxHp}
+            hitRate={hitRate}
+            dist={variableMultiHitDist}
+            weakArmorRawRollsByHit={weakArmorVariableRawRollsByHit}
+          />
         </div>
       )}
 
