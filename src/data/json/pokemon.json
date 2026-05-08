@@ -17801,6 +17801,28 @@
     "weight": 334.1
   },
   {
+    "id": 10502,
+    "name": "ヒスイバクフーン",
+    "nameEn": "Typhlosion-Hisui",
+    "types": [
+      "ほのお",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 73,
+      "atk": 84,
+      "def": 78,
+      "spa": 119,
+      "spd": 85,
+      "spe": 95
+    },
+    "abilities": [
+      "もうか",
+      "せいしんりょく"
+    ],
+    "weight": 69.8
+  },
+  {
     "id": 10503,
     "name": "ヒスイダイケンキ",
     "nameEn": "Samurott-Hisui",
