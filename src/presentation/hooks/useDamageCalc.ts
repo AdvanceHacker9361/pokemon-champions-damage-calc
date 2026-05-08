@@ -118,6 +118,16 @@ export function useDamageCalc() {
             defender.effectiveAbility === 'くだけるよろい' &&
             move.category === '物理'
 
+          // じきゅうりょく: 攻撃を受けるたびに防御側Bランクが+1される
+          // Defランク上昇は物理技のダメージにしか影響しないため、物理技のみ計算に反映
+          const defenderStamina =
+            defender.effectiveAbility === 'じきゅうりょく' &&
+            move.category === '物理'
+
+          // 多段技で発ごとにDefランクが累積変化する特性
+          // （くだけるよろい: -1/hit、じきゅうりょく: +1/hit）
+          const hasPerHitDefShift = defenderWeakArmor || defenderStamina
+
           // 2発目以降の入力（マルチスケイル無効 + 半減実消費済み）
           const subsequentInput = (defenderHadMultiscale || halfBerryActive)
             ? {
@@ -127,12 +137,17 @@ export function useDamageCalc() {
               }
             : calcInput
 
-          // くだけるよろい: N発目の入力にBランク累積低下を適用するヘルパー
-          // drops: 1発目=0, 2発目=1, 3発目=2 ... (現在ランクから引く段数)
-          function withWeakArmorDrop(input: typeof calcInput, drops: number): typeof calcInput {
-            if (!defenderWeakArmor || drops === 0) return input
+          // N発目の入力にDefランク累積変化を適用するヘルパー
+          // drops: 1発目=0, 2発目=1, 3発目=2 ... (絶対量)
+          // くだけるよろいなら -drops、じきゅうりょくなら +drops を defender.ranks.def に加算
+          function withPerHitDefShift(input: typeof calcInput, drops: number): typeof calcInput {
+            if (!hasPerHitDefShift || drops === 0) return input
+            let delta = 0
+            if (defenderWeakArmor) delta -= drops
+            if (defenderStamina) delta += drops
+            if (delta === 0) return input
             const currentDef = input.defender.ranks.def ?? 0
-            const newDef = Math.max(-6, currentDef - drops)
+            const newDef = Math.max(-6, Math.min(6, currentDef + delta))
             if (newDef === currentDef) return input
             return {
               ...input,
@@ -147,9 +162,9 @@ export function useDamageCalc() {
             function calcEscalating(isCrit: boolean) {
               const hitResults = powers.map((power, idx) => {
                 // 2発目以降: マルチスケイル無効化 / 半減実消費済み
-                // くだけるよろい: idx発目はBランクをidx段階下げる（1発目=0段, 2発目=1段, ...）
+                // くだけるよろい/じきゅうりょく: idx発目はBランクをidx段階変化（くだけるよろい=-, じきゅうりょく=+）
                 const baseInput = idx === 0 ? calcInput : subsequentInput
-                const hitInput = withWeakArmorDrop(baseInput, idx)
+                const hitInput = withPerHitDefShift(baseInput, idx)
                 return executeDamageCalculation({ ...hitInput, move: { ...baseMove, power }, isCritical: isCrit })
               })
               const defHp = hitResults[0].defenderMaxHp
@@ -176,43 +191,43 @@ export function useDamageCalc() {
           const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
           const critResult = executeDamageCalculation({ ...calcInput, isCritical: true })
 
-          // くだけるよろい + 固定多段技: 各発ごとにBランク低下を適用して個別計算
+          // くだけるよろい / じきゅうりょく + 固定多段技: 各発ごとにBランク変化を適用して個別計算
           let weakArmorPerHitResults: DamageResult[] | undefined
           let weakArmorCritPerHitResults: DamageResult[] | undefined
-          if (move.multiHit?.type === 'fixed' && move.multiHit.count > 1 && defenderWeakArmor) {
+          if (move.multiHit?.type === 'fixed' && move.multiHit.count > 1 && hasPerHitDefShift) {
             const count = move.multiHit.count
             weakArmorPerHitResults = Array.from({ length: count }, (_, idx) => {
-              const hitInput = withWeakArmorDrop(idx === 0 ? calcInput : subsequentInput, idx)
+              const hitInput = withPerHitDefShift(idx === 0 ? calcInput : subsequentInput, idx)
               return executeDamageCalculation({ ...hitInput, isCritical: alwaysCrit })
             })
             weakArmorCritPerHitResults = Array.from({ length: count }, (_, idx) => {
-              const hitInput = withWeakArmorDrop(idx === 0 ? calcInput : subsequentInput, idx)
+              const hitInput = withPerHitDefShift(idx === 0 ? calcInput : subsequentInput, idx)
               return executeDamageCalculation({ ...hitInput, isCritical: true })
             })
           }
 
-          // くだけるよろい + 変動連続技: 3〜5発目用に追加でBランク-2,-3,-4 のロールを生成
-          // （rawResult が B-1 を担うので、ここでは B-2 以降を計算）
+          // くだけるよろい / じきゅうりょく + 変動連続技: 3〜5発目用に追加でBランク変化（±2,±3,±4）のロールを生成
+          // （rawResult が B±1 を担うので、ここでは B±2 以降を計算）
           let weakArmorVariableRawResults: DamageResult[] | undefined
           let weakArmorVariableRawCritResults: DamageResult[] | undefined
-          if (defenderWeakArmor && move.multiHit?.type === 'variable') {
+          if (hasPerHitDefShift && move.multiHit?.type === 'variable') {
             weakArmorVariableRawResults = Array.from({ length: 3 }, (_, i) => {
               const drops = i + 2  // i=0: B-2, i=1: B-3, i=2: B-4
-              const hitInput = withWeakArmorDrop(subsequentInput, drops)
+              const hitInput = withPerHitDefShift(subsequentInput, drops)
               return executeDamageCalculation({ ...hitInput, isCritical: alwaysCrit })
             })
             weakArmorVariableRawCritResults = Array.from({ length: 3 }, (_, i) => {
               const drops = i + 2
-              const hitInput = withWeakArmorDrop(subsequentInput, drops)
+              const hitInput = withPerHitDefShift(subsequentInput, drops)
               return executeDamageCalculation({ ...hitInput, isCritical: true })
             })
           }
 
-          // 素ダメ版（マルチスケイル無効化 + 半減実消費済み + くだけるよろいBランク-1）:
+          // 素ダメ版（マルチスケイル無効化 + 半減実消費済み + くだけるよろい/じきゅうりょく Bランク±1）:
           // 加算リストの2発目以降 / 多段技の2発目以降 / おやこあいの子 で使用
-          if (defenderHadMultiscale || halfBerryActive || defenderWeakArmor) {
-            // おやこあい子・加算2発目以降はBランク-1（くだけるよろい発動後のダメージを反映）
-            const rawSubsequentInput = withWeakArmorDrop(subsequentInput, 1)
+          if (defenderHadMultiscale || halfBerryActive || hasPerHitDefShift) {
+            // おやこあい子・加算2発目以降は B±1（くだけるよろい/じきゅうりょく発動後のダメージを反映）
+            const rawSubsequentInput = withPerHitDefShift(subsequentInput, 1)
             const rawResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: alwaysCrit })
             const rawCritResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: true })
             return {
