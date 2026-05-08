@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.1.5**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.2.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -345,7 +345,7 @@ src/
 #### CritRank.ts
 - `src/domain/calculators/CritRank.ts` を新規作成
 - `calcCritChance({ moveCritBonus, attackerAbility, attackerItem, focusEnergyActive })` で急所率を統合計算
-- ランクテーブル: 0→1/16, +1→1/8, +2→1/2, +3→確定
+- ランクテーブル: 0→1/24, +1→1/8, +2→1/2, +3→確定（Gen 7+ 仕様。Gen 6 までは 0→1/16）
 - ランク加算要素:
   - 高急所技（`move.critChance >= 1`）: +1
   - 特性「きょううん」: +1
@@ -419,6 +419,29 @@ src/
 - `DamageCalculator` の `max = effectiveRolls[14]` → `effectiveRolls[15]`
 - ゼロロール配列（無効タイプ・威力0）を 15 → 16 要素に拡張
 - 検証テスト・ラベル・コメントをすべて 16 段階仕様に更新
+
+### V3.2.0: 急所率修正 + KoProbabilityCalc 拡張
+
+#### ランク0急所率を 1/16 → 1/24 に修正（Gen 7+ 仕様）
+- `CritRank.ts` の `CRIT_RANK_TABLE[0]` を `1/16` → `1/24` に変更
+- Gen 7（SM）以降の仕様に追従（Pokemon Champions は Gen 9 ベース）
+- 関連するコメント・スキーマ定義・UI ツールチップを同時に更新:
+  - `src/domain/models/Move.ts`: `critChance` フィールドコメント
+  - `src/data/schemas/types.ts`: `critChance` フィールドコメント
+  - `src/presentation/store/accumStore.ts`: `critChance` フィールドコメント
+  - `src/presentation/components/results/DamageSummaryHeader.tsx`: tooltip 文言
+
+#### KoProbabilityCalc 拡張（将来の変動連続技対応基盤）
+- `calcCombinedDamageDistribution` / `calcCombinedKoProbability` のスロット型を
+  `number[]` から `number[] | Map<number, number>` に拡張（事前計算済み分布を直接渡せる）
+- `AttackSlot` 型を追加（`AttackRollsWithCrit | { precomputed: Map<number, number> }`）
+- `calcCombinedDamageDistributionWithCrit` が `AttackSlot[]` を受け付けるよう拡張
+- `calcVariableHitsSingleUsageDist(rolls, dist, rawRolls?)` を追加
+  - 変動連続技 1 使用分のダメージ分布をヒット数確率で重み付けして計算
+- `calcVariableHitsSingleUsageDistWithCrit(rolls, critRolls, critChance, dist, ...)` を追加
+  - 同・急所込み版（各発で独立に急所判定）
+- `AccumEntry` に `variableHitDist?: { hits: number; prob: number }[]` を追加（オプション）
+- 累積パネルの `×N` はヒット数の意味を維持（個別に発数指定可能）
 
 ### V3.1.5 以降: pkdx クロスチェック
 
