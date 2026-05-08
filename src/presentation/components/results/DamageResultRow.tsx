@@ -476,20 +476,39 @@ export function DamageResultRow(props: DamageResultRowProps) {
   }
 
   function handleAddToAccum() {
-    // 加算には実効ロール（おやこあい合算 / ばけのかわ後）を使う
     const critLabel = isCritical ? '(急所)' : ''
 
-    // 素ダメ（マルチスケイルなし）: useDamageCalc が計算した activeRawResult を使う。
-    // フォールバックはロール×2 近似（pokeRound の誤差は最大1HP）。
-    const accumRawRolls = hadMultiscale
-      ? (activeRawResult ? Array.from(activeRawResult.rolls) : effectiveRolls.map(r => r * 2))
-      : effectiveRolls
+    // 固定多段技（ドラゴンアロー・ダブルウイング等）: 1発ずつ加算（×N = ヒット数）
+    // effectiveRolls は N発合算なので、per-hit ロール（rolls）を使う
+    const isFixedMultiHit = multiHit?.type === 'fixed' && multiHit.count > 1 && !isDisguiseIntact
+    const fixedHitCount = isFixedMultiHit ? (multiHit as { type: 'fixed'; count: number }).count : 1
+
+    // 加算ロール: 固定多段技は per-hit（1発分）、それ以外は effectiveRolls（合算）
+    const accumRolls = isFixedMultiHit ? rolls : effectiveRolls
+    const accumMin = accumRolls[0]
+    const accumMax = accumRolls[accumRolls.length - 1]
+
+    // 素ダメ（マルチスケイルなし / 2発目以降のBランク変化後）
+    // 固定多段技: rawResult が B±1 のロールを持つ場合はそれを使用（Stamina/WeakArmor）
+    // 通常技: hadMultiscale が true なら rawResult（×2 近似フォールバックあり）
+    const useHadMultiscale = isFixedMultiHit ? (activeRawResult != null) : hadMultiscale
+    const accumRawRolls = isFixedMultiHit
+      ? (activeRawResult ? Array.from(activeRawResult.rolls) : accumRolls)
+      : (hadMultiscale
+          ? (activeRawResult ? Array.from(activeRawResult.rolls) : effectiveRolls.map(r => r * 2))
+          : effectiveRolls)
     const accumRawMin = accumRawRolls[0]
     const accumRawMax = accumRawRolls[accumRawRolls.length - 1]
 
     // 急所ロール: 急所モードで加算または確定急所技の場合は rolls と同じ（急所込み計算で再混合しない）
-    const critRolls = isForcedCrit ? effectiveRolls : effectiveCritRolls
-    const rawCritRollsStored = isForcedCrit ? accumRawRolls : effectiveCritRolls
+    // 固定多段技: per-hit の急所ロール（critRollsBase）を使用
+    const accumCritRolls = isForcedCrit ? accumRolls
+      : isFixedMultiHit ? critRollsBase
+      : effectiveCritRolls
+    const accumRawCritRolls = isForcedCrit ? accumRawRolls
+      : isFixedMultiHit
+        ? (props.rawCritResult ? Array.from(props.rawCritResult.rolls) : critRollsBase)
+        : effectiveCritRolls
     const thisCritChance = isForcedCrit ? 1.0 : moveCritChance
 
     // おやこあい（ばけのかわ未発動時）: 親・子を独立スロットで急所込み計算するために
@@ -510,28 +529,32 @@ export function DamageResultRow(props: DamageResultRowProps) {
       pbChildCritRolls = calcChildRolls(rawCritRollsBase)  // 急所子ロール
     }
 
-    // 変動連続技: ×N はヒット数を表す（個別に加算可能）。デフォルトは最大ヒット数。
-    const defaultUsages = multiHit?.type === 'variable'
-      ? variableMultiHitDist[variableMultiHitDist.length - 1].hits
-      : 1
+    // デフォルト使用回数:
+    // - 固定多段技: ヒット数（×N = 1発ずつ N回加算）
+    // - 変動連続技: 最大ヒット数（×N はヒット数を表す）
+    // - それ以外: 1
+    const defaultUsages = isFixedMultiHit ? fixedHitCount
+      : multiHit?.type === 'variable'
+        ? variableMultiHitDist[variableMultiHitDist.length - 1].hits
+        : 1
 
     addEntry({
       label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
-      rolls: effectiveRolls,
+      rolls: accumRolls,
       rawRolls: accumRawRolls,
       usages: defaultUsages,
-      minDmg: displayMin,
-      maxDmg: displayMax,
+      minDmg: accumMin,
+      maxDmg: accumMax,
       rawMin: accumRawMin,
       rawMax: accumRawMax,
       defenderMaxHp,
-      hadMultiscale,
-      critRolls,
-      rawCritRolls: rawCritRollsStored,
-      critMin: critRolls[0],
-      critMax: critRolls[critRolls.length - 1],
-      rawCritMin: rawCritRollsStored[0],
-      rawCritMax: rawCritRollsStored[rawCritRollsStored.length - 1],
+      hadMultiscale: useHadMultiscale,
+      critRolls: accumCritRolls,
+      rawCritRolls: accumRawCritRolls,
+      critMin: accumCritRolls[0],
+      critMax: accumCritRolls[accumCritRolls.length - 1],
+      rawCritMin: accumRawCritRolls[0],
+      rawCritMax: accumRawCritRolls[accumRawCritRolls.length - 1],
       critChance: thisCritChance,
       isForcedCrit,
       pbParentRolls,
