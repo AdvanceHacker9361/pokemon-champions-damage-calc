@@ -5554,7 +5554,11 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "powerOptions": [
+      60,
+      120
+    ]
   },
   {
     "name": "だんがいのつるぎ",
