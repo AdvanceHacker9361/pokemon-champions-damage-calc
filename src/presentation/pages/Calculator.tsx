@@ -22,6 +22,7 @@ function swapStores() {
     availableMegas: s.availableMegas,
     megaKey: s.megaKey,
     isBlade: s.isBlade,
+    isMighty: s.isMighty,
     ranks: s.ranks,
     status: s.status,
     abilityActivated: s.abilityActivated,

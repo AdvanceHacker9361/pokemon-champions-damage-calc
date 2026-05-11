@@ -186,6 +186,40 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             </div>
           )}
 
+          {/* マイティチェンジ: ナイーブ/マイティフォルム切り替え */}
+          {store.effectiveAbility === 'マイティチェンジ' && (
+            <div>
+              <label className="label block mb-1">フォルム</label>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => store.setMighty(false)}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                    !store.isMighty
+                      ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
+                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                  }`}
+                >
+                  🐟 ナイーブフォルム
+                </button>
+                <button
+                  type="button"
+                  onClick={() => store.setMighty(true)}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                    store.isMighty
+                      ? 'bg-blue-600 dark:bg-blue-700 border-blue-500 dark:border-blue-600 text-white'
+                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                  }`}
+                >
+                  💪 マイティフォルム
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                {store.isMighty ? '交代後（A160/B97/C106/D87）' : '交代前（A70/B72/C53/D62）'}
+              </p>
+            </div>
+          )}
+
           {/* そうだいしょう: 倒れた味方の数 */}
           {store.effectiveAbility === 'そうだいしょう' && (
             <div>
