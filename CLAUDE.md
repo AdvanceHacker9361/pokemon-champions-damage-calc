@@ -493,7 +493,7 @@ src/
 - **ドゲザン** を `moves.json` に追加（あく物理・威力85・必中・切る属性）
 - **ひけん・ちえなみ** を `moves.json` に追加（あく物理・威力65・命中90・PP16・接触/切る属性、ヒスイダイケンキの専用技。まきびし設置効果はダメージ計算外）
 - **はめつのひかり** を `moves.json` に追加（フェアリー特殊・威力140・命中90・PP8、反動フラグあり）
-- **英語表記の特性を日本語化**: `Stamina` → `じきゅうりょく`、`Stalwart` → `すじがねいり`、`Toxic Debris` → `どくげしょう`
+- **英語表記の特性を日本語化**: `Stamina` → `じきゅうりょく`、`Stalwart` → `すじがねいり`、`Toxic Debris` → `どくげしょう`、`Zero to Hero` → `マイティチェンジ`
   - 影響ポケモン: ブリジュラス・ドンカラス・バンバドロ・ジュラルドン・キラフロル
   - `abilities.json` の `name` フィールドと `pokemon.json` の `abilities` 配列の両方を修正
 - **特性「あついしぼう」をダメージ計算に実装**
@@ -595,6 +595,18 @@ src/
     `rawRolls` として保存し、`hadMultiscale=true` でDPに伝達
     → 1発目はB±0、2発目はB±1で各スロットを独立計算
   - ばけのかわ発動時は従来通り合算（効果なし発を除いた残発分）で保存
+
+#### イルカマン マイティチェンジ対応
+- **バグ**: 特性名が英語表記 `Zero to Hero` のままで、フォルム変更後の種族値が反映されていなかった
+- **修正**:
+  - `abilities.json` / `pokemon.json` の特性名を `マイティチェンジ` に和訳
+  - `pokemonStore.ts` に `isMighty: boolean` と `setMighty(enable: boolean)` を追加
+    （`setBlade` と同じパターン）
+  - ナイーブ → マイティ切替時に `baseStats` を `{hp:100, atk:160, def:97, spa:106, spd:87, spe:100}` に上書き
+  - マイティ → ナイーブ切替時は `PokemonRepository.findById(pokemonId)` から元の種族値を復元
+  - `setPokemon` / `reset` で `isMighty: false` にリセット
+  - `Calculator.tsx` の `swapStores` の `pick` に `isMighty` を追加
+  - `PokemonPanel.tsx` で `effectiveAbility === 'マイティチェンジ'` 時にフォルム切替ボタンを表示
 
 ---
 

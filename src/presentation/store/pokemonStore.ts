@@ -46,6 +46,7 @@ export interface PokemonStore {
   availableMegas: MegaPokemonRecord[]  // 利用可能なメガ形態リスト（複数形態対応）
   megaKey: string | null               // 選択中のメガ形態キー
   isBlade: boolean  // バトルスイッチ: true=ブレードフォルム, false=シールドフォルム
+  isMighty: boolean // マイティチェンジ: true=マイティフォルム, false=ナイーブフォルム
   ranks: Record<StatKey, number>
   status: StatusCondition
   abilityActivated: boolean
@@ -77,6 +78,7 @@ export interface PokemonStore {
   setMega: (enable: boolean) => void
   setMegaForm: (key: string) => void   // X/Y等の形態切り替え
   setBlade: (enable: boolean) => void
+  setMighty: (enable: boolean) => void
   setRank: (stat: StatKey, rank: number) => void
   setStatus: (status: StatusCondition) => void
   setAbilityActivated: (v: boolean) => void
@@ -106,6 +108,7 @@ function createPokemonStore() {
     availableMegas: [],
     megaKey: null,
     isBlade: false,
+    isMighty: false,
     ranks: { ...DEFAULT_RANKS },
     status: null,
     abilityActivated: false,
@@ -154,6 +157,7 @@ function createPokemonStore() {
         megaKey,
         isMega,
         isBlade: false,
+        isMighty: false,
         abilityName: record.abilities[0] ?? 'なし',
         effectiveAbility,
         weight,
@@ -264,6 +268,29 @@ function createPokemonStore() {
       })
     },
 
+    setMighty: (enable) => {
+      const { isMighty, pokemonId, effectiveAbility } = get()
+      if (effectiveAbility !== 'マイティチェンジ') return
+      if (isMighty === enable) return
+      // ナイーブフォルム ↔ マイティフォルム: HP/Spe は不変、A/B/C/D が変化
+      // ナイーブ: 100/70/72/53/62/100
+      // マイティ: 100/160/97/106/87/100
+      if (enable) {
+        set({
+          isMighty: true,
+          baseStats: { hp: 100, atk: 160, def: 97, spa: 106, spd: 87, spe: 100 },
+        })
+      } else {
+        // ナイーブフォルムに戻す: 元のレコードから取得
+        const record = pokemonId != null ? PokemonRepository.findById(pokemonId) : null
+        if (!record) return
+        set({
+          isMighty: false,
+          baseStats: record.baseStats as BaseStats,
+        })
+      }
+    },
+
     setRank: (stat, rank) => set(s => ({
       ranks: { ...s.ranks, [stat]: Math.max(-6, Math.min(6, rank)) },
     })),
@@ -302,7 +329,7 @@ function createPokemonStore() {
       statNatures: { ...DEFAULT_STAT_NATURES },
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
       isMega: false, canMega: false, availableMegas: [], megaKey: null,
-      isBlade: false, ranks: { ...DEFAULT_RANKS }, status: null,
+      isBlade: false, isMighty: false, ranks: { ...DEFAULT_RANKS }, status: null,
       abilityActivated: false, proteanType: null, proteanStab: true,
       moves: [null, null, null, null],
       movePowers: [null, null, null, null],
