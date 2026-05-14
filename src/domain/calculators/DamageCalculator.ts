@@ -461,6 +461,10 @@ function applyOtherModifiers(
   if (defenderAbility === 'あついしぼう' && (moveType === 'ほのお' || moveType === 'こおり')) {
     d = pokeRound(d * 0.5)
   }
+  // すいほう（防御側）: ほのお技を0.5倍
+  if (defenderAbility === 'すいほう' && moveType === 'ほのお') {
+    d = pokeRound(d * 0.5)
+  }
 
   // フェアリーオーラ: 攻撃側・防御側どちらが持っていてもフェアリー技1.33倍
   if ((attackerAbility === 'フェアリーオーラ' || defenderAbility === 'フェアリーオーラ') &&
@@ -494,6 +498,10 @@ function applyOtherModifiers(
   // きれあじ: 切る属性技の威力1.5倍
   if (attackerAbility === 'きれあじ' && move.flags.slice) {
     d = pokeRound(d * 1.5)
+  }
+  // すいほう（攻撃側）: みず技を2倍
+  if (attackerAbility === 'すいほう' && moveType === 'みず') {
+    d = pokeRound(d * 2)
   }
   // すなのちから: すなあらし時にいわ/はがね/じめん技1.3倍
   if (attackerAbility === 'すなのちから' && input.field.weather === 'すなあらし') {
