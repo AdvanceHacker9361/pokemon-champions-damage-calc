@@ -7261,7 +7261,7 @@
     "nameEn": "Night Daze",
     "type": "あく",
     "category": "特殊",
-    "power": 85,
+    "power": 90,
     "accuracy": 95,
     "pp": 12,
     "priority": 0,
@@ -12040,6 +12040,26 @@
       "punch": false,
       "bite": false,
       "slice": true
+    },
+    "special": null
+  },
+  {
+    "name": "うらみつらみ",
+    "nameEn": "Rage and Resentment",
+    "type": "ゴースト",
+    "category": "特殊",
+    "power": 75,
+    "accuracy": 100,
+    "pp": 20,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
     },
     "special": null
   }
