@@ -18013,5 +18013,26 @@
       "ふゆう"
     ],
     "weight": 0.3
+  },
+  {
+    "id": 10504,
+    "name": "ヒスイゾロアーク",
+    "nameEn": "Zoroark-Hisui",
+    "types": [
+      "ノーマル",
+      "ゴースト"
+    ],
+    "baseStats": {
+      "hp": 72,
+      "atk": 100,
+      "def": 60,
+      "spa": 130,
+      "spd": 60,
+      "spe": 116
+    },
+    "abilities": [
+      "イリュージョン"
+    ],
+    "weight": 73.0
   }
 ]
