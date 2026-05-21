@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useSessionStore } from '@/presentation/store/sessionStore'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
+import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
 import { DamageSummaryHeader } from '@/presentation/components/results/DamageSummaryHeader'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
@@ -31,6 +33,7 @@ function swapStores() {
     moves: s.moves,
     movePowers: s.movePowers,
     supremeOverlordBoost: s.supremeOverlordBoost,
+    focusEnergyActive: s.focusEnergyActive,
     chargeActive: s.chargeActive,
     baseStats: s.baseStats,
     types: s.types,
@@ -71,14 +74,19 @@ export function Calculator() {
 
   useDamageCalc()
 
-  // 初回マウント時にデフォルトポケモンを設定
+  // 初回マウント時にデフォルトポケモンを設定し、1つ目のタブを生成
   useEffect(() => {
+    if (useSessionStore.getState().tabs.length > 0) return
     initDefaults()
+    useSessionStore.getState().initFirstTab('タブ 1')
   }, [])
 
   return (
     <>
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+        {/* タブバー: 複数の計算状態を保持・切替 */}
+        <SessionTabsBar />
+
         {/* サマリーヘッダー: 最大ダメージ技の概要 */}
         <DamageSummaryHeader />
 
