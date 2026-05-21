@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.2.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.3.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -43,6 +43,7 @@ src/
 | `useFieldStore` | 天候・フィールド・壁（リフレク・ひかりのかべ・オーロラベール） |
 | `useResultStore` | ダメージ計算結果（MoveResult の配列、`result` と `critResult` を持つ） |
 | `useAccumStore` | 累積ダメージ（エントリーリスト、使用回数 1–9） |
+| `useSessionStore` | タブ（複数計算状態）管理。各タブが攻撃側/防御側/フィールド/累積のスナップショットを保持し、切替時にライブストアへ復元（V3.3.0） |
 
 ---
 
@@ -421,6 +422,58 @@ src/
 - ゼロロール配列（無効タイプ・威力0）を 15 → 16 要素に拡張
 - 検証テスト・ラベル・コメントをすべて 16 段階仕様に更新
 
+### V3.3.0: 複数計算状態を保持できるタブバー機能 + データ追加・修正
+
+#### タブバー方式のセッション管理
+- ブラウザの複数タブで「計算結果を保持しながら別の計算もする」運用を、アプリ内で完結できるようにした
+- 画面上部にブラウザ風のタブバーを表示し、タブをクリックすると計算状態全体
+  （攻撃側・防御側・フィールド・累積ダメージ）をまるごと切り替える
+  - `＋` で新規タブ（デフォルト盤面）、`×` でタブを閉じる、タブ名をダブルクリックでリネーム
+  - メモリ上のみで保持（ページ再読込でリセット = 従来のブラウザタブ運用と同じ挙動）
+
+##### 設計（既存ストアを「ライブ状態」に保つスナップショット方式）
+- 既存の `useAttackerStore` / `useDefenderStore` / `useFieldStore` / `useAccumStore` を
+  「ライブ（作業中）状態」として維持したまま、タブ切替時に **スナップショット保存 → 復元** する
+  - 各コンポーネントは従来どおり同じストアを直接購読するため、UI側の改修は不要
+  - `useResultStore` は派生（`useDamageCalc` が自動再計算）のため復元不要
+- `src/presentation/store/sessionSnapshot.ts`（新規）
+  - `snapshotLiveState()`: ライブストアからスナップショットを取得。配列・オブジェクト
+    （`sp`/`ranks`/`statNatures`/`moves`/`movePowers`/`baseStats`/`types`/`entries` の各ロール配列等）
+    をすべて深くコピーし、ライブストアと参照を共有させない
+  - `restoreState(snap)`: `setState`（マージ）で各ストアへ復元。アクション関数は保持される。
+    復元時も再複製しタブ側スナップショットを汚さない
+  - `cloneSnapshot()` / `cloneAccumEntry()` で `structuredClone` を使わずフィールド単位で複製
+    （`tsconfig` の lib が ES2020 のため）
+- `src/presentation/store/sessionStore.ts`（新規）
+  - `Tab { id, name, snapshot }` の配列と `activeTabId` を管理
+  - `initFirstTab` / `createTab` / `duplicateTab` / `switchTab` / `renameTab` / `closeTab`
+  - 切替・新規・複製・クローズ時は必ず現アクティブタブへライブ状態をスナップショット保存してから遷移
+  - 新規タブは最初のタブ生成時のライブ状態（= デフォルト盤面）を複製して開く
+  - クローズ: 最終1タブは閉じない（×非表示）、アクティブタブを閉じたら左隣へ切替
+- `src/presentation/components/session/SessionTabsBar.tsx`（新規）
+  - タブUI（クリック切替・ダブルクリックでインラインリネーム・×でクローズ・＋で新規）
+  - `Calculator.tsx` の最上部（`DamageSummaryHeader` の上）に配置
+- `Calculator.tsx`: 初回マウントの `useEffect` で `initDefaults()` 後に `initFirstTab('タブ 1')` を実行
+  （`tabs.length > 0` ガードで StrictMode の二重実行を防止）
+
+#### 攻守交代バグ修正（きあいだめ状態の欠落）
+- `Calculator.tsx` の `swapStores` の `pick` に `focusEnergyActive` が欠落しており、
+  攻守交代するときあいだめ状態が失われていたのを修正
+- 同フィールドはタブのスナップショット対象にも含める
+
+#### データ追加・修正（V3.3.0）
+- **技「ダメおし」（Assurance）** に `powerOptions: [60, 120]` を追加
+  （相手が既にダメージを受けている場合に威力60→120。しっぺがえし [50,100] と同様の手動選択方式）
+- **技「ナイトバースト」（Night Daze）** の威力を 85 → 90 に修正
+- **技「うらみつらみ」** を `moves.json` に追加（ゴースト/特殊/威力75/命中100/PP12/非接触）
+- **特性「すいほう」をダメージ計算に実装**
+  - `abilities.json` には登録済みだったが `DamageCalculator` 側で未処理だった
+  - 攻撃側がすいほう → みず技 ×2、防御側がすいほう → ほのお技 ×0.5
+    （やけど無効化はダメージ計算外のためスコープ外）
+- **ヒスイゾロアーク** を `pokemon.json` に追加
+  （ノーマル/ゴースト、特性イリュージョン、H55/A100/B60/C125/D60/S110、体重73.0kg、id=10504）
+- **ヌメルゴン** のタイプ誤りを修正（ドラゴン/フェアリー → ドラゴン単タイプ）
+
 ### V3.2.0: 急所率修正 + KoProbabilityCalc 拡張
 
 #### ランク0急所率を 1/16 → 1/24 に修正（Gen 7+ 仕様）
@@ -620,6 +673,9 @@ src/
 | `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に上記フィールドすべてあり） |
 | `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ・`critChance` 等） |
 | `src/presentation/hooks/useDamageCalc.ts` | 計算実行、`result` と `critResult` を返す |
+| `src/presentation/store/sessionStore.ts` | タブ管理（生成・切替・複製・リネーム・クローズ）。切替時に現タブ保存→対象タブ復元 |
+| `src/presentation/store/sessionSnapshot.ts` | ライブストアのスナップショット取得・復元ヘルパー（深いコピーで参照共有を防止） |
+| `src/presentation/components/session/SessionTabsBar.tsx` | タブバー UI（クリック切替・ダブルクリックでリネーム・×でクローズ・＋で新規） |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
 | `src/presentation/store/accumStore.ts` | 累積計算、entries + `constDmg`/`constRec`/`poisonTurns` 状態 |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージの totals/分布/KO確率を一元計算するフック |
