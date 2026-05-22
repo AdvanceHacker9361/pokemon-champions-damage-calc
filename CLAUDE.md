@@ -448,7 +448,7 @@ src/
   - `Tab { id, name, snapshot }` の配列と `activeTabId` を管理
   - `initFirstTab` / `createTab` / `duplicateTab` / `switchTab` / `renameTab` / `closeTab`
   - 切替・新規・複製・クローズ時は必ず現アクティブタブへライブ状態をスナップショット保存してから遷移
-  - 新規タブは最初のタブ生成時のライブ状態（= デフォルト盤面）を複製して開く
+  - 新規タブ（`＋`）は追加直前に表示されていたタブの計算状態を複製して開く（計算の継続性）
   - クローズ: 最終1タブは閉じない（×非表示）、アクティブタブを閉じたら左隣へ切替
 - `src/presentation/components/session/SessionTabsBar.tsx`（新規）
   - タブUI（クリック切替・ダブルクリックでインラインリネーム・×でクローズ・＋で新規）
