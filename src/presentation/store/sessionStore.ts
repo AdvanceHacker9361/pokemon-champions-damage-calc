@@ -34,26 +34,24 @@ function nextTabName(tabs: Tab[]): string {
 }
 
 /** 新規タブの初期盤面（最初のタブ生成時のライブ状態 = デフォルト盤面）*/
-let defaultSnapshot: SessionSnapshot | null = null
-
 export const useSessionStore = create<SessionStore>((set, get) => ({
   tabs: [],
   activeTabId: null,
 
   initFirstTab: (name = 'タブ 1') => {
     if (get().tabs.length > 0) return
-    const snapshot = snapshotLiveState()
-    defaultSnapshot = cloneSnapshot(snapshot)
     const id = genId()
-    set({ tabs: [{ id, name, snapshot }], activeTabId: id })
+    set({ tabs: [{ id, name, snapshot: snapshotLiveState() }], activeTabId: id })
   },
 
   createTab: () => {
+    // 追加前に表示されていたタブの計算状態を複製して引き継ぐ（計算の継続性）
     const { tabs, activeTabId } = get()
+    const current = snapshotLiveState()
     const saved = tabs.map(t =>
-      t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
+      t.id === activeTabId ? { ...t, snapshot: current } : t
     )
-    const snapshot = defaultSnapshot ? cloneSnapshot(defaultSnapshot) : snapshotLiveState()
+    const snapshot = cloneSnapshot(current)
     const id = genId()
     const newTab: Tab = { id, name: nextTabName(tabs), snapshot }
     set({ tabs: [...saved, newTab], activeTabId: id })
