@@ -125,17 +125,19 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
                   key={m.name}
                   ref={i === activeIndex ? activeItemRef : undefined}
                   type="button"
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                  className={`w-full flex flex-col px-3 py-1.5 text-left transition-colors ${
                     i === activeIndex
                       ? 'bg-surface-3'
                       : 'hover:bg-surface-2'
                   }`}
                   onClick={() => handleSelect(m.name)}
                 >
-                  <span className="text-sm text-fg flex-1">{m.name}</span>
-                  <span className="text-[11px] text-fg-subtle w-12 text-right">{m.type}</span>
-                  <span className="text-[11px] text-fg-subtle w-7 text-right">{m.category}</span>
-                  {m.power != null && <span className="text-xs text-fg-muted w-8 text-right">{m.power}</span>}
+                  <span className="text-sm text-fg">{m.name}</span>
+                  <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
+                    <span>{m.type}</span>
+                    <span>{m.category}</span>
+                    {m.power != null && <span className="text-fg-muted">{m.power}</span>}
+                  </div>
                 </button>
               ))
             )}
