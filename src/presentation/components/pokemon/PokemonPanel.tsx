@@ -51,7 +51,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
     <div className="panel space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</h2>
+        <h2 className="text-xs font-medium text-fg-muted">{label}</h2>
         {store.pokemonId && (
           <div className="flex items-center gap-1.5">
             {store.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}
@@ -75,9 +75,9 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           onSelect={handleSelectPokemon}
         />
         {store.pokemonId && (
-          <div className="flex gap-2 mt-1 text-[10px] font-mono text-slate-500 dark:text-slate-500">
+          <div className="flex gap-3 mt-1 text-xs text-fg-muted">
             {([['H', store.baseStats.hp], ['A', store.baseStats.atk], ['B', store.baseStats.def], ['C', store.baseStats.spa], ['D', store.baseStats.spd], ['S', store.baseStats.spe]] as [string, number][]).map(([label, val]) => (
-              <span key={label}><span className="text-slate-400 dark:text-slate-600">{label}</span>{val}</span>
+              <span key={label}><span className="text-fg-subtle mr-0.5">{label}</span>{val}</span>
             ))}
           </div>
         )}
@@ -122,15 +122,13 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                   onClick={() => store.setFocusEnergyActive(!store.focusEnergyActive)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     store.focusEnergyActive
-                      ? 'text-yellow-700 border-yellow-500 bg-yellow-50 dark:text-yellow-400 dark:border-yellow-600 dark:bg-yellow-950'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
                   {store.focusEnergyActive ? '✓ きあいだめ (+2)' : 'きあいだめ (+2)'}
                 </button>
-                <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
-                  {store.focusEnergyActive ? '急所ランク+2' : '急所ランク+2'}
-                </p>
+                <p className="text-[11px] text-fg-subtle mt-0.5">急所ランク+2</p>
               </div>
               <div>
                 <label className="label block mb-1">じゅうでん</label>
@@ -139,15 +137,13 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                   onClick={() => store.setChargeActive(!store.chargeActive)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     store.chargeActive
-                      ? 'text-amber-700 border-amber-500 bg-amber-50 dark:text-amber-400 dark:border-amber-600 dark:bg-amber-950'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
                   {store.chargeActive ? '✓ じゅうでん (×2)' : 'じゅうでん (×2)'}
                 </button>
-                <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
-                  {store.chargeActive ? '電気技の威力×2' : '電気技の威力×2'}
-                </p>
+                <p className="text-[11px] text-fg-subtle mt-0.5">電気技の威力×2</p>
               </div>
             </div>
           )}
@@ -162,25 +158,25 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                   onClick={() => store.setBlade(false)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     !store.isBlade
-                      ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
-                  🛡 シールドフォルム
+                  シールドフォルム
                 </button>
                 <button
                   type="button"
                   onClick={() => store.setBlade(true)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     store.isBlade
-                      ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
-                  ⚔ ブレードフォルム
+                  ブレードフォルム
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+              <p className="text-[11px] text-fg-subtle mt-0.5">
                 {store.isBlade ? '攻撃時（A・C↑ / B・D↓）' : '防御時（B・D↑ / A・C↓）'}
               </p>
             </div>
@@ -196,25 +192,25 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                   onClick={() => store.setMighty(false)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     !store.isMighty
-                      ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
-                  🐟 ナイーブフォルム
+                  ナイーブフォルム
                 </button>
                 <button
                   type="button"
                   onClick={() => store.setMighty(true)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     store.isMighty
-                      ? 'bg-blue-600 dark:bg-blue-700 border-blue-500 dark:border-blue-600 text-white'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
-                  💪 マイティフォルム
+                  マイティフォルム
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+              <p className="text-[11px] text-fg-subtle mt-0.5">
                 {store.isMighty ? '交代後（A160/B97/C106/D87）' : '交代前（A70/B72/C53/D62）'}
               </p>
             </div>
@@ -232,15 +228,15 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                     onClick={() => store.setSupremeOverlordBoost(v)}
                     className={`flex-1 text-xs px-2 py-0.5 rounded border transition-colors ${
                       store.supremeOverlordBoost === v
-                        ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white font-semibold'
-                        : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                        ? 'bg-accent-bg text-accent border-accent-border font-medium'
+                        : 'text-fg-muted border-edge hover:bg-surface-3'
                     }`}
                   >
                     {v === 0 ? 'なし' : `×${(1 + v * 0.1).toFixed(1)}`}
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+              <p className="text-[11px] text-fg-subtle mt-0.5">
                 {store.supremeOverlordBoost === 0
                   ? '補正なし'
                   : `A・C が ×${(1 + store.supremeOverlordBoost * 0.1).toFixed(1)} になります`}
@@ -258,8 +254,8 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                   onClick={() => store.setAbilityActivated(!store.abilityActivated)}
                   className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                     store.abilityActivated
-                      ? 'text-indigo-600 border-indigo-500 bg-indigo-50 dark:text-indigo-400 dark:border-indigo-600 dark:bg-indigo-950'
-                      : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
                   }`}
                 >
                   {store.abilityActivated
@@ -284,8 +280,8 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                       onClick={() => store.setProteanStab(false)}
                       className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                         !store.proteanStab
-                          ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
-                          : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400'
+                          ? 'bg-accent-bg text-accent border-accent-border'
+                          : 'text-fg-muted border-edge hover:bg-surface-3'
                       }`}
                     >
                       なし
@@ -295,8 +291,8 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                       onClick={() => store.setProteanStab(true)}
                       className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                         store.proteanStab
-                          ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white'
-                          : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400'
+                          ? 'bg-accent-bg text-accent border-accent-border'
+                          : 'text-fg-muted border-edge hover:bg-surface-3'
                       }`}
                     >
                       ×1.5

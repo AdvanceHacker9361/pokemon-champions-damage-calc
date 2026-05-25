@@ -81,12 +81,6 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
     }
   }
 
-  const categoryColors: Record<string, string> = {
-    '物理': 'text-orange-500 dark:text-orange-400',
-    '特殊': 'text-blue-500 dark:text-blue-400',
-    '変化': 'text-slate-600 dark:text-slate-400',
-  }
-
   return (
     <div className="relative">
       <input
@@ -102,13 +96,13 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
       />
       {value && !query && (
         <div className="absolute inset-0 flex items-center px-2 pointer-events-none pr-6">
-          <span className="text-sm text-slate-800 dark:text-slate-200 truncate">{value}</span>
+          <span className="text-sm text-fg truncate">{value}</span>
         </div>
       )}
       {value && (
         <button
           type="button"
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs px-1.5 py-1"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted text-xs px-1.5 py-1"
           onClick={() => { onChange(null); setQuery(''); setIsOpen(false) }}
         >
           ✕
@@ -118,12 +112,12 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded shadow-xl max-h-60 overflow-hidden flex flex-col"
+          className="absolute z-50 w-full mt-1 bg-surface-1 border border-edge-strong rounded max-h-60 overflow-hidden flex flex-col"
         >
           <div className="overflow-y-auto">
             {results.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-                {query ? '該当する技がありません' : '該当する技がありません'}
+              <div className="px-3 py-2 text-xs text-fg-subtle">
+                該当する技がありません
               </div>
             ) : (
               results.map((m, i) => (
@@ -133,14 +127,15 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
                   type="button"
                   className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
                     i === activeIndex
-                      ? 'bg-slate-100 dark:bg-slate-600'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                      ? 'bg-surface-3'
+                      : 'hover:bg-surface-2'
                   }`}
                   onClick={() => handleSelect(m.name)}
                 >
-                  <span className="text-sm text-slate-900 dark:text-slate-100 flex-1">{m.name}</span>
-                  <span className={`text-xs ${categoryColors[m.category] ?? ''}`}>{m.category}</span>
-                  {m.power && <span className="text-xs text-slate-600 dark:text-slate-400 font-mono w-8 text-right">{m.power}</span>}
+                  <span className="text-sm text-fg flex-1">{m.name}</span>
+                  <span className="text-[11px] text-fg-subtle w-12 text-right">{m.type}</span>
+                  <span className="text-[11px] text-fg-subtle w-7 text-right">{m.category}</span>
+                  {m.power != null && <span className="text-xs text-fg-muted w-8 text-right">{m.power}</span>}
                 </button>
               ))
             )}
