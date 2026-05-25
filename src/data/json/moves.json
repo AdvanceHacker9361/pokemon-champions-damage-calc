@@ -9519,7 +9519,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "powerOptions": [65, 130]
   },
   {
     "name": "ヘビーボンバー",
