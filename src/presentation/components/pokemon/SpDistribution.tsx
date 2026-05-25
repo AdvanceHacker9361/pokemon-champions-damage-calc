@@ -42,7 +42,7 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
 
       {/* プリセットボタン（横一行） */}
       <div className="flex flex-wrap gap-1">
-        {SP_PRESETS.filter(p => ['AS', 'CS', 'HS', 'HB', 'HD', 'HC', 'HA', '均等', 'クリア'].includes(p.label)).map(preset => (
+        {SP_PRESETS.filter(p => ['AS', 'CS', 'HS', 'HB', 'HD', 'HC', 'HA', 'クリア'].includes(p.label)).map(preset => (
           <button
             key={preset.key}
             type="button"
