@@ -1,11 +1,6 @@
 import { useEffect } from 'react'
 import { useSessionStore } from '@/presentation/store/sessionStore'
 
-function isEditable(target: EventTarget | null): boolean {
-  if (!target) return false
-  const el = target as HTMLElement
-  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
-}
 
 export function useKeyboardShortcuts(onSwap: () => void) {
   const activeTabId = useSessionStore(s => s.activeTabId)
@@ -32,15 +27,15 @@ export function useKeyboardShortcuts(onSwap: () => void) {
         return
       }
 
-      if (isEditable(e.target)) return
-
-      if (e.key === 's' || e.key === 'S') {
+      if (cmd && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault()
         onSwap()
         return
       }
 
       const slot = Number(e.key) - 1
-      if (slot >= 0 && slot <= 3) {
+      if (cmd && slot >= 0 && slot <= 3) {
+        e.preventDefault()
         document.dispatchEvent(new CustomEvent('kb:focus-move', { detail: { slot } }))
       }
     }
