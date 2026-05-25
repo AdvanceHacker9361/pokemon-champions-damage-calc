@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useSessionStore } from '@/presentation/store/sessionStore'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar'
+import { TabMemo } from '@/presentation/components/session/TabMemo'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
 import { DamageSummaryHeader } from '@/presentation/components/results/DamageSummaryHeader'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
+import { useKeyboardShortcuts } from '@/presentation/hooks/useKeyboardShortcuts'
 
 /** 攻守交代 */
 function swapStores() {
@@ -74,6 +76,9 @@ export function Calculator() {
 
   useDamageCalc()
 
+  const handleSwap = useCallback(() => swapStores(), [])
+  useKeyboardShortcuts(handleSwap)
+
   // 初回マウント時にデフォルトポケモンを設定し、1つ目のタブを生成
   useEffect(() => {
     if (useSessionStore.getState().tabs.length > 0) return
@@ -86,6 +91,9 @@ export function Calculator() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
         {/* タブバー: 複数の計算状態を保持・切替 */}
         <SessionTabsBar />
+
+        {/* 構築メモ: タブごとの自由記述メモ */}
+        <TabMemo />
 
         {/* サマリーヘッダー: 最大ダメージ技の概要 */}
         <DamageSummaryHeader />

@@ -8,14 +8,28 @@ interface PokemonSearchProps {
   value: string
   onSelect: (pokemon: PokemonRecord) => void
   placeholder?: string
+  /** true のとき Cmd+K グローバルショートカットでフォーカスされる */
+  listenFocusShortcut?: boolean
 }
 
-export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検索...' }: PokemonSearchProps) {
+export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検索...', listenFocusShortcut }: PokemonSearchProps) {
   const { query, setQuery, results, isOpen, setIsOpen } = usePokemonSearch()
   const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const activeItemRef = useRef<HTMLButtonElement>(null)
+
+  // Cmd+K ショートカットでフォーカス
+  useEffect(() => {
+    if (!listenFocusShortcut) return
+    function handler() {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+      setIsOpen(true)
+    }
+    document.addEventListener('kb:focus-pokemon-search', handler)
+    return () => document.removeEventListener('kb:focus-pokemon-search', handler)
+  }, [listenFocusShortcut, setIsOpen])
 
   // 外側クリックで閉じる
   useEffect(() => {

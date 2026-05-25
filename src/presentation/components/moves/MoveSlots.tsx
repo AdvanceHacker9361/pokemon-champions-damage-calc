@@ -76,6 +76,7 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
                   value={moveName}
                   onChange={name => setMove(slot, name)}
                   placeholder={`技${slot + 1}`}
+                  slot={slot}
                 />
               </div>
 

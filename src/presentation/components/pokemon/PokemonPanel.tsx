@@ -73,6 +73,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
         <PokemonSearch
           value={store.pokemonName}
           onSelect={handleSelectPokemon}
+          listenFocusShortcut={label === '攻撃側'}
         />
         {store.pokemonId && (
           <div className="flex gap-3 mt-1 text-xs text-fg-muted">
