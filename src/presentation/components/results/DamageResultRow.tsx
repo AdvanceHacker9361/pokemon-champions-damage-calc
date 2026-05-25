@@ -482,7 +482,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
         : 1
 
     addEntry({
-      label: `${attackerName} の${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
+      label: `${attackerName} の ${moveName}${critLabel}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
       rolls: accumRolls,
       rawRolls: accumRawRolls,
       usages: defaultUsages,
