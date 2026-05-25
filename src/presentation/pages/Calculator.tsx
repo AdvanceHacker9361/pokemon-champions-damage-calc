@@ -95,10 +95,10 @@ export function Calculator() {
           <button
             type="button"
             onClick={swapStores}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 active:bg-slate-400 dark:active:bg-slate-500 text-slate-700 dark:text-slate-300 rounded-full border border-slate-300 dark:border-slate-600 transition-colors"
+            className="flex items-center gap-1.5 h-7 px-3 text-xs bg-surface-3 hover:bg-surface-2 text-fg-muted rounded-md transition-colors"
             title="攻撃側と防御側を入れ替え"
           >
-            ⇄ 攻守交代
+            ⇆ 攻守交代
           </button>
         </div>
 
@@ -113,10 +113,10 @@ export function Calculator() {
               <button
                 type="button"
                 onClick={swapStores}
-                className="flex items-center gap-2 px-4 py-1.5 text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-full border border-slate-300 dark:border-slate-600 transition-colors"
+                className="flex items-center gap-1.5 h-7 px-3 text-xs bg-surface-3 hover:bg-surface-2 text-fg-muted rounded-md transition-colors"
                 title="攻撃側と防御側を入れ替え"
               >
-                ⇄ 攻守交代
+                ⇆ 攻守交代
               </button>
             </div>
             <DamageResultArea />

@@ -28,15 +28,27 @@ export function DamageResultArea() {
   return (
     <>
       {results.length > 0 ? (
-        <div className="panel">
-          <div className="text-xs text-fg-muted mb-3">
+        <div className="space-y-2">
+          <div className="text-xs text-fg-muted px-1">
             {attackerName} → {defenderName}
           </div>
-          <div>
-            {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
-              <DamageResultRow key={moveName} moveName={moveName} result={result} critResult={critResult} perHitResults={perHitResults} critPerHitResults={critPerHitResults} rawResult={rawResult} rawCritResult={rawCritResult} weakArmorPerHitResults={weakArmorPerHitResults} weakArmorCritPerHitResults={weakArmorCritPerHitResults} weakArmorVariableRawResults={weakArmorVariableRawResults} weakArmorVariableRawCritResults={weakArmorVariableRawCritResults} />
-            ))}
-          </div>
+          {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
+            <div key={moveName} className="bg-surface-2 rounded-lg px-3.5 py-3">
+              <DamageResultRow
+                moveName={moveName}
+                result={result}
+                critResult={critResult}
+                perHitResults={perHitResults}
+                critPerHitResults={critPerHitResults}
+                rawResult={rawResult}
+                rawCritResult={rawCritResult}
+                weakArmorPerHitResults={weakArmorPerHitResults}
+                weakArmorCritPerHitResults={weakArmorCritPerHitResults}
+                weakArmorVariableRawResults={weakArmorVariableRawResults}
+                weakArmorVariableRawCritResults={weakArmorVariableRawCritResults}
+              />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="panel text-center py-8">

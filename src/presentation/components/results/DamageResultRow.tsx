@@ -426,7 +426,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
 
   if (min === 0 && max === 0) {
     return (
-      <div className="py-2 border-b border-edge last:border-0">
+      <div>
         <div className="text-sm text-fg font-medium">{moveName}</div>
         <div className="text-xs text-fg-subtle mt-1">効果がない</div>
       </div>
@@ -512,7 +512,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   }
 
   return (
-    <div className="py-2 border-b border-edge last:border-0">
+    <div>
       {/* ヘッダー: 技名バッジ + KOラベル + 加算回数セレクター */}
       <div className="flex items-baseline justify-between mb-1">
         <div className="flex items-center gap-1.5">
@@ -745,15 +745,18 @@ export function DamageResultRow(props: DamageResultRowProps) {
         <div className="mt-2 pt-2 border-t border-edge space-y-1.5">
           {/* 実効ロール */}
           <div>
-            <div className="text-xs text-fg-muted mb-0.5">
-              {isParentalBond && !isDisguiseIntact ? '合算15乱数（親+子）'
+            <div className="text-xs text-fg-muted mb-1">
+              {isParentalBond && !isDisguiseIntact ? '合算乱数（親+子）'
                 : isDisguiseIntact && isParentalBond ? '子ダメ16乱数'
                 : isDisguiseIntact ? '実効ダメ16乱数'
                 : '16乱数'}
             </div>
-            <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+            <div className="grid grid-cols-4 gap-1">
               {effectiveRolls.map((r, i) => (
-                <span key={i} className={`text-xs font-mono ${rollKoClass(r, effectiveHpForKo)}`}>
+                <span
+                  key={i}
+                  className={`text-[12px] font-mono tabular-nums text-center bg-surface-3 rounded px-1 py-0.5 ${rollKoClass(r, effectiveHpForKo)}`}
+                >
                   {r}
                 </span>
               ))}
@@ -763,12 +766,12 @@ export function DamageResultRow(props: DamageResultRowProps) {
           {/* 段階威力型: 各発の内訳 */}
           {multiHit?.type === 'escalating' && perHitResults && perHitResults.map((hr, idx) => (
             <div key={idx}>
-              <div className="text-xs text-fg-subtle mb-0.5">
+              <div className="text-xs text-fg-subtle mb-1">
                 {idx + 1}発目（威力{(multiHit as { type: 'escalating'; powers: number[] }).powers[idx]}）
               </div>
-              <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+              <div className="grid grid-cols-4 gap-1">
                 {Array.from(hr.rolls).map((r, i) => (
-                  <span key={i} className={`text-xs font-mono ${rollKoClass(r, defenderMaxHp)}`}>{r}</span>
+                  <span key={i} className={`text-[12px] font-mono tabular-nums text-center bg-surface-3 rounded px-1 py-0.5 ${rollKoClass(r, defenderMaxHp)}`}>{r}</span>
                 ))}
               </div>
             </div>
@@ -777,12 +780,12 @@ export function DamageResultRow(props: DamageResultRowProps) {
           {/* おやこあい時: 親の素ロールを参考表示 */}
           {isParentalBond && (
             <div>
-              <div className="text-xs text-fg-subtle mb-0.5">
+              <div className="text-xs text-fg-subtle mb-1">
                 親ロール（参考）
               </div>
-              <div className="flex flex-wrap gap-x-1 gap-y-0.5">
+              <div className="grid grid-cols-4 gap-1">
                 {rolls.map((r, i) => (
-                  <span key={i} className="text-xs font-mono text-fg-subtle">
+                  <span key={i} className="text-[12px] font-mono tabular-nums text-center bg-surface-3 rounded px-1 py-0.5 text-fg-subtle">
                     {r}
                   </span>
                 ))}
