@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSessionStore } from '@/presentation/store/sessionStore'
+import { AccumExportButton } from '@/presentation/components/results/AccumExportButton'
 
 export function TabMemo() {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,17 +17,20 @@ export function TabMemo() {
 
   return (
     <div className="mb-3">
-      <button
-        type="button"
-        onClick={() => setIsOpen(v => !v)}
-        className="flex items-center gap-1.5 text-xs text-fg-subtle hover:text-fg transition-colors"
-      >
-        <span className="text-[9px]">{isOpen ? '▼' : '▶'}</span>
-        <span>メモ</span>
-        {!isOpen && firstLine && (
-          <span className="text-fg-faint truncate max-w-[240px]">{firstLine}</span>
-        )}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setIsOpen(v => !v)}
+          className="flex items-center gap-1.5 text-xs text-fg-subtle hover:text-fg transition-colors"
+        >
+          <span className="text-[9px]">{isOpen ? '▼' : '▶'}</span>
+          <span>メモ</span>
+          {!isOpen && firstLine && (
+            <span className="text-fg-faint truncate max-w-[240px]">{firstLine}</span>
+          )}
+        </button>
+        <AccumExportButton />
+      </div>
       {isOpen && (
         <textarea
           className="mt-1.5 w-full input-base text-xs font-mono resize-none leading-relaxed"
