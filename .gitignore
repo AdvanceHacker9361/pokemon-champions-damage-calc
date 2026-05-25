@@ -8,3 +8,4 @@ coverage
 .claude/*
 !.claude/settings.json
 
+tsconfig.tsbuildinfo

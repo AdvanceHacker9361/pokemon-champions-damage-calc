@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import {
   snapshotLiveState, restoreState, cloneSnapshot, type SessionSnapshot,
 } from './sessionSnapshot'
@@ -23,6 +24,8 @@ interface SessionStore {
   switchTab: (id: string) => void
   renameTab: (id: string, name: string) => void
   closeTab: (id: string) => void
+  /** タブ順を入れ替える（D&D用） */
+  moveTab: (fromId: string, toId: string) => void
 }
 
 function genId(): string {
@@ -33,81 +36,100 @@ function nextTabName(tabs: Tab[]): string {
   return `タブ ${tabs.length + 1}`
 }
 
-/** 新規タブの初期盤面（最初のタブ生成時のライブ状態 = デフォルト盤面）*/
-export const useSessionStore = create<SessionStore>((set, get) => ({
-  tabs: [],
-  activeTabId: null,
+export const useSessionStore = create<SessionStore>()(
+  persist(
+    (set, get) => ({
+      tabs: [],
+      activeTabId: null,
 
-  initFirstTab: (name = 'タブ 1') => {
-    if (get().tabs.length > 0) return
-    const id = genId()
-    set({ tabs: [{ id, name, snapshot: snapshotLiveState() }], activeTabId: id })
-  },
+      initFirstTab: (name = 'タブ 1') => {
+        if (get().tabs.length > 0) return
+        const id = genId()
+        set({ tabs: [{ id, name, snapshot: snapshotLiveState() }], activeTabId: id })
+      },
 
-  createTab: () => {
-    // 追加前に表示されていたタブの計算状態を複製して引き継ぐ（計算の継続性）
-    const { tabs, activeTabId } = get()
-    const current = snapshotLiveState()
-    const saved = tabs.map(t =>
-      t.id === activeTabId ? { ...t, snapshot: current } : t
-    )
-    const snapshot = cloneSnapshot(current)
-    const id = genId()
-    const newTab: Tab = { id, name: nextTabName(tabs), snapshot }
-    set({ tabs: [...saved, newTab], activeTabId: id })
-    restoreState(snapshot)
-  },
+      createTab: () => {
+        const { tabs, activeTabId } = get()
+        const current = snapshotLiveState()
+        const saved = tabs.map(t =>
+          t.id === activeTabId ? { ...t, snapshot: current } : t
+        )
+        const snapshot = cloneSnapshot(current)
+        const id = genId()
+        const newTab: Tab = { id, name: nextTabName(tabs), snapshot }
+        set({ tabs: [...saved, newTab], activeTabId: id })
+        restoreState(snapshot)
+      },
 
-  duplicateTab: (id) => {
-    const { tabs, activeTabId } = get()
-    const source = tabs.find(t => t.id === id)
-    if (!source) return
-    const saved = tabs.map(t =>
-      t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
-    )
-    const snapshot = cloneSnapshot(source.snapshot)
-    const newId = genId()
-    const newTab: Tab = { id: newId, name: `${source.name} (コピー)`, snapshot }
-    set({ tabs: [...saved, newTab], activeTabId: newId })
-    restoreState(snapshot)
-  },
-
-  switchTab: (id) => {
-    const { activeTabId, tabs } = get()
-    if (id === activeTabId) return
-    const target = tabs.find(t => t.id === id)
-    if (!target) return
-    const saved = tabs.map(t =>
-      t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
-    )
-    set({ tabs: saved, activeTabId: id })
-    restoreState(target.snapshot)
-  },
-
-  renameTab: (id, name) => set(s => ({
-    tabs: s.tabs.map(t => t.id === id ? { ...t, name: name.trim() || t.name } : t),
-  })),
-
-  closeTab: (id) => {
-    const { tabs, activeTabId } = get()
-    if (tabs.length <= 1) return
-    const idx = tabs.findIndex(t => t.id === id)
-    if (idx === -1) return
-    const remaining = tabs.filter(t => t.id !== id)
-
-    if (id !== activeTabId) {
-      // 背景タブを閉じる: アクティブタブには現在のライブ状態を保存しておく
-      set({
-        tabs: remaining.map(t =>
+      duplicateTab: (id) => {
+        const { tabs, activeTabId } = get()
+        const source = tabs.find(t => t.id === id)
+        if (!source) return
+        const saved = tabs.map(t =>
           t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
-        ),
-      })
-      return
-    }
+        )
+        const snapshot = cloneSnapshot(source.snapshot)
+        const newId = genId()
+        const newTab: Tab = { id: newId, name: `${source.name} (コピー)`, snapshot }
+        set({ tabs: [...saved, newTab], activeTabId: newId })
+        restoreState(snapshot)
+      },
 
-    // アクティブタブを閉じる: 左隣（なければ先頭）へ切替
-    const neighbor = remaining[idx - 1] ?? remaining[0]
-    set({ tabs: remaining, activeTabId: neighbor.id })
-    restoreState(neighbor.snapshot)
-  },
-}))
+      switchTab: (id) => {
+        const { activeTabId, tabs } = get()
+        if (id === activeTabId) return
+        const target = tabs.find(t => t.id === id)
+        if (!target) return
+        const saved = tabs.map(t =>
+          t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
+        )
+        set({ tabs: saved, activeTabId: id })
+        restoreState(target.snapshot)
+      },
+
+      renameTab: (id, name) => set(s => ({
+        tabs: s.tabs.map(t => t.id === id ? { ...t, name: name.trim() || t.name } : t),
+      })),
+
+      closeTab: (id) => {
+        const { tabs, activeTabId } = get()
+        if (tabs.length <= 1) return
+        const idx = tabs.findIndex(t => t.id === id)
+        if (idx === -1) return
+        const remaining = tabs.filter(t => t.id !== id)
+
+        if (id !== activeTabId) {
+          set({
+            tabs: remaining.map(t =>
+              t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
+            ),
+          })
+          return
+        }
+
+        const neighbor = remaining[idx - 1] ?? remaining[0]
+        set({ tabs: remaining, activeTabId: neighbor.id })
+        restoreState(neighbor.snapshot)
+      },
+
+      moveTab: (fromId, toId) => {
+        const { tabs } = get()
+        const fromIdx = tabs.findIndex(t => t.id === fromId)
+        const toIdx = tabs.findIndex(t => t.id === toId)
+        if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
+        const next = [...tabs]
+        const [moved] = next.splice(fromIdx, 1)
+        next.splice(toIdx, 0, moved)
+        set({ tabs: next })
+      },
+    }),
+    {
+      name: 'pcma-session-v1',
+      onRehydrateStorage: () => (state) => {
+        if (!state?.activeTabId) return
+        const active = state.tabs.find(t => t.id === state.activeTabId)
+        if (active) restoreState(active.snapshot)
+      },
+    }
+  )
+)
