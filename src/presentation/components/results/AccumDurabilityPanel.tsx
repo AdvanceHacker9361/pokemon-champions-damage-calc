@@ -37,7 +37,6 @@ export function AccumDurabilityPanel() {
     currentSurvives, minSurvivingSpH, points,
   } = result
 
-  // 表示対象 spH: 最小耐え点 + その前後 + 端点を含める
   const highlightSpHs = new Set<number>()
   highlightSpHs.add(0)
   highlightSpHs.add(currentSpH)
@@ -45,48 +44,47 @@ export function AccumDurabilityPanel() {
     highlightSpHs.add(minSurvivingSpH)
     if (minSurvivingSpH > 0) highlightSpHs.add(minSurvivingSpH - 1)
   }
-  // 一定間隔でも追加
   for (let s = 0; s <= Math.min(32, budget); s += 4) highlightSpHs.add(s)
   highlightSpHs.add(Math.min(32, budget))
 
   const displayPoints = points.filter(p => highlightSpHs.has(p.spH))
 
   return (
-    <div className="space-y-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+    <div className="space-y-2 mt-2 pt-2 border-t border-edge">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+        <span className="text-xs font-semibold text-fg-muted">
           耐久調整（総合累積 / HPのみ）
         </span>
-        <span className="text-[10px] text-slate-500 dark:text-slate-500">
-          予算 <span className="font-mono text-slate-700 dark:text-slate-400">{budget}</span> SP
+        <span className="text-[10px] text-fg-subtle">
+          予算 <span className="font-mono text-fg-muted">{budget}</span> SP
         </span>
       </div>
 
       {/* 現状サマリ */}
-      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-500">
+      <div className="flex items-center justify-between text-[10px] text-fg-subtle">
         <span>
           現在 H
-          <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentSpH}</span>
+          <span className="font-mono text-fg-muted ml-0.5">{currentSpH}</span>
           {'　'}HP
-          <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentHp}</span>
+          <span className="font-mono text-fg-muted ml-0.5">{currentHp}</span>
           {'　'}最大被ダメ
-          <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentMaxDmg}</span>
+          <span className="font-mono text-fg-muted ml-0.5">{currentMaxDmg}</span>
         </span>
-        <span className={`font-semibold ${currentSurvives ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+        <span className={`font-semibold ${currentSurvives ? 'text-success' : 'text-danger-2'}`}>
           {currentSurvives ? '✓ 確定耐え' : '✗ 耐えられない'}
         </span>
       </div>
 
       {/* 最小必要 SP の告知 */}
       {minSurvivingSpH == null ? (
-        <div className="text-[11px] text-red-500 dark:text-red-400 py-1">
+        <div className="text-[11px] text-danger-2 py-1">
           H 最大振り（H32）でも確定耐え不可。B/D や持ち物・特性で対応が必要です。
         </div>
       ) : (
-        <div className="text-[11px] text-emerald-700 dark:text-emerald-400 py-1">
+        <div className="text-[11px] text-success py-1">
           必要最小 HP 投資:
           <span className="font-mono font-bold ml-1">H{minSurvivingSpH}</span>
-          <span className="text-slate-500 dark:text-slate-500 ml-1">
+          <span className="text-fg-subtle ml-1">
             （残HP +{points[minSurvivingSpH].remainHpWorst}）
           </span>
         </div>
@@ -97,7 +95,7 @@ export function AccumDurabilityPanel() {
         <div className="overflow-x-auto">
           <table className="text-xs font-mono w-full">
             <thead>
-              <tr className="text-[10px] text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
+              <tr className="text-[10px] text-fg-subtle border-b border-edge">
                 <th className="text-right pr-2 py-0.5 font-normal">H SP</th>
                 <th className="text-right pr-2 font-normal">HP実数</th>
                 {poisonTurns > 0 && <th className="text-right pr-2 font-normal">毒累計</th>}
@@ -113,26 +111,26 @@ export function AccumDurabilityPanel() {
                 return (
                   <tr
                     key={p.spH}
-                    className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${
+                    className={`border-b border-edge last:border-0 ${
                       isMin
                         ? 'bg-emerald-50 dark:bg-emerald-950/40'
                         : isCurrent
-                        ? 'bg-slate-100 dark:bg-slate-800/50'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+                        ? 'bg-surface-2'
+                        : 'hover:bg-surface-2'
                     }`}
                   >
-                    <td className={`text-right pr-2 py-0.5 ${isMin ? 'font-bold text-emerald-700 dark:text-emerald-400' : isCurrent ? 'text-slate-700 dark:text-slate-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                    <td className={`text-right pr-2 py-0.5 ${isMin ? 'font-bold text-success' : isCurrent ? 'text-fg-muted' : 'text-fg-muted'}`}>
                       {p.spH}{isCurrent && !isMin ? '*' : ''}
                     </td>
-                    <td className="text-right pr-2 text-slate-800 dark:text-slate-200">{p.hp}</td>
+                    <td className="text-right pr-2 text-fg">{p.hp}</td>
                     {poisonTurns > 0 && (
-                      <td className="text-right pr-2 text-purple-500 dark:text-purple-400">{p.poisonTotal}</td>
+                      <td className="text-right pr-2 text-fg-muted">{p.poisonTotal}</td>
                     )}
-                    <td className="text-right pr-2 text-slate-500 dark:text-slate-500">{p.maxEffectiveDmg}</td>
-                    <td className={`text-right pr-2 ${p.remainHpWorst > 0 ? 'text-green-600 dark:text-green-400' : 'text-slate-500'}`}>
+                    <td className="text-right pr-2 text-fg-subtle">{p.maxEffectiveDmg}</td>
+                    <td className={`text-right pr-2 ${p.remainHpWorst > 0 ? 'text-success' : 'text-fg-subtle'}`}>
                       {p.remainHpWorst > 0 ? `+${p.remainHpWorst}` : p.remainHpWorst}
                     </td>
-                    <td className={`text-center ${p.survivesMax ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                    <td className={`text-center ${p.survivesMax ? 'text-success' : 'text-danger-2'}`}>
                       {p.survivesMax ? '✓' : '✗'}
                     </td>
                   </tr>
@@ -140,7 +138,7 @@ export function AccumDurabilityPanel() {
               })}
             </tbody>
           </table>
-          <div className="text-[10px] text-slate-400 dark:text-slate-600 mt-1">
+          <div className="text-[10px] text-fg-faint mt-1">
             * = 現在の設定{'　｜　'}B/D の最適化は個別技の耐久調整を使用してください
           </div>
         </div>

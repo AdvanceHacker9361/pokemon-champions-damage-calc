@@ -17,7 +17,7 @@ export function DamageResultArea() {
     return (
       <>
         <div className="panel text-center py-8">
-          <p className="text-slate-500 text-sm">攻撃側・防御側のポケモンを選択してください</p>
+          <p className="text-fg-muted text-sm">攻撃側・防御側のポケモンを選択してください</p>
         </div>
         <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
         <FieldStateBar />
@@ -29,7 +29,7 @@ export function DamageResultArea() {
     <>
       {results.length > 0 ? (
         <div className="panel">
-          <div className="text-xs text-slate-500 mb-3">
+          <div className="text-xs text-fg-muted mb-3">
             {attackerName} → {defenderName}
           </div>
           <div>
@@ -40,7 +40,7 @@ export function DamageResultArea() {
         </div>
       ) : (
         <div className="panel text-center py-8">
-          <p className="text-slate-500 text-sm">攻撃側に技を選択するとダメージが計算されます</p>
+          <p className="text-fg-muted text-sm">攻撃側に技を選択するとダメージが計算されます</p>
         </div>
       )}
       <DamageAccumPanel defenderMaxHp={defenderMaxHp} />

@@ -22,11 +22,14 @@ const CONST_REC_FRACTIONS = [
   { label: '2/3',  num: 2, den: 3  },
 ]
 
-function ConstBar({ value, maxHp, color = 'bg-amber-500' }: { value: number; maxHp: number; color?: string }) {
+function ConstBar({ value, maxHp, isRecovery = false }: { value: number; maxHp: number; isRecovery?: boolean }) {
   const pct = Math.min(100, (value / maxHp) * 100)
   return (
-    <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-      <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+    <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all"
+        style={{ width: `${pct}%`, backgroundColor: isRecovery ? 'var(--success)' : 'var(--warning)' }}
+      />
     </div>
   )
 }
@@ -43,7 +46,6 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
   const setConstRec    = useAccumStore(s => s.setConstRec)
   const setPoisonTurns = useAccumStore(s => s.setPoisonTurns)
 
-  // もうどく累積
   const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
     Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
   )
@@ -55,12 +57,12 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
   return (
     <div className="panel space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">加算計算リスト</h3>
+        <h3 className="text-xs font-semibold text-fg-muted">加算計算リスト</h3>
         {hasAnything && (
           <button
             type="button"
             onClick={clearEntries}
-            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-red-300 dark:border-red-700 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-danger-2 text-danger-2 hover:bg-surface-3 transition-colors"
             title="加算リスト・定数ダメ・定数回復・もうどくをすべてクリア"
           >
             <span>✕</span>
@@ -69,7 +71,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
         )}
       </div>
 
-      <div className="text-[10px] text-slate-400 dark:text-slate-600">
+      <div className="text-[10px] text-fg-faint">
         総合累積はページ上部のサマリーに表示されます
       </div>
 
@@ -81,7 +83,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
             const subMax = entry.maxDmg * entry.usages
             return (
               <div key={entry.id} className="flex items-center gap-2 text-xs">
-                <span className="text-slate-700 dark:text-slate-300 truncate flex-1 min-w-0">
+                <span className="text-fg truncate flex-1 min-w-0">
                   {entry.label}
                 </span>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -89,27 +91,27 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
                     type="button"
                     onClick={() => setEntryUsages(entry.id, entry.usages - 1)}
                     disabled={entry.usages <= 1}
-                    className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                     title="回数を減らす"
                   >−</button>
-                  <span className="w-6 text-center font-mono text-blue-600 dark:text-blue-400 font-medium">
+                  <span className="w-6 text-center font-mono text-accent font-medium">
                     ×{entry.usages}
                   </span>
                   <button
                     type="button"
                     onClick={() => setEntryUsages(entry.id, entry.usages + 1)}
                     disabled={entry.usages >= 9}
-                    className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed"
                     title="回数を増やす"
                   >+</button>
                 </div>
-                <span className="text-slate-700 dark:text-slate-400 font-mono flex-shrink-0 w-24 text-right">
+                <span className="text-fg-muted font-mono flex-shrink-0 w-24 text-right">
                   {subMin}〜{subMax}
                 </span>
                 <button
                   type="button"
                   onClick={() => removeEntry(entry.id)}
-                  className="text-slate-500 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                  className="text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0"
                   title="削除"
                 >
                   ✕
@@ -119,21 +121,21 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           })}
         </div>
       ) : (
-        <div className="text-xs text-slate-400 dark:text-slate-600 text-center py-1">
+        <div className="text-xs text-fg-faint text-center py-1">
           各技の「+ 加算」ボタンで追加
         </div>
       )}
 
-      <div className="border-t border-slate-200 dark:border-slate-700" />
+      <div className="border-t border-edge" />
 
       {/* 定数ダメージ */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">定数ダメ</span>
+          <span className="text-xs text-fg-muted w-14 flex-shrink-0">定数ダメ</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
               onClick={() => setConstDmg(Math.max(0, constDmg - 1))}
             >−</button>
             <input
@@ -145,11 +147,11 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
             />
             <button
               type="button"
-              className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
               onClick={() => setConstDmg(constDmg + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-slate-600 dark:text-slate-600">砂/毒/やけど等</span>
+          <span className="text-xs text-fg-subtle">砂/毒/やけど等</span>
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_DMG_FRACTIONS.map(f => {
@@ -159,7 +161,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
                 key={f.label}
                 type="button"
                 onClick={() => setConstDmg(constDmg + val)}
-                className="text-xs px-1 py-0.5 rounded border transition-colors bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-amber-500 dark:hover:border-amber-500 hover:text-amber-700 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                className="text-xs px-1 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-warning hover:text-warning"
                 title={`+${val} (${f.label})`}
               >
                 +{f.label}<span className="ml-0.5 opacity-60">{val}</span>
@@ -170,7 +172,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
         {constDmg > 0 && (
           <div className="pl-[3.75rem]">
             <ConstBar value={constDmg} maxHp={defenderMaxHp} />
-            <span className="text-xs text-amber-600 dark:text-amber-500 font-mono">
+            <span className="text-xs text-warning font-mono">
               {(constDmg / defenderMaxHp * 100).toFixed(1)}%
             </span>
           </div>
@@ -180,11 +182,11 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
       {/* 定数回復 */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">定数回復</span>
+          <span className="text-xs text-fg-muted w-14 flex-shrink-0">定数回復</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
               onClick={() => setConstRec(Math.max(0, constRec - 1))}
             >−</button>
             <input
@@ -196,11 +198,11 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
             />
             <button
               type="button"
-              className="w-5 h-5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-slate-700 dark:text-slate-300"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
               onClick={() => setConstRec(constRec + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-slate-600 dark:text-slate-600">残飯/黒ヘド等</span>
+          <span className="text-xs text-fg-subtle">残飯/黒ヘド等</span>
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {
@@ -210,7 +212,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
                 key={f.label}
                 type="button"
                 onClick={() => setConstRec(constRec + val)}
-                className="text-xs px-1 py-0.5 rounded border transition-colors bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 hover:border-teal-500 dark:hover:border-teal-500 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                className="text-xs px-1 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-success hover:text-success"
                 title={`+${val} (${f.label})`}
               >
                 +{f.label}<span className="ml-0.5 opacity-60">{val}</span>
@@ -220,8 +222,8 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
         </div>
         {constRec > 0 && (
           <div className="pl-[3.75rem]">
-            <ConstBar value={constRec} maxHp={defenderMaxHp} color="bg-teal-500" />
-            <span className="text-xs text-teal-600 dark:text-teal-400 font-mono">
+            <ConstBar value={constRec} maxHp={defenderMaxHp} isRecovery />
+            <span className="text-xs text-success font-mono">
               {(constRec / defenderMaxHp * 100).toFixed(1)}%
             </span>
           </div>
@@ -231,7 +233,7 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
       {/* もうどく累積 */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-700 dark:text-slate-400 w-14 flex-shrink-0">もうどく</span>
+          <span className="text-xs text-fg-muted w-14 flex-shrink-0">もうどく</span>
           <div className="flex gap-1">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
               <button
@@ -240,8 +242,8 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
                 onClick={() => setPoisonTurns(n)}
                 className={`w-6 h-6 text-xs rounded transition-colors ${
                   poisonTurns === n
-                    ? 'bg-purple-600 dark:bg-purple-700 text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'
+                    ? 'bg-accent-bg border border-accent-border text-accent'
+                    : 'bg-surface-3 text-fg-muted hover:bg-surface-2'
                 }`}
                 title={n === 0 ? 'なし' : `${n}ターン目まで`}
               >
@@ -254,19 +256,19 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           <div className="pl-[3.75rem] space-y-1">
             <div className="flex flex-wrap gap-x-2 gap-y-0.5">
               {poisonPerTurn.map((dmg, i) => (
-                <span key={i} className="text-[10px] font-mono text-purple-700 dark:text-purple-400">
+                <span key={i} className="text-[10px] font-mono text-fg-muted">
                   {i + 1}T:{dmg}
                 </span>
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-300">
+              <span className="text-xs font-mono font-bold text-fg-muted">
                 累計 {poisonTotal}
-                <span className="font-normal text-purple-500 dark:text-purple-400 ml-1">
+                <span className="font-normal text-fg-subtle ml-1">
                   ({(poisonTotal / defenderMaxHp * 100).toFixed(1)}%)
                 </span>
               </span>
-              <span className="text-[10px] text-purple-500 dark:text-purple-500">→ 総合累積に自動加算</span>
+              <span className="text-[10px] text-fg-subtle">→ 総合累積に自動加算</span>
             </div>
           </div>
         )}
