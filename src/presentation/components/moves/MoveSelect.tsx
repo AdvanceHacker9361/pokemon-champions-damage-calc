@@ -6,9 +6,11 @@ interface MoveSelectProps {
   value: string | null
   onChange: (moveName: string | null) => void
   placeholder?: string
+  /** 設定すると kb:focus-move イベントの該当スロット番号でフォーカスされる */
+  slot?: number
 }
 
-export function MoveSelect({ value, onChange, placeholder = '技を選択...' }: MoveSelectProps) {
+export function MoveSelect({ value, onChange, placeholder = '技を選択...', slot }: MoveSelectProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<MoveRecord[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -23,6 +25,19 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...' }:
     }, 80)
     return () => clearTimeout(timer)
   }, [query])
+
+  // キーボードショートカット 1-4 でフォーカス
+  useEffect(() => {
+    if (slot === undefined) return
+    function handler(e: Event) {
+      if ((e as CustomEvent<{ slot: number }>).detail.slot === slot) {
+        inputRef.current?.focus()
+        setIsOpen(true)
+      }
+    }
+    document.addEventListener('kb:focus-move', handler)
+    return () => document.removeEventListener('kb:focus-move', handler)
+  }, [slot])
 
   // 結果変化時にアクティブ選択リセット
   useEffect(() => { setActiveIndex(-1) }, [results])

@@ -7,6 +7,7 @@ import {
 export interface Tab {
   id: string
   name: string
+  memo: string
   snapshot: SessionSnapshot
 }
 
@@ -23,6 +24,7 @@ interface SessionStore {
   /** タブ切替（現タブをスナップショット保存 → 対象タブを復元） */
   switchTab: (id: string) => void
   renameTab: (id: string, name: string) => void
+  updateMemo: (id: string, memo: string) => void
   closeTab: (id: string) => void
   /** タブ順を入れ替える（D&D用） */
   moveTab: (fromId: string, toId: string) => void
@@ -45,7 +47,7 @@ export const useSessionStore = create<SessionStore>()(
       initFirstTab: (name = 'タブ 1') => {
         if (get().tabs.length > 0) return
         const id = genId()
-        set({ tabs: [{ id, name, snapshot: snapshotLiveState() }], activeTabId: id })
+        set({ tabs: [{ id, name, memo: '', snapshot: snapshotLiveState() }], activeTabId: id })
       },
 
       createTab: () => {
@@ -56,7 +58,7 @@ export const useSessionStore = create<SessionStore>()(
         )
         const snapshot = cloneSnapshot(current)
         const id = genId()
-        const newTab: Tab = { id, name: nextTabName(tabs), snapshot }
+        const newTab: Tab = { id, name: nextTabName(tabs), memo: '', snapshot }
         set({ tabs: [...saved, newTab], activeTabId: id })
         restoreState(snapshot)
       },
@@ -70,7 +72,7 @@ export const useSessionStore = create<SessionStore>()(
         )
         const snapshot = cloneSnapshot(source.snapshot)
         const newId = genId()
-        const newTab: Tab = { id: newId, name: `${source.name} (コピー)`, snapshot }
+        const newTab: Tab = { id: newId, name: `${source.name} (コピー)`, memo: source.memo ?? '', snapshot }
         set({ tabs: [...saved, newTab], activeTabId: newId })
         restoreState(snapshot)
       },
@@ -89,6 +91,10 @@ export const useSessionStore = create<SessionStore>()(
 
       renameTab: (id, name) => set(s => ({
         tabs: s.tabs.map(t => t.id === id ? { ...t, name: name.trim() || t.name } : t),
+      })),
+
+      updateMemo: (id, memo) => set(s => ({
+        tabs: s.tabs.map(t => t.id === id ? { ...t, memo } : t),
       })),
 
       closeTab: (id) => {

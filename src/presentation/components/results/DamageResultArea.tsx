@@ -2,6 +2,7 @@ import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
 import { DamageAccumPanel } from './DamageAccumPanel'
 import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
+import { ExportButton } from './ExportButton'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useAccumStore } from '@/presentation/store/accumStore'
 
@@ -29,8 +30,9 @@ export function DamageResultArea() {
     <>
       {results.length > 0 ? (
         <div className="space-y-2">
-          <div className="text-xs text-fg-muted px-1">
-            {attackerName} → {defenderName}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-fg-muted">{attackerName} → {defenderName}</span>
+            <ExportButton results={results} attackerName={attackerName} defenderName={defenderName} />
           </div>
           {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
             <div key={moveName} className="bg-surface-2 rounded-lg px-3.5 py-3">
