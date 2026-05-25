@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { MoveSelect } from './MoveSelect'
 import type { PokemonStore } from '@/presentation/store/pokemonStore'
+import type { TypeName } from '@/domain/models/Pokemon'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
+import { typeColor } from '@/presentation/components/shared/typeColors'
 
 interface MoveSlotsProps {
   moves: PokemonStore['moves']
@@ -62,13 +64,20 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
               ? resolveReversalPower(Math.min(currentHP, max), max)
               : movePowers[slot] ?? moveRecord?.power ?? null
 
+          const typeBarColor = moveRecord ? typeColor(moveRecord.type as TypeName) : 'transparent'
+
           return (
             <div key={slot} className="space-y-1">
-              <MoveSelect
-                value={moveName}
-                onChange={name => setMove(slot, name)}
-                placeholder={`技${slot + 1}`}
-              />
+              <div
+                className="rounded"
+                style={{ borderLeft: `3px solid ${typeBarColor}`, paddingLeft: moveRecord ? 4 : 0 }}
+              >
+                <MoveSelect
+                  value={moveName}
+                  onChange={name => setMove(slot, name)}
+                  placeholder={`技${slot + 1}`}
+                />
+              </div>
 
               {/* ── きしかいせい / じたばた: HP入力 ── */}
               {isReversal && moveName && (
@@ -84,16 +93,9 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
                       className="input-base w-full text-xs pr-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <span className="text-xs text-fg-muted whitespace-nowrap">
                     → 威力
-                    <span className={`ml-1 font-semibold ${
-                      reversalPower !== null
-                        ? reversalPower >= 150 ? 'text-red-500 dark:text-red-400'
-                        : reversalPower >= 100 ? 'text-orange-500 dark:text-orange-400'
-                        : reversalPower >= 80  ? 'text-yellow-600 dark:text-yellow-400'
-                        : 'text-slate-600 dark:text-slate-400'
-                        : 'text-slate-400'
-                    }`}>
+                    <span className={`ml-1 font-medium ${reversalPower !== null ? 'text-fg' : 'text-fg-subtle'}`}>
                       {reversalPower ?? '—'}
                     </span>
                   </span>
@@ -110,8 +112,8 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
                       onClick={() => setMovePower(slot, p)}
                       className={`flex-1 text-xs py-0.5 rounded border transition-colors ${
                         (movePowers[slot] ?? moveRecord!.power) === p
-                          ? 'bg-indigo-600 dark:bg-indigo-700 border-indigo-500 dark:border-indigo-600 text-white font-semibold'
-                          : 'text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400'
+                          ? 'bg-accent-bg border-accent-border text-accent font-medium'
+                          : 'text-fg-muted border-edge hover:bg-surface-3'
                       }`}
                     >
                       {p}

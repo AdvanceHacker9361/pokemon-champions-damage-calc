@@ -16,20 +16,20 @@ export function RankModifier({ ranks, onChangeRank }: RankModifierProps) {
       <div className="flex flex-wrap gap-1">
         {RANK_STATS.map(stat => (
           <div key={stat} className="flex items-center gap-0.5">
-            <span className="text-xs text-slate-400 w-3">{STAT_LABEL[stat]}</span>
+            <span className="text-xs text-fg-subtle w-3">{STAT_LABEL[stat]}</span>
             <button
               type="button"
-              className="w-5 h-5 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
               onClick={() => onChangeRank(stat, Math.max(-6, ranks[stat] - 1))}
             >-</button>
-            <span className={`text-xs w-4 text-center font-mono ${
-              ranks[stat] > 0 ? 'text-blue-400' : ranks[stat] < 0 ? 'text-red-400' : 'text-slate-400'
+            <span className={`text-xs w-4 text-center ${
+              ranks[stat] !== 0 ? 'text-fg' : 'text-fg-subtle'
             }`}>
               {ranks[stat] > 0 ? `+${ranks[stat]}` : ranks[stat]}
             </span>
             <button
               type="button"
-              className="w-5 h-5 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
               onClick={() => onChangeRank(stat, Math.min(6, ranks[stat] + 1))}
             >+</button>
           </div>

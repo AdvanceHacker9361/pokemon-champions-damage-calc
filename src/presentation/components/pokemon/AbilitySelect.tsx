@@ -11,7 +11,7 @@ export function AbilitySelect({ value, options, isMega, megaAbility, onChange }:
     return (
       <div>
         <label className="label block mb-1">特性</label>
-        <div className="input-base text-sm text-slate-400 w-full">
+        <div className="input-base text-sm text-fg-subtle w-full">
           {megaAbility} <span className="text-xs">(メガ固定)</span>
         </div>
       </div>

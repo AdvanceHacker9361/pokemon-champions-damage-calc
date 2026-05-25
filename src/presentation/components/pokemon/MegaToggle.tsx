@@ -9,10 +9,14 @@ interface MegaToggleProps {
   onFormChange: (key: string) => void
 }
 
+const SEG = 'text-[11px] px-2.5 py-1 font-medium transition-colors'
+const SEG_ON = 'bg-accent-bg text-accent'
+const SEG_OFF = 'text-fg-muted hover:bg-surface-3'
+
 /**
- * メガシンカトグル
- * - 1形態: シンプルなON/OFFボタン
- * - 複数形態（リザードンX/Y・ミュウツーX/Y等）: OFF | X | Y の3択ボタン
+ * メガシンカトグル（セグメントコントロール）
+ * - 1形態: ノーマル | メガ の2択
+ * - 複数形態（リザードンX/Y・ミュウツーX/Y等）: 通常 | メガX | メガY
  */
 export function MegaToggle({ isMega, canMega, availableMegas, megaKey, onChange, onFormChange }: MegaToggleProps) {
   if (!canMega) return null
@@ -20,38 +24,24 @@ export function MegaToggle({ isMega, canMega, availableMegas, megaKey, onChange,
   const hasMultipleForms = availableMegas.length > 1
 
   if (!hasMultipleForms) {
-    // 1形態: 既存のシンプルトグル
     return (
-      <button
-        type="button"
-        onClick={() => onChange(!isMega)}
-        className={`text-xs px-3 py-1 rounded border font-medium transition-colors ${
-          isMega
-            ? 'bg-violet-700 border-violet-500 text-white'
-            : 'bg-transparent border-violet-400 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900'
-        }`}
-      >
-        {isMega ? '▼ メガシンカ中' : 'メガシンカ'}
-      </button>
+      <div className="inline-flex rounded-md border border-edge overflow-hidden">
+        <button type="button" onClick={() => onChange(false)} className={`${SEG} ${!isMega ? SEG_ON : SEG_OFF}`}>
+          ノーマル
+        </button>
+        <button type="button" onClick={() => onChange(true)} className={`${SEG} border-l border-edge ${isMega ? SEG_ON : SEG_OFF}`}>
+          メガ
+        </button>
+      </div>
     )
   }
 
-  // 複数形態: [通常] [メガX] [メガY] ボタン群
   return (
-    <div className="flex items-center gap-1">
-      <button
-        type="button"
-        onClick={() => onChange(false)}
-        className={`text-xs px-2 py-1 rounded border font-medium transition-colors ${
-          !isMega
-            ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
-            : 'text-slate-500 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400'
-        }`}
-      >
+    <div className="inline-flex rounded-md border border-edge overflow-hidden">
+      <button type="button" onClick={() => onChange(false)} className={`${SEG} ${!isMega ? SEG_ON : SEG_OFF}`}>
         通常
       </button>
       {availableMegas.map(mega => {
-        // "mega-charizard-x" → "X", "mega-mewtwo-y" → "Y" のように末尾の -x/-y を取得
         const suffix = mega.key.split('-').pop()?.toUpperCase() ?? mega.name
         const isActive = isMega && megaKey === mega.key
         return (
@@ -62,11 +52,7 @@ export function MegaToggle({ isMega, canMega, availableMegas, megaKey, onChange,
               if (!isMega) onChange(true)
               onFormChange(mega.key)
             }}
-            className={`text-xs px-2 py-1 rounded border font-medium transition-colors ${
-              isActive
-                ? 'bg-violet-700 border-violet-500 text-white'
-                : 'text-violet-600 dark:text-violet-400 border-violet-400 dark:border-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900'
-            }`}
+            className={`${SEG} border-l border-edge ${isActive ? SEG_ON : SEG_OFF}`}
             title={mega.name}
           >
             メガ{suffix}

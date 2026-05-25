@@ -33,25 +33,43 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
       {/* SP 合計表示 */}
       <div className="flex items-center justify-between">
         <span className="label">能力ポイント(SP)</span>
-        <span className={`text-xs font-mono ${isOver ? 'text-red-500 dark:text-red-400' : 'text-slate-600 dark:text-slate-400'}`}>
+        <span className={`text-xs ${isOver ? 'text-warning' : 'text-fg-muted'}`}>
           {total}/{SP_MAX_TOTAL}
-          {isOver && <span className="ml-1 text-red-500 dark:text-red-400">超過!</span>}
-          {!isOver && <span className="ml-1 text-slate-500">(残{remaining})</span>}
+          {isOver && <span className="ml-1 text-warning">超過!</span>}
+          {!isOver && <span className="ml-1 text-fg-subtle">(残{remaining})</span>}
         </span>
       </div>
 
-      {/* プリセットボタン */}
-      <div className="flex flex-wrap gap-1">
-        {SP_PRESETS.map(preset => (
-          <button
-            key={preset.key}
-            type="button"
-            onClick={() => onSetPreset(preset.sp)}
-            className="btn-ghost text-xs px-2 py-0.5 border border-slate-700"
-          >
-            {preset.label}
-          </button>
-        ))}
+      {/* プリセットボタン（攻撃寄り / 耐久寄り / その他 でグルーピング） */}
+      <div className="space-y-1">
+        {[
+          ['AS', 'CS', 'HS'],
+          ['HB', 'HD', 'HC', 'HA'],
+          ['均等', 'クリア'],
+        ].map((group, gi) => {
+          const presets = group
+            .map(label => SP_PRESETS.find(p => p.label === label))
+            .filter((p): p is typeof SP_PRESETS[number] => p !== undefined)
+          if (presets.length === 0) return null
+          return (
+            <div key={gi} className="flex flex-wrap gap-1">
+              {presets.map(preset => (
+                <button
+                  key={preset.key}
+                  type="button"
+                  onClick={() => onSetPreset(preset.sp)}
+                  className={`text-xs px-2.5 py-1 rounded transition-colors ${
+                    preset.label === 'クリア'
+                      ? 'text-fg-muted hover:bg-surface-3 border border-edge'
+                      : 'bg-surface-3 text-fg-muted hover:bg-surface-2'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          )
+        })}
       </div>
 
       {/* スライダー + ランク補正 + 性格 */}
