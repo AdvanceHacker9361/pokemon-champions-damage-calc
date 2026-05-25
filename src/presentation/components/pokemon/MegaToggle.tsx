@@ -27,7 +27,7 @@ export function MegaToggle({ isMega, canMega, availableMegas, megaKey, onChange,
     return (
       <div className="inline-flex rounded-md border border-edge overflow-hidden">
         <button type="button" onClick={() => onChange(false)} className={`${SEG} ${!isMega ? SEG_ON : SEG_OFF}`}>
-          ノーマル
+          通常
         </button>
         <button type="button" onClick={() => onChange(true)} className={`${SEG} border-l border-edge ${isMega ? SEG_ON : SEG_OFF}`}>
           メガ

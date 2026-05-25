@@ -40,36 +40,22 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
         </span>
       </div>
 
-      {/* プリセットボタン（攻撃寄り / 耐久寄り / その他 でグルーピング） */}
-      <div className="space-y-1">
-        {[
-          ['AS', 'CS', 'HS'],
-          ['HB', 'HD', 'HC', 'HA'],
-          ['均等', 'クリア'],
-        ].map((group, gi) => {
-          const presets = group
-            .map(label => SP_PRESETS.find(p => p.label === label))
-            .filter((p): p is typeof SP_PRESETS[number] => p !== undefined)
-          if (presets.length === 0) return null
-          return (
-            <div key={gi} className="flex flex-wrap gap-1">
-              {presets.map(preset => (
-                <button
-                  key={preset.key}
-                  type="button"
-                  onClick={() => onSetPreset(preset.sp)}
-                  className={`text-xs px-2.5 py-1 rounded transition-colors ${
-                    preset.label === 'クリア'
-                      ? 'text-fg-muted hover:bg-surface-3 border border-edge'
-                      : 'bg-surface-3 text-fg-muted hover:bg-surface-2'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          )
-        })}
+      {/* プリセットボタン（横一行） */}
+      <div className="flex flex-wrap gap-1">
+        {SP_PRESETS.filter(p => ['AS', 'CS', 'HS', 'HB', 'HD', 'HC', 'HA', '均等', 'クリア'].includes(p.label)).map(preset => (
+          <button
+            key={preset.key}
+            type="button"
+            onClick={() => onSetPreset(preset.sp)}
+            className={`text-xs px-2.5 py-1 rounded transition-colors ${
+              preset.label === 'クリア'
+                ? 'text-fg-muted hover:bg-surface-3 border border-edge'
+                : 'bg-surface-3 text-fg-muted hover:bg-surface-2'
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
       </div>
 
       {/* スライダー + ランク補正 + 性格 */}
