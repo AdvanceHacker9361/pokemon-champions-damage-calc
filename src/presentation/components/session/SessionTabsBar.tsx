@@ -25,17 +25,17 @@ export function SessionTabsBar() {
   if (tabs.length === 0) return null
 
   return (
-    <div className="flex items-stretch gap-1 overflow-x-auto mb-3 pb-1 border-b border-slate-200 dark:border-slate-800">
+    <div className="flex items-stretch gap-1 overflow-x-auto mb-3 pb-1 border-b border-edge">
       {tabs.map(tab => {
         const isActive = tab.id === activeTabId
         return (
           <div
             key={tab.id}
             onClick={() => switchTab(tab.id)}
-            className={`group flex items-center gap-1 px-2.5 py-1 rounded-t text-xs cursor-pointer border border-b-0 transition-colors flex-shrink-0 ${
+            className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium cursor-pointer border-b-2 transition-colors flex-shrink-0 ${
               isActive
-                ? 'bg-blue-600 dark:bg-blue-700 border-blue-500 dark:border-blue-600 text-white'
-                : 'text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-500'
+                ? 'bg-accent-bg text-accent border-accent'
+                : 'text-fg-muted border-transparent hover:bg-surface-3'
             }`}
           >
             {editingId === tab.id ? (
@@ -49,7 +49,7 @@ export function SessionTabsBar() {
                   if (e.key === 'Escape') setEditingId(null)
                 }}
                 onClick={e => e.stopPropagation()}
-                className="input-base w-24 px-1 py-0 text-xs text-slate-900 dark:text-slate-100"
+                className="input-base w-28 px-1 py-0 text-[13px]"
               />
             ) : (
               <span
@@ -64,9 +64,7 @@ export function SessionTabsBar() {
               <button
                 type="button"
                 onClick={e => { e.stopPropagation(); closeTab(tab.id) }}
-                className={`leading-none rounded px-1 ${
-                  isActive ? 'hover:bg-blue-500' : 'hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
+                className="leading-none rounded px-1 text-fg-subtle hover:text-fg-muted hover:bg-surface-2"
                 title="タブを閉じる"
               >
                 ×
@@ -78,7 +76,7 @@ export function SessionTabsBar() {
       <button
         type="button"
         onClick={createTab}
-        className="flex-shrink-0 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-500 dark:hover:border-slate-500 transition-colors"
+        className="flex-shrink-0 px-2.5 py-1.5 text-[13px] rounded-md border border-edge text-fg-muted hover:bg-surface-3 transition-colors"
         title="新しいタブ"
       >
         ＋

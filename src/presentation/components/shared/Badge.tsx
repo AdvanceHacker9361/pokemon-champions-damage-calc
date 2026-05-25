@@ -1,24 +1,34 @@
 import type { TypeName } from '@/domain/models/Pokemon'
 
-const TYPE_COLORS: Record<TypeName, string> = {
-  ノーマル:  'bg-stone-500',
-  ほのお:    'bg-orange-500',
-  みず:      'bg-blue-500',
-  でんき:    'bg-yellow-400 text-slate-900',
-  くさ:      'bg-green-500',
-  こおり:    'bg-cyan-400 text-slate-900',
-  かくとう:  'bg-red-700',
-  どく:      'bg-purple-600',
-  じめん:    'bg-amber-600',
-  ひこう:    'bg-indigo-400 text-slate-900',
-  エスパー:  'bg-pink-500',
-  むし:      'bg-lime-600',
-  いわ:      'bg-stone-600',
-  ゴースト:  'bg-purple-800',
-  ドラゴン:  'bg-violet-700',
-  あく:      'bg-stone-800',
-  はがね:    'bg-slate-500',
-  フェアリー:'bg-pink-400 text-slate-900',
+/** タイプ色（彩度を一段落とした版・§2.3） */
+const TYPE_HEX: Record<TypeName, string> = {
+  ノーマル:  '#9c9c8e',
+  ほのお:    '#c7472b',
+  みず:      '#3a7ab8',
+  でんき:    '#c2a430',
+  くさ:      '#5a9242',
+  こおり:    '#6ab3c2',
+  かくとう:  '#a83a2b',
+  どく:      '#8e3a8e',
+  じめん:    '#b87842',
+  ひこう:    '#7896c2',
+  エスパー:  '#c25a85',
+  むし:      '#8aa033',
+  いわ:      '#a89255',
+  ゴースト:  '#5a4a85',
+  ドラゴン:  '#4a5db8',
+  あく:      '#3a2e23',
+  はがね:    '#7a8a95',
+  フェアリー:'#c280a0',
+}
+
+/** 背景色の明度からコントラストの高い文字色（黒/白）を選ぶ */
+function pickTextColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000
+  return brightness > 150 ? '#1a1b1f' : '#ffffff'
 }
 
 interface BadgeProps {
@@ -27,10 +37,14 @@ interface BadgeProps {
 }
 
 export function TypeBadge({ type, size = 'sm' }: BadgeProps) {
-  const colorClass = TYPE_COLORS[type] ?? 'bg-slate-600'
-  const sizeClass = size === 'sm' ? 'text-xs px-1.5 py-0.5' : 'text-sm px-2 py-1'
+  const bg = TYPE_HEX[type] ?? '#5d626c'
+  const color = pickTextColor(bg)
+  const sizeClass = size === 'sm' ? 'text-[11px] px-1.5 py-0.5' : 'text-xs px-2 py-0.5'
   return (
-    <span className={`inline-block rounded font-medium text-white ${colorClass} ${sizeClass}`}>
+    <span
+      className={`inline-block rounded font-medium ${sizeClass}`}
+      style={{ backgroundColor: bg, color }}
+    >
       {type}
     </span>
   )
