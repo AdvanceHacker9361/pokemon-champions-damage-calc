@@ -18,9 +18,9 @@ function natureSymbol(n: 0.9 | 1.0 | 1.1): string {
 }
 
 function natureClass(n: 0.9 | 1.0 | 1.1): string {
-  if (n > 1.0) return 'text-blue-500 dark:text-blue-400'
-  if (n < 1.0) return 'text-red-500 dark:text-red-400'
-  return 'text-slate-400 dark:text-slate-500'
+  if (n > 1.0) return 'text-accent'
+  if (n < 1.0) return 'text-danger-2'
+  return 'text-fg-subtle'
 }
 
 export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
@@ -124,7 +124,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
     <div className="space-y-2">
       {/* タイトル + 耐え数切り替え */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+        <span className="text-xs font-semibold text-fg-muted">
           耐久調整 H + {defStatLabel}
         </span>
         <div className="flex gap-0.5 ml-auto">
@@ -135,8 +135,8 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
               onClick={() => setHitsToSurvive(n)}
               className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                 hitsToSurvive === n
-                  ? 'bg-slate-600 dark:bg-slate-500 border-slate-500 dark:border-slate-400 text-white'
-                  : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'bg-accent-bg border-accent-border text-accent'
+                  : 'border-edge text-fg-muted hover:bg-surface-3'
               }`}
             >
               {n}発耐え
@@ -146,30 +146,30 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
       </div>
 
       {/* 現状サマリ */}
-      <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-500">
+      <div className="flex items-center justify-between text-[10px] text-fg-subtle">
         <span>
           現在 HP
-          <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentHp}</span>
+          <span className="font-mono text-fg-muted ml-0.5">{currentHp}</span>
           {'　'}最大被ダメ
-          <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{currentMaxDmg}</span>
+          <span className="font-mono text-fg-muted ml-0.5">{currentMaxDmg}</span>
           {'　'}予算
-          <span className="font-mono text-slate-700 dark:text-slate-400 ml-0.5">{budget}</span>SP
+          <span className="font-mono text-fg-muted ml-0.5">{budget}</span>SP
         </span>
-        <span className={`font-semibold ${currentSurvives ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+        <span className={`font-semibold ${currentSurvives ? 'text-success' : 'text-danger-2'}`}>
           {currentSurvives ? `✓ ${hitsToSurvive}発耐え済み` : `✗ ${hitsToSurvive}発耐えできない`}
         </span>
       </div>
 
       {/* 結果テーブル */}
       {points.length === 0 ? (
-        <div className="text-xs text-slate-500 dark:text-slate-500 py-1 text-center">
+        <div className="text-xs text-fg-subtle py-1 text-center">
           {hitsToSurvive}発耐えを達成できる組み合わせが見つかりません
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="text-xs font-mono w-full">
             <thead>
-              <tr className="text-[10px] text-slate-400 dark:text-slate-500 border-b border-slate-200 dark:border-slate-700">
+              <tr className="text-[10px] text-fg-subtle border-b border-edge">
                 <th className="text-right pr-2 py-0.5 font-normal">計</th>
                 <th className="text-right pr-2 font-normal">H</th>
                 <th className="text-right pr-2 font-normal">{defStatLabel}</th>
@@ -184,24 +184,24 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
               {displayPoints.map((p, i) => (
                 <tr
                   key={`${p.spH}-${p.spDef}-${p.defNature}`}
-                  className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${
+                  className={`border-b border-edge last:border-0 ${
                     i === 0
                       ? 'bg-emerald-50 dark:bg-emerald-950/40'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+                      : 'hover:bg-surface-2'
                   }`}
                 >
-                  <td className={`text-right pr-2 py-0.5 font-bold ${i === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                  <td className={`text-right pr-2 py-0.5 font-bold ${i === 0 ? 'text-success' : 'text-fg-muted'}`}>
                     {p.totalSp}
                   </td>
-                  <td className="text-right pr-2 text-slate-600 dark:text-slate-400">{p.spH}</td>
-                  <td className="text-right pr-2 text-slate-600 dark:text-slate-400">{p.spDef}</td>
+                  <td className="text-right pr-2 text-fg-muted">{p.spH}</td>
+                  <td className="text-right pr-2 text-fg-muted">{p.spDef}</td>
                   <td className={`text-center px-1 ${natureClass(p.defNature)}`}>
                     {natureSymbol(p.defNature)}
                   </td>
-                  <td className="text-right pr-2 text-slate-800 dark:text-slate-200">{p.hp}</td>
-                  <td className="text-right pr-2 text-slate-800 dark:text-slate-200">{p.defStat}</td>
-                  <td className="text-right pr-2 text-slate-500 dark:text-slate-500">{p.maxDmgPerHit}</td>
-                  <td className={`text-right ${p.remainHp > 0 ? 'text-green-600 dark:text-green-400' : 'text-slate-500'}`}>
+                  <td className="text-right pr-2 text-fg">{p.hp}</td>
+                  <td className="text-right pr-2 text-fg">{p.defStat}</td>
+                  <td className="text-right pr-2 text-fg-subtle">{p.maxDmgPerHit}</td>
+                  <td className={`text-right ${p.remainHp > 0 ? 'text-success' : 'text-fg-subtle'}`}>
                     +{p.remainHp}
                   </td>
                 </tr>
@@ -209,7 +209,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
             </tbody>
           </table>
           {points.length > 20 && (
-            <div className="text-[10px] text-slate-400 dark:text-slate-600 mt-1 text-right">
+            <div className="text-[10px] text-fg-faint mt-1 text-right">
               他 {points.length - 20} 件
             </div>
           )}

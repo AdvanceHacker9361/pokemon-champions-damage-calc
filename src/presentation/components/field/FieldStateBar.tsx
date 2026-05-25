@@ -33,8 +33,8 @@ export function FieldStateBar() {
               onClick={() => field.setWeather(w.value)}
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
                 field.weather === w.value
-                  ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-accent-bg text-accent font-medium'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               {w.label}
@@ -52,8 +52,8 @@ export function FieldStateBar() {
               onClick={() => field.setTerrain(t.value)}
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
                 field.terrain === t.value
-                  ? 'bg-green-600 dark:bg-green-700 text-white'
-                  : 'text-slate-700 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-accent-bg text-accent font-medium'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               {t.label}
@@ -75,8 +75,8 @@ export function FieldStateBar() {
               onClick={() => setter(!value)}
               className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                 value
-                  ? 'bg-indigo-700 dark:bg-indigo-800 border-indigo-500 dark:border-indigo-600 text-white'
-                  : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-400 hover:border-slate-500 dark:hover:border-slate-500'
+                  ? 'bg-accent-bg border-accent-border text-accent font-medium'
+                  : 'border-edge text-fg-muted hover:border-accent-border hover:text-accent'
               }`}
             >
               {label}

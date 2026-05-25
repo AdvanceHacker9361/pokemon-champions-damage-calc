@@ -9,13 +9,13 @@ import type { KoResult } from '@/domain/models/DamageResult'
 
 function koLabelColor(koResult: KoResult): string {
   if (koResult.type === 'guaranteed') {
-    if (koResult.hits === 1) return 'text-red-500 dark:text-red-400'
-    if (koResult.hits === 2) return 'text-orange-500 dark:text-orange-400'
-    if (koResult.hits === 3) return 'text-yellow-600 dark:text-yellow-400'
-    return 'text-green-600 dark:text-green-400'
+    if (koResult.hits === 1) return 'text-danger-1'
+    if (koResult.hits === 2) return 'text-danger-2'
+    if (koResult.hits === 3) return 'text-danger-3'
+    return 'text-danger-4'
   }
-  if (koResult.type === 'chance') return 'text-amber-600 dark:text-amber-400'
-  return 'text-slate-500 dark:text-slate-500'
+  if (koResult.type === 'chance') return 'text-danger-4'
+  return 'text-neutral'
 }
 
 export function DamageSummaryHeader() {
@@ -37,31 +37,33 @@ export function DamageSummaryHeader() {
     ? '倒せない'
     : `${(accum.combinedProbWithCrit * 100).toFixed(1)}%`
 
-  // 急所込みと通常で値が変わるかどうか（確定急所エントリのみ・単発 等で同値ならバッジ非表示）
   const critAffects = Math.abs(accum.combinedProbWithCrit - accum.combinedProb) > 1e-6
 
   return (
     <div className="panel mb-3 sm:mb-4">
       {!accum.hasAnything ? (
-        <div className="text-xs text-slate-400 dark:text-slate-600 text-center py-1">
+        <div className="text-xs text-fg-faint text-center py-1">
           加算されると結果が表示されます
         </div>
       ) : (
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">総合累積</span>
-            <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">
+            <span className="text-xs font-semibold text-fg-muted">総合累積</span>
+            <span className="text-sm font-mono font-bold text-fg">
               {accum.totalMin}〜{accum.totalMax}
             </span>
-            <span className="text-xs font-mono text-slate-600 dark:text-slate-400">
+            <span className="text-xs font-mono text-fg-muted">
               ({accum.totalMinPct.toFixed(1)}〜{accum.totalMaxPct.toFixed(1)}%)
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-600">/{defenderMaxHp}</span>
+            <span className="text-xs text-fg-subtle">/{defenderMaxHp}</span>
             <span className={`text-sm font-bold ml-auto ${koLabelColor(accum.accumKoResult)}`}>
               {accumProbDisplay}
             </span>
             {critAffects && (
-              <span className="text-xs font-mono text-amber-600 dark:text-amber-400 whitespace-nowrap" title="各エントリの急所率（1/24 or 1/8）で混合した撃破率。確定急所・急所モード加算分はそのまま扱う">
+              <span
+                className="text-xs font-mono text-warning whitespace-nowrap"
+                title="各エントリの急所率（1/24 or 1/8）で混合した撃破率。確定急所・急所モード加算分はそのまま扱う"
+              >
                 急所込み <span className="font-bold">{accumProbWithCritDisplay}</span>
               </span>
             )}
@@ -73,7 +75,7 @@ export function DamageSummaryHeader() {
               percentMax={accum.totalMaxPct}
               koResult={accum.accumKoResult}
             />
-            <div className="flex justify-end text-[10px] font-mono text-slate-400 dark:text-slate-600 mt-0.5">
+            <div className="flex justify-end text-[10px] font-mono text-fg-faint mt-0.5">
               残HP {Math.max(0, defenderMaxHp - accum.totalMax)}〜{Math.max(0, defenderMaxHp - accum.totalMin)}/{defenderMaxHp}
             </div>
           </div>
@@ -92,7 +94,7 @@ export function DamageSummaryHeader() {
             <button
               type="button"
               onClick={() => setDurabilityExpanded(v => !v)}
-              className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+              className="text-xs text-fg-subtle hover:text-fg transition-colors"
             >
               {durabilityExpanded ? '▲ 耐久調整を閉じる' : '▼ 耐久調整（HP投資）'}
             </button>
