@@ -11128,7 +11128,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "powerOptions": [60, 120]
   },
   {
     "name": "ゆびをふる",
