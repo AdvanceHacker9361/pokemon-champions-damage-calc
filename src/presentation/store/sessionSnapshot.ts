@@ -9,6 +9,7 @@ export type PokemonSnapshot = Pick<PokemonStore,
   | 'isMega' | 'canMega' | 'availableMegas' | 'megaKey' | 'isBlade' | 'isMighty'
   | 'ranks' | 'status' | 'abilityActivated' | 'proteanType' | 'proteanStab'
   | 'moves' | 'movePowers' | 'supremeOverlordBoost' | 'focusEnergyActive' | 'chargeActive'
+  | 'grounded'
   | 'baseStats' | 'types' | 'weight' | 'effectiveAbility'>
 
 export interface FieldSnapshot {
@@ -62,6 +63,7 @@ function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
     supremeOverlordBoost: s.supremeOverlordBoost,
     focusEnergyActive: s.focusEnergyActive,
     chargeActive: s.chargeActive,
+    grounded: s.grounded,
     baseStats: { ...s.baseStats },
     types: [...s.types],
     weight: s.weight,

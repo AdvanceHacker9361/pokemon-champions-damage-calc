@@ -29,6 +29,8 @@ export interface DamageCalcInput {
   defenderAbilityActivated?: boolean
   defenderProteanType?: TypeName | null
   defenderWeight?: number
+  /** うちおとす等による接地状態: true のとき じめん技が ひこうタイプ/ふゆう にも当たる */
+  defenderGrounded?: boolean
   move: MoveData
   field: BattleField
   isCritical?: boolean
@@ -64,6 +66,9 @@ const HALF_BERRIES: Record<string, TypeName> = {
   'リリバのみ': 'はがね', 'ロゼルのみ': 'フェアリー',
   'ホズのみ': 'ノーマル',
 }
+
+/** かたやぶり系: 相手の特性（ふゆう等）を無効化する特性 */
+const MOLD_BREAKER_ABILITIES = new Set(['かたやぶり', 'ターボブレイズ', 'テラボルテージ'])
 
 /** 五捨五超入（pokeRound）: 0.5を切り上げる四捨五入 */
 function pokeRound(n: number): number {
@@ -283,6 +288,18 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     ? baseDefenderTypes.filter(t => t !== 'ゴースト')
     : baseDefenderTypes
 
+  // うちおとす等による接地: じめん技に対して ひこうタイプ / ふゆう の無効化を解除
+  const grounded = input.defenderGrounded === true
+  // 接地中はひこうタイプのじめん無効化を解除（他タイプの相性は維持）
+  const groundEffectiveTypes: TypeName[] =
+    moveType === 'じめん' && grounded
+      ? effectiveDefenderTypes.filter(t => t !== 'ひこう')
+      : effectiveDefenderTypes
+  // ふゆう: じめん技を無効化（接地時 または かたやぶり系特性で解除）
+  const levitateImmuneToGround =
+    defenderAbility === 'ふゆう' && moveType === 'じめん' &&
+    !grounded && !MOLD_BREAKER_ABILITIES.has(attackerAbility)
+
   // ===== 基本ダメージ =====
   // floor((レベル×2÷5+2)) = floor((50×2÷5+2)) = floor(22) = 22
   const levelCalc = Math.floor(50 * 2 / 5 + 2)  // = 22 (レベル50固定)
@@ -330,7 +347,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     }
 
     // 5. タイプ相性（へんげんじざい発動時は変換後タイプで判定）
-    let typeEff: number = getTypeEffectiveness(moveType, effectiveDefenderTypes)
+    let typeEff: number = getTypeEffectiveness(moveType, groundEffectiveTypes)
     // フリーズドライ: みず タイプに対して2倍有効（通常はこおり→みず 0.5倍）
     if (move.special === 'freeze-dry' && effectiveDefenderTypes.includes('みず')) {
       let eff = 1
@@ -361,11 +378,13 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   })
 
   // 無効タイプは0（へんげんじざい発動時は変換後タイプで判定）
-  let typeEffCheck: number = getTypeEffectiveness(moveType, effectiveDefenderTypes)
+  let typeEffCheck: number = getTypeEffectiveness(moveType, groundEffectiveTypes)
   if (move.special === 'freeze-dry') {
     // みずタイプへの無効化はない（こおりに免疫なし）
     typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効
   }
+  // ふゆう: じめん技を無効化（接地・かたやぶり系で解除済みの場合は false）
+  if (levitateImmuneToGround) typeEffCheck = 0
   const effectiveRolls = typeEffCheck === 0
     ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
     : (finalRolls as DamageResult['rolls'])
