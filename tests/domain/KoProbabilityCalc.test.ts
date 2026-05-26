@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
+import {
+  calcKoProbability,
+  calcVariableHitsSingleUsageDist,
+  calcCombinedKoProbability,
+  VARIABLE_MULTI_HIT_DIST,
+} from '@/domain/calculators/KoProbabilityCalc'
 
 describe('KoProbabilityCalc', () => {
   describe('確定1発KO', () => {
@@ -89,6 +94,43 @@ describe('KoProbabilityCalc', () => {
       const rolls = Array(16).fill(0) as number[]
       const result = calcKoProbability(rolls, 100)
       expect(result.type).toBe('no-ko')
+    })
+  })
+
+  describe('変動連続技を総合累積へ加算（1使用分のヒット数加重分布）', () => {
+    it('スケイルショット 1使用分の分布が 2〜5発の加重平均と一致する', () => {
+      // 1発あたり一様ロール 10 のみ（簡略化のため 1要素ロール配列）
+      const rolls = [10]
+      const dist = calcVariableHitsSingleUsageDist(rolls, VARIABLE_MULTI_HIT_DIST, rolls)
+      // 2発=20 (P=1/3), 3発=30 (P=1/3), 4発=40 (P=1/6), 5発=50 (P=1/6)
+      expect(dist.size).toBe(4)
+      expect(dist.get(20)).toBeCloseTo(1 / 3, 6)
+      expect(dist.get(30)).toBeCloseTo(1 / 3, 6)
+      expect(dist.get(40)).toBeCloseTo(1 / 6, 6)
+      expect(dist.get(50)).toBeCloseTo(1 / 6, 6)
+    })
+
+    it('5発相当のダメージ1回分が常に5発当たる前提より KO 確率が低くなる', () => {
+      // 防御側 HP=50。1発10ダメ。5発当たる前提なら 50 で確定KO
+      const rolls = [10]
+      // 旧バグ実装相当: usages=5 で 5スロット → P(KO) = 1.0（常に5発当たる前提）
+      const buggy = calcCombinedKoProbability([rolls, rolls, rolls, rolls, rolls], 50)
+      expect(buggy).toBe(1.0)
+      // 新実装: 1使用分の加重分布で 1スロット → P(KO) = P(5発) = 1/6
+      const dist = calcVariableHitsSingleUsageDist(rolls, VARIABLE_MULTI_HIT_DIST, rolls)
+      const proper = calcCombinedKoProbability([dist], 50)
+      expect(proper).toBeCloseTo(1 / 6, 6)
+    })
+
+    it('複数スロット（他技 + 変動連続技）の畳み込みが正しい', () => {
+      // 他技: ロール [40] (固定 40 ダメ)
+      // 変動連続技: 1発10ダメ → 1使用分の分布
+      // 合算: 40 + (20|30|40|50) = 60 (1/3), 70 (1/3), 80 (1/6), 90 (1/6)
+      // 防御側 HP=75 → KO は damage>=75 → 80 (1/6) + 90 (1/6) = 2/6 = 1/3
+      const other = [40]
+      const variableDist = calcVariableHitsSingleUsageDist([10], VARIABLE_MULTI_HIT_DIST, [10])
+      const prob = calcCombinedKoProbability([other, variableDist], 75)
+      expect(prob).toBeCloseTo(1 / 3, 6)
     })
   })
 })
