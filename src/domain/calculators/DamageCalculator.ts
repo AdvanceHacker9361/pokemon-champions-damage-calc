@@ -84,6 +84,11 @@ function resolvePower(input: DamageCalcInput): number {
     return power * 2
   }
 
+  // Gのちから: じゅうりょく中は威力1.5倍
+  if (input.move.special === 'grav-apple' && input.field.isGravity) {
+    return Math.floor(power * 1.5)
+  }
+
   return power
 }
 
