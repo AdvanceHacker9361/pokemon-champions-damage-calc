@@ -24,6 +24,8 @@ export interface PokemonBattleState {
   weight?: number
   /** じゅうでん状態: 次の電気技の威力2倍 */
   chargeActive?: boolean
+  /** うちおとす等による接地状態: じめん技が ひこう/ふゆう にも当たる */
+  grounded?: boolean
 }
 
 export interface CalculateDamageInput {
@@ -87,6 +89,7 @@ export function executeDamageCalculation(
     defenderAbilityActivated: input.defender.abilityActivated,
     defenderProteanType: input.defender.proteanType,
     defenderWeight: input.defender.weight,
+    defenderGrounded: input.defender.grounded,
     move: input.move,
     field: input.field,
     isCritical: input.isCritical,

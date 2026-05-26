@@ -62,6 +62,8 @@ export interface PokemonStore {
   focusEnergyActive: boolean
   /** じゅうでん状態（次の電気技の威力2倍） */
   chargeActive: boolean
+  /** 接地状態（うちおとす等）: じめん技が ひこう/ふゆう にも当たる */
+  grounded: boolean
   // Derived (cached)
   baseStats: BaseStats
   types: TypeName[]
@@ -89,6 +91,7 @@ export interface PokemonStore {
   setSupremeOverlordBoost: (v: 0 | 1 | 2) => void
   setFocusEnergyActive: (v: boolean) => void
   setChargeActive: (v: boolean) => void
+  setGrounded: (v: boolean) => void
   reset: () => void
 }
 
@@ -119,6 +122,7 @@ function createPokemonStore() {
     supremeOverlordBoost: 0,
     focusEnergyActive: false,
     chargeActive: false,
+    grounded: false,
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
     weight: 0,
@@ -170,6 +174,7 @@ function createPokemonStore() {
         supremeOverlordBoost: 0,
         focusEnergyActive: false,
         chargeActive: false,
+        grounded: false,
       })
     },
 
@@ -324,6 +329,8 @@ function createPokemonStore() {
 
     setChargeActive: (v) => set({ chargeActive: v }),
 
+    setGrounded: (v) => set({ grounded: v }),
+
     reset: () => set({
       pokemonId: null, pokemonName: '',
       statNatures: { ...DEFAULT_STAT_NATURES },
@@ -336,6 +343,7 @@ function createPokemonStore() {
       supremeOverlordBoost: 0,
       focusEnergyActive: false,
       chargeActive: false,
+      grounded: false,
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',
     }),

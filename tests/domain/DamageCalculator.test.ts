@@ -156,6 +156,84 @@ describe('DamageCalculator', () => {
     })
   })
 
+  describe('接地（うちおとす）とふゆう', () => {
+    it('ひこうタイプはじめん技を無効化（0ダメージ）', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ひこう'],
+        defenderAbility: 'ちくでん',
+        move,
+      })
+      expect(result.max).toBe(0)
+    })
+
+    it('接地中はひこうタイプにもじめん技が当たる（でんきの2倍弱点が乗る）', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ひこう'],
+        defenderAbility: 'ちくでん',
+        defenderGrounded: true,
+        move,
+      })
+      expect(result.min).toBeGreaterThan(0)
+    })
+
+    it('ふゆうはじめん技を無効化（0ダメージ）', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ゴースト'],
+        defenderAbility: 'ふゆう',
+        move,
+      })
+      expect(result.max).toBe(0)
+    })
+
+    it('接地中はふゆうでもじめん技が当たる', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ゴースト'],
+        defenderAbility: 'ふゆう',
+        defenderGrounded: true,
+        move,
+      })
+      expect(result.min).toBeGreaterThan(0)
+    })
+
+    it('かたやぶり系はふゆうを無視してじめん技が当たる', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        attackerAbility: 'かたやぶり',
+        defenderTypes: ['でんき', 'ゴースト'],
+        defenderAbility: 'ふゆう',
+        move,
+      })
+      expect(result.min).toBeGreaterThan(0)
+    })
+
+    it('接地はじめん技以外には影響しない（ひこうのでんき弱点は維持）', () => {
+      const move = makeSpecialMove('１０まんボルト', 'でんき', 90)
+      const grounded = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ひこう'],
+        defenderAbility: 'ちくでん',
+        defenderGrounded: true,
+        move,
+      })
+      const notGrounded = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ひこう'],
+        defenderAbility: 'ちくでん',
+        move,
+      })
+      expect(grounded.max).toBe(notGrounded.max)
+    })
+  })
+
   describe('STAB補正', () => {
     it('タイプ一致技は威力1.5倍相当になる', () => {
       const stabMove = makePhysicalMove('じしん', 'じめん', 100)  // ガブリアスのSTAB
