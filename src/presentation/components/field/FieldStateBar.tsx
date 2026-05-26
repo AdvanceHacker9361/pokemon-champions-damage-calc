@@ -83,6 +83,23 @@ export function FieldStateBar() {
             </button>
           ))}
         </div>
+
+        {/* 場 */}
+        <div className="flex items-center gap-1.5">
+          <span className="label">場:</span>
+          <button
+            type="button"
+            onClick={() => field.setGravity(!field.isGravity)}
+            title="命中率5/3倍 + 全ポケモン接地（ひこう/ふゆうにじめん技が当たる）"
+            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+              field.isGravity
+                ? 'bg-accent-bg border-accent-border text-accent font-medium'
+                : 'border-edge text-fg-muted hover:border-accent-border hover:text-accent'
+            }`}
+          >
+            じゅうりょく
+          </button>
+        </div>
       </div>
     </div>
   )

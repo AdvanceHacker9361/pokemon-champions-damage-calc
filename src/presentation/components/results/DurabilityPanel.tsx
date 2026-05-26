@@ -58,6 +58,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
   const isLightScreen = useFieldStore(s => s.isLightScreen)
   const isAuroraVeil  = useFieldStore(s => s.isAuroraVeil)
   const isTrickRoom   = useFieldStore(s => s.isTrickRoom)
+  const isGravity     = useFieldStore(s => s.isGravity)
 
   const moveRecord = useMemo(() => MoveRepository.findByName(moveName), [moveName])
 
@@ -84,7 +85,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
       attackerWeight,
       attackerChargeActive,
       move: moveRecord,
-      field: { weather, terrain, isReflect, isLightScreen, isAuroraVeil, isTrickRoom },
+      field: { weather, terrain, isReflect, isLightScreen, isAuroraVeil, isTrickRoom, isGravity },
       defenderBaseStats,
       defenderStatNatures: defenderNatures,
       defenderCurrentSp: defenderSp,
@@ -106,7 +107,7 @@ export function DurabilityPanel({ moveName }: DurabilityPanelProps) {
     defenderBaseStats, defenderSp, defenderNatures, defenderRanks,
     defenderTypes, defenderAbility, defenderItem, defenderStatus,
     defenderAbilityActivated, defenderProteanType, defenderWeight,
-    weather, terrain, isReflect, isLightScreen, isAuroraVeil, isTrickRoom,
+    weather, terrain, isReflect, isLightScreen, isAuroraVeil, isTrickRoom, isGravity,
   ])
 
   const currentHp = useMemo(

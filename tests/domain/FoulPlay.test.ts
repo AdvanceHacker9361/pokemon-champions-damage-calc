@@ -8,7 +8,7 @@ const foulPlayMove = {
   flags: { contact: true, sound: false, bullet: false, pulse: false, punch: false, bite: false, slice: false },
   special: 'foul-play' as const,
 }
-const field = { weather: null, terrain: null, isReflect: false, isLightScreen: false, isAuroraVeil: false, isTrickRoom: false }
+const field = { weather: null, terrain: null, isReflect: false, isLightScreen: false, isAuroraVeil: false, isTrickRoom: false, isGravity: false }
 
 describe('イカサマ', () => {
   it('防御側のAを参照する（攻撃側のAではない）', () => {

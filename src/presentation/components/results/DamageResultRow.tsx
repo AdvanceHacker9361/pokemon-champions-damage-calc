@@ -11,6 +11,7 @@ import {
 import { calcCritChance } from '@/domain/calculators/CritRank'
 import { useAccumStore } from '@/presentation/store/accumStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useFieldStore } from '@/presentation/store/fieldStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MultiHitData } from '@/domain/models/Move'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
@@ -330,6 +331,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const setAttackerRank = useAttackerStore(s => s.setRank)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
+  const isGravity = useFieldStore(s => s.isGravity)
 
   const isParentalBond = attackerAbility === 'おやこあい'
   const isDisguiseIntact = defenderAbility === 'ばけのかわ' && defenderAbilityActivated
@@ -398,7 +400,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const displayPercentMin = displayMin / defenderMaxHp * 100
   const displayPercentMax = displayMax / defenderMaxHp * 100
 
-  const hitRate = moveRecord?.accuracy != null ? moveRecord.accuracy / 100 : 1.0
+  // じゅうりょく: 命中率5/3倍（最大100%）。必中技（accuracy=null）は影響なし
+  const accuracyMult = isGravity ? 5 / 3 : 1
+  const hitRate = moveRecord?.accuracy != null
+    ? Math.min(1, moveRecord.accuracy / 100 * accuracyMult)
+    : 1.0
   const isAlwaysCrit = moveRecord?.alwaysCrit === true
   const critRate = isAlwaysCrit ? 1.0 : moveCritChance
   const avgNormal = (displayMin + displayMax) / 2
