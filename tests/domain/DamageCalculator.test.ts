@@ -215,6 +215,30 @@ describe('DamageCalculator', () => {
       expect(result.min).toBeGreaterThan(0)
     })
 
+    it('じゅうりょく（場）でひこうタイプにもじめん技が当たる', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ひこう'],
+        defenderAbility: 'ちくでん',
+        field: { ...createDefaultBattleField(), isGravity: true },
+        move,
+      })
+      expect(result.min).toBeGreaterThan(0)
+    })
+
+    it('じゅうりょく（場）でふゆうでもじめん技が当たる', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき', 'ゴースト'],
+        defenderAbility: 'ふゆう',
+        field: { ...createDefaultBattleField(), isGravity: true },
+        move,
+      })
+      expect(result.min).toBeGreaterThan(0)
+    })
+
     it('接地はじめん技以外には影響しない（ひこうのでんき弱点は維持）', () => {
       const move = makeSpecialMove('１０まんボルト', 'でんき', 90)
       const grounded = calculateDamage({

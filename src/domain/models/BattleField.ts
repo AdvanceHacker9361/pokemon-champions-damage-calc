@@ -7,6 +7,8 @@ export interface BattleField {
   isLightScreen: boolean
   isAuroraVeil: boolean
   isTrickRoom: boolean
+  /** じゅうりょく: 命中率5/3倍 + 全ポケモン接地（ひこう/ふゆうにじめん技が当たる） */
+  isGravity: boolean
 }
 
 export function createDefaultBattleField(): BattleField {
@@ -17,5 +19,6 @@ export function createDefaultBattleField(): BattleField {
     isLightScreen: false,
     isAuroraVeil: false,
     isTrickRoom: false,
+    isGravity: false,
   }
 }

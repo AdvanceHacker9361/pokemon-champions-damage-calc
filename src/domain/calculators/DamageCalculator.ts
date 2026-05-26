@@ -288,8 +288,9 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     ? baseDefenderTypes.filter(t => t !== 'ゴースト')
     : baseDefenderTypes
 
-  // うちおとす等による接地: じめん技に対して ひこうタイプ / ふゆう の無効化を解除
-  const grounded = input.defenderGrounded === true
+  // 接地: じめん技に対して ひこうタイプ / ふゆう の無効化を解除
+  // うちおとす（個別トグル） または じゅうりょく（場全体）で発生
+  const grounded = input.defenderGrounded === true || field.isGravity === true
   // 接地中はひこうタイプのじめん無効化を解除（他タイプの相性は維持）
   const groundEffectiveTypes: TypeName[] =
     moveType === 'じめん' && grounded

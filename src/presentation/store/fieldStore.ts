@@ -8,6 +8,7 @@ interface FieldStore {
   isLightScreen: boolean
   isAuroraVeil: boolean
   isTrickRoom: boolean
+  isGravity: boolean
 
   setWeather: (w: Weather) => void
   setTerrain: (t: TerrainField) => void
@@ -15,6 +16,7 @@ interface FieldStore {
   setLightScreen: (v: boolean) => void
   setAuroraVeil: (v: boolean) => void
   setTrickRoom: (v: boolean) => void
+  setGravity: (v: boolean) => void
 }
 
 export const useFieldStore = create<FieldStore>(set => ({
@@ -24,6 +26,7 @@ export const useFieldStore = create<FieldStore>(set => ({
   isLightScreen: false,
   isAuroraVeil: false,
   isTrickRoom: false,
+  isGravity: false,
 
   setWeather: (weather) => set({ weather }),
   setTerrain: (terrain) => set({ terrain }),
@@ -31,4 +34,5 @@ export const useFieldStore = create<FieldStore>(set => ({
   setLightScreen: (isLightScreen) => set({ isLightScreen }),
   setAuroraVeil: (isAuroraVeil) => set({ isAuroraVeil }),
   setTrickRoom: (isTrickRoom) => set({ isTrickRoom }),
+  setGravity: (isGravity) => set({ isGravity }),
 }))

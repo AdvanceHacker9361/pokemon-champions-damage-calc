@@ -19,6 +19,7 @@ export interface FieldSnapshot {
   isLightScreen: boolean
   isAuroraVeil: boolean
   isTrickRoom: boolean
+  isGravity: boolean
 }
 
 export interface AccumSnapshot {
@@ -121,6 +122,7 @@ export function snapshotLiveState(): SessionSnapshot {
       isLightScreen: field.isLightScreen,
       isAuroraVeil: field.isAuroraVeil,
       isTrickRoom: field.isTrickRoom,
+      isGravity: field.isGravity,
     },
     accum: cloneAccumSnapshot({
       entries: accum.entries,

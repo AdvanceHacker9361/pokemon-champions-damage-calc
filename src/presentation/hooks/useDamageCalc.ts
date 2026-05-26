@@ -32,6 +32,7 @@ export function useDamageCalc() {
       isLightScreen: field.isLightScreen,
       isAuroraVeil: field.isAuroraVeil,
       isTrickRoom: field.isTrickRoom,
+      isGravity: field.isGravity,
     }
 
     const results = attacker.moves
@@ -262,7 +263,7 @@ export function useDamageCalc() {
     defender.ranks, defender.status, defender.abilityActivated, defender.proteanType,
     defender.grounded,
     field.weather, field.terrain,
-    field.isReflect, field.isLightScreen, field.isAuroraVeil, field.isTrickRoom,
+    field.isReflect, field.isLightScreen, field.isAuroraVeil, field.isTrickRoom, field.isGravity,
     setResults,
   ])
 }
