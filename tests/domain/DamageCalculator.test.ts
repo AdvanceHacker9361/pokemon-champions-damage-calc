@@ -239,6 +239,28 @@ describe('DamageCalculator', () => {
       expect(result.min).toBeGreaterThan(0)
     })
 
+    it('Gのちからはじゅうりょく中に威力1.5倍になる', () => {
+      const gravApple: MoveData = {
+        ...makePhysicalMove('Gのちから', 'くさ', 80),
+        special: 'grav-apple',
+      }
+      const normal = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['みず', 'じめん'],
+        defenderAbility: 'げきりゅう',
+        move: gravApple,
+      })
+      const withGravity = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['みず', 'じめん'],
+        defenderAbility: 'げきりゅう',
+        field: { ...createDefaultBattleField(), isGravity: true },
+        move: gravApple,
+      })
+      // 威力80→120相当（1.5倍）なので明確に増える
+      expect(withGravity.max).toBeGreaterThan(normal.max)
+    })
+
     it('接地はじめん技以外には影響しない（ひこうのでんき弱点は維持）', () => {
       const move = makeSpecialMove('１０まんボルト', 'でんき', 90)
       const grounded = calculateDamage({

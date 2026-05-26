@@ -4378,6 +4378,27 @@
     "multiHit": null
   },
   {
+    "name": "Gのちから",
+    "nameEn": "Grav Apple",
+    "type": "くさ",
+    "category": "物理",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": "grav-apple",
+    "multiHit": null
+  },
+  {
     "name": "しろいきり",
     "nameEn": "Mist",
     "type": "こおり",
