@@ -4,6 +4,8 @@ import {
   calcCombinedKoProbability,
   calcCombinedDamageDistribution,
   calcCombinedKoProbabilityWithCrit,
+  calcVariableHitsSingleUsageDist,
+  calcVariableHitsSingleUsageDistWithCrit,
 } from '@/domain/calculators/KoProbabilityCalc'
 import type { AttackSlot } from '@/domain/calculators/KoProbabilityCalc'
 import type { KoResult } from '@/domain/models/DamageResult'
@@ -80,6 +82,35 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         const useRaw = !isVeryFirst && firstHadMultiscale
         const normalRolls = useRaw ? e.rawRolls : e.rolls
         const critRolls  = useRaw ? e.rawCritRolls : e.critRolls
+
+        if (e.variableHitDist) {
+          // 変動連続技: 1使用分のダメージ分布（ヒット数加重）を precomputed Map として 1スロットに集約
+          // hit1 はマルチスケイル/半減実の影響を受けるロール（useRaw 時は素ダメ）、hit2+ は常に素ダメ
+          const hit1Rolls = normalRolls
+          const hit2plusRolls = e.rawRolls
+          const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
+          rollSets.push(dist)
+
+          if (e.isForcedCrit) {
+            // 急所強制（確定急所技 or 急所モードで加算）: 急所ロールで分布を構築
+            const hit1CritRolls = critRolls
+            const hit2plusCritRolls = e.rawCritRolls
+            const critDist = calcVariableHitsSingleUsageDist(hit1CritRolls, e.variableHitDist, hit2plusCritRolls)
+            attackRollsWithCrit.push({ precomputed: critDist })
+          } else {
+            // 各発で独立に急所判定して通常/急所ロールを混合
+            const distWithCrit = calcVariableHitsSingleUsageDistWithCrit(
+              hit1Rolls,
+              critRolls,
+              e.critChance,
+              e.variableHitDist,
+              hit2plusRolls,
+              e.rawCritRolls,
+            )
+            attackRollsWithCrit.push({ precomputed: distWithCrit })
+          }
+          continue
+        }
 
         rollSets.push(normalRolls)
 
