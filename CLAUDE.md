@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.6.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.6.1**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -748,6 +748,31 @@ src/
 
 #### テスト（`tests/domain/BattleSequenceCalc.test.ts`）
 - 9件: 単発KO・乱数半分KO・被ダメ生存・痛み分けの回復/減衰・定数ダメ・攻守同時確率分離・確率分割整合性（`ko+faint+bothAlive=1`）
+
+### V3.6.1: 吸収技（ドレイン）のバトルシーケンス対応
+
+#### 概要
+- ドレインパンチ・ギガドレイン・きゅうけつ・ドレインキッス等の吸収技を、バトルシーケンスで「与ダメ＋回復」として同時シミュレート
+- 2D同時分布DPの利点を活かし、攻撃イベントで**1ロールごとに防御側ダメージと攻撃側回復を同時適用**
+
+#### データ拡張
+- `Move.ts` / `schemas/types.ts` の `MoveRecord` に `drain?: number`（与ダメに対する回復率）を追加
+- `moves.json` の吸収技8件に付与:
+  - 0.5: すいとる・メガドレイン・ギガドレイン・ドレインパンチ・きゅうけつ・ウッドホーン・パラボラチャージ
+  - 0.75: ドレインキッス
+
+#### エンジン（`BattleSequenceCalc.ts`）
+- `attack` / `incoming` イベントに `drain?: number` を追加
+- `attack` + drain: 各ロールで `actual = min(roll, 防御側残HP)` → 攻撃側を `floor(actual × drain)`（最低1）回復（最大HPクランプ）
+  - 防御側KO時は koProb 吸収（撃破済みのため回復不要）
+- `incoming` + drain: 相手（防御側）が被ダメに応じて回復（相手が吸収技を使うケース）
+
+#### フック（`useBattleSequence.ts`）
+- `attack` / `incoming` ステップ解決時に `MoveRepository.findByName(moveName).drain` を読み取りイベントへ伝搬
+- ラベルに「（吸収50%）」「（相手吸収75%）」を表示
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に5件追加（回復・最大HPクランプ・実ダメージクランプ・相手吸収・回復で被ダメを耐える対照テスト）
 
 ---
 

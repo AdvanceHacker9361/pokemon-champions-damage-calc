@@ -128,8 +128,10 @@ export function useBattleSequence(): BattleSequenceComputed {
             resolved.push({ step, label: `与ダメ ${step.moveName}`, error: 'ダメージ結果がありません' })
             continue
           }
-          events.push({ kind: 'attack', dmg: rolls })
-          resolved.push({ step, label: `与ダメ ${step.moveName}${step.crit ? '（急所）' : ''}` })
+          const drain = MoveRepository.findByName(step.moveName)?.drain
+          events.push({ kind: 'attack', dmg: rolls, drain })
+          const drainTag = drain ? `（吸収${Math.round(drain * 100)}%）` : ''
+          resolved.push({ step, label: `与ダメ ${step.moveName}${step.crit ? '（急所）' : ''}${drainTag}` })
           break
         }
         case 'incoming': {
@@ -142,8 +144,10 @@ export function useBattleSequence(): BattleSequenceComputed {
             resolved.push({ step, label: `被ダメ ${step.moveName}`, error: '計算できませんでした' })
             continue
           }
-          events.push({ kind: 'incoming', dmg: rolls })
-          resolved.push({ step, label: `被ダメ ${step.moveName}${step.crit ? '（急所）' : ''}` })
+          const drain = MoveRepository.findByName(step.moveName)?.drain
+          events.push({ kind: 'incoming', dmg: rolls, drain })
+          const drainTag = drain ? `（相手吸収${Math.round(drain * 100)}%）` : ''
+          resolved.push({ step, label: `被ダメ ${step.moveName}${step.crit ? '（急所）' : ''}${drainTag}` })
           break
         }
         case 'painSplit': {
