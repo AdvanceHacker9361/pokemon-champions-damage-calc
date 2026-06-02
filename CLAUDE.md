@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.7.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -801,6 +801,44 @@ src/
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
 
+### V3.8.0: データモデル統合（単一イベント時系列）
+
+#### 概要
+- 「累積エントリ」「シーケンスステップ」「痛み分け」を **単一の `events: ProgressionEvent[]`** に統合
+- 旧 `accumStore` と `battleSequenceStore` を廃止し、`progressionStore` ひとつに集約
+- UI も単一の `DamageProgressionPanel` に統一。痛み分け入口・被ダメ入口・定数入口がすべて1か所
+- シーケンス出力（生存率・各ステップHP）は「攻撃側に影響するイベント（被ダメ・攻撃側定数・痛み分け）または開始HP指定」がある時のみ自動表示。`enabled` トグル廃止
+
+#### `progressionStore.ts`（新規・統合）
+```ts
+type ProgressionEvent =
+  | { kind: 'attack'; id; ...AttackPayload (旧 AccumEntry); usages }
+  | { kind: 'painSplit'; id; attackerHp }
+  | { kind: 'incoming'; id; moveName; crit }
+  | { kind: 'defenderConst' | 'attackerConst' | 'defenderRecover' | 'attackerRecover'; id; amount }
+```
+- 背景効果（`constDmg/constRec/poisonTurns`）と開始HP は別フィールド維持
+- アクション: `addAttack` / `setAttackUsages` / `addEventAfter` / `removeEvent` / `moveEvent` / `updateEvent` / 背景効果 setter / `clear`
+- DistributiveOmit で discriminated union の id 除去型を維持
+
+#### 削除されたファイル
+- `src/presentation/store/accumStore.ts`
+- `src/presentation/store/battleSequenceStore.ts`
+- `src/presentation/components/results/DamageAccumPanel.tsx`
+- `src/presentation/components/results/BattleSequencePanel.tsx`
+
+#### 新規/書き換えファイル
+- `DamageProgressionPanel.tsx`（新規）: 統合パネル。イベント時系列リスト＋背景効果＋シーケンス出力を一画面に
+- `DamageProgressionSection.tsx`: 統合パネルのみを内包する形に簡素化
+- `useAccumulatedDamage.ts`: `progressionStore.events` から ProgressionEvent を読み、SeqEvent に変換（累積モード=攻撃側HP固定）
+- `useBattleSequence.ts`: 同じ events を読みつつ攻撃イベントの usages 展開・被ダメ攻守入替を継承。`enabled` 廃止＝`hasSequenceImpact()` で自動判定
+- `sessionSnapshot.ts`: `AccumSnapshot` + `BattleSequenceSnapshot` を `ProgressionSnapshot` に統合
+
+#### 移行影響
+- 旧 AccumEntry はそのまま AttackPayload として AttackEvent 内に再利用（型互換性高い）
+- 痛み分けの入口は「攻撃イベント右の +痛み分け」と「下部アクションバー +痛み分け」の2つから「単一のイベントリスト」へ。両者は同じ `addEventAfter` を呼ぶだけで、結果は1つのイベント列に集約される
+- 被ダメ・攻撃側定数・攻撃側回復のあるイベント列を組んだ瞬間にシーケンス出力が自動表示される
+
 ---
 
 ## 重要なファイルと役割
@@ -817,21 +855,19 @@ src/
 | `src/presentation/store/sessionSnapshot.ts` | ライブストアのスナップショット取得・復元ヘルパー（深いコピーで参照共有を防止） |
 | `src/presentation/components/session/SessionTabsBar.tsx` | タブバー UI（クリック切替・ダブルクリックでリネーム・×でクローズ・＋で新規） |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
-| `src/presentation/store/accumStore.ts` | 累積計算、entries + `painSplits` + `constDmg`/`constRec`/`poisonTurns` 状態 |
-| `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージを2Dエンジン（runBattleSequence・攻撃側HP固定）経由で計算し totals/分布/KO確率を導出するフック |
-| `src/presentation/components/results/DamageProgressionSection.tsx` | 「ダメージ進行」統合セクション（総合累積＋バトルシーケンスを1ブロックに） |
-| `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`（痛み分けの残HP分布変換）、変動連続技分布 |
-| `src/domain/calculators/BattleSequenceCalc.ts` | バトルシーケンス2D同時分布DP（攻守HP・被ダメ・痛み分け・定数の時系列変換） |
-| `src/presentation/store/battleSequenceStore.ts` | バトルシーケンスのステップ列・開始HP・有効フラグ |
-| `src/presentation/hooks/useBattleSequence.ts` | ステップ解決（与ダメ=resultStore / 被ダメ=攻守入替）→ runBattleSequence 実行 |
-| `src/presentation/components/results/BattleSequencePanel.tsx` | バトルシーケンスUI（ステップ編集・撃破/生存確率・残HPテーブル） |
-| `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageAccumPanel の配置 |
-| `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン・期待ダメ表示・耐久調整トグル |
-| `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（総合累積バー＋ヒストグラムのみ。加算なし時はプレースホルダー表示） |
+| `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 背景効果 `constDmg/constRec/poisonTurns` ＋ 開始HP |
+| `src/presentation/hooks/useAccumulatedDamage.ts` | progression events を SeqEvent 列（攻撃側HP固定モード）に変換し2Dエンジン経由で累積分布/KO確率を導出 |
+| `src/presentation/hooks/useBattleSequence.ts` | 同じ progression events を読み攻撃イベントの usages 展開・被ダメ攻守入替を継承。`hasSequenceImpact()` で出力可否を自動判定 |
+| `src/presentation/components/results/DamageProgressionPanel.tsx` | **統合パネル**。イベント時系列リスト＋背景効果＋シーケンス出力（生存率・各ステップHP）を一画面に |
+| `src/presentation/components/results/DamageProgressionSection.tsx` | 「ダメージ進行」見出し付きで統合パネルを内包 |
+| `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`、変動連続技分布 |
+| `src/domain/calculators/BattleSequenceCalc.ts` | バトルシーケンス2D同時分布DP（攻守HP・被ダメ・痛み分け・定数・吸収の時系列変換） |
+| `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageProgressionSection の配置 |
+| `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン（progressionStore.addAttack 呼び出し）・期待ダメ表示・耐久調整トグル |
+| `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（累積バー＋ヒストグラム。progressionStore.events から defenderMaxHp 取得） |
 | `src/presentation/components/results/DurabilityPanel.tsx` | 耐久調整パネル（個別技・H+B/D最適SP配分テーブル） |
-| `src/presentation/components/results/AccumDurabilityPanel.tsx` | 耐久調整パネル（総合累積・HP投資のみ最適化） |
-| `src/application/usecases/FindOptimalAccumDurability.ts` | 総合累積用の耐久調整ロジック（HP のみ列挙、もうどく再計算込み） |
-| `src/presentation/components/results/DamageAccumPanel.tsx` | 加算リスト・定数ダメ/回復・もうどく入力 UI |
+| `src/presentation/components/results/AccumDurabilityPanel.tsx` | 耐久調整パネル（累積・HP投資のみ最適化、progressionStore から attack イベント抽出） |
+| `src/application/usecases/FindOptimalAccumDurability.ts` | 累積用の耐久調整ロジック（HP のみ列挙、もうどく再計算込み） |
 | `src/presentation/components/results/AccumHistogram.tsx` | 累積ダメージ分布ヒストグラム（整数 bin 化で離散分布対応） |
 | `src/application/usecases/FindOptimalSpUseCase.ts` | 耐久調整ロジック（二分探索 + 全組み合わせ列挙） |
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |

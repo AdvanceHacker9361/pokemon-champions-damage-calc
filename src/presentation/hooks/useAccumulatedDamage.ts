@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { useAccumStore } from '@/presentation/store/accumStore'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
+import type { ProgressionEvent } from '@/presentation/store/progressionStore'
 import {
   calcVariableHitsSingleUsageDist,
   calcVariableHitsSingleUsageDistWithCrit,
@@ -22,13 +23,12 @@ export interface AccumulatedDamage {
   poisonTotal: number
   poisonPerTurn: number[]
   combinedProb: number
-  /** 急所込み（各エントリの急所率で混合）KO確率 */
   combinedProbWithCrit: number
   distribution: Map<number, number>
   accumKoResult: KoResult
 }
 
-/** 通常ロール + 急所ロールを critChance で混合した1発分の分布Map（攻撃ごとに独立急所判定） */
+/** 通常ロール + 急所ロールを critChance で混合した1発分の分布Map */
 function mixToMap(rolls: number[], critRolls: number[] | undefined, critChance: number): Map<number, number> {
   const m = new Map<number, number>()
   const useCrit = critRolls != null && critChance > 0
@@ -43,16 +43,67 @@ function mixToMap(rolls: number[], critRolls: number[] | undefined, critChance: 
 }
 
 /**
- * 総合累積を「バトルシーケンス2Dエンジン」経由で計算する。
- * 攻撃側HPは固定（被ダメなし）の特殊ケースとして扱い、防御側HPの周辺分布を導出する。
- * 痛み分けはエントリ末尾で attackerHp 指定の painSplit イベントとして挿入。
+ * 攻撃イベントから通常パス・急所込みパスの SeqEvent を構築（usages 展開・マルチスケイル継承）。
+ * 旧 useAccumulatedDamage のロジックそのまま。
  */
+function expandAttack(
+  e: Extract<ProgressionEvent, { kind: 'attack' }>,
+  isFirstOverall: boolean,
+  firstHadMultiscale: boolean,
+): { normal: SeqEvent[]; crit: SeqEvent[] } {
+  const normal: SeqEvent[] = []
+  const crit: SeqEvent[] = []
+  for (let u = 0; u < e.usages; u++) {
+    const isVeryFirst = isFirstOverall && u === 0
+    const useRaw = !isVeryFirst && firstHadMultiscale
+    const normalRolls = useRaw ? e.rawRolls : e.rolls
+    const critRolls   = useRaw ? e.rawCritRolls : e.critRolls
+
+    if (e.variableHitDist) {
+      const hit1Rolls = normalRolls
+      const hit2plusRolls = e.rawRolls
+      const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
+      normal.push({ kind: 'attack', dmg: dist })
+      if (e.isForcedCrit) {
+        const critDist = calcVariableHitsSingleUsageDist(critRolls, e.variableHitDist, e.rawCritRolls)
+        crit.push({ kind: 'attack', dmg: critDist })
+      } else {
+        const distWithCrit = calcVariableHitsSingleUsageDistWithCrit(
+          hit1Rolls, critRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
+        )
+        crit.push({ kind: 'attack', dmg: distWithCrit })
+      }
+      continue
+    }
+
+    normal.push({ kind: 'attack', dmg: normalRolls })
+
+    if (e.pbChildRolls !== undefined) {
+      const parentNorm = useRaw ? (e.pbParentRawRolls ?? normalRolls) : (e.pbParentRolls ?? normalRolls)
+      const parentCrit = useRaw ? (e.pbParentRawCritRolls ?? critRolls) : (e.pbParentCritRolls ?? critRolls)
+      const childNorm = e.pbChildRolls
+      const childCrit = e.pbChildCritRolls ?? childNorm
+      if (e.isForcedCrit) {
+        crit.push({ kind: 'attack', dmg: parentNorm })
+        crit.push({ kind: 'attack', dmg: childNorm })
+      } else {
+        crit.push({ kind: 'attack', dmg: mixToMap(parentNorm, parentCrit, e.critChance) })
+        crit.push({ kind: 'attack', dmg: mixToMap(childNorm, childCrit, e.critChance) })
+      }
+    } else if (e.isForcedCrit) {
+      crit.push({ kind: 'attack', dmg: normalRolls })
+    } else {
+      crit.push({ kind: 'attack', dmg: mixToMap(normalRolls, critRolls, e.critChance) })
+    }
+  }
+  return { normal, crit }
+}
+
 export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
-  const entries     = useAccumStore(s => s.entries)
-  const painSplits  = useAccumStore(s => s.painSplits)
-  const constDmg    = useAccumStore(s => s.constDmg)
-  const constRec    = useAccumStore(s => s.constRec)
-  const poisonTurns = useAccumStore(s => s.poisonTurns)
+  const events      = useProgressionStore(s => s.events)
+  const constDmg    = useProgressionStore(s => s.constDmg)
+  const constRec    = useProgressionStore(s => s.constRec)
+  const poisonTurns = useProgressionStore(s => s.poisonTurns)
 
   return useMemo(() => {
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
@@ -61,22 +112,15 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
     const totalConst = constDmg + poisonTotal - constRec
 
-    const hasEntries = entries.length > 0
-    const hasAnything = hasEntries || totalConst !== 0
+    const attackEvents = events.filter(e => e.kind === 'attack')
+    const hasEntries = attackEvents.length > 0
+    const hasAnything = events.length > 0 || totalConst !== 0
 
-    // 最初のエントリがマルチスケイル半減済みの場合、2発目以降は素ダメを使う
-    const firstHadMultiscale = entries.length > 0 && entries[0].hadMultiscale
+    // 最初の attack イベントがマルチスケイル発動中なら、2発目以降は素ダメ
+    const firstAttack = attackEvents[0]
+    const firstHadMultiscale = firstAttack?.hadMultiscale ?? false
 
-    // 各 entry id → そのエントリ後に発動する痛み分けの攻撃側HP配列
-    const painSplitsByEntryId = new Map<string, number[]>()
-    for (const ps of painSplits) {
-      const arr = painSplitsByEntryId.get(ps.afterEntryId) ?? []
-      arr.push(ps.attackerHp)
-      painSplitsByEntryId.set(ps.afterEntryId, arr)
-    }
-
-    // 通常パス / 急所込みパスのイベント列を構築
-    // 定数ダメ/回復は先頭に適用（痛み分けより前 = 現行と同じく初期オフセット相当）
+    // 通常パス / 急所込みパスのイベント列を構築（背景効果は先頭で適用）
     const normalEvents: SeqEvent[] = []
     const critEvents: SeqEvent[] = []
     if (totalConst > 0) {
@@ -87,69 +131,42 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       critEvents.push({ kind: 'defenderRecover', amount: -totalConst })
     }
 
-    for (let i = 0; i < entries.length; i++) {
-      const e = entries[i]
-      for (let u = 0; u < e.usages; u++) {
-        const isVeryFirst = i === 0 && u === 0
-        const useRaw = !isVeryFirst && firstHadMultiscale
-        const normalRolls = useRaw ? e.rawRolls : e.rolls
-        const critRolls   = useRaw ? e.rawCritRolls : e.critRolls
-
-        if (e.variableHitDist) {
-          // 変動連続技: 1使用分のヒット数加重分布を precomputed Map として1イベントに集約
-          const hit1Rolls = normalRolls
-          const hit2plusRolls = e.rawRolls
-          const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
-          normalEvents.push({ kind: 'attack', dmg: dist })
-
-          if (e.isForcedCrit) {
-            const critDist = calcVariableHitsSingleUsageDist(critRolls, e.variableHitDist, e.rawCritRolls)
-            critEvents.push({ kind: 'attack', dmg: critDist })
-          } else {
-            const distWithCrit = calcVariableHitsSingleUsageDistWithCrit(
-              hit1Rolls, critRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
-            )
-            critEvents.push({ kind: 'attack', dmg: distWithCrit })
-          }
-          continue
+    // 攻撃イベントの累積モード変換（incoming/attackerConst/attackerRecover は累積では無視）
+    let attackIdx = 0
+    for (const ev of events) {
+      switch (ev.kind) {
+        case 'attack': {
+          const isFirstOverall = attackIdx === 0
+          attackIdx++
+          const { normal, crit } = expandAttack(ev, isFirstOverall, firstHadMultiscale)
+          normalEvents.push(...normal)
+          critEvents.push(...crit)
+          break
         }
-
-        // 通常パス: 合算ロール（おやこあいは親+子合算の e.rolls）
-        normalEvents.push({ kind: 'attack', dmg: normalRolls })
-
-        // 急所込みパス
-        if (e.pbChildRolls !== undefined) {
-          // おやこあい: 親・子を独立イベントに分割して各発で独立急所判定
-          const parentNorm = useRaw ? (e.pbParentRawRolls ?? normalRolls) : (e.pbParentRolls ?? normalRolls)
-          const parentCrit = useRaw ? (e.pbParentRawCritRolls ?? critRolls) : (e.pbParentCritRolls ?? critRolls)
-          const childNorm = e.pbChildRolls
-          const childCrit = e.pbChildCritRolls ?? childNorm
-          if (e.isForcedCrit) {
-            critEvents.push({ kind: 'attack', dmg: parentNorm })
-            critEvents.push({ kind: 'attack', dmg: childNorm })
-          } else {
-            critEvents.push({ kind: 'attack', dmg: mixToMap(parentNorm, parentCrit, e.critChance) })
-            critEvents.push({ kind: 'attack', dmg: mixToMap(childNorm, childCrit, e.critChance) })
-          }
-        } else if (e.isForcedCrit) {
-          critEvents.push({ kind: 'attack', dmg: normalRolls })
-        } else {
-          critEvents.push({ kind: 'attack', dmg: mixToMap(normalRolls, critRolls, e.critChance) })
+        case 'painSplit': {
+          // 累積モード: 攻撃側HPは入力値で固定
+          normalEvents.push({ kind: 'painSplit', attackerHp: ev.attackerHp })
+          critEvents.push({ kind: 'painSplit', attackerHp: ev.attackerHp })
+          break
         }
-      }
-
-      // このエントリ末尾の痛み分け（攻撃側HP固定）
-      const splitsAfter = painSplitsByEntryId.get(e.id)
-      if (splitsAfter) {
-        for (const aHp of splitsAfter) {
-          normalEvents.push({ kind: 'painSplit', attackerHp: aHp })
-          critEvents.push({ kind: 'painSplit', attackerHp: aHp })
+        case 'defenderConst': {
+          normalEvents.push({ kind: 'defenderConst', amount: ev.amount })
+          critEvents.push({ kind: 'defenderConst', amount: ev.amount })
+          break
         }
+        case 'defenderRecover': {
+          normalEvents.push({ kind: 'defenderRecover', amount: ev.amount })
+          critEvents.push({ kind: 'defenderRecover', amount: ev.amount })
+          break
+        }
+        // incoming / attackerConst / attackerRecover は累積ビュー（防御側のみ）では効果なし
+        case 'incoming':
+        case 'attackerConst':
+        case 'attackerRecover':
+          break
       }
     }
 
-    // 2Dエンジン実行（攻撃側HPは固定＝被ダメなし。痛み分けは attackerHp 指定で防御側のみ変換）
-    // attackerMaxHp は使わないため 1 で十分（faintProb は常に0）
     const ATT_DUMMY = 1
     let distribution: Map<number, number>
     let combinedProb: number
@@ -167,7 +184,6 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProbWithCrit = critResult.defenderKoProb
     }
 
-    // totalMin / totalMax は分布の key 範囲から（撃破時はしきい値 defenderMaxHp に集約）
     let totalMin = totalConst
     let totalMax = totalConst
     {
@@ -193,5 +209,5 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb, combinedProbWithCrit,
       distribution, accumKoResult,
     }
-  }, [entries, painSplits, constDmg, constRec, poisonTurns, defenderMaxHp])
+  }, [events, constDmg, constRec, poisonTurns, defenderMaxHp])
 }

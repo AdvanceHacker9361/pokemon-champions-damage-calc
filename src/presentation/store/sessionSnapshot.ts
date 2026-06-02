@@ -1,8 +1,7 @@
 import type { Weather, TerrainField } from '@/domain/models/Pokemon'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from './pokemonStore'
 import { useFieldStore } from './fieldStore'
-import { useAccumStore, type AccumEntry, type PainSplit } from './accumStore'
-import { useBattleSequenceStore, type SeqStep } from './battleSequenceStore'
+import { useProgressionStore, type ProgressionEvent } from './progressionStore'
 
 /** ポケモンストアのうちスナップショット対象となるデータフィールドのみ */
 export type PokemonSnapshot = Pick<PokemonStore,
@@ -23,17 +22,11 @@ export interface FieldSnapshot {
   isGravity: boolean
 }
 
-export interface AccumSnapshot {
-  entries: AccumEntry[]
-  painSplits: PainSplit[]
+export interface ProgressionSnapshot {
+  events: ProgressionEvent[]
   constDmg: number
   constRec: number
   poisonTurns: number
-}
-
-export interface BattleSequenceSnapshot {
-  enabled: boolean
-  steps: SeqStep[]
   attackerStartHp: number | null
   defenderStartHp: number | null
 }
@@ -42,14 +35,9 @@ export interface SessionSnapshot {
   attacker: PokemonSnapshot
   defender: PokemonSnapshot
   field: FieldSnapshot
-  accum: AccumSnapshot
-  battleSequence: BattleSequenceSnapshot
+  progression: ProgressionSnapshot
 }
 
-/**
- * ポケモンスナップショットの深いコピー。
- * 配列・オブジェクトはすべて複製し、ライブストアと参照を共有させない。
- */
 function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
   return {
     pokemonId: s.pokemonId,
@@ -82,39 +70,34 @@ function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
   }
 }
 
-function cloneAccumEntry(e: AccumEntry): AccumEntry {
-  return {
-    ...e,
-    rolls: [...e.rolls],
-    rawRolls: [...e.rawRolls],
-    critRolls: [...e.critRolls],
-    rawCritRolls: [...e.rawCritRolls],
-    pbParentRolls: e.pbParentRolls ? [...e.pbParentRolls] : undefined,
-    pbParentCritRolls: e.pbParentCritRolls ? [...e.pbParentCritRolls] : undefined,
-    pbParentRawRolls: e.pbParentRawRolls ? [...e.pbParentRawRolls] : undefined,
-    pbParentRawCritRolls: e.pbParentRawCritRolls ? [...e.pbParentRawCritRolls] : undefined,
-    pbChildRolls: e.pbChildRolls ? [...e.pbChildRolls] : undefined,
-    pbChildCritRolls: e.pbChildCritRolls ? [...e.pbChildCritRolls] : undefined,
-    variableHitDist: e.variableHitDist ? e.variableHitDist.map(d => ({ ...d })) : undefined,
+function cloneProgressionEvent(ev: ProgressionEvent): ProgressionEvent {
+  if (ev.kind === 'attack') {
+    return {
+      ...ev,
+      rolls: [...ev.rolls],
+      rawRolls: [...ev.rawRolls],
+      critRolls: [...ev.critRolls],
+      rawCritRolls: [...ev.rawCritRolls],
+      pbParentRolls: ev.pbParentRolls ? [...ev.pbParentRolls] : undefined,
+      pbParentCritRolls: ev.pbParentCritRolls ? [...ev.pbParentCritRolls] : undefined,
+      pbParentRawRolls: ev.pbParentRawRolls ? [...ev.pbParentRawRolls] : undefined,
+      pbParentRawCritRolls: ev.pbParentRawCritRolls ? [...ev.pbParentRawCritRolls] : undefined,
+      pbChildRolls: ev.pbChildRolls ? [...ev.pbChildRolls] : undefined,
+      pbChildCritRolls: ev.pbChildCritRolls ? [...ev.pbChildCritRolls] : undefined,
+      variableHitDist: ev.variableHitDist ? ev.variableHitDist.map(d => ({ ...d })) : undefined,
+    }
   }
+  return { ...ev }
 }
 
-function cloneAccumSnapshot(a: AccumSnapshot): AccumSnapshot {
+function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
   return {
-    entries: a.entries.map(cloneAccumEntry),
-    painSplits: a.painSplits.map(p => ({ ...p })),
-    constDmg: a.constDmg,
-    constRec: a.constRec,
-    poisonTurns: a.poisonTurns,
-  }
-}
-
-function cloneBattleSequenceSnapshot(b: BattleSequenceSnapshot): BattleSequenceSnapshot {
-  return {
-    enabled: b.enabled,
-    steps: b.steps.map(s => ({ ...s })),
-    attackerStartHp: b.attackerStartHp,
-    defenderStartHp: b.defenderStartHp,
+    events: p.events.map(cloneProgressionEvent),
+    constDmg: p.constDmg,
+    constRec: p.constRec,
+    poisonTurns: p.poisonTurns,
+    attackerStartHp: p.attackerStartHp,
+    defenderStartHp: p.defenderStartHp,
   }
 }
 
@@ -124,16 +107,14 @@ export function cloneSnapshot(snap: SessionSnapshot): SessionSnapshot {
     attacker: clonePokemonSnapshot(snap.attacker),
     defender: clonePokemonSnapshot(snap.defender),
     field: { ...snap.field },
-    accum: cloneAccumSnapshot(snap.accum),
-    battleSequence: cloneBattleSequenceSnapshot(snap.battleSequence),
+    progression: cloneProgressionSnapshot(snap.progression),
   }
 }
 
 /** 現在のライブストアからスナップショットを取得（参照は複製） */
 export function snapshotLiveState(): SessionSnapshot {
   const field = useFieldStore.getState()
-  const accum = useAccumStore.getState()
-  const seq = useBattleSequenceStore.getState()
+  const prog = useProgressionStore.getState()
   return {
     attacker: clonePokemonSnapshot(useAttackerStore.getState()),
     defender: clonePokemonSnapshot(useDefenderStore.getState()),
@@ -146,18 +127,13 @@ export function snapshotLiveState(): SessionSnapshot {
       isTrickRoom: field.isTrickRoom,
       isGravity: field.isGravity,
     },
-    accum: cloneAccumSnapshot({
-      entries: accum.entries,
-      painSplits: accum.painSplits,
-      constDmg: accum.constDmg,
-      constRec: accum.constRec,
-      poisonTurns: accum.poisonTurns,
-    }),
-    battleSequence: cloneBattleSequenceSnapshot({
-      enabled: seq.enabled,
-      steps: seq.steps,
-      attackerStartHp: seq.attackerStartHp,
-      defenderStartHp: seq.defenderStartHp,
+    progression: cloneProgressionSnapshot({
+      events: prog.events,
+      constDmg: prog.constDmg,
+      constRec: prog.constRec,
+      poisonTurns: prog.poisonTurns,
+      attackerStartHp: prog.attackerStartHp,
+      defenderStartHp: prog.defenderStartHp,
     }),
   }
 }
@@ -165,16 +141,10 @@ export function snapshotLiveState(): SessionSnapshot {
 /**
  * スナップショットをライブストアへ復元。
  * setState はマージなのでアクション関数は保持される。
- * 復元時も再複製し、ライブストアの変更がタブ側スナップショットを汚さないようにする。
  */
 export function restoreState(snap: SessionSnapshot): void {
   useAttackerStore.setState(clonePokemonSnapshot(snap.attacker))
   useDefenderStore.setState(clonePokemonSnapshot(snap.defender))
   useFieldStore.setState({ ...snap.field })
-  useAccumStore.setState(cloneAccumSnapshot(snap.accum))
-  useBattleSequenceStore.setState(
-    cloneBattleSequenceSnapshot(
-      snap.battleSequence ?? { enabled: false, steps: [], attackerStartHp: null, defenderStartHp: null },
-    ),
-  )
+  useProgressionStore.setState(cloneProgressionSnapshot(snap.progression))
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAccumStore } from '@/presentation/store/accumStore'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useResultStore } from '@/presentation/store/resultStore'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
 
@@ -11,13 +11,15 @@ function formatProb(prob: number): string {
 
 export function AccumExportButton() {
   const [copied, setCopied] = useState(false)
-  const entries = useAccumStore(s => s.entries)
-  const constDmg = useAccumStore(s => s.constDmg)
-  const constRec = useAccumStore(s => s.constRec)
-  const poisonTurns = useAccumStore(s => s.poisonTurns)
+  const events = useProgressionStore(s => s.events)
+  const constDmg = useProgressionStore(s => s.constDmg)
+  const constRec = useProgressionStore(s => s.constRec)
+  const poisonTurns = useProgressionStore(s => s.poisonTurns)
   const results = useResultStore(s => s.results)
 
-  const defenderMaxHp = results[0]?.result.defenderMaxHp ?? entries[0]?.defenderMaxHp ?? 0
+  const firstAttack = events.find(e => e.kind === 'attack')
+  const defenderMaxHp = results[0]?.result.defenderMaxHp
+    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : 0)
   const accum = useAccumulatedDamage(defenderMaxHp)
 
   if (!accum.hasAnything) return null
@@ -27,12 +29,23 @@ export function AccumExportButton() {
     lines.push(`総合累積  (HP ${defenderMaxHp})`)
     lines.push('─'.repeat(30))
 
-    for (const e of entries) {
-      const subMin = e.minDmg * e.usages
-      const subMax = e.maxDmg * e.usages
-      const usageStr = e.usages > 1 ? ` ×${e.usages}` : ''
-      const range = subMin === subMax ? `${subMin}` : `${subMin}〜${subMax}`
-      lines.push(`${e.label}${usageStr}: ${range}`)
+    for (const ev of events) {
+      switch (ev.kind) {
+        case 'attack': {
+          const subMin = ev.minDmg * ev.usages
+          const subMax = ev.maxDmg * ev.usages
+          const usageStr = ev.usages > 1 ? ` ×${ev.usages}` : ''
+          const range = subMin === subMax ? `${subMin}` : `${subMin}〜${subMax}`
+          lines.push(`${ev.label}${usageStr}: ${range}`)
+          break
+        }
+        case 'painSplit': lines.push(`痛み分け（攻撃側HP=${ev.attackerHp}）`); break
+        case 'incoming': lines.push(`被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
+        case 'defenderConst': lines.push(`防御側ダメ ${ev.amount}`); break
+        case 'attackerConst': lines.push(`攻撃側ダメ ${ev.amount}`); break
+        case 'defenderRecover': lines.push(`防御側回復 ${ev.amount}`); break
+        case 'attackerRecover': lines.push(`攻撃側回復 ${ev.amount}`); break
+      }
     }
 
     if (constDmg > 0) lines.push(`定数ダメ: ${constDmg}`)
