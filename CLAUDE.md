@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.5.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.6.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -708,6 +708,47 @@ src/
   - 2セグメント分割で「攻撃→痛み分け→攻撃」が機能する end-to-end
   - 初期分布として Map を受け取る `calcCombinedDamageDistribution`
 
+### V3.6.0: バトルシーケンス（2D同時分布シミュレーション）
+
+#### 概要
+- 攻撃側が複数ターン技を撃つ間に、防御側の反撃（被ダメ）・痛み分け・定数ダメ/回復を挟む多ターンシナリオを、**(攻撃側HP, 防御側HP) の同時確率分布**を時系列で変換してシミュレートする
+- 例: 控目CSメガゲンガー vs 腕白HD特化カバルドン
+  - T1: 鬼火（防御側火傷）→ カバルドンの地震を耐える（被ダメ）
+  - T2: 痛み分け（両HP平均化で回復＆与ダメ）→ さらに地震を耐える
+  - T3: 祟り目（威力130）でカバルドンを撃破できるか？
+- 出力: **防御側撃破確率 / 攻撃側生存確率 / 両者生存確率** と、各ステップ後の攻守残HP範囲
+
+#### コアエンジン（`src/domain/calculators/BattleSequenceCalc.ts`）
+- `runBattleSequence(events, attackerMaxHp, defenderMaxHp, opts)` が 2D DP を実行
+- 状態 = `Map<number, number>`（key = `aHP * (defenderMaxHp+1) + dHP`、両者HP>0 のマスのみ live）
+- 防御側0以下 → `koProb`（吸収）、攻撃側0以下 → `faintProb`（吸収）。move 順で各イベントが一方向のため同時瀕死は起きず、`koProb + faintProb + bothAlive = 1` が常に成立
+- イベント種別: `attack`（与ダメ）/`incoming`（被ダメ）/`painSplit`/`defenderConst`/`attackerConst`/`defenderRecover`/`attackerRecover`
+- 痛み分け: 各マスで `floor((aHP + dHP) / 2)` に両者を均す（同時分布なので正確）
+- `DmgDist = number[] | Map<number, number>`（一様ロール or 事前計算分布）
+
+#### 被ダメの自動計算（攻守入替）
+- `useBattleSequence` フック（`src/presentation/hooks/useBattleSequence.ts`）
+  - `attack` ステップ: `resultStore` の既存計算結果（powerOptions・特性等反映済み）からロール取得
+  - `incoming` ステップ: 攻撃側↔防御側を入れ替えて `executeDamageCalculation` を呼び、防御側の技による被ダメロールを算出（**防御側の火傷による物理半減も自然に反映**）
+  - 防御側の `powerOptions`（たたりめ等）・確定急所も解決
+- 各ステップ後の周辺HP分布・累積撃破/瀕死確率を返す
+
+#### データモデル（`src/presentation/store/battleSequenceStore.ts`）
+- `SeqStep { id, kind, moveName?, crit?, amount? }` の順序付きリスト
+- `enabled` / `attackerStartHp` / `defenderStartHp`（null = 最大HP）
+- アクション: `addStep / removeStep / updateStep / moveStep(±1) / clear / setStartHp`
+
+#### UI（`src/presentation/components/results/BattleSequencePanel.tsx`）
+- `Calculator.tsx` の中央カラム（`DamageResultArea` の下）に配置
+- 有効トグル・開始HP入力・ステップ並べ替え（↑↓）・追加ボタン群
+- 結果: 撃破/生存/両者生存の確率サマリ + ステップ別の攻守残HP範囲・累積確率テーブル
+
+#### スナップショット（`sessionSnapshot.ts`）
+- `BattleSequenceSnapshot` を `SessionSnapshot` に追加し、タブ切替・複製で保持
+
+#### テスト（`tests/domain/BattleSequenceCalc.test.ts`）
+- 9件: 単発KO・乱数半分KO・被ダメ生存・痛み分けの回復/減衰・定数ダメ・攻守同時確率分離・確率分割整合性（`ko+faint+bothAlive=1`）
+
 ---
 
 ## 重要なファイルと役割
@@ -727,6 +768,10 @@ src/
 | `src/presentation/store/accumStore.ts` | 累積計算、entries + `painSplits` + `constDmg`/`constRec`/`poisonTurns` 状態 |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージの totals/分布/KO確率を一元計算するフック（痛み分けで分布をセグメント分割DP） |
 | `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`（痛み分けの残HP分布変換）、変動連続技分布 |
+| `src/domain/calculators/BattleSequenceCalc.ts` | バトルシーケンス2D同時分布DP（攻守HP・被ダメ・痛み分け・定数の時系列変換） |
+| `src/presentation/store/battleSequenceStore.ts` | バトルシーケンスのステップ列・開始HP・有効フラグ |
+| `src/presentation/hooks/useBattleSequence.ts` | ステップ解決（与ダメ=resultStore / 被ダメ=攻守入替）→ runBattleSequence 実行 |
+| `src/presentation/components/results/BattleSequencePanel.tsx` | バトルシーケンスUI（ステップ編集・撃破/生存確率・残HPテーブル） |
 | `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageAccumPanel の配置 |
 | `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン・期待ダメ表示・耐久調整トグル |
 | `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（総合累積バー＋ヒストグラムのみ。加算なし時はプレースホルダー表示） |
