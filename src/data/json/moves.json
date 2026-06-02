@@ -1220,7 +1220,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "drain": 0.5
   },
   {
     "name": "うっぷんばらし",
@@ -2428,7 +2429,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "drain": 0.5
   },
   {
     "name": "きしかいせい",
@@ -2489,7 +2491,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "drain": 0.5
   },
   {
     "name": "キラースピン",
@@ -4586,7 +4589,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "drain": 0.5
   },
   {
     "name": "すいりゅうれんだ",
@@ -7131,7 +7135,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "drain": 0.75
   },
   {
     "name": "ドレインパンチ",
@@ -7151,7 +7156,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "drain": 0.5
   },
   {
     "name": "どろかけ",
@@ -8607,7 +8613,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "drain": 0.5
   },
   {
     "name": "バリアーラッシュ",
@@ -10773,7 +10780,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "drain": 0.5
   },
   {
     "name": "メガトンキック",

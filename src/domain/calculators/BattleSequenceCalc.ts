@@ -17,10 +17,10 @@
 export type DmgDist = number[] | Map<number, number>
 
 export type SeqEvent =
-  /** 防御側へのダメージ（攻撃側の技） */
-  | { kind: 'attack'; dmg: DmgDist }
-  /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ） */
-  | { kind: 'incoming'; dmg: DmgDist }
+  /** 防御側へのダメージ（攻撃側の技）。drain 指定時は与ダメに応じて攻撃側が回復 */
+  | { kind: 'attack'; dmg: DmgDist; drain?: number }
+  /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain 指定時は防御側が回復 */
+  | { kind: 'incoming'; dmg: DmgDist; drain?: number }
   /** 痛み分け: 両者HPを floor((aHP + dHP) / 2) に均す */
   | { kind: 'painSplit' }
   /** 防御側への定数ダメージ（火傷・砂・毒など） */
@@ -119,16 +119,33 @@ export function runBattleSequence(
         case 'attack': {
           for (const [r, rp] of iterDist(ev.dmg)) {
             const nd = d - r
+            // 吸収: 実際に与えたダメージ（防御側残HPでクランプ）に応じて攻撃側が回復
+            let na = a
+            if (ev.drain && ev.drain > 0) {
+              const actual = Math.min(r, d)
+              if (actual > 0) {
+                na = clamp(a + Math.max(1, Math.floor(actual * ev.drain)), 0, attackerMaxHp)
+              }
+            }
+            // 防御側がKO → koProb（吸収状態。撃破済みなので攻撃側回復は以後不要）
             if (nd <= 0) koProb += p * rp
-            else addLive(a, nd, p * rp)
+            else addLive(na, nd, p * rp)
           }
           break
         }
         case 'incoming': {
           for (const [r, rp] of iterDist(ev.dmg)) {
             const na = a - r
+            // 吸収: 相手（防御側）が被ダメに応じて回復
+            let nd = d
+            if (ev.drain && ev.drain > 0) {
+              const actual = Math.min(r, a)
+              if (actual > 0) {
+                nd = clamp(d + Math.max(1, Math.floor(actual * ev.drain)), 0, defenderMaxHp)
+              }
+            }
             if (na <= 0) faintProb += p * rp
-            else addLive(na, d, p * rp)
+            else addLive(na, nd, p * rp)
           }
           break
         }
