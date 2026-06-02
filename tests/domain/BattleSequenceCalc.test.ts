@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { runBattleSequence } from '@/domain/calculators/BattleSequenceCalc'
+import { runBattleSequence, extractDefenderDamageDistribution } from '@/domain/calculators/BattleSequenceCalc'
 import type { SeqEvent } from '@/domain/calculators/BattleSequenceCalc'
+import { calcCombinedKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 
 describe('BattleSequenceCalc', () => {
   describe('単発攻撃', () => {
@@ -180,6 +181,45 @@ describe('BattleSequenceCalc', () => {
       ]
       const r2 = runBattleSequence(noDrain, 200, 200)
       expect(r2.attackerSurviveProb).toBeCloseTo(0, 6)
+    })
+  })
+
+  describe('総合累積エンジン統合（1D primitive との一致）', () => {
+    it('複数攻撃の撃破率が calcCombinedKoProbability と一致（攻撃側HP固定）', () => {
+      // 各攻撃 {40,60} を2回、防御側HP=100
+      const rolls = [40, 60]
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: rolls },
+        { kind: 'attack', dmg: rolls },
+      ]
+      const r = runBattleSequence(events, 1, 100)
+      const ref = calcCombinedKoProbability([rolls, rolls], 100)
+      expect(r.defenderKoProb).toBeCloseTo(ref, 6)
+    })
+
+    it('extractDefenderDamageDistribution: 非撃破は残HPから、撃破はしきい値に集約', () => {
+      // HP=100, 攻撃 [30] 1回 → 残70（ダメ30）、撃破0
+      const r1 = runBattleSequence([{ kind: 'attack', dmg: [30] }], 1, 100)
+      const d1 = extractDefenderDamageDistribution(r1, 100)
+      expect(d1.get(30)).toBeCloseTo(1, 6)
+
+      // HP=100, 攻撃 [120] 1回 → 撃破 → ダメ100(しきい値)に集約
+      const r2 = runBattleSequence([{ kind: 'attack', dmg: [120] }], 1, 100)
+      const d2 = extractDefenderDamageDistribution(r2, 100)
+      expect(d2.get(100)).toBeCloseTo(1, 6)
+    })
+
+    it('attackerHp 指定の痛み分けは防御側のみ変換し攻撃側HPは不変', () => {
+      // HP=200に確定80 → 残120、痛み分け(攻撃側HP=200) → floor((200+120)/2)=160
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [80] },
+        { kind: 'painSplit', attackerHp: 200 },
+      ]
+      const r = runBattleSequence(events, 1, 200)
+      const last = r.steps[r.steps.length - 1]
+      expect(last.defenderHpDist.get(160)).toBeCloseTo(1, 6)
+      // 攻撃側HPは固定（ダミー1のまま）
+      expect(last.attackerHpDist.get(1)).toBeCloseTo(1, 6)
     })
   })
 

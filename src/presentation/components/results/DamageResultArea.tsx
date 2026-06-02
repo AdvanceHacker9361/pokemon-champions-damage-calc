@@ -1,6 +1,6 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
-import { DamageAccumPanel } from './DamageAccumPanel'
+import { DamageProgressionSection } from './DamageProgressionSection'
 import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { ExportButton } from './ExportButton'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
@@ -20,7 +20,7 @@ export function DamageResultArea() {
         <div className="panel text-center py-8">
           <p className="text-fg-muted text-sm">攻撃側・防御側のポケモンを選択してください</p>
         </div>
-        <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
+        <DamageProgressionSection defenderMaxHp={defenderMaxHp} />
         <FieldStateBar />
       </>
     )
@@ -57,7 +57,7 @@ export function DamageResultArea() {
           <p className="text-fg-muted text-sm">攻撃側に技を選択するとダメージが計算されます</p>
         </div>
       )}
-      <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
+      <DamageProgressionSection defenderMaxHp={defenderMaxHp} />
       <FieldStateBar />
     </>
   )

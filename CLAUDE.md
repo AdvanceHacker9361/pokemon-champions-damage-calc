@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.6.1**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.7.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -774,6 +774,33 @@ src/
 #### テスト
 - `BattleSequenceCalc.test.ts` に5件追加（回復・最大HPクランプ・実ダメージクランプ・相手吸収・回復で被ダメを耐える対照テスト）
 
+### V3.7.0: 総合累積とバトルシーケンスのエンジン統合 + UI単一パネル化
+
+#### 概要
+- 「総合累積」と「バトルシーケンス」を**単一の2D同時分布エンジン（`BattleSequenceCalc`）**に統合
+- 総合累積は「攻撃側HPを固定（被ダメなし）した2Dシーケンスの特殊ケース」として再実装
+- UIは中央カラムに「ダメージ進行」セクションとして累積＋シーケンスを1ブロックに統合
+
+#### エンジン統合（段階1）
+- `BattleSequenceCalc.ts`:
+  - `painSplit` イベントに `attackerHp?` を追加。指定時は防御側のみ `floor((attackerHp+dHP)/2)` に変換し攻撃側HPは不変（=総合累積モード）
+  - `extractDefenderDamageDistribution(result, defenderMaxHp)` を追加：結果から防御側累積ダメージ分布を導出（生存マスは残HPから、撃破マスはしきい値 `defenderMaxHp` に集約＝オーバーキルの裾は畳む「簡潔優先」）
+- `useAccumulatedDamage.ts` を全面書き換え：
+  - 累積エントリ→ `SeqEvent[]`（通常パス／急所込みパス）を構築し `runBattleSequence` を2回実行
+  - 定数ダメ/回復・もうどくは先頭に `defenderConst`/`defenderRecover` として適用
+  - 痛み分けはエントリ末尾に `painSplit(attackerHp)` を挿入
+  - マルチスケイル・半減実・おやこあい（親子分割）・変動連続技加重・確定急所/急所モードは事前計算Map（`mixToMap` / `calcVariableHitsSingleUsageDist(WithCrit)`）でイベント化
+  - 出力（`distribution` / `combinedProb` / `combinedProbWithCrit` / `totalMin/Max`）は防御側周辺分布と `defenderKoProb` から導出
+- **仕様改善**: 痛み分けを挟む累積で「途中で防御側HPが0→痛み分けで回復」する場合、旧実装は最終ダメージ判定のため復活しうるバグ的挙動だったが、2Dエンジンは撃破を終端扱いするため物理的に正確化（痛み分けなしの通常累積は完全一致）
+- **簡潔優先の影響**: ヒストグラム/`totalMax` の maxHP超オーバーキル裾は撃破しきい値に集約（撃破率 P(≥maxHP) は厳密に保持）
+
+#### UI統合（段階2）
+- `DamageProgressionSection.tsx`（新規）：総合累積（`DamageAccumPanel`）＋バトルシーケンス（`BattleSequencePanel`）を「ダメージ進行」見出しで1ブロックに統合
+- `DamageResultArea` がこのセクションを描画。`Calculator.tsx` から独立配置の `BattleSequencePanel` を撤去
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
 ---
 
 ## 重要なファイルと役割
@@ -791,7 +818,8 @@ src/
 | `src/presentation/components/session/SessionTabsBar.tsx` | タブバー UI（クリック切替・ダブルクリックでリネーム・×でクローズ・＋で新規） |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
 | `src/presentation/store/accumStore.ts` | 累積計算、entries + `painSplits` + `constDmg`/`constRec`/`poisonTurns` 状態 |
-| `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージの totals/分布/KO確率を一元計算するフック（痛み分けで分布をセグメント分割DP） |
+| `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージを2Dエンジン（runBattleSequence・攻撃側HP固定）経由で計算し totals/分布/KO確率を導出するフック |
+| `src/presentation/components/results/DamageProgressionSection.tsx` | 「ダメージ進行」統合セクション（総合累積＋バトルシーケンスを1ブロックに） |
 | `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`（痛み分けの残HP分布変換）、変動連続技分布 |
 | `src/domain/calculators/BattleSequenceCalc.ts` | バトルシーケンス2D同時分布DP（攻守HP・被ダメ・痛み分け・定数の時系列変換） |
 | `src/presentation/store/battleSequenceStore.ts` | バトルシーケンスのステップ列・開始HP・有効フラグ |
