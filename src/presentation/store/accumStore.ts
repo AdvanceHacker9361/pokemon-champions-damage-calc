@@ -51,8 +51,22 @@ export interface AccumEntry {
   variableHitDist?: { hits: number; prob: number }[]
 }
 
+/**
+ * 痛み分け挿入点。afterEntryId 直後（その entry の全 usages 終了後）に
+ * 防御側残HP分布を floor((attackerHp + remainHp) / 2) で変換する。
+ * 同じ afterEntryId に複数挿入された場合は配列順で連続適用。
+ */
+export interface PainSplit {
+  id: string
+  /** この entry id の usages すべて完了後に発動。entries に存在しない id は無視 */
+  afterEntryId: string
+  /** 痛み分け使用時の攻撃側現在HP実数値 */
+  attackerHp: number
+}
+
 interface AccumStore {
   entries: AccumEntry[]
+  painSplits: PainSplit[]
   constDmg: number
   constRec: number
   poisonTurns: number
@@ -64,10 +78,15 @@ interface AccumStore {
   setConstDmg: (v: number) => void
   setConstRec: (v: number) => void
   setPoisonTurns: (n: number) => void
+
+  addPainSplit: (afterEntryId: string, attackerHp: number) => void
+  removePainSplit: (id: string) => void
+  setPainSplitAttackerHp: (id: string, attackerHp: number) => void
 }
 
 export const useAccumStore = create<AccumStore>(set => ({
   entries: [],
+  painSplits: [],
   constDmg: 0,
   constRec: 0,
   poisonTurns: 0,
@@ -79,14 +98,35 @@ export const useAccumStore = create<AccumStore>(set => ({
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     }],
   })),
-  removeEntry: (id) => set(s => ({ entries: s.entries.filter(e => e.id !== id) })),
+  removeEntry: (id) => set(s => ({
+    entries: s.entries.filter(e => e.id !== id),
+    painSplits: s.painSplits.filter(p => p.afterEntryId !== id),
+  })),
   setEntryUsages: (id, usages) => set(s => ({
     entries: s.entries.map(e =>
       e.id === id ? { ...e, usages: Math.max(1, Math.min(9, Math.floor(usages))) } : e
     ),
   })),
-  clearEntries: () => set({ entries: [], constDmg: 0, constRec: 0, poisonTurns: 0 }),
+  clearEntries: () => set({
+    entries: [], painSplits: [], constDmg: 0, constRec: 0, poisonTurns: 0,
+  }),
   setConstDmg: (v) => set({ constDmg: Math.max(0, Math.floor(v)) }),
   setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
   setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
+
+  addPainSplit: (afterEntryId, attackerHp) => set(s => ({
+    painSplits: [...s.painSplits, {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      afterEntryId,
+      attackerHp: Math.max(0, Math.floor(attackerHp)),
+    }],
+  })),
+  removePainSplit: (id) => set(s => ({
+    painSplits: s.painSplits.filter(p => p.id !== id),
+  })),
+  setPainSplitAttackerHp: (id, attackerHp) => set(s => ({
+    painSplits: s.painSplits.map(p =>
+      p.id === id ? { ...p, attackerHp: Math.max(0, Math.floor(attackerHp)) } : p
+    ),
+  })),
 }))

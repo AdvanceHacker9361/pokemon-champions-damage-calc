@@ -1,4 +1,6 @@
 import { useAccumStore } from '@/presentation/store/accumStore'
+import { useAttackerStore } from '@/presentation/store/pokemonStore'
+import { calculateHP } from '@/domain/calculators/StatCalculator'
 
 interface DamageAccumPanelProps {
   defenderMaxHp: number
@@ -36,6 +38,7 @@ function ConstBar({ value, maxHp, isRecovery = false }: { value: number; maxHp: 
 
 export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
   const entries        = useAccumStore(s => s.entries)
+  const painSplits     = useAccumStore(s => s.painSplits)
   const constDmg       = useAccumStore(s => s.constDmg)
   const constRec       = useAccumStore(s => s.constRec)
   const poisonTurns    = useAccumStore(s => s.poisonTurns)
@@ -45,6 +48,14 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
   const setConstDmg    = useAccumStore(s => s.setConstDmg)
   const setConstRec    = useAccumStore(s => s.setConstRec)
   const setPoisonTurns = useAccumStore(s => s.setPoisonTurns)
+  const addPainSplit            = useAccumStore(s => s.addPainSplit)
+  const removePainSplit         = useAccumStore(s => s.removePainSplit)
+  const setPainSplitAttackerHp  = useAccumStore(s => s.setPainSplitAttackerHp)
+
+  // 攻撃側最大HP（痛み分け挿入時の初期値・参考表示用）
+  const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
+  const attackerSpHp   = useAttackerStore(s => s.sp.hp)
+  const attackerMaxHp  = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
 
   const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
     Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
@@ -53,6 +64,14 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
 
   const hasEntries = entries.length > 0
   const hasAnything = hasEntries || constDmg > 0 || constRec > 0 || poisonTurns > 0
+
+  // entry id → そのエントリの後ろに挿入される痛み分けの配列
+  const painSplitsByEntryId = new Map<string, typeof painSplits>()
+  for (const ps of painSplits) {
+    const arr = painSplitsByEntryId.get(ps.afterEntryId) ?? []
+    arr.push(ps)
+    painSplitsByEntryId.set(ps.afterEntryId, arr)
+  }
 
   return (
     <div className="panel space-y-3">
@@ -81,41 +100,81 @@ export function DamageAccumPanel({ defenderMaxHp }: DamageAccumPanelProps) {
           {entries.map(entry => {
             const subMin = entry.minDmg * entry.usages
             const subMax = entry.maxDmg * entry.usages
+            const entryPainSplits = painSplitsByEntryId.get(entry.id) ?? []
             return (
-              <div key={entry.id} className="flex items-center gap-2 text-xs">
-                <span className="text-fg truncate flex-1 min-w-0">
-                  {entry.label}
-                </span>
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setEntryUsages(entry.id, entry.usages - 1)}
-                    disabled={entry.usages <= 1}
-                    className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="回数を減らす"
-                  >−</button>
-                  <span className="w-6 text-center font-mono text-accent font-medium">
-                    ×{entry.usages}
+              <div key={entry.id} className="space-y-1">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-fg truncate flex-1 min-w-0">
+                    {entry.label}
+                  </span>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setEntryUsages(entry.id, entry.usages - 1)}
+                      disabled={entry.usages <= 1}
+                      className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="回数を減らす"
+                    >−</button>
+                    <span className="w-6 text-center font-mono text-accent font-medium">
+                      ×{entry.usages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEntryUsages(entry.id, entry.usages + 1)}
+                      disabled={entry.usages >= 9}
+                      className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="回数を増やす"
+                    >+</button>
+                  </div>
+                  <span className="text-fg-muted font-mono flex-shrink-0 w-24 text-right">
+                    {subMin}〜{subMax}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setEntryUsages(entry.id, entry.usages + 1)}
-                    disabled={entry.usages >= 9}
-                    className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="回数を増やす"
-                  >+</button>
+                    onClick={() => addPainSplit(entry.id, attackerMaxHp)}
+                    className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors flex-shrink-0"
+                    title="このエントリの直後に痛み分けを挿入"
+                  >
+                    +痛み分け
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeEntry(entry.id)}
+                    className="text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0"
+                    title="削除"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <span className="text-fg-muted font-mono flex-shrink-0 w-24 text-right">
-                  {subMin}〜{subMax}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeEntry(entry.id)}
-                  className="text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0"
-                  title="削除"
-                >
-                  ✕
-                </button>
+                {/* このエントリ後ろの痛み分けカード */}
+                {entryPainSplits.map(ps => (
+                  <div
+                    key={ps.id}
+                    className="flex items-center gap-2 text-xs pl-3 ml-1 border-l-2 border-accent-border bg-accent-bg/30 rounded-r py-1 pr-2"
+                  >
+                    <span className="text-accent">↺ 痛み分け</span>
+                    <span className="text-fg-muted">攻撃側HP:</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={ps.attackerHp}
+                      onChange={e => setPainSplitAttackerHp(ps.id, Number(e.target.value))}
+                      className="input-base w-14 text-center text-xs px-1"
+                    />
+                    {attackerMaxHp > 0 && (
+                      <span className="text-[10px] text-fg-faint">/ 最大{attackerMaxHp}</span>
+                    )}
+                    <span className="flex-1" />
+                    <button
+                      type="button"
+                      onClick={() => removePainSplit(ps.id)}
+                      className="text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0"
+                      title="痛み分けを削除"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             )
           })}

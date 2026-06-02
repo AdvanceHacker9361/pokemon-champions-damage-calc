@@ -661,6 +661,53 @@ src/
   - `Calculator.tsx` の `swapStores` の `pick` に `isMighty` を追加
   - `PokemonPanel.tsx` で `effectiveAbility === 'マイティチェンジ'` 時にフォルム切替ボタンを表示
 
+### V3.5.0: 累積に「痛み分け（Pain Split）」挟みを実装（2セグメント分割DP）
+
+#### 概要
+- 攻撃側が複数回技を撃つ間に防御側が痛み分けを挟むケースを累積パネルで再現可能に
+- 痛み分け = 攻撃側現在HPと防御側現在HPの合計を2で割って両者をその値にする
+- 加算リストの各エントリ右側に **「+痛み分け」ボタン** を追加。クリックでそのエントリ直後に痛み分けカード（攻撃側HP入力欄＋削除ボタン）が出現
+- 同じエントリに複数回挿入可・複数の異なるエントリに挿入可
+- エントリ削除時は連動する痛み分けも自動削除
+- タブ間のスナップショットにも `painSplits` を含めて保持
+
+#### 実装アプローチ：2セグメント分割DP
+- 痛み分け挿入位置で DP を N+1 セグメントに分割
+- 各セグメント末尾で残HP分布を `floor((attackerHp + remainHp) / 2)` で変換し、次セグメントの初期分布として渡す
+- 通常 KO 確率・急所込み KO 確率の両方に対応
+
+#### 新規/拡張関数（`KoProbabilityCalc.ts`）
+- `applyPainSplitToDmgDist(dmgDist, defenderMaxHp, attackerCurrentHp)`：累積ダメージ分布を痛み分けで変換
+- `calcCombinedDamageDistribution(rollSets, init)` / `calcCombinedDamageDistributionWithCrit(attacks, init)`：第2引数の `offset: number` を `init: number | Map<number, number>` に拡張（後方互換維持）。セグメント連結時は前セグメント終端の分布をそのまま初期分布として渡せる
+
+#### データモデル拡張（`accumStore.ts`）
+- 新しい `PainSplit { id, afterEntryId, attackerHp }` 型
+- `painSplits: PainSplit[]` フィールド
+- アクション: `addPainSplit / removePainSplit / setPainSplitAttackerHp`
+- `removeEntry` で `painSplits.filter(p => p.afterEntryId !== id)` も連動
+- `clearEntries` で `painSplits` も初期化
+
+#### フック改修（`useAccumulatedDamage.ts`）
+- エントリ走査時、`painSplitsByEntryId` Map を引いて該当エントリ末尾でセグメントを切る
+- セグメント順次 DP 実行 → 末尾で `applyPainSplitToDmgDist` 適用 → 次セグメントへ
+- `totalMin/Max` は最終分布の key 範囲から取得（旧: `moveMin + totalConst` は痛み分けで残HPが変動するため使えない）
+
+#### UI（`DamageAccumPanel.tsx`）
+- 攻撃側ストアから `calculateHP(baseStats.hp, sp.hp)` で攻撃側最大HPを算出 → 痛み分け挿入時のデフォルト値・「最大{HP}」表示に使用
+- 痛み分けカードは accent 色のボーダー・背景で視覚的にエントリと区別
+
+#### スナップショット（`sessionSnapshot.ts`）
+- `AccumSnapshot.painSplits: PainSplit[]` を追加
+- `cloneAccumSnapshot` で深いコピー、`snapshotLiveState` / `restoreState` も対応
+
+#### テスト（`KoProbabilityCalc.test.ts`）
+- 7件追加：
+  - 単一ダメージ点 / 攻撃側HP<残HPで追加ダメ / 複数点の分布変換
+  - newRemain が defenderMaxHp で上限クランプ
+  - 既に瀕死キー (dmg≥defenderMaxHp) は残HP=0扱い
+  - 2セグメント分割で「攻撃→痛み分け→攻撃」が機能する end-to-end
+  - 初期分布として Map を受け取る `calcCombinedDamageDistribution`
+
 ---
 
 ## 重要なファイルと役割
@@ -677,8 +724,9 @@ src/
 | `src/presentation/store/sessionSnapshot.ts` | ライブストアのスナップショット取得・復元ヘルパー（深いコピーで参照共有を防止） |
 | `src/presentation/components/session/SessionTabsBar.tsx` | タブバー UI（クリック切替・ダブルクリックでリネーム・×でクローズ・＋で新規） |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
-| `src/presentation/store/accumStore.ts` | 累積計算、entries + `constDmg`/`constRec`/`poisonTurns` 状態 |
-| `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージの totals/分布/KO確率を一元計算するフック |
+| `src/presentation/store/accumStore.ts` | 累積計算、entries + `painSplits` + `constDmg`/`constRec`/`poisonTurns` 状態 |
+| `src/presentation/hooks/useAccumulatedDamage.ts` | 累積ダメージの totals/分布/KO確率を一元計算するフック（痛み分けで分布をセグメント分割DP） |
+| `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`（痛み分けの残HP分布変換）、変動連続技分布 |
 | `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageAccumPanel の配置 |
 | `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン・期待ダメ表示・耐久調整トグル |
 | `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（総合累積バー＋ヒストグラムのみ。加算なし時はプレースホルダー表示） |

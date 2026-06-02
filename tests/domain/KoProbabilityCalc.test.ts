@@ -3,6 +3,8 @@ import {
   calcKoProbability,
   calcVariableHitsSingleUsageDist,
   calcCombinedKoProbability,
+  calcCombinedDamageDistribution,
+  applyPainSplitToDmgDist,
   VARIABLE_MULTI_HIT_DIST,
 } from '@/domain/calculators/KoProbabilityCalc'
 
@@ -131,6 +133,72 @@ describe('KoProbabilityCalc', () => {
       const variableDist = calcVariableHitsSingleUsageDist([10], VARIABLE_MULTI_HIT_DIST, [10])
       const prob = calcCombinedKoProbability([other, variableDist], 75)
       expect(prob).toBeCloseTo(1 / 3, 6)
+    })
+  })
+
+  describe('痛み分け（applyPainSplitToDmgDist）', () => {
+    it('単一ダメージ点: 残HPと攻撃側HPの平均で新残HPを算出', () => {
+      // HP=100, 累積50ダメ → 残50
+      // 攻撃側HP=100 → newRemain=floor((100+50)/2)=75 → newDmg=100-75=25
+      const dist = new Map<number, number>([[50, 1.0]])
+      const out = applyPainSplitToDmgDist(dist, 100, 100)
+      expect(out.size).toBe(1)
+      expect(out.get(25)).toBeCloseTo(1.0, 6)
+    })
+
+    it('攻撃側HP<残HP のとき防御側は追加ダメージを受ける', () => {
+      // HP=100, 累積20ダメ → 残80
+      // 攻撃側HP=10 → newRemain=floor((10+80)/2)=45 → newDmg=55
+      const dist = new Map<number, number>([[20, 1.0]])
+      const out = applyPainSplitToDmgDist(dist, 100, 10)
+      expect(out.get(55)).toBeCloseTo(1.0, 6)
+    })
+
+    it('複数ダメージ点の分布を保ったまま変換', () => {
+      // HP=100, {80: 0.5, 60: 0.5}, 攻撃側HP=10
+      // 残20→floor(15)=15→dmg85, 残40→floor(25)=25→dmg75
+      const dist = new Map<number, number>([[80, 0.5], [60, 0.5]])
+      const out = applyPainSplitToDmgDist(dist, 100, 10)
+      expect(out.get(85)).toBeCloseTo(0.5, 6)
+      expect(out.get(75)).toBeCloseTo(0.5, 6)
+    })
+
+    it('newRemain は防御側最大HPで上限クランプされる', () => {
+      // HP=100, 累積0ダメ → 残100。攻撃側HP=200 → floor((200+100)/2)=150 だが上限100でクランプ → newDmg=0
+      const dist = new Map<number, number>([[0, 1.0]])
+      const out = applyPainSplitToDmgDist(dist, 100, 200)
+      expect(out.get(0)).toBeCloseTo(1.0, 6)
+    })
+
+    it('既に瀕死 (dmg≥defenderMaxHp) のキーは残HP=0として扱われる', () => {
+      // HP=100, 累積120ダメ → 残HP=max(0, -20)=0
+      // 攻撃側HP=80 → newRemain=floor((80+0)/2)=40 → newDmg=60
+      const dist = new Map<number, number>([[120, 1.0]])
+      const out = applyPainSplitToDmgDist(dist, 100, 80)
+      expect(out.get(60)).toBeCloseTo(1.0, 6)
+    })
+
+    it('2セグメント分割DPで「攻撃→痛み分け→攻撃」が機能する', () => {
+      // 防御側 HP=200、攻撃側 HP=200
+      // セグ1: 確定80ダメ → 残120 (dmg=80)
+      // 痛み分け: floor((200+120)/2)=160 → 累積40ダメ
+      // セグ2: 確定80ダメ → 残80 (累積120ダメ)
+      const seg1 = calcCombinedDamageDistribution([[80]], 0)
+      const afterSplit = applyPainSplitToDmgDist(seg1, 200, 200)
+      const seg2 = calcCombinedDamageDistribution([[80]], afterSplit)
+      expect(seg2.size).toBe(1)
+      expect(seg2.get(120)).toBeCloseTo(1.0, 6)
+    })
+
+    it('初期分布として Map を受け取る calcCombinedDamageDistribution', () => {
+      // {30: 0.5, 50: 0.5} + 一様ロール[10, 20]
+      // 30+10=40 0.25, 30+20=50 0.25, 50+10=60 0.25, 50+20=70 0.25
+      const init = new Map<number, number>([[30, 0.5], [50, 0.5]])
+      const out = calcCombinedDamageDistribution([[10, 20]], init)
+      expect(out.get(40)).toBeCloseTo(0.25, 6)
+      expect(out.get(50)).toBeCloseTo(0.25, 6)
+      expect(out.get(60)).toBeCloseTo(0.25, 6)
+      expect(out.get(70)).toBeCloseTo(0.25, 6)
     })
   })
 })

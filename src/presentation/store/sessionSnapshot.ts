@@ -1,7 +1,7 @@
 import type { Weather, TerrainField } from '@/domain/models/Pokemon'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from './pokemonStore'
 import { useFieldStore } from './fieldStore'
-import { useAccumStore, type AccumEntry } from './accumStore'
+import { useAccumStore, type AccumEntry, type PainSplit } from './accumStore'
 
 /** ポケモンストアのうちスナップショット対象となるデータフィールドのみ */
 export type PokemonSnapshot = Pick<PokemonStore,
@@ -24,6 +24,7 @@ export interface FieldSnapshot {
 
 export interface AccumSnapshot {
   entries: AccumEntry[]
+  painSplits: PainSplit[]
   constDmg: number
   constRec: number
   poisonTurns: number
@@ -92,6 +93,7 @@ function cloneAccumEntry(e: AccumEntry): AccumEntry {
 function cloneAccumSnapshot(a: AccumSnapshot): AccumSnapshot {
   return {
     entries: a.entries.map(cloneAccumEntry),
+    painSplits: a.painSplits.map(p => ({ ...p })),
     constDmg: a.constDmg,
     constRec: a.constRec,
     poisonTurns: a.poisonTurns,
@@ -126,6 +128,7 @@ export function snapshotLiveState(): SessionSnapshot {
     },
     accum: cloneAccumSnapshot({
       entries: accum.entries,
+      painSplits: accum.painSplits,
       constDmg: accum.constDmg,
       constRec: accum.constRec,
       poisonTurns: accum.poisonTurns,
