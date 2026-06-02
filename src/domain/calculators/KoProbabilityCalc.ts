@@ -222,14 +222,16 @@ export function calcCombinedKoProbability(
 /**
  * 複数の技・ポケモンによる複合ダメージの分布をDPで計算
  * @param rollSets 各スロット: `number[]`（一様乱数）か `Map<number, number>`（事前計算済み分布）
- * @param offset 定数ダメージ（毒・砂嵐・残飯等の減算済み値）
+ * @param init 定数ダメージ（毒・砂嵐・残飯等の減算済み値）または初期分布Map
+ *   （セグメント分割DPで前セグメント終端の累積ダメ分布を渡す場合に使用）
  * @returns 累積ダメージ値 -> 確率 のMap
  */
 export function calcCombinedDamageDistribution(
   rollSets: (number[] | Map<number, number>)[],
-  offset = 0,
+  init: number | Map<number, number> = 0,
 ): Map<number, number> {
-  let dp: Map<number, number> = new Map([[offset, 1.0]])
+  let dp: Map<number, number> =
+    typeof init === 'number' ? new Map([[init, 1.0]]) : new Map(init)
   for (const slot of rollSets) {
     const next: Map<number, number> = new Map()
     if (slot instanceof Map) {
@@ -276,9 +278,10 @@ export type AttackSlot = AttackRollsWithCrit | { precomputed: Map<number, number
  */
 export function calcCombinedDamageDistributionWithCrit(
   attacks: AttackSlot[],
-  offset = 0,
+  init: number | Map<number, number> = 0,
 ): Map<number, number> {
-  let dp: Map<number, number> = new Map([[offset, 1.0]])
+  let dp: Map<number, number> =
+    typeof init === 'number' ? new Map([[init, 1.0]]) : new Map(init)
   for (const atk of attacks) {
     const next: Map<number, number> = new Map()
     if ('precomputed' in atk) {
@@ -467,4 +470,32 @@ export function calcVariableMultiHitKoWithCrit(
   }, 0)
 
   return { perHit, totalKoProb, minDmg, maxDmg, expectedDmg }
+}
+
+/**
+ * 累積ダメージ分布に「痛み分け」を適用。
+ *
+ * 痛み分け: 攻撃側・防御側のHPを足して2で割り、両者をその値にする（少数切り捨て）。
+ * 防御側残HP r = max(0, defenderMaxHp - dmg)
+ * 新残HP newRemain = min(defenderMaxHp, floor((attackerCurrentHp + r) / 2))
+ * 新累積ダメ newDmg = defenderMaxHp - newRemain（0以上）
+ *
+ * @param dmgDist 現時点の累積ダメージ分布（key=累積ダメージ, value=確率）
+ * @param defenderMaxHp 防御側の最大HP
+ * @param attackerCurrentHp 痛み分け使用時の攻撃側現在HP実数値
+ */
+export function applyPainSplitToDmgDist(
+  dmgDist: Map<number, number>,
+  defenderMaxHp: number,
+  attackerCurrentHp: number,
+): Map<number, number> {
+  const aHp = Math.max(0, attackerCurrentHp)
+  const out = new Map<number, number>()
+  for (const [dmg, p] of dmgDist) {
+    const remainHp = Math.max(0, defenderMaxHp - dmg)
+    const newRemain = Math.min(defenderMaxHp, Math.floor((aHp + remainHp) / 2))
+    const newDmg = defenderMaxHp - newRemain
+    out.set(newDmg, (out.get(newDmg) ?? 0) + p)
+  }
+  return out
 }
