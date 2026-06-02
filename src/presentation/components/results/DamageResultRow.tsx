@@ -9,7 +9,7 @@ import {
   getVariableMultiHitDist,
 } from '@/domain/calculators/KoProbabilityCalc'
 import { calcCritChance } from '@/domain/calculators/CritRank'
-import { useAccumStore } from '@/presentation/store/accumStore'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
@@ -322,7 +322,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const [added, setAdded] = useState(false)
   const [isCritical, setIsCritical] = useState(false)
 
-  const addEntry = useAccumStore(s => s.addEntry)
+  const addEntry = useProgressionStore(s => s.addAttack)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
   const attackerItem = useAttackerStore(s => s.itemName)

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useDefenderStore } from '@/presentation/store/pokemonStore'
-import { useAccumStore } from '@/presentation/store/accumStore'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { findOptimalAccumDurability } from '@/application/usecases/FindOptimalAccumDurability'
 
 /**
@@ -13,14 +13,15 @@ export function AccumDurabilityPanel() {
   const defenderBase = useDefenderStore(s => s.baseStats)
   const defenderSp   = useDefenderStore(s => s.sp)
 
-  const entries     = useAccumStore(s => s.entries)
-  const constDmg    = useAccumStore(s => s.constDmg)
-  const constRec    = useAccumStore(s => s.constRec)
-  const poisonTurns = useAccumStore(s => s.poisonTurns)
+  const events      = useProgressionStore(s => s.events)
+  const constDmg    = useProgressionStore(s => s.constDmg)
+  const constRec    = useProgressionStore(s => s.constRec)
+  const poisonTurns = useProgressionStore(s => s.poisonTurns)
 
   const result = useMemo(() => {
-    const movesMaxTotal = entries.reduce((s, e) => s + e.maxDmg * e.usages, 0)
-    const movesMinTotal = entries.reduce((s, e) => s + e.minDmg * e.usages, 0)
+    const attacks = events.filter((e): e is Extract<typeof e, { kind: 'attack' }> => e.kind === 'attack')
+    const movesMaxTotal = attacks.reduce((s, e) => s + e.maxDmg * e.usages, 0)
+    const movesMinTotal = attacks.reduce((s, e) => s + e.minDmg * e.usages, 0)
     return findOptimalAccumDurability({
       defenderBaseHp: defenderBase.hp,
       defenderCurrentSp: defenderSp,
@@ -30,7 +31,7 @@ export function AccumDurabilityPanel() {
       constRec,
       poisonTurns,
     })
-  }, [defenderBase.hp, defenderSp, entries, constDmg, constRec, poisonTurns])
+  }, [defenderBase.hp, defenderSp, events, constDmg, constRec, poisonTurns])
 
   const {
     budget, currentSpH, currentHp, currentMaxDmg,

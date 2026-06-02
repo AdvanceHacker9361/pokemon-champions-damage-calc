@@ -4,15 +4,17 @@ import { DamageProgressionSection } from './DamageProgressionSection'
 import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { ExportButton } from './ExportButton'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
-import { useAccumStore } from '@/presentation/store/accumStore'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
 
 export function DamageResultArea() {
   const results = useResultStore(s => s.results)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const defenderName = useDefenderStore(s => s.pokemonName)
-  const accumEntries = useAccumStore(s => s.entries)
+  const events = useProgressionStore(s => s.events)
 
-  const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
+  const firstAttack = events.find(e => e.kind === 'attack')
+  const defenderMaxHp = results[0]?.result.defenderMaxHp
+    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : 0)
 
   if (!attackerName || !defenderName) {
     return (

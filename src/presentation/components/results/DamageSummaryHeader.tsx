@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useResultStore } from '@/presentation/store/resultStore'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
-import { useAccumStore } from '@/presentation/store/accumStore'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { DamageBar } from './DamageBar'
 import { AccumHistogram } from './AccumHistogram'
 import { AccumDurabilityPanel } from './AccumDurabilityPanel'
@@ -20,8 +20,10 @@ function koLabelColor(koResult: KoResult): string {
 
 export function DamageSummaryHeader() {
   const results = useResultStore(s => s.results)
-  const accumEntries = useAccumStore(s => s.entries)
-  const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
+  const events = useProgressionStore(s => s.events)
+  const firstAttack = events.find(e => e.kind === 'attack')
+  const defenderMaxHp = results[0]?.result.defenderMaxHp
+    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : 0)
   const accum = useAccumulatedDamage(defenderMaxHp)
   const [durabilityExpanded, setDurabilityExpanded] = useState(false)
 
