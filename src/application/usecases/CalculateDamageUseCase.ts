@@ -34,6 +34,7 @@ export interface CalculateDamageInput {
   move: MoveData
   field: BattleField
   isCritical?: boolean
+  skipHalfBerry?: boolean
 }
 
 export function executeDamageCalculation(
@@ -93,5 +94,6 @@ export function executeDamageCalculation(
     move: input.move,
     field: input.field,
     isCritical: input.isCritical,
+    skipHalfBerry: input.skipHalfBerry,
   })
 }
