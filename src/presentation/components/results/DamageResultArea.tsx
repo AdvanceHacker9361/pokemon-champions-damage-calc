@@ -1,6 +1,7 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
 import { DamageAccumPanel } from './DamageAccumPanel'
+import { PainSplitInsertRow } from './PainSplitInsertRow'
 import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { ExportButton } from './ExportButton'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
@@ -9,10 +10,12 @@ import { useAccumStore } from '@/presentation/store/accumStore'
 export function DamageResultArea() {
   const results = useResultStore(s => s.results)
   const attackerName = useAttackerStore(s => s.pokemonName)
+  const attackerMoves = useAttackerStore(s => s.moves)
   const defenderName = useDefenderStore(s => s.pokemonName)
   const accumEntries = useAccumStore(s => s.entries)
 
   const defenderMaxHp = results[0]?.result.defenderMaxHp ?? accumEntries[0]?.defenderMaxHp ?? 0
+  const hasPainSplitMove = attackerMoves.includes('いたみわけ')
 
   if (!attackerName || !defenderName) {
     return (
@@ -20,6 +23,7 @@ export function DamageResultArea() {
         <div className="panel text-center py-8">
           <p className="text-fg-muted text-sm">攻撃側・防御側のポケモンを選択してください</p>
         </div>
+        {hasPainSplitMove && <PainSplitInsertRow />}
         <DamageAccumPanel defenderMaxHp={defenderMaxHp} />
         <FieldStateBar />
       </>
@@ -28,7 +32,7 @@ export function DamageResultArea() {
 
   return (
     <>
-      {results.length > 0 ? (
+      {results.length > 0 || hasPainSplitMove ? (
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs text-fg-muted">{attackerName} → {defenderName}</span>
@@ -51,6 +55,7 @@ export function DamageResultArea() {
               />
             </div>
           ))}
+          {hasPainSplitMove && <PainSplitInsertRow />}
         </div>
       ) : (
         <div className="panel text-center py-8">
