@@ -5,6 +5,7 @@ import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar'
 import { TabMemo } from '@/presentation/components/session/TabMemo'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
+import { BattleSequencePanel } from '@/presentation/components/results/BattleSequencePanel'
 import { DamageSummaryHeader } from '@/presentation/components/results/DamageSummaryHeader'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
 import { useKeyboardShortcuts } from '@/presentation/hooks/useKeyboardShortcuts'
@@ -129,6 +130,7 @@ export function Calculator() {
               </button>
             </div>
             <DamageResultArea />
+            <BattleSequencePanel />
           </div>
 
           {/* 防御側 */}

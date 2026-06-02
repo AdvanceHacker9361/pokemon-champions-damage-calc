@@ -2,6 +2,7 @@ import type { Weather, TerrainField } from '@/domain/models/Pokemon'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from './pokemonStore'
 import { useFieldStore } from './fieldStore'
 import { useAccumStore, type AccumEntry, type PainSplit } from './accumStore'
+import { useBattleSequenceStore, type SeqStep } from './battleSequenceStore'
 
 /** ポケモンストアのうちスナップショット対象となるデータフィールドのみ */
 export type PokemonSnapshot = Pick<PokemonStore,
@@ -30,11 +31,19 @@ export interface AccumSnapshot {
   poisonTurns: number
 }
 
+export interface BattleSequenceSnapshot {
+  enabled: boolean
+  steps: SeqStep[]
+  attackerStartHp: number | null
+  defenderStartHp: number | null
+}
+
 export interface SessionSnapshot {
   attacker: PokemonSnapshot
   defender: PokemonSnapshot
   field: FieldSnapshot
   accum: AccumSnapshot
+  battleSequence: BattleSequenceSnapshot
 }
 
 /**
@@ -100,6 +109,15 @@ function cloneAccumSnapshot(a: AccumSnapshot): AccumSnapshot {
   }
 }
 
+function cloneBattleSequenceSnapshot(b: BattleSequenceSnapshot): BattleSequenceSnapshot {
+  return {
+    enabled: b.enabled,
+    steps: b.steps.map(s => ({ ...s })),
+    attackerStartHp: b.attackerStartHp,
+    defenderStartHp: b.defenderStartHp,
+  }
+}
+
 /** SessionSnapshot 全体の深いコピー */
 export function cloneSnapshot(snap: SessionSnapshot): SessionSnapshot {
   return {
@@ -107,6 +125,7 @@ export function cloneSnapshot(snap: SessionSnapshot): SessionSnapshot {
     defender: clonePokemonSnapshot(snap.defender),
     field: { ...snap.field },
     accum: cloneAccumSnapshot(snap.accum),
+    battleSequence: cloneBattleSequenceSnapshot(snap.battleSequence),
   }
 }
 
@@ -114,6 +133,7 @@ export function cloneSnapshot(snap: SessionSnapshot): SessionSnapshot {
 export function snapshotLiveState(): SessionSnapshot {
   const field = useFieldStore.getState()
   const accum = useAccumStore.getState()
+  const seq = useBattleSequenceStore.getState()
   return {
     attacker: clonePokemonSnapshot(useAttackerStore.getState()),
     defender: clonePokemonSnapshot(useDefenderStore.getState()),
@@ -133,6 +153,12 @@ export function snapshotLiveState(): SessionSnapshot {
       constRec: accum.constRec,
       poisonTurns: accum.poisonTurns,
     }),
+    battleSequence: cloneBattleSequenceSnapshot({
+      enabled: seq.enabled,
+      steps: seq.steps,
+      attackerStartHp: seq.attackerStartHp,
+      defenderStartHp: seq.defenderStartHp,
+    }),
   }
 }
 
@@ -146,4 +172,9 @@ export function restoreState(snap: SessionSnapshot): void {
   useDefenderStore.setState(clonePokemonSnapshot(snap.defender))
   useFieldStore.setState({ ...snap.field })
   useAccumStore.setState(cloneAccumSnapshot(snap.accum))
+  useBattleSequenceStore.setState(
+    cloneBattleSequenceSnapshot(
+      snap.battleSequence ?? { enabled: false, steps: [], attackerStartHp: null, defenderStartHp: null },
+    ),
+  )
 }
