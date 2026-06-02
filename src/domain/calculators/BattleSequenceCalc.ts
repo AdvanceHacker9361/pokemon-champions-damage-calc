@@ -21,8 +21,10 @@ export type SeqEvent =
   | { kind: 'attack'; dmg: DmgDist; drain?: number }
   /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain 指定時は防御側が回復 */
   | { kind: 'incoming'; dmg: DmgDist; drain?: number }
-  /** 痛み分け: 両者HPを floor((aHP + dHP) / 2) に均す */
-  | { kind: 'painSplit' }
+  /** 痛み分け: 両者HPを floor((aHP + dHP) / 2) に均す。
+   *  attackerHp 指定時は防御側のみを floor((attackerHp + dHP) / 2) に変換し
+   *  攻撃側HPは変えない（総合累積=攻撃側HP固定の特殊ケース用） */
+  | { kind: 'painSplit'; attackerHp?: number }
   /** 防御側への定数ダメージ（火傷・砂・毒など） */
   | { kind: 'defenderConst'; amount: number }
   /** 攻撃側への定数ダメージ */
@@ -150,11 +152,17 @@ export function runBattleSequence(
           break
         }
         case 'painSplit': {
-          const v = Math.floor((a + d) / 2)
-          const na = clamp(v, 0, attackerMaxHp)
-          const nd = clamp(v, 0, defenderMaxHp)
-          // a,d >= 1 なので v >= 1、瀕死にはならない
-          addLive(na, nd, p)
+          if (ev.attackerHp !== undefined) {
+            // 攻撃側HP固定（総合累積モード）: 防御側のみ均し、攻撃側HPは不変
+            const nd = clamp(Math.floor((ev.attackerHp + d) / 2), 0, defenderMaxHp)
+            addLive(a, nd, p)
+          } else {
+            const v = Math.floor((a + d) / 2)
+            const na = clamp(v, 0, attackerMaxHp)
+            const nd = clamp(v, 0, defenderMaxHp)
+            // a,d >= 1 なので v >= 1、瀕死にはならない
+            addLive(na, nd, p)
+          }
           break
         }
         case 'defenderConst': {
@@ -212,4 +220,32 @@ export function runBattleSequence(
     attackerSurviveProb: Math.min(1, 1 - faintProb),
     bothAliveProb: bothAlive,
   }
+}
+
+/**
+ * バトルシーケンス結果から、防御側への累積ダメージ分布を導出する。
+ * （総合累積のヒストグラム・撃破率に使用）
+ *
+ * - 生存マス: ダメージ = defenderMaxHp - 残HP
+ * - 撃破マス (koProb): しきい値 defenderMaxHp に集約（オーバーキルの裾は畳む = 簡潔優先）
+ *
+ * 攻撃側生存マス（faint なし前提＝総合累積）の防御側周辺分布を使う。
+ * @returns ダメージ値 -> 確率 の Map（総和は live + ko = 1、faint=0 の前提）
+ */
+export function extractDefenderDamageDistribution(
+  result: BattleSequenceResult,
+  defenderMaxHp: number,
+): Map<number, number> {
+  const out = new Map<number, number>()
+  const last = result.steps[result.steps.length - 1]
+  if (last) {
+    for (const [hp, p] of last.defenderHpDist) {
+      const dmg = defenderMaxHp - hp
+      out.set(dmg, (out.get(dmg) ?? 0) + p)
+    }
+  }
+  if (result.defenderKoProb > 0) {
+    out.set(defenderMaxHp, (out.get(defenderMaxHp) ?? 0) + result.defenderKoProb)
+  }
+  return out
 }
