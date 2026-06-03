@@ -107,12 +107,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     }
   }
 
-  // 攻撃の直後に防御側回復を挿入（オボン=1/4 を初期値に。条件回復はここで挟む）
-  function addRecoverAfter(targetId: string) {
-    const oboned = defenderMaxHp > 0 ? Math.floor(defenderMaxHp / 4) : 0
-    addEventAfter(targetId, { kind: 'defenderRecover', amount: oboned })
-  }
-
   return (
     <div className="panel space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -150,7 +144,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               onMoveUp={() => moveEvent(ev.id, -1)}
               onMoveDown={() => moveEvent(ev.id, 1)}
               onAddPainSplit={() => addAfter('painSplit', ev.id)}
-              onAddRecover={() => addRecoverAfter(ev.id)}
               onUpdate={patch => updateEvent(ev.id, patch)}
             />
           ))}
@@ -298,14 +291,13 @@ interface EventRowProps {
   onMoveUp: () => void
   onMoveDown: () => void
   onAddPainSplit: () => void
-  onAddRecover: () => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
 }
 
 function EventRow({
   ev, idx, total,
   attackerMaxHp, defenderMoveOptions,
-  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddRecover, onUpdate,
+  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onUpdate,
 }: EventRowProps) {
   if (ev.kind === 'attack') {
     const subMin = ev.minDmg * ev.usages
@@ -332,12 +324,6 @@ function EventRow({
           >+</button>
         </div>
         <span className="text-fg-muted font-mono flex-shrink-0 w-24 text-right">{subMin}〜{subMax}</span>
-        <button
-          type="button"
-          onClick={onAddRecover}
-          className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors flex-shrink-0"
-          title="このエントリの直後に回復を挿入（オボン=1/4 を初期値に。条件回復はここで挟む）"
-        >+回復</button>
         <button
           type="button"
           onClick={onAddPainSplit}
@@ -551,10 +537,10 @@ function BackgroundEffectsSection({
               onClick={() => setConstRec(constRec + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-fg-subtle">残飯/黒ヘド等</span>
+          <span className="text-xs text-fg-subtle">残飯/オボン等</span>
         </div>
         <div className="pl-[3.75rem] text-[10px] text-fg-faint">
-          ※末尾でまとめて適用。オボン等「攻撃の間に挟む条件回復」は各攻撃行の「+回復」で挿入してください
+          ※各与ダメ攻撃の直後に毎回適用（残飯/オボン等の位置依存回復に対応。撃破判定は正確、最終HPは過大評価になる場合あり）
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {

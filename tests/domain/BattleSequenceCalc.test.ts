@@ -107,6 +107,23 @@ describe('BattleSequenceCalc', () => {
       expect(r.defenderKoProb).toBeCloseTo(1, 6)
     })
 
+    it('ブリジュラス流星群×2 vs ガブリアス(オボン): オボンが2発の間に挟まると生存', () => {
+      // HP=183、流星群1=122〜144、流星群2(C-2)=61〜72、オボン=45
+      // 「+加算→+加算」の間にオボン(=defenderRecover 45)が自動挿入される想定
+      const HP = 183
+      const draco1 = [122,124,126,128,130,132,134,136,138,140,141,142,143,144,144,144]
+      const draco2 = [61,62,63,64,65,66,67,68,69,70,71,71,72,72,72,72]
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: draco1 },
+        { kind: 'defenderRecover', amount: 45 }, // 1発目直後の constRec
+        { kind: 'attack', dmg: draco2 },
+        { kind: 'defenderRecover', amount: 45 }, // 2発目直後の constRec（終端で結果に影響しない）
+      ]
+      const r = runBattleSequence(events, 1, HP)
+      // 確定撃破ではなく、全乱数で生存していること
+      expect(r.defenderKoProb).toBeCloseTo(0, 6)
+    })
+
     it('定数回復は攻撃の後に適用すると正味ダメージを減らす（残飯）', () => {
       // 防御側100に攻撃50 → 残50、回復20 → 残70（正味ダメ30）
       // 末尾適用なら満タンクランプされず回復が効く

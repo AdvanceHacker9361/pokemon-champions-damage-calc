@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.3**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.4**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,26 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.8.4: 「定数回復」を攻撃ごとの自動適用に変更（オボン等の位置依存対応・UI簡素化）
+
+#### 変更
+- V3.8.3 で追加した各攻撃行の「+回復」ボタンを廃止
+- 背景効果の **「定数回復」を各与ダメ攻撃の直後に毎回適用**するセマンティクスに変更
+  - これによりオボン等の位置依存条件回復が「定数回復」フィールド単独で再現可能に（ブリジュラス流星群×2 vs ガブリアス(オボン) で全乱数生存になることを確認）
+  - 残飯（毎ターン1/16回復）にも同セマンティクスで対応可能
+- 背景の `定数ダメ` + `もうどく` は従来どおり末尾で累計適用（砂/毒/火傷の合計）
+
+#### 制約（UI で明示）
+- 撃破判定は正確だが、回復量が「攻撃数 × 定数回復」分適用されるため、オボン（本来1回限り）使用時の **最終HPはやや過大評価** になる
+- 精密な制御が必要な場合は、引き続き個別の `defenderRecover` イベントを明示挿入できる
+
+#### 実装
+- `useAccumulatedDamage.ts` / `useBattleSequence.ts`: 各 `attack` イベント処理直後に `constRec` を `defenderRecover` イベントとして挿入。背景累計ダメ（`bgDamageTotal = constDmg + poisonTotal`）は末尾で適用。攻撃が0件のときは `constRec` も末尾に1回適用（取りこぼし防止）
+- `useBattleSequence.ts`: ラベルが `seqEvents` と 1:1 で連動する `pushSeq` ヘルパーに統一
+- `DamageProgressionPanel.tsx`: `+回復` ボタン・`addRecoverAfter` を削除、`onAddRecover` プロップを撤去、定数回復のヒントを更新
+
+---
 
 ### V3.8.3: 攻撃の間に挟む条件回復（オボン等）用に攻撃行へ「+回復」を追加
 
