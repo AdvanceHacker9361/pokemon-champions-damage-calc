@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.1**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.2**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,21 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.8.2: 定数ダメ/回復が総合累積に反映されない不具合を修正
+
+#### 不具合
+1. **定数回復が消える**: 背景効果（定数ダメ/回復・もうどく合計）を**先頭イベント**として適用していたため、防御側が満タンの状態で回復が適用され、最大HPでクランプされて無効化されていた（例: 攻撃50＋回復20 が正味30ではなく50と表示）
+2. **攻撃技未選択時に defenderMaxHp=0**: 結果/加算エントリが無いと防御側HPが0になり、定数の分数ボタン（+1/16 等）が0を加算 → 定数のみ入れたいケースで反映されなかった
+
+#### 修正
+- `useAccumulatedDamage.ts` / `useBattleSequence.ts`: 背景効果の `totalConst` を**全攻撃・痛み分けの後（末尾）**に適用。攻撃で削れた後に回復が乗るためクランプされず正しく正味ダメージに反映（残飯は被弾後に回復するゲーム挙動とも一致）
+- `DamageResultArea.tsx` / `DamageSummaryHeader.tsx` / `AccumExportButton.tsx`: defenderMaxHp のフォールバックに**防御側ストアの実HP**（`calculateHP(baseStats.hp, sp.hp)`）を追加。攻撃技未選択でも定数が正しい防御側HPで計算される
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に1件追加（「定数回復は攻撃の後に適用すると正味ダメージを減らす（残飯）」: 攻撃50→回復20で正味30を検証）
+
+---
 
 ### V3.8.1: シーケンスモードの痛み分けで両者HPを均すよう修正
 

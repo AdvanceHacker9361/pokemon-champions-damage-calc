@@ -106,6 +106,18 @@ describe('BattleSequenceCalc', () => {
       const r = runBattleSequence(events, 150, 100)
       expect(r.defenderKoProb).toBeCloseTo(1, 6)
     })
+
+    it('定数回復は攻撃の後に適用すると正味ダメージを減らす（残飯）', () => {
+      // 防御側100に攻撃50 → 残50、回復20 → 残70（正味ダメ30）
+      // 末尾適用なら満タンクランプされず回復が効く
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [50] },
+        { kind: 'defenderRecover', amount: 20 },
+      ]
+      const r = runBattleSequence(events, 1, 100)
+      const dist = extractDefenderDamageDistribution(r, 100)
+      expect(dist.get(30)).toBeCloseTo(1, 6) // 正味30ダメ
+    })
   })
 
   describe('シナリオ: 攻撃→痛み分け→被ダメ→攻撃', () => {

@@ -120,16 +120,12 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const firstAttack = attackEvents[0]
     const firstHadMultiscale = firstAttack?.hadMultiscale ?? false
 
-    // 通常パス / 急所込みパスのイベント列を構築（背景効果は先頭で適用）
+    // 通常パス / 急所込みパスのイベント列を構築
+    // 背景効果（定数ダメ/回復・もうどく）は「末尾」で適用する。
+    // 先頭で回復を適用すると満タン時にクランプされて無効化されるため、
+    // 攻撃で削れた後に乗せる（残飯は被弾後に回復するゲーム挙動とも一致）。
     const normalEvents: SeqEvent[] = []
     const critEvents: SeqEvent[] = []
-    if (totalConst > 0) {
-      normalEvents.push({ kind: 'defenderConst', amount: totalConst })
-      critEvents.push({ kind: 'defenderConst', amount: totalConst })
-    } else if (totalConst < 0) {
-      normalEvents.push({ kind: 'defenderRecover', amount: -totalConst })
-      critEvents.push({ kind: 'defenderRecover', amount: -totalConst })
-    }
 
     // 攻撃イベントの累積モード変換（incoming/attackerConst/attackerRecover は累積では無視）
     let attackIdx = 0
@@ -165,6 +161,15 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         case 'attackerRecover':
           break
       }
+    }
+
+    // 背景効果（定数ダメ/回復・もうどく合計）を末尾で適用
+    if (totalConst > 0) {
+      normalEvents.push({ kind: 'defenderConst', amount: totalConst })
+      critEvents.push({ kind: 'defenderConst', amount: totalConst })
+    } else if (totalConst < 0) {
+      normalEvents.push({ kind: 'defenderRecover', amount: -totalConst })
+      critEvents.push({ kind: 'defenderRecover', amount: -totalConst })
     }
 
     const ATT_DUMMY = 1

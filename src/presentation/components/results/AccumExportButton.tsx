@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useResultStore } from '@/presentation/store/resultStore'
+import { useDefenderStore } from '@/presentation/store/pokemonStore'
+import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
 
 function formatProb(prob: number): string {
@@ -16,10 +18,14 @@ export function AccumExportButton() {
   const constRec = useProgressionStore(s => s.constRec)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
   const results = useResultStore(s => s.results)
+  const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
+  const defenderSpHp = useDefenderStore(s => s.sp.hp)
 
   const firstAttack = events.find(e => e.kind === 'attack')
-  const defenderMaxHp = results[0]?.result.defenderMaxHp
-    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : 0)
+  const storeDefHp = defenderBaseHp > 0 ? calculateHP(defenderBaseHp, defenderSpHp) : 0
+  const defenderMaxHp =
+    results[0]?.result.defenderMaxHp
+    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : storeDefHp)
   const accum = useAccumulatedDamage(defenderMaxHp)
 
   if (!accum.hasAnything) return null
