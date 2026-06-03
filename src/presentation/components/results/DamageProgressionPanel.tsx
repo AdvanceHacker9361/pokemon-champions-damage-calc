@@ -615,7 +615,7 @@ function BackgroundEffectsSection({
       {/* 定数回復（たべのこし等の per-turn passive） */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-fg-muted w-20 flex-shrink-0">食べ残し/黒ヘド</span>
+          <span className="text-xs text-fg-muted w-20 flex-shrink-0">食べ残し/ポイヒ</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -637,11 +637,8 @@ function BackgroundEffectsSection({
           </div>
           <span className="text-xs text-fg-subtle">毎ターン回復</span>
         </div>
-        <div className="pl-[3.75rem] text-[10px] text-fg-faint leading-relaxed">
-          ※各与ダメ攻撃の直後に毎回適用。プリセットはクリックで<b>加算（重複可）</b>
-          ：食べ残し＋あめうけざら＋アクアリング等を足し込めます。<br />
-          1/16 = 食べ残し/あめうけざら/アクアリング/ねをはる、1/8 = ポイズンヒール。
-          黒いヘドロ(どく以外)の 1/8 は「定数ダメ」側へ。再生技は「＋回復」イベントで挟む
+        <div className="pl-[3.75rem] text-[10px] text-fg-faint">
+          毎ターン適用・加算可（重複ソースは複数クリック）
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {
