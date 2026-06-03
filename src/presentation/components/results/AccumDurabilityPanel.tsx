@@ -13,25 +13,29 @@ export function AccumDurabilityPanel() {
   const defenderBase = useDefenderStore(s => s.baseStats)
   const defenderSp   = useDefenderStore(s => s.sp)
 
-  const events      = useProgressionStore(s => s.events)
-  const constDmg    = useProgressionStore(s => s.constDmg)
-  const constRec    = useProgressionStore(s => s.constRec)
-  const poisonTurns = useProgressionStore(s => s.poisonTurns)
+  const events         = useProgressionStore(s => s.events)
+  const constDmg       = useProgressionStore(s => s.constDmg)
+  const constRec       = useProgressionStore(s => s.constRec)
+  const constRecBerry  = useProgressionStore(s => s.constRecBerry)
+  const poisonTurns    = useProgressionStore(s => s.poisonTurns)
 
   const result = useMemo(() => {
     const attacks = events.filter((e): e is Extract<typeof e, { kind: 'attack' }> => e.kind === 'attack')
     const movesMaxTotal = attacks.reduce((s, e) => s + e.maxDmg * e.usages, 0)
     const movesMinTotal = attacks.reduce((s, e) => s + e.minDmg * e.usages, 0)
+    // 耐久調整では「攻撃数 × 定数回復 + オボン回復」を総静的回復としてまとめる近似
+    const attackTurns = attacks.reduce((s, e) => s + e.usages, 0)
+    const totalStaticRecovery = constRec * Math.max(1, attackTurns) + constRecBerry
     return findOptimalAccumDurability({
       defenderBaseHp: defenderBase.hp,
       defenderCurrentSp: defenderSp,
       movesMaxTotal,
       movesMinTotal,
       constDmg,
-      constRec,
+      constRec: totalStaticRecovery,
       poisonTurns,
     })
-  }, [defenderBase.hp, defenderSp, events, constDmg, constRec, poisonTurns])
+  }, [defenderBase.hp, defenderSp, events, constDmg, constRec, constRecBerry, poisonTurns])
 
   const {
     budget, currentSpH, currentHp, currentMaxDmg,

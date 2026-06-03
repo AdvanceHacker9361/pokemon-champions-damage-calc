@@ -154,6 +154,23 @@ describe('BattleSequenceCalc', () => {
       expect(dist.get(70)).toBeCloseTo(1, 6)
     })
 
+    it('たべのこし(per-turn)+オボン(1回限り)併用シナリオ', () => {
+      // HP=192, 攻撃50×3、たべのこし+12/turn (defenderRecover events), オボン+48 (defenderBerry)
+      // T1: 192-50=142, +12=154
+      // T2: 154-50=104, +12=116
+      // T3: 116-50=66 ≤96 → オボン+48=114, +12=126 → ダメ66
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [50] }, { kind: 'defenderRecover', amount: 12 },
+        { kind: 'attack', dmg: [50] }, { kind: 'defenderRecover', amount: 12 },
+        { kind: 'attack', dmg: [50] }, { kind: 'defenderRecover', amount: 12 },
+      ]
+      const r = runBattleSequence(events, 1, 192, {
+        defenderBerry: { threshold: 96, amount: 48 },
+      })
+      const dist = extractDefenderDamageDistribution(r, 192)
+      expect(dist.get(66)).toBeCloseTo(1, 6)
+    })
+
     it('定数回復は攻撃の後に適用すると正味ダメージを減らす（残飯）', () => {
       // 防御側100に攻撃50 → 残50、回復20 → 残70（正味ダメ30）
       // 末尾適用なら満タンクランプされず回復が効く

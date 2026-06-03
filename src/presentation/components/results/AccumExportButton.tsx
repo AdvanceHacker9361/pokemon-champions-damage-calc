@@ -16,6 +16,7 @@ export function AccumExportButton() {
   const events = useProgressionStore(s => s.events)
   const constDmg = useProgressionStore(s => s.constDmg)
   const constRec = useProgressionStore(s => s.constRec)
+  const constRecBerry = useProgressionStore(s => s.constRecBerry)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
   const results = useResultStore(s => s.results)
   const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
@@ -55,7 +56,8 @@ export function AccumExportButton() {
     }
 
     if (constDmg > 0) lines.push(`定数ダメ: ${constDmg}`)
-    if (constRec > 0) lines.push(`定数回復: -${constRec}`)
+    if (constRec > 0) lines.push(`定数回復(per-turn): -${constRec}`)
+    if (constRecBerry > 0) lines.push(`オボン(HP≤50%で1回): -${constRecBerry}`)
     if (poisonTurns > 0) lines.push(`もうどく(${poisonTurns}T): 累計 ${accum.poisonTotal}`)
 
     lines.push('─'.repeat(30))
