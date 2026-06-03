@@ -5,16 +5,23 @@ import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { ExportButton } from './ExportButton'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
+import { calculateHP } from '@/domain/calculators/StatCalculator'
 
 export function DamageResultArea() {
   const results = useResultStore(s => s.results)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const defenderName = useDefenderStore(s => s.pokemonName)
+  const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
+  const defenderSpHp = useDefenderStore(s => s.sp.hp)
   const events = useProgressionStore(s => s.events)
 
   const firstAttack = events.find(e => e.kind === 'attack')
-  const defenderMaxHp = results[0]?.result.defenderMaxHp
-    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : 0)
+  // 結果 → 加算エントリ → 防御側ストアの順でフォールバック
+  // （攻撃技未選択で定数ダメのみ入れる場合でも正しい防御側HPで計算するため）
+  const storeDefHp = defenderBaseHp > 0 ? calculateHP(defenderBaseHp, defenderSpHp) : 0
+  const defenderMaxHp =
+    results[0]?.result.defenderMaxHp
+    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : storeDefHp)
 
   if (!attackerName || !defenderName) {
     return (

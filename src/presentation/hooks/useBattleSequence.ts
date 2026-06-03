@@ -113,7 +113,8 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
-    // 背景効果（定数ダメ/回復・もうどく）を先頭イベントとして適用
+    // 背景効果（定数ダメ/回復・もうどく）の合計。末尾で適用する（先頭で回復を適用すると
+    // 満タン時にクランプされて無効化されるため）。
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
       Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
     )
@@ -122,13 +123,6 @@ export function useBattleSequence(): BattleSequenceComputed {
 
     const seqEvents: SeqEvent[] = []
     const resolved: ResolvedEvent[] = []
-
-    if (totalConst > 0) {
-      seqEvents.push({ kind: 'defenderConst', amount: totalConst })
-    } else if (totalConst < 0) {
-      seqEvents.push({ kind: 'defenderRecover', amount: -totalConst })
-    }
-    // 注: 背景効果は resolved（表示テーブル）には含めない。先頭オフセットとしてのみ反映。
 
     let firstHadMultiscale = false
     let attackSeen = 0
@@ -208,15 +202,21 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
+    // 背景効果（定数ダメ/回復・もうどく合計）を末尾で適用
+    if (totalConst > 0) {
+      seqEvents.push({ kind: 'defenderConst', amount: totalConst })
+    } else if (totalConst < 0) {
+      seqEvents.push({ kind: 'defenderRecover', amount: -totalConst })
+    }
+
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
       return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
     }
 
-    // ラベルは「背景効果（先頭オフセット）」がある場合と無い場合で長さがずれるので調整
-    const hasBgEvent = totalConst !== 0
+    // ラベル: resolved（表示テーブル）に出るイベントの後、末尾に背景効果のラベルを付ける
     const labels: string[] = []
-    if (hasBgEvent) labels.push(totalConst > 0 ? `背景ダメ ${totalConst}` : `背景回復 ${-totalConst}`)
     for (const r of resolved) if (!r.error) labels.push(r.label)
+    if (totalConst !== 0) labels.push(totalConst > 0 ? `背景ダメ ${totalConst}` : `背景回復 ${-totalConst}`)
 
     const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, {
       attackerStartHp: attackerStartHp ?? undefined,
