@@ -154,6 +154,21 @@ describe('BattleSequenceCalc', () => {
       expect(dist.get(70)).toBeCloseTo(1, 6)
     })
 
+    it('混乱実相当: HP≤25% で +1/3 発動・HP>25% では発動しない', () => {
+      // HP=100, threshold=25, amount=33 (≈1/3)
+      // 攻撃80 → 残20 ≤25 → +33 → 残53、ダメ=47
+      const r1 = runBattleSequence([{ kind: 'attack', dmg: [80] }], 1, 100, {
+        defenderBerry: { threshold: 25, amount: 33 },
+      })
+      expect(extractDefenderDamageDistribution(r1, 100).get(47)).toBeCloseTo(1, 6)
+
+      // 攻撃50 → 残50 (>25) → 未発動 → ダメ=50
+      const r2 = runBattleSequence([{ kind: 'attack', dmg: [50] }], 1, 100, {
+        defenderBerry: { threshold: 25, amount: 33 },
+      })
+      expect(extractDefenderDamageDistribution(r2, 100).get(50)).toBeCloseTo(1, 6)
+    })
+
     it('たべのこし(per-turn)+オボン(1回限り)併用シナリオ', () => {
       // HP=192, 攻撃50×3、たべのこし+12/turn (defenderRecover events), オボン+48 (defenderBerry)
       // T1: 192-50=142, +12=154

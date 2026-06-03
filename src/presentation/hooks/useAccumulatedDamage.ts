@@ -100,11 +100,12 @@ function expandAttack(
 }
 
 export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
-  const events         = useProgressionStore(s => s.events)
-  const constDmg       = useProgressionStore(s => s.constDmg)
-  const constRec       = useProgressionStore(s => s.constRec)
-  const constRecBerry  = useProgressionStore(s => s.constRecBerry)
-  const poisonTurns    = useProgressionStore(s => s.poisonTurns)
+  const events            = useProgressionStore(s => s.events)
+  const constDmg          = useProgressionStore(s => s.constDmg)
+  const constRec          = useProgressionStore(s => s.constRec)
+  const constRecBerry     = useProgressionStore(s => s.constRecBerry)
+  const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
+  const poisonTurns       = useProgressionStore(s => s.poisonTurns)
 
   return useMemo(() => {
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
@@ -179,9 +180,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       pushBoth({ kind: 'defenderRecover', amount: constRec })
     }
 
-    // オボン回復: HP≤50% で1回限り自動発動
+    // オボン/混乱実: HP≤しきい値 で1回限り自動発動
     const defenderBerry = constRecBerry > 0
-      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRecBerry }
+      ? { threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100), amount: constRecBerry }
       : undefined
 
     const ATT_DUMMY = 1
@@ -226,5 +227,5 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb, combinedProbWithCrit,
       distribution, accumKoResult,
     }
-  }, [events, constDmg, constRec, constRecBerry, poisonTurns, defenderMaxHp])
+  }, [events, constDmg, constRec, constRecBerry, berryThresholdPct, poisonTurns, defenderMaxHp])
 }

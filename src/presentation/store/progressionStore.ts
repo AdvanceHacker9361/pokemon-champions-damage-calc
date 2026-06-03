@@ -69,8 +69,10 @@ interface ProgressionStore {
   constDmg: number
   /** 定数回復: 各与ダメ攻撃の直後に毎回適用（たべのこし/黒ヘド等） */
   constRec: number
-  /** オボン回復: 防御側HPが50%以下になった時点で1回限り適用（オボンのみ） */
+  /** オボン/混乱実回復: 防御側HPがしきい値以下になった時点で1回限り適用 */
   constRecBerry: number
+  /** オボン/混乱実の発動しきい値（HP%。オボン=50, 混乱実=25） */
+  constRecBerryThresholdPct: number
   poisonTurns: number
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
@@ -92,6 +94,7 @@ interface ProgressionStore {
   setConstDmg: (v: number) => void
   setConstRec: (v: number) => void
   setConstRecBerry: (v: number) => void
+  setConstRecBerryThresholdPct: (v: number) => void
   setPoisonTurns: (n: number) => void
   setAttackerStartHp: (v: number | null) => void
   setDefenderStartHp: (v: number | null) => void
@@ -109,6 +112,7 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   constDmg: 0,
   constRec: 0,
   constRecBerry: 0,
+  constRecBerryThresholdPct: 50,
   poisonTurns: 0,
   attackerStartHp: null,
   defenderStartHp: null,
@@ -170,13 +174,14 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   setConstDmg: (v) => set({ constDmg: Math.max(0, Math.floor(v)) }),
   setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
   setConstRecBerry: (v) => set({ constRecBerry: Math.max(0, Math.floor(v)) }),
+  setConstRecBerryThresholdPct: (v) => set({ constRecBerryThresholdPct: Math.max(1, Math.min(100, Math.floor(v))) }),
   setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
   setAttackerStartHp: (v) => set({ attackerStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
   setDefenderStartHp: (v) => set({ defenderStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
 
   clear: () => set({
     events: [],
-    constDmg: 0, constRec: 0, constRecBerry: 0, poisonTurns: 0,
+    constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50, poisonTurns: 0,
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))
