@@ -162,10 +162,11 @@ export function useBattleSequence(): BattleSequenceComputed {
           break
         }
         case 'painSplit': {
-          // シーケンス表示では「攻撃側現在HP」を使うか、明示入力 attackerHp を使うか
-          // → 累積互換のため明示入力 attackerHp を採用（攻撃側現在HPと違う場合の柔軟性を残す）
-          seqEvents.push({ kind: 'painSplit', attackerHp: ev.attackerHp })
-          resolved.push({ event: ev, label: `痛み分け（攻撃側HP=${ev.attackerHp}）` })
+          // シーケンスモードでは追跡中の攻撃側HP同時分布を使って両者を均す
+          // （attackerHp を指定すると防御側のみ均す累積モードになる。シーケンスでは
+          //  攻撃側の被ダメ・回復が反映されたHPを使うため attackerHp は渡さない）
+          seqEvents.push({ kind: 'painSplit' })
+          resolved.push({ event: ev, label: `痛み分け（両者HP平均化）` })
           break
         }
         case 'incoming': {

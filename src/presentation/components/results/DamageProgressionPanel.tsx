@@ -340,13 +340,19 @@ function EventRow({
       <div className="flex items-center gap-2 text-xs pl-3 ml-1 border-l-2 border-accent-border bg-accent-bg/30 rounded-r py-1 pr-2">
         <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
         <span className="text-accent">↺ 痛み分け</span>
-        <span className="text-fg-muted">攻撃側HP:</span>
+        <span
+          className="text-fg-muted"
+          title="累積モードでの攻撃側HP（被ダメ等を含むシーケンス時は追跡中のHPが使われ、この値は無視されます）"
+        >
+          累積時の攻撃側HP:
+        </span>
         <input
           type="number"
           min={0}
           value={ev.attackerHp}
           onChange={e => onUpdate({ attackerHp: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
           className="input-base w-14 text-center text-xs px-1"
+          title="累積（被ダメなし）モードでのみ使用。シーケンス出力は両者の追跡HPで均します。"
         />
         {attackerMaxHp > 0 && (
           <span className="text-[10px] text-fg-faint">/ 最大{attackerMaxHp}</span>
