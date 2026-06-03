@@ -33,6 +33,7 @@ const ADD_BUTTONS: { kind: EventKind; label: string }[] = [
   { kind: 'attackerConst',   label: '＋攻撃側ダメ' },
   { kind: 'defenderRecover', label: '＋防御側回復' },
   { kind: 'attackerRecover', label: '＋攻撃側回復' },
+  { kind: 'rearmBerry',      label: '＋リサイクル' },
 ]
 
 function hpRange(dist: Map<number, number>): { min: number; max: number } | null {
@@ -63,6 +64,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const constRec         = useProgressionStore(s => s.constRec)
   const constRecBerry    = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
+  const berryCudChew     = useProgressionStore(s => s.berryCudChew)
+  const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns      = useProgressionStore(s => s.poisonTurns)
   const attackerStartHp  = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp  = useProgressionStore(s => s.defenderStartHp)
@@ -76,6 +79,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const setConstRec           = useProgressionStore(s => s.setConstRec)
   const setConstRecBerry      = useProgressionStore(s => s.setConstRecBerry)
   const setConstRecBerryThresholdPct = useProgressionStore(s => s.setConstRecBerryThresholdPct)
+  const setBerryCudChew       = useProgressionStore(s => s.setBerryCudChew)
+  const setBerryHarvestChance = useProgressionStore(s => s.setBerryHarvestChance)
   const setPoisonTurns        = useProgressionStore(s => s.setPoisonTurns)
   const setAttackerStartHp    = useProgressionStore(s => s.setAttackerStartHp)
   const setDefenderStartHp    = useProgressionStore(s => s.setDefenderStartHp)
@@ -106,6 +111,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       addEventAfter(targetId, { kind: 'painSplit', attackerHp: attackerMaxHp })
     } else if (kind === 'incoming') {
       addEventAfter(targetId, { kind: 'incoming', moveName: null, crit: false })
+    } else if (kind === 'rearmBerry') {
+      addEventAfter(targetId, { kind: 'rearmBerry' })
     } else if (kind === 'defenderConst' || kind === 'attackerConst' || kind === 'defenderRecover' || kind === 'attackerRecover') {
       addEventAfter(targetId, { kind, amount: 0 })
     }
@@ -180,6 +187,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         constRec={constRec}
         constRecBerry={constRecBerry}
         berryThresholdPct={berryThresholdPct}
+        berryCudChew={berryCudChew}
+        berryHarvestChance={berryHarvestChance}
         poisonTurns={poisonTurns}
         poisonPerTurn={poisonPerTurn}
         poisonTotal={poisonTotal}
@@ -188,6 +197,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         setConstRec={setConstRec}
         setConstRecBerry={setConstRecBerry}
         setConstRecBerryThresholdPct={setConstRecBerryThresholdPct}
+        setBerryCudChew={setBerryCudChew}
+        setBerryHarvestChance={setBerryHarvestChance}
         setPoisonTurns={setPoisonTurns}
       />
 
@@ -399,6 +410,17 @@ function EventRow({
     )
   }
 
+  if (ev.kind === 'rearmBerry') {
+    return (
+      <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
+        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
+        <span className="font-semibold text-success">♻ リサイクル（きのみ再装填）</span>
+        <span className="flex-1" />
+        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
+      </div>
+    )
+  }
+
   // const / recover 系
   const labels: Record<string, { text: string; color: string }> = {
     defenderConst:   { text: '防御側ダメ', color: 'text-warning' },
@@ -458,6 +480,8 @@ interface BgProps {
   constRec: number
   constRecBerry: number
   berryThresholdPct: number
+  berryCudChew: boolean
+  berryHarvestChance: number
   poisonTurns: number
   poisonPerTurn: number[]
   poisonTotal: number
@@ -466,12 +490,16 @@ interface BgProps {
   setConstRec: (v: number) => void
   setConstRecBerry: (v: number) => void
   setConstRecBerryThresholdPct: (v: number) => void
+  setBerryCudChew: (v: boolean) => void
+  setBerryHarvestChance: (v: number) => void
   setPoisonTurns: (n: number) => void
 }
 
 function BackgroundEffectsSection({
-  constDmg, constRec, constRecBerry, berryThresholdPct, poisonTurns, poisonPerTurn, poisonTotal, defenderMaxHp,
-  setConstDmg, setConstRec, setConstRecBerry, setConstRecBerryThresholdPct, setPoisonTurns,
+  constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
+  poisonTurns, poisonPerTurn, poisonTotal, defenderMaxHp,
+  setConstDmg, setConstRec, setConstRecBerry, setConstRecBerryThresholdPct,
+  setBerryCudChew, setBerryHarvestChance, setPoisonTurns,
 }: BgProps) {
   return (
     <>
@@ -641,6 +669,63 @@ function BackgroundEffectsSection({
           >
             混乱実<span className="ml-0.5 opacity-60">HP≤25% / +1/3</span>
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConstRecBerry(Math.floor(defenderMaxHp / 3))
+              setConstRecBerryThresholdPct(50)
+            }}
+            className="text-xs px-1.5 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-accent hover:text-accent"
+            title={`くいしんぼう: 混乱実が HP≤50% で発動 (+${Math.floor(defenderMaxHp / 3)})`}
+          >
+            +くいしんぼう<span className="ml-0.5 opacity-60">→HP≤50%</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setConstRecBerry(constRecBerry + Math.floor(defenderMaxHp / 3))}
+            className="text-xs px-1.5 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-accent hover:text-accent"
+            title={`ほおぶくろ: きのみ消費時に追加 +${Math.floor(defenderMaxHp / 3)} (1/3)`}
+          >
+            +ほおぶくろ<span className="ml-0.5 opacity-60">+1/3</span>
+          </button>
+        </div>
+        {/* はんすう・しゅうかく（複数回発動） */}
+        {constRecBerry > 0 && (
+          <div className="flex items-center gap-3 pl-[3.75rem] flex-wrap text-xs">
+            <label className="flex items-center gap-1 cursor-pointer" title="はんすう: 次のターン終了時にもう一度発動（計2回）">
+              <input
+                type="checkbox"
+                checked={berryCudChew}
+                onChange={e => setBerryCudChew(e.target.checked)}
+                className="accent-accent"
+              />
+              <span className="text-fg-muted">はんすう（2回）</span>
+            </label>
+            <span className="flex items-center gap-1" title="しゅうかく/ものひろい: 各ターン終了時に再装填">
+              <span className="text-fg-muted">しゅうかく:</span>
+              {[
+                { label: 'なし', v: 0 },
+                { label: '50%', v: 0.5 },
+                { label: '晴/物拾', v: 1 },
+              ].map(o => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={() => setBerryHarvestChance(o.v)}
+                  className={`px-1 py-0.5 rounded border text-[11px] transition-colors ${
+                    berryHarvestChance === o.v
+                      ? 'bg-accent-bg border-accent-border text-accent'
+                      : 'bg-surface-3 border-edge text-fg-muted hover:bg-surface-2'
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </span>
+          </div>
+        )}
+        <div className="pl-[3.75rem] text-[10px] text-fg-faint">
+          リサイクル（手動再装填）はイベント「＋リサイクル」を時系列に挿入
         </div>
         {constRecBerry > 0 && (
           <div className="pl-[3.75rem]">

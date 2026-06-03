@@ -55,6 +55,8 @@ export type ProgressionEvent =
   | { kind: 'attackerConst'; id: string; amount: number }
   | { kind: 'defenderRecover'; id: string; amount: number }
   | { kind: 'attackerRecover'; id: string; amount: number }
+  /** きのみ再装填（リサイクル等）。直後の与ダメで再びきのみが発動できる */
+  | { kind: 'rearmBerry'; id: string }
 
 export type EventKind = ProgressionEvent['kind']
 
@@ -73,6 +75,10 @@ interface ProgressionStore {
   constRecBerry: number
   /** オボン/混乱実の発動しきい値（HP%。オボン=50, 混乱実=25） */
   constRecBerryThresholdPct: number
+  /** はんすう: きのみ発動後、次のターン終了時にもう一度発動 */
+  berryCudChew: boolean
+  /** しゅうかく/ものひろい: 各ターン終了時にこの確率で再装填（0=なし, 0.5, 1=晴れ/ものひろい） */
+  berryHarvestChance: number
   poisonTurns: number
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
@@ -95,6 +101,8 @@ interface ProgressionStore {
   setConstRec: (v: number) => void
   setConstRecBerry: (v: number) => void
   setConstRecBerryThresholdPct: (v: number) => void
+  setBerryCudChew: (v: boolean) => void
+  setBerryHarvestChance: (v: number) => void
   setPoisonTurns: (n: number) => void
   setAttackerStartHp: (v: number | null) => void
   setDefenderStartHp: (v: number | null) => void
@@ -113,6 +121,8 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   constRec: 0,
   constRecBerry: 0,
   constRecBerryThresholdPct: 50,
+  berryCudChew: false,
+  berryHarvestChance: 0,
   poisonTurns: 0,
   attackerStartHp: null,
   defenderStartHp: null,
@@ -175,13 +185,16 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
   setConstRecBerry: (v) => set({ constRecBerry: Math.max(0, Math.floor(v)) }),
   setConstRecBerryThresholdPct: (v) => set({ constRecBerryThresholdPct: Math.max(1, Math.min(100, Math.floor(v))) }),
+  setBerryCudChew: (v) => set({ berryCudChew: v }),
+  setBerryHarvestChance: (v) => set({ berryHarvestChance: Math.max(0, Math.min(1, v)) }),
   setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
   setAttackerStartHp: (v) => set({ attackerStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
   setDefenderStartHp: (v) => set({ defenderStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
 
   clear: () => set({
     events: [],
-    constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50, poisonTurns: 0,
+    constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50,
+    berryCudChew: false, berryHarvestChance: 0, poisonTurns: 0,
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))

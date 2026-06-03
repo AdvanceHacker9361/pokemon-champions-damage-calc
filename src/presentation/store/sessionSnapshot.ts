@@ -28,6 +28,8 @@ export interface ProgressionSnapshot {
   constRec: number
   constRecBerry: number
   constRecBerryThresholdPct: number
+  berryCudChew: boolean
+  berryHarvestChance: number
   poisonTurns: number
   attackerStartHp: number | null
   defenderStartHp: number | null
@@ -99,6 +101,8 @@ function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
     constRec: p.constRec,
     constRecBerry: p.constRecBerry ?? 0,
     constRecBerryThresholdPct: p.constRecBerryThresholdPct ?? 50,
+    berryCudChew: p.berryCudChew ?? false,
+    berryHarvestChance: p.berryHarvestChance ?? 0,
     poisonTurns: p.poisonTurns,
     attackerStartHp: p.attackerStartHp,
     defenderStartHp: p.defenderStartHp,
@@ -137,6 +141,8 @@ export function snapshotLiveState(): SessionSnapshot {
       constRec: prog.constRec,
       constRecBerry: prog.constRecBerry,
       constRecBerryThresholdPct: prog.constRecBerryThresholdPct,
+      berryCudChew: prog.berryCudChew,
+      berryHarvestChance: prog.berryHarvestChance,
       poisonTurns: prog.poisonTurns,
       attackerStartHp: prog.attackerStartHp,
       defenderStartHp: prog.defenderStartHp,

@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.9.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.10.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,44 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.10.0: きのみ回復の例外特性・技対応（はんすう/しゅうかく/リサイクル/くいしんぼう/ほおぶくろ）
+
+#### 概要
+Gen 9 のきのみ回復にまつわる例外を `BattleSequenceCalc` のきのみ状態機械に実装。Bulbapedia でクロスチェック済み。
+
+| 例外 | 仕様 | 実装 |
+|---|---|---|
+| **くいしんぼう** | 25%発動のきのみを50%発動に早める | しきい値%フィールド＋プリセット |
+| **ほおぶくろ** | きのみ消費時に追加で最大HPの1/3回復 | 回復量に加算するプリセット |
+| **はんすう** | 発動後、次のターン終了時にもう一度発動（計2回） | エンジン: `cudChew` cudカウントダウン状態 |
+| **リサイクル**（技） | 消費したきのみを再装填 → 再発動 | 新イベント `rearmBerry` |
+| **しゅうかく/ものひろい** | 各ターン終了時に確率（50%/晴れ・物拾100%）で再装填 | エンジン: `harvestChance` 確率分岐 |
+
+#### エンジン拡張（`BattleSequenceCalc.ts`）
+- `RunSequenceOptions.defenderBerry` に `cudChew?: boolean` / `harvestChance?: number` を追加
+- 新 `SeqEvent` kind `'rearmBerry'`（消費済み→未消費に戻す）
+- きのみ状態を `consumed(0/1)` ＋ `cud(0/1/2)` の packing に拡張
+  - `berryUnit = きのみなし:1 / はんすうなし:2 / はんすうあり:6`、`key = (a*stride+d)*berryUnit + bstate`
+- **ターン境界処理**（`attack` イベント後）: はんすう cud カウントダウン（2→1→再回復）、しゅうかく確率再装填
+- はんすう発動時 cud=2 をセット → 次のターン末（attack 2回後）に +amount 再適用
+
+#### データモデル（`progressionStore.ts`）
+- `berryCudChew: boolean` / `berryHarvestChance: number`（0/0.5/1）追加
+- `ProgressionEvent` に `{ kind: 'rearmBerry' }` 追加
+- `sessionSnapshot.ts` に両フィールド追加
+
+#### UI（`DamageProgressionPanel.tsx`）
+- オボン/混乱実セクションに「+くいしんぼう（→HP≤50%）」「+ほおぶくろ（+1/3）」プリセット、「はんすう（2回）」チェック、「しゅうかく なし/50%/晴・物拾」トグルを追加
+- イベント追加に「＋リサイクル」、EventRow に rearmBerry 表示を追加
+
+#### データ修正
+- `abilities.json` / `pokemon.json`: **はんすう** が英語名 `"Cud Chew"` のままだったのを和訳（リキキリン）
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に4件追加（はんすう2回・リサイクル再装填・しゅうかく100%・しゅうかく50%確率分岐）。計156件全パス
+
+---
 
 ### V3.9.0: 「オボン」フィールドを「オボン/混乱実」に拡張・しきい値を可変化
 

@@ -105,6 +105,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const constRec          = useProgressionStore(s => s.constRec)
   const constRecBerry     = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
+  const berryCudChew      = useProgressionStore(s => s.berryCudChew)
+  const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns       = useProgressionStore(s => s.poisonTurns)
 
   return useMemo(() => {
@@ -163,6 +165,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           pushBoth({ kind: 'defenderRecover', amount: ev.amount })
           break
         }
+        case 'rearmBerry': {
+          pushBoth({ kind: 'rearmBerry' })
+          break
+        }
         // incoming / attackerConst / attackerRecover は累積ビュー（防御側のみ）では効果なし
         case 'incoming':
         case 'attackerConst':
@@ -180,9 +186,14 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       pushBoth({ kind: 'defenderRecover', amount: constRec })
     }
 
-    // オボン/混乱実: HP≤しきい値 で1回限り自動発動
+    // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう=2回・しゅうかく=再装填対応）
     const defenderBerry = constRecBerry > 0
-      ? { threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100), amount: constRecBerry }
+      ? {
+          threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100),
+          amount: constRecBerry,
+          cudChew: berryCudChew,
+          harvestChance: berryHarvestChance,
+        }
       : undefined
 
     const ATT_DUMMY = 1
@@ -227,5 +238,5 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb, combinedProbWithCrit,
       distribution, accumKoResult,
     }
-  }, [events, constDmg, constRec, constRecBerry, berryThresholdPct, poisonTurns, defenderMaxHp])
+  }, [events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns, defenderMaxHp])
 }

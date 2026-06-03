@@ -63,6 +63,8 @@ export function useBattleSequence(): BattleSequenceComputed {
   const constRec = useProgressionStore(s => s.constRec)
   const constRecBerry = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
+  const berryCudChew = useProgressionStore(s => s.berryCudChew)
+  const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp = useProgressionStore(s => s.defenderStartHp)
@@ -215,6 +217,12 @@ export function useBattleSequence(): BattleSequenceComputed {
           resolved.push({ event: ev, label })
           break
         }
+        case 'rearmBerry': {
+          const label = 'リサイクル（きのみ再装填）'
+          pushSeq({ kind: 'rearmBerry' }, label)
+          resolved.push({ event: ev, label })
+          break
+        }
       }
     }
 
@@ -227,9 +235,14 @@ export function useBattleSequence(): BattleSequenceComputed {
       return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
     }
 
-    // オボン/混乱実: HP≤しきい値 で1回限り自動発動
+    // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう・しゅうかく対応）
     const defenderBerry = constRecBerry > 0
-      ? { threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100), amount: constRecBerry }
+      ? {
+          threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100),
+          amount: constRecBerry,
+          cudChew: berryCudChew,
+          harvestChance: berryHarvestChance,
+        }
       : undefined
 
     const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, {
@@ -241,7 +254,7 @@ export function useBattleSequence(): BattleSequenceComputed {
 
     return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result }
   }, [
-    events, constDmg, constRec, constRecBerry, berryThresholdPct, poisonTurns,
+    events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
     attackerStartHp, defenderStartHp,
     attacker, defender, field,
   ])
