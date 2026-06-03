@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.1**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,22 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.8.1: シーケンスモードの痛み分けで両者HPを均すよう修正
+
+#### 修正内容
+- `useBattleSequence` が痛み分けイベント解決時に `attackerHp` を渡していたため、シーケンスモードでも「防御側のみ均す（累積モード）」挙動になり、攻撃側のHPが回復しないバグを修正
+- 修正後: シーケンスモードでは `attackerHp` を渡さず、2Dエンジンが追跡中の同時分布から `floor((aHP + dHP) / 2)` で両者を均す（既存のテスト「攻撃側が被弾後に痛み分けすると回復量が減る」「攻撃側生存と防御側撃破の同時確率が正しく分離される」が想定する挙動）
+- 累積モード（`useAccumulatedDamage`）は引き続き `attackerHp` を渡し、防御側のみを均す挙動を維持
+
+#### 影響
+- 「鬼火→地震耐え→痛み分けで回復→地震耐え→祟り目で撃破」のような典型シナリオで、痛み分け時に攻撃側が正しく回復するようになり、攻撃側生存率が現実的な値になる
+- UI: 痛み分けイベントの「攻撃側HP」入力欄ラベルを「累積時の攻撃側HP」に変更し、シーケンスでは追跡中HPが使われる旨をツールチップで明示
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に1件追加（「シーケンスモードの痛み分けは攻撃側も回復し、次の被ダメを耐えられる」: 痛み分けあり/なしの対照テストで生存率の差を検証）
+
+---
 
 ### V3.8.0: データモデル統合（単一イベント時系列）
 

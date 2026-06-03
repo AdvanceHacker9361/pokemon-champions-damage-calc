@@ -72,6 +72,28 @@ describe('BattleSequenceCalc', () => {
       expect(last.attackerHpDist.get(90)).toBeCloseTo(1, 6)
       expect(last.defenderHpDist.get(90)).toBeCloseTo(1, 6)
     })
+
+    it('シーケンスモードの痛み分けは攻撃側も回復し、次の被ダメを耐えられる', () => {
+      // 控目CSメガゲンガー(HP=200) vs カバルドン(HP=200) を抽象化したシナリオ:
+      //   T1: 鬼火相当（火傷=被ダメ無し）→ 被ダメ140 (ゲンガー残60)
+      //   T2: 痛み分け → 両者90 / 被ダメ140 (ゲンガー残 = max(0, 90-140) → 瀕死)
+      // ↑ 痛み分けでゲンガーが回復しないと、被ダメ140は受けられない
+      const withSplit: SeqEvent[] = [
+        { kind: 'incoming', dmg: [140] },
+        { kind: 'painSplit' },   // 両者90
+        { kind: 'incoming', dmg: [80] }, // 90-80=10で生存
+      ]
+      const r1 = runBattleSequence(withSplit, 200, 200)
+      expect(r1.attackerSurviveProb).toBeCloseTo(1, 6)
+
+      // 比較: 痛み分けなしだと残60で被ダメ80は受けられず瀕死
+      const withoutSplit: SeqEvent[] = [
+        { kind: 'incoming', dmg: [140] },
+        { kind: 'incoming', dmg: [80] },
+      ]
+      const r2 = runBattleSequence(withoutSplit, 200, 200)
+      expect(r2.attackerSurviveProb).toBeCloseTo(0, 6)
+    })
   })
 
   describe('定数ダメージ（火傷など）', () => {
