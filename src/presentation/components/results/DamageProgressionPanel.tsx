@@ -637,19 +637,25 @@ function BackgroundEffectsSection({
           </div>
           <span className="text-xs text-fg-subtle">毎ターン回復</span>
         </div>
-        <div className="pl-[3.75rem] text-[10px] text-fg-faint">
-          ※各与ダメ攻撃の直後に毎回適用（食べ残し=1/16・黒いヘドロ=1/8）。再生技は「＋回復」イベントで挟む
+        <div className="pl-[3.75rem] text-[10px] text-fg-faint leading-relaxed">
+          ※各与ダメ攻撃の直後に毎回適用。プリセットはクリックで<b>加算（重複可）</b>
+          ：食べ残し＋あめうけざら＋アクアリング等を足し込めます。<br />
+          1/16 = 食べ残し/あめうけざら/アクアリング/ねをはる、1/8 = ポイズンヒール。
+          黒いヘドロ(どく以外)の 1/8 は「定数ダメ」側へ。再生技は「＋回復」イベントで挟む
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {
             const val = Math.floor(defenderMaxHp * f.num / f.den)
+            const src = f.label === '1/16'
+              ? '食べ残し/あめうけざら/アクアリング/ねをはる'
+              : 'ポイズンヒール'
             return (
               <button
                 key={f.label}
                 type="button"
                 onClick={() => setConstRec(constRec + val)}
                 className="text-xs px-1 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-success hover:text-success"
-                title={`+${val} (${f.label})`}
+                title={`+${val} (${f.label} = ${src}) クリックで加算`}
               >
                 +{f.label}<span className="ml-0.5 opacity-60">{val}</span>
               </button>
