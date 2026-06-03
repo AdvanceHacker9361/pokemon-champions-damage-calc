@@ -110,7 +110,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
     )
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
-    const totalConst = constDmg + poisonTotal - constRec
+    // 定数ダメ・もうどくは累計で末尾適用（砂/毒/火傷の合計）。
+    // 定数回復は「攻撃の合間に毎回」適用する（オボン等の位置依存条件回復もこれで再現）。
+    const bgDamageTotal = constDmg + poisonTotal
+    const totalConst = bgDamageTotal - constRec
 
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
@@ -120,12 +123,13 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const firstAttack = attackEvents[0]
     const firstHadMultiscale = firstAttack?.hadMultiscale ?? false
 
-    // 通常パス / 急所込みパスのイベント列を構築
-    // 背景効果（定数ダメ/回復・もうどく）は「末尾」で適用する。
-    // 先頭で回復を適用すると満タン時にクランプされて無効化されるため、
-    // 攻撃で削れた後に乗せる（残飯は被弾後に回復するゲーム挙動とも一致）。
     const normalEvents: SeqEvent[] = []
     const critEvents: SeqEvent[] = []
+
+    function pushBoth(ev: SeqEvent) {
+      normalEvents.push(ev)
+      critEvents.push(ev)
+    }
 
     // 攻撃イベントの累積モード変換（incoming/attackerConst/attackerRecover は累積では無視）
     let attackIdx = 0
@@ -137,22 +141,23 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           const { normal, crit } = expandAttack(ev, isFirstOverall, firstHadMultiscale)
           normalEvents.push(...normal)
           critEvents.push(...crit)
+          // 攻撃直後に定数回復を適用（オボン等の位置依存条件回復を表現）
+          if (constRec > 0) {
+            pushBoth({ kind: 'defenderRecover', amount: constRec })
+          }
           break
         }
         case 'painSplit': {
           // 累積モード: 攻撃側HPは入力値で固定
-          normalEvents.push({ kind: 'painSplit', attackerHp: ev.attackerHp })
-          critEvents.push({ kind: 'painSplit', attackerHp: ev.attackerHp })
+          pushBoth({ kind: 'painSplit', attackerHp: ev.attackerHp })
           break
         }
         case 'defenderConst': {
-          normalEvents.push({ kind: 'defenderConst', amount: ev.amount })
-          critEvents.push({ kind: 'defenderConst', amount: ev.amount })
+          pushBoth({ kind: 'defenderConst', amount: ev.amount })
           break
         }
         case 'defenderRecover': {
-          normalEvents.push({ kind: 'defenderRecover', amount: ev.amount })
-          critEvents.push({ kind: 'defenderRecover', amount: ev.amount })
+          pushBoth({ kind: 'defenderRecover', amount: ev.amount })
           break
         }
         // incoming / attackerConst / attackerRecover は累積ビュー（防御側のみ）では効果なし
@@ -163,13 +168,13 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       }
     }
 
-    // 背景効果（定数ダメ/回復・もうどく合計）を末尾で適用
-    if (totalConst > 0) {
-      normalEvents.push({ kind: 'defenderConst', amount: totalConst })
-      critEvents.push({ kind: 'defenderConst', amount: totalConst })
-    } else if (totalConst < 0) {
-      normalEvents.push({ kind: 'defenderRecover', amount: -totalConst })
-      critEvents.push({ kind: 'defenderRecover', amount: -totalConst })
+    // 背景の累計ダメ（砂・もうどく・固定の定数ダメ）を末尾で適用
+    if (bgDamageTotal > 0) {
+      pushBoth({ kind: 'defenderConst', amount: bgDamageTotal })
+    }
+    // 攻撃が無い場合は定数回復を末尾でも適用（攻撃なし＝間隔がないため取りこぼし防止）
+    if (attackEvents.length === 0 && constRec > 0) {
+      pushBoth({ kind: 'defenderRecover', amount: constRec })
     }
 
     const ATT_DUMMY = 1

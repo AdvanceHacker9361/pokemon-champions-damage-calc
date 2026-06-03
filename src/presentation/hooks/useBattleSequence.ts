@@ -113,53 +113,64 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
-    // 背景効果（定数ダメ/回復・もうどく）の合計。末尾で適用する（先頭で回復を適用すると
-    // 満タン時にクランプされて無効化されるため）。
+    // 定数ダメ・もうどくは末尾で累計適用、定数回復は攻撃の合間に毎回適用（オボン等の位置依存条件回復も再現）
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
       Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
     )
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
-    const totalConst = constDmg + poisonTotal - constRec
+    const bgDamageTotal = constDmg + poisonTotal
 
     const seqEvents: SeqEvent[] = []
+    const labels: string[] = []
     const resolved: ResolvedEvent[] = []
+
+    function pushSeq(ev: SeqEvent, label: string) {
+      seqEvents.push(ev)
+      labels.push(label)
+    }
 
     let firstHadMultiscale = false
     let attackSeen = 0
+    let attackCount = 0
 
     for (const ev of events) {
       switch (ev.kind) {
         case 'attack': {
           if (attackSeen === 0) firstHadMultiscale = ev.hadMultiscale
           attackSeen++
+          attackCount++
           const drainRate = (() => {
             const fromLabel = MoveRepository.findByName(ev.label.replace(/（.+?）$/g, ''))?.drain
             return fromLabel
           })()
+          const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
+          const critTag = ev.isForcedCrit ? '（急所）' : ''
           // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）
           for (let u = 0; u < ev.usages; u++) {
             const isVeryFirst = (attackSeen === 1) && u === 0
             const useRaw = !isVeryFirst && firstHadMultiscale
             const baseRolls = useRaw ? ev.rawRolls : ev.rolls
 
+            const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
+            const seqLabel = `与ダメ ${ev.label}${critTag}${drainTag}${usageSuffix}`
             if (ev.variableHitDist) {
               const dist = calcVariableHitsSingleUsageDist(baseRolls, ev.variableHitDist, ev.rawRolls)
-              seqEvents.push({ kind: 'attack', dmg: dist, drain: drainRate })
+              pushSeq({ kind: 'attack', dmg: dist, drain: drainRate }, seqLabel)
             } else {
-              seqEvents.push({ kind: 'attack', dmg: baseRolls, drain: drainRate })
+              pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate }, seqLabel)
             }
           }
-          const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
-          const critTag = ev.isForcedCrit ? '（急所）' : ''
+          // 攻撃直後に定数回復を適用（オボン等の位置依存条件回復）
+          if (constRec > 0) {
+            pushSeq({ kind: 'defenderRecover', amount: constRec }, `定数回復 ${constRec}`)
+          }
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${usageTag}` })
           break
         }
         case 'painSplit': {
           // シーケンスモードでは追跡中の攻撃側HP同時分布を使って両者を均す
-          // （attackerHp を指定すると防御側のみ均す累積モードになる。シーケンスでは
-          //  攻撃側の被ダメ・回復が反映されたHPを使うため attackerHp は渡さない）
-          seqEvents.push({ kind: 'painSplit' })
+          pushSeq({ kind: 'painSplit' }, '痛み分け（両者HP平均化）')
           resolved.push({ event: ev, label: `痛み分け（両者HP平均化）` })
           break
         }
@@ -174,49 +185,51 @@ export function useBattleSequence(): BattleSequenceComputed {
             continue
           }
           const drain = MoveRepository.findByName(ev.moveName)?.drain
-          seqEvents.push({ kind: 'incoming', dmg: rolls, drain })
           const drainTag = drain ? `（相手吸収${Math.round(drain * 100)}%）` : ''
-          resolved.push({ event: ev, label: `被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}` })
+          const label = `被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}`
+          pushSeq({ kind: 'incoming', dmg: rolls, drain }, label)
+          resolved.push({ event: ev, label })
           break
         }
         case 'defenderConst': {
-          seqEvents.push({ kind: 'defenderConst', amount: ev.amount })
-          resolved.push({ event: ev, label: `防御側ダメ ${ev.amount}` })
+          const label = `防御側ダメ ${ev.amount}`
+          pushSeq({ kind: 'defenderConst', amount: ev.amount }, label)
+          resolved.push({ event: ev, label })
           break
         }
         case 'attackerConst': {
-          seqEvents.push({ kind: 'attackerConst', amount: ev.amount })
-          resolved.push({ event: ev, label: `攻撃側ダメ ${ev.amount}` })
+          const label = `攻撃側ダメ ${ev.amount}`
+          pushSeq({ kind: 'attackerConst', amount: ev.amount }, label)
+          resolved.push({ event: ev, label })
           break
         }
         case 'defenderRecover': {
-          seqEvents.push({ kind: 'defenderRecover', amount: ev.amount })
-          resolved.push({ event: ev, label: `防御側回復 ${ev.amount}` })
+          const label = `防御側回復 ${ev.amount}`
+          pushSeq({ kind: 'defenderRecover', amount: ev.amount }, label)
+          resolved.push({ event: ev, label })
           break
         }
         case 'attackerRecover': {
-          seqEvents.push({ kind: 'attackerRecover', amount: ev.amount })
-          resolved.push({ event: ev, label: `攻撃側回復 ${ev.amount}` })
+          const label = `攻撃側回復 ${ev.amount}`
+          pushSeq({ kind: 'attackerRecover', amount: ev.amount }, label)
+          resolved.push({ event: ev, label })
           break
         }
       }
     }
 
-    // 背景効果（定数ダメ/回復・もうどく合計）を末尾で適用
-    if (totalConst > 0) {
-      seqEvents.push({ kind: 'defenderConst', amount: totalConst })
-    } else if (totalConst < 0) {
-      seqEvents.push({ kind: 'defenderRecover', amount: -totalConst })
+    // 背景の累計ダメ（砂・もうどく・固定の定数ダメ）を末尾で適用
+    if (bgDamageTotal > 0) {
+      pushSeq({ kind: 'defenderConst', amount: bgDamageTotal }, `背景ダメ ${bgDamageTotal}`)
+    }
+    // 攻撃が無い場合は定数回復を末尾でも適用（取りこぼし防止）
+    if (attackCount === 0 && constRec > 0) {
+      pushSeq({ kind: 'defenderRecover', amount: constRec }, `定数回復 ${constRec}`)
     }
 
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
       return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
     }
-
-    // ラベル: resolved（表示テーブル）に出るイベントの後、末尾に背景効果のラベルを付ける
-    const labels: string[] = []
-    for (const r of resolved) if (!r.error) labels.push(r.label)
-    if (totalConst !== 0) labels.push(totalConst > 0 ? `背景ダメ ${totalConst}` : `背景回復 ${-totalConst}`)
 
     const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, {
       attackerStartHp: attackerStartHp ?? undefined,
