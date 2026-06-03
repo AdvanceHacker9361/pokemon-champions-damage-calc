@@ -111,7 +111,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     )
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
     // 定数ダメ・もうどくは累計で末尾適用（砂/毒/火傷の合計）。
-    // 定数回復は「攻撃の合間に毎回」適用する（オボン等の位置依存条件回復もこれで再現）。
+    // 定数回復はオボン相当の1回限り条件回復として扱う（HP≤50% で自動発動・以後消費）。
     const bgDamageTotal = constDmg + poisonTotal
     const totalConst = bgDamageTotal - constRec
 
@@ -141,10 +141,6 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           const { normal, crit } = expandAttack(ev, isFirstOverall, firstHadMultiscale)
           normalEvents.push(...normal)
           critEvents.push(...crit)
-          // 攻撃直後に定数回復を適用（オボン等の位置依存条件回復を表現）
-          if (constRec > 0) {
-            pushBoth({ kind: 'defenderRecover', amount: constRec })
-          }
           break
         }
         case 'painSplit': {
@@ -172,10 +168,11 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     if (bgDamageTotal > 0) {
       pushBoth({ kind: 'defenderConst', amount: bgDamageTotal })
     }
-    // 攻撃が無い場合は定数回復を末尾でも適用（攻撃なし＝間隔がないため取りこぼし防止）
-    if (attackEvents.length === 0 && constRec > 0) {
-      pushBoth({ kind: 'defenderRecover', amount: constRec })
-    }
+
+    // 定数回復をオボン相当に渡す（HP≤50% で1回限り自動発動）
+    const defenderBerry = constRec > 0
+      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRec }
+      : undefined
 
     const ATT_DUMMY = 1
     let distribution: Map<number, number>
@@ -187,8 +184,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb = 0
       combinedProbWithCrit = 0
     } else {
-      const normalResult = runBattleSequence(normalEvents, ATT_DUMMY, defenderMaxHp)
-      const critResult   = runBattleSequence(critEvents, ATT_DUMMY, defenderMaxHp)
+      const normalResult = runBattleSequence(normalEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
+      const critResult   = runBattleSequence(critEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
       distribution = extractDefenderDamageDistribution(normalResult, defenderMaxHp)
       combinedProb = normalResult.defenderKoProb
       combinedProbWithCrit = critResult.defenderKoProb
