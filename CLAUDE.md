@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.6**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.9.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,35 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.9.0: 「オボン」フィールドを「オボン/混乱実」に拡張・しきい値を可変化
+
+#### 概要
+- v3.8.6 の「オボン」フィールドを「オボン/混乱実」に名称変更
+- 発動しきい値（HP%）を可変フィールドとして追加。将来的に追加される混乱実（フィラのみ等）にも対応
+  - オボンのみ: HP≤50% で +1/4 回復
+  - 混乱実: HP≤25% で +1/3 回復
+
+#### 変更
+- `progressionStore.ts`: `constRecBerryThresholdPct: number`（HP%、デフォルト50）と `setConstRecBerryThresholdPct` を追加
+- `sessionSnapshot.ts`: 新フィールドをスナップショットに追加
+- `useAccumulatedDamage.ts` / `useBattleSequence.ts`: `threshold = floor(defenderMaxHp × pct / 100)` で `defenderBerry` の閾値を算出
+- `DamageProgressionPanel.tsx`:
+  - フィールド名を「オボン/混乱実」に変更
+  - 「HP≤[%]%で1回限り」のしきい値入力欄を追加（1〜100で編集可能）
+  - プリセットボタンを `1/8 1/4 1/3` から **「オボン HP≤50% / +1/4」** と **「混乱実 HP≤25% / +1/3」** の2種類に変更（1/8 削除）
+  - 各プリセットは回復量としきい値を同時に設定
+- `AccumExportButton.tsx`: 出力に閾値%を含める
+
+#### 動作確認
+- 混乱実 HP=100, threshold=25, amount=33: 攻撃80 → 残20≤25 → +33 → ダメ47
+- 混乱実 HP=100, threshold=25, amount=33: 攻撃50 → 残50(>25) → 未発動 → ダメ50
+- 既存のオボンシナリオ（ブリジュラス流星群×2 vs ガブ、たべのこし＋オボン併用）はすべて維持
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に混乱実シナリオ1件追加（計152件全パス）
+
+---
 
 ### V3.8.6: 「定数回復」と「オボン回復」を別フィールドに分離
 

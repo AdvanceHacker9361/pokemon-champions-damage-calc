@@ -62,6 +62,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const constDmg         = useProgressionStore(s => s.constDmg)
   const constRec         = useProgressionStore(s => s.constRec)
   const constRecBerry    = useProgressionStore(s => s.constRecBerry)
+  const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const poisonTurns      = useProgressionStore(s => s.poisonTurns)
   const attackerStartHp  = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp  = useProgressionStore(s => s.defenderStartHp)
@@ -74,6 +75,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const setConstDmg           = useProgressionStore(s => s.setConstDmg)
   const setConstRec           = useProgressionStore(s => s.setConstRec)
   const setConstRecBerry      = useProgressionStore(s => s.setConstRecBerry)
+  const setConstRecBerryThresholdPct = useProgressionStore(s => s.setConstRecBerryThresholdPct)
   const setPoisonTurns        = useProgressionStore(s => s.setPoisonTurns)
   const setAttackerStartHp    = useProgressionStore(s => s.setAttackerStartHp)
   const setDefenderStartHp    = useProgressionStore(s => s.setDefenderStartHp)
@@ -177,6 +179,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         constDmg={constDmg}
         constRec={constRec}
         constRecBerry={constRecBerry}
+        berryThresholdPct={berryThresholdPct}
         poisonTurns={poisonTurns}
         poisonPerTurn={poisonPerTurn}
         poisonTotal={poisonTotal}
@@ -184,6 +187,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         setConstDmg={setConstDmg}
         setConstRec={setConstRec}
         setConstRecBerry={setConstRecBerry}
+        setConstRecBerryThresholdPct={setConstRecBerryThresholdPct}
         setPoisonTurns={setPoisonTurns}
       />
 
@@ -453,6 +457,7 @@ interface BgProps {
   constDmg: number
   constRec: number
   constRecBerry: number
+  berryThresholdPct: number
   poisonTurns: number
   poisonPerTurn: number[]
   poisonTotal: number
@@ -460,12 +465,13 @@ interface BgProps {
   setConstDmg: (v: number) => void
   setConstRec: (v: number) => void
   setConstRecBerry: (v: number) => void
+  setConstRecBerryThresholdPct: (v: number) => void
   setPoisonTurns: (n: number) => void
 }
 
 function BackgroundEffectsSection({
-  constDmg, constRec, constRecBerry, poisonTurns, poisonPerTurn, poisonTotal, defenderMaxHp,
-  setConstDmg, setConstRec, setConstRecBerry, setPoisonTurns,
+  constDmg, constRec, constRecBerry, berryThresholdPct, poisonTurns, poisonPerTurn, poisonTotal, defenderMaxHp,
+  setConstDmg, setConstRec, setConstRecBerry, setConstRecBerryThresholdPct, setPoisonTurns,
 }: BgProps) {
   return (
     <>
@@ -574,10 +580,10 @@ function BackgroundEffectsSection({
         )}
       </div>
 
-      {/* オボン回復（HP≤50% で1回限り） */}
+      {/* オボン/混乱実回復（HP≤しきい値 で1回限り） */}
       <div className="space-y-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-fg-muted w-14 flex-shrink-0">オボン</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-fg-muted w-14 flex-shrink-0">オボン/混乱実</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -597,30 +603,44 @@ function BackgroundEffectsSection({
               onClick={() => setConstRecBerry(constRecBerry + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-fg-subtle">条件付き1回限り</span>
+          <span className="text-xs text-fg-muted">HP≤</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={berryThresholdPct}
+            onChange={e => setConstRecBerryThresholdPct(Number(e.target.value))}
+            className="input-base w-10 text-center text-xs px-1"
+            title="発動しきい値（防御側HPの%）"
+          />
+          <span className="text-xs text-fg-muted">%で1回限り</span>
         </div>
         <div className="pl-[3.75rem] text-[10px] text-fg-faint">
-          ※防御側HPが50%以下に達した時点で1回限り自動発動・以後消費（オボンのみ=1/4）
+          ※防御側HPがしきい値以下に達した時点で1回限り自動発動・以後消費
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
-          {[
-            { label: '1/8', num: 1, den: 8 },
-            { label: '1/4', num: 1, den: 4 },
-            { label: '1/3', num: 1, den: 3 },
-          ].map(f => {
-            const val = Math.floor(defenderMaxHp * f.num / f.den)
-            return (
-              <button
-                key={f.label}
-                type="button"
-                onClick={() => setConstRecBerry(val)}
-                className="text-xs px-1 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-success hover:text-success"
-                title={`${val} に設定 (${f.label})`}
-              >
-                {f.label}<span className="ml-0.5 opacity-60">{val}</span>
-              </button>
-            )
-          })}
+          <button
+            type="button"
+            onClick={() => {
+              setConstRecBerry(Math.floor(defenderMaxHp / 4))
+              setConstRecBerryThresholdPct(50)
+            }}
+            className="text-xs px-1.5 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-success hover:text-success"
+            title={`オボンのみ: HP≤50% で +${Math.floor(defenderMaxHp / 4)} (1/4)`}
+          >
+            オボン<span className="ml-0.5 opacity-60">HP≤50% / +1/4</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConstRecBerry(Math.floor(defenderMaxHp / 3))
+              setConstRecBerryThresholdPct(25)
+            }}
+            className="text-xs px-1.5 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-success hover:text-success"
+            title={`混乱実: HP≤25% で +${Math.floor(defenderMaxHp / 3)} (1/3)`}
+          >
+            混乱実<span className="ml-0.5 opacity-60">HP≤25% / +1/3</span>
+          </button>
         </div>
         {constRecBerry > 0 && (
           <div className="pl-[3.75rem]">
