@@ -26,6 +26,7 @@ const CONST_REC_FRACTIONS = [
   { label: '2/3',  num: 2, den: 3  },
 ]
 
+/** 通常イベント追加ボタン（leechSeed は方向別に別途扱う） */
 const ADD_BUTTONS: { kind: EventKind; label: string }[] = [
   { kind: 'incoming',        label: '＋被ダメ' },
   { kind: 'painSplit',       label: '＋痛み分け' },
@@ -118,6 +119,10 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     }
   }
 
+  function addLeechSeed(direction: 'fromAttacker' | 'fromDefender') {
+    addEventAfter(null, { kind: 'leechSeed', direction })
+  }
+
   return (
     <div className="panel space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -177,6 +182,22 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
             {b.label}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => addLeechSeed('fromAttacker')}
+          className="text-[11px] px-1.5 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
+          title="攻撃側が宿り木のタネを植えた状態の1ティック（防御側-1/8、攻撃側+同量）"
+        >
+          ＋宿り木（攻→防）
+        </button>
+        <button
+          type="button"
+          onClick={() => addLeechSeed('fromDefender')}
+          className="text-[11px] px-1.5 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
+          title="防御側が宿り木のタネを植えた状態の1ティック（攻撃側-1/8、防御側+同量）"
+        >
+          ＋宿り木（防→攻）
+        </button>
       </div>
 
       <div className="border-t border-edge" />
@@ -415,6 +436,23 @@ function EventRow({
       <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
         <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
         <span className="font-semibold text-success">♻ リサイクル（きのみ再装填）</span>
+        <span className="flex-1" />
+        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
+      </div>
+    )
+  }
+
+  if (ev.kind === 'leechSeed') {
+    const arrow = ev.direction === 'fromAttacker' ? '攻→防' : '防→攻'
+    return (
+      <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
+        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
+        <span className="font-semibold text-success">🌱 宿り木 ({arrow})</span>
+        <span className="text-[10px] text-fg-faint">
+          {ev.direction === 'fromAttacker'
+            ? '防御側 -1/8 → 攻撃側 +同量'
+            : '攻撃側 -1/8 → 防御側 +同量'}
+        </span>
         <span className="flex-1" />
         <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
       </div>

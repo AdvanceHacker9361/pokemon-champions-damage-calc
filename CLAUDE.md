@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.10.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,36 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.11.0: 宿り木のタネ（攻↔防方向の1ティック）をイベントとして追加
+
+#### 概要
+- 「やどりぎのタネ」の挙動を、イベント時系列に挿入できる **1ティック単位** で実装
+- ボタン2種類：「＋宿り木（攻→防）」「＋宿り木（防→攻）」
+- 1ティック = 被ダメ側の最大HPの 1/8 をダメージ、同量を植え主が回復（実ダメは残HPでクランプ、回復は最大HPでクランプ）
+
+#### エンジン（`BattleSequenceCalc.ts`）
+- 新 `SeqEvent` kind `'leechSeed'`：`direction: 'fromAttacker' | 'fromDefender'`、`amount: number`（被ダメ側のHP/8、ホックが算出）
+- 処理：被ダメ側残HP/0 でクランプ、撃破/瀕死は koProb/faintProb 吸収。きのみトリガーチェックは植え主側に発火（HP減少時のみ）
+
+#### データモデル
+- `ProgressionEvent` に `{ kind: 'leechSeed'; direction }` を追加
+- スナップショット対応は既存 `cloneProgressionEvent` の `...ev` スプレッドで自動継承
+
+#### ホック
+- `useBattleSequence`: ティックを `floor(targetMaxHp/8)` で算出して `leechSeed` をそのまま渡す
+- `useAccumulatedDamage`: 累積（防御側のみ）モードのため簡略変換
+  - fromAttacker → `defenderConst(floor(defenderMaxHp/8))`
+  - fromDefender → `defenderRecover(floor(attackerRealMaxHp/8))`（攻撃側ストアから算出）
+
+#### UI（`DamageProgressionPanel.tsx`）
+- イベント追加ボタン群の末尾に「＋宿り木（攻→防）」「＋宿り木（防→攻）」を追加
+- EventRow に 🌱 アイコン付き表示（方向と効果の説明テキスト）
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に4件追加（攻→防 1ティック・8ティックで撃破・防→攻・残HPクランプ）。計160件全パス
+
+---
 
 ### V3.10.0: きのみ回復の例外特性・技対応（はんすう/しゅうかく/リサイクル/くいしんぼう/ほおぶくろ）
 

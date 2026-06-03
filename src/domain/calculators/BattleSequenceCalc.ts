@@ -39,6 +39,13 @@ export type SeqEvent =
   | { kind: 'attackerRecover'; amount: number }
   /** きのみを再装填（リサイクル等）。消費済みのきのみを再び発動可能にする */
   | { kind: 'rearmBerry' }
+  /**
+   * 宿り木のタネの1ティック（毎ターン適用）。
+   * direction='fromAttacker': 攻撃側が植えた → 防御側 -amount、攻撃側 +amount
+   * direction='fromDefender': 防御側が植えた → 攻撃側 -amount、防御側 +amount
+   * amount は植えた側ではなく **被ダメ側の最大HP/8** をホック側で算出して渡す
+   */
+  | { kind: 'leechSeed'; direction: 'fromAttacker' | 'fromDefender'; amount: number }
 
 export interface SeqStepResult {
   label: string
@@ -246,6 +253,26 @@ export function runBattleSequence(
         case 'rearmBerry': {
           // リサイクル等: 消費済みのきのみを未消費に戻す（はんすう予約カウントは維持）
           addLive(a, d, packB(0, cud), p)
+          break
+        }
+        case 'leechSeed': {
+          // 宿り木ティック: 被ダメ側の残HPで実ダメをクランプ、同量を植え主が回復
+          if (ev.direction === 'fromAttacker') {
+            const actual = Math.min(ev.amount, d)
+            const nd0 = d - actual
+            const na = clamp(a + actual, 0, attackerMaxHp)
+            if (nd0 <= 0) koProb += p
+            else {
+              const t = triggerBerry(nd0, consumed, cud)
+              addLive(na, t.d, t.bstate, p)
+            }
+          } else {
+            const actual = Math.min(ev.amount, a)
+            const na = a - actual
+            const nd = clamp(d + actual, 0, defenderMaxHp)
+            if (na <= 0) faintProb += p
+            else addLive(na, nd, bstate, p) // HP上昇なのできのみは発動しない
+          }
           break
         }
       }

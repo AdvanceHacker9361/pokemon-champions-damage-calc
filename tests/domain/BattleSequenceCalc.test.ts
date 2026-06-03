@@ -348,6 +348,48 @@ describe('BattleSequenceCalc', () => {
     })
   })
 
+  describe('宿り木のタネ', () => {
+    it('攻→防: 防御側-amount, 攻撃側+amount（クランプ）', () => {
+      // attacker=100満タン, defender=160, 1ティック amount=20
+      const r = runBattleSequence(
+        [{ kind: 'leechSeed', direction: 'fromAttacker', amount: 20 }],
+        100, 160,
+      )
+      const last = r.steps[0]
+      expect(last.attackerHpDist.get(100)).toBeCloseTo(1, 6) // 満タンクランプ
+      expect(last.defenderHpDist.get(140)).toBeCloseTo(1, 6)
+    })
+
+    it('攻→防 ×8 で撃破成立（HP=160）', () => {
+      const ev: SeqEvent[] = Array.from({ length: 8 }, () => (
+        { kind: 'leechSeed' as const, direction: 'fromAttacker' as const, amount: 20 }
+      ))
+      const r = runBattleSequence(ev, 200, 160)
+      expect(r.defenderKoProb).toBeCloseTo(1, 6)
+    })
+
+    it('防→攻: 攻撃側-amount, 防御側+amount', () => {
+      // 攻200→160(被ダメ40)、その後 leechSeed defender→attacker amount=25
+      const r = runBattleSequence([
+        { kind: 'incoming', dmg: [40] },
+        { kind: 'leechSeed', direction: 'fromDefender', amount: 25 },
+      ], 200, 160)
+      const last = r.steps[r.steps.length - 1]
+      expect(last.attackerHpDist.get(135)).toBeCloseTo(1, 6) // 160-25=135
+      expect(last.defenderHpDist.get(160)).toBeCloseTo(1, 6) // 満タンクランプ
+    })
+
+    it('攻→防の実ダメージは防御側残HPでクランプ（吸血量も追従）', () => {
+      // 防御側 残10 で amount=20 のティック → 実ダメ=10、撃破。攻撃側 +10
+      const r = runBattleSequence([
+        { kind: 'attack', dmg: [150] }, // 160→10
+        { kind: 'leechSeed', direction: 'fromAttacker', amount: 20 },
+      ], 100, 160, { attackerStartHp: 50 })
+      // 攻撃側は実ダメ10で +10 → 60、防御側は0→koProb
+      expect(r.defenderKoProb).toBeCloseTo(1, 6)
+    })
+  })
+
   describe('総合累積エンジン統合（1D primitive との一致）', () => {
     it('複数攻撃の撃破率が calcCombinedKoProbability と一致（攻撃側HP固定）', () => {
       // 各攻撃 {40,60} を2回、防御側HP=100
