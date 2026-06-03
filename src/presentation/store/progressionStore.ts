@@ -57,6 +57,12 @@ export type ProgressionEvent =
   | { kind: 'attackerRecover'; id: string; amount: number }
   /** きのみ再装填（リサイクル等）。直後の与ダメで再びきのみが発動できる */
   | { kind: 'rearmBerry'; id: string }
+  /**
+   * 宿り木のタネ1ティック。
+   * direction='fromAttacker': 攻撃側が植え主 → 防御側-1/8(防御側最大HP)、攻撃側+同量
+   * direction='fromDefender': 防御側が植え主 → 攻撃側-1/8(攻撃側最大HP)、防御側+同量
+   */
+  | { kind: 'leechSeed'; id: string; direction: 'fromAttacker' | 'fromDefender' }
 
 export type EventKind = ProgressionEvent['kind']
 

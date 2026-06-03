@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
 import type { ProgressionEvent } from '@/presentation/store/progressionStore'
+import { useAttackerStore } from '@/presentation/store/pokemonStore'
 import {
   calcVariableHitsSingleUsageDist,
   calcVariableHitsSingleUsageDistWithCrit,
@@ -10,6 +11,7 @@ import {
   extractDefenderDamageDistribution,
   type SeqEvent,
 } from '@/domain/calculators/BattleSequenceCalc'
+import { calculateHP } from '@/domain/calculators/StatCalculator'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -108,6 +110,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const berryCudChew      = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns       = useProgressionStore(s => s.poisonTurns)
+  // 宿り木: 防御側→攻撃側 ティックで「攻撃側最大HPの1/8」を防御側回復として使用
+  const attackerBaseHp    = useAttackerStore(s => s.baseStats.hp)
+  const attackerSpHp      = useAttackerStore(s => s.sp.hp)
 
   return useMemo(() => {
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
@@ -167,6 +172,21 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         }
         case 'rearmBerry': {
           pushBoth({ kind: 'rearmBerry' })
+          break
+        }
+        case 'leechSeed': {
+          // 累積モード（防御側のみ追跡）: 攻撃側のHP変化は無視し、防御側へのダメ/回復のみ
+          if (ev.direction === 'fromAttacker') {
+            const dmg = Math.max(1, Math.floor(defenderMaxHp / 8))
+            pushBoth({ kind: 'defenderConst', amount: dmg })
+          } else {
+            // 防→攻: 攻撃側の実最大HPの1/8を防御側回復として適用
+            const aMax = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
+            if (aMax > 0) {
+              const heal = Math.max(1, Math.floor(aMax / 8))
+              pushBoth({ kind: 'defenderRecover', amount: heal })
+            }
+          }
           break
         }
         // incoming / attackerConst / attackerRecover は累積ビュー（防御側のみ）では効果なし
@@ -238,5 +258,5 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb, combinedProbWithCrit,
       distribution, accumKoResult,
     }
-  }, [events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns, defenderMaxHp])
+  }, [events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns, defenderMaxHp, attackerBaseHp, attackerSpHp])
 }
