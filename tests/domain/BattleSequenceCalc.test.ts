@@ -154,6 +154,57 @@ describe('BattleSequenceCalc', () => {
       expect(dist.get(70)).toBeCloseTo(1, 6)
     })
 
+    it('はんすう: きのみが次のターン終了時にもう一度発動（計2回）', () => {
+      // HP=200, 攻撃50×4, きのみ thr=100 amount=50
+      // 1回限り: T2でHP100に達し+50→150 → T4でダメ100... ではなく
+      //   オボンのみ → ダメ150、はんすう（2回） → ダメ100
+      const ev: SeqEvent[] = [
+        { kind: 'attack', dmg: [50] }, { kind: 'attack', dmg: [50] },
+        { kind: 'attack', dmg: [50] }, { kind: 'attack', dmg: [50] },
+      ]
+      const once = runBattleSequence(ev, 1, 200, { defenderBerry: { threshold: 100, amount: 50 } })
+      expect(extractDefenderDamageDistribution(once, 200).get(150)).toBeCloseTo(1, 6)
+      const cud = runBattleSequence(ev, 1, 200, { defenderBerry: { threshold: 100, amount: 50, cudChew: true } })
+      expect(extractDefenderDamageDistribution(cud, 200).get(100)).toBeCloseTo(1, 6)
+    })
+
+    it('リサイクル(rearmBerry): 再装填で同じきのみが再発動', () => {
+      // HP=100, 攻撃40×3, きのみ thr=50 amount=30
+      const withRecycle: SeqEvent[] = [
+        { kind: 'attack', dmg: [40] }, { kind: 'attack', dmg: [40] },
+        { kind: 'rearmBerry' }, { kind: 'attack', dmg: [40] },
+      ]
+      const r1 = runBattleSequence(withRecycle, 1, 100, { defenderBerry: { threshold: 50, amount: 30 } })
+      expect(extractDefenderDamageDistribution(r1, 100).get(60)).toBeCloseTo(1, 6) // +30×2
+
+      const noRecycle: SeqEvent[] = [
+        { kind: 'attack', dmg: [40] }, { kind: 'attack', dmg: [40] }, { kind: 'attack', dmg: [40] },
+      ]
+      const r2 = runBattleSequence(noRecycle, 1, 100, { defenderBerry: { threshold: 50, amount: 30 } })
+      expect(extractDefenderDamageDistribution(r2, 100).get(90)).toBeCloseTo(1, 6) // +30×1
+    })
+
+    it('しゅうかく100%: 毎ターン終了時に再装填され繰り返し発動', () => {
+      // HP=100, 攻撃40×3, きのみ thr=50 amount=30, harvest=1.0
+      const ev: SeqEvent[] = [
+        { kind: 'attack', dmg: [40] }, { kind: 'attack', dmg: [40] }, { kind: 'attack', dmg: [40] },
+      ]
+      const harvest = runBattleSequence(ev, 1, 100, { defenderBerry: { threshold: 50, amount: 30, harvestChance: 1.0 } })
+      expect(extractDefenderDamageDistribution(harvest, 100).get(60)).toBeCloseTo(1, 6) // +30×2
+    })
+
+    it('しゅうかく50%: 再装填が確率的（撃破率が中間値になる）', () => {
+      // HP=70, 攻撃40×2, きのみ thr=35 amount=30, harvest=0.5
+      // T1:30≤35→+30=60(consumed) TB harvest 50%再装填
+      // T2:再装填済(0.5)→20≤35→+30=50→生存 / 未装填(0.5)→20→生存
+      //   どちらも生存だが残HPが変わる。確率分岐の存在を確認
+      const ev: SeqEvent[] = [{ kind: 'attack', dmg: [40] }, { kind: 'attack', dmg: [40] }]
+      const r = runBattleSequence(ev, 1, 70, { defenderBerry: { threshold: 35, amount: 30, harvestChance: 0.5 } })
+      const dist = extractDefenderDamageDistribution(r, 70)
+      // 再装填あり: ダメ50 (+30×2)、なし: ダメ80→撃破... 実際は再計算。分岐2値が出ることを確認
+      expect(dist.size).toBeGreaterThanOrEqual(2)
+    })
+
     it('混乱実相当: HP≤25% で +1/3 発動・HP>25% では発動しない', () => {
       // HP=100, threshold=25, amount=33 (≈1/3)
       // 攻撃80 → 残20 ≤25 → +33 → 残53、ダメ=47

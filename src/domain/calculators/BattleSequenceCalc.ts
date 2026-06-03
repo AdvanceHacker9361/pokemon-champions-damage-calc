@@ -37,6 +37,8 @@ export type SeqEvent =
   | { kind: 'defenderRecover'; amount: number }
   /** 攻撃側の定数回復（残飯など） */
   | { kind: 'attackerRecover'; amount: number }
+  /** きのみを再装填（リサイクル等）。消費済みのきのみを再び発動可能にする */
+  | { kind: 'rearmBerry' }
 
 export interface SeqStepResult {
   label: string
@@ -82,16 +84,27 @@ export interface RunSequenceOptions {
   attackerStartHp?: number
   defenderStartHp?: number
   labels?: string[]
-  /** 防御側のオボン相当回復（1回限り、HP≤threshold で自動発動） */
-  defenderBerry?: { threshold: number; amount: number }
+  /**
+   * 防御側のきのみ回復（HP≤threshold で1回限り自動発動・以後消費）。
+   * - cudChew: はんすう（発動後、次のターン終了時にもう一度発動）
+   * - harvestChance: しゅうかく/ものひろい（各ターン終了時にこの確率で再装填 0〜1）
+   * これらの再発動は `rearmBerry` イベントでも手動再装填できる（リサイクル）。
+   */
+  defenderBerry?: {
+    threshold: number
+    amount: number
+    cudChew?: boolean
+    harvestChance?: number
+  }
 }
 
 /**
  * バトルシーケンスを実行し、各ステップ後のHP分布と最終的な撃破/生存確率を返す。
  *
- * 状態は (攻撃側HP, 防御側HP[, berryConsumed]) の同時分布を `Map<number, number>` で保持する。
- * defenderBerry なし: key = aHP * stride + dHP
- * defenderBerry あり: key = (aHP * stride + dHP) * 2 + berry（berry=0 未消費, 1 消費済み）
+ * 状態は (攻撃側HP, 防御側HP[, きのみ状態]) の同時分布を `Map<number, number>` で保持する。
+ * きのみ状態 = consumed(0/1) と cud(0/1/2, はんすう用カウントダウン) を packing。
+ *   key = (aHP * stride + dHP) * berryUnit + bstate
+ *   berryUnit = きのみなし:1 / はんすうなし:2 / はんすうあり:6
  * 両者HP > 0 のマスのみ live として保持し、
  * 防御側が0以下 → koProb（吸収）、攻撃側が0以下 → faintProb（吸収）。
  */
@@ -104,28 +117,38 @@ export function runBattleSequence(
   const stride = defenderMaxHp + 1
   const berry = opts.defenderBerry
   const hasBerry = berry != null && berry.amount > 0
-  const stateMul = hasBerry ? 2 : 1
-  const enc = (a: number, d: number, b: 0 | 1 = 0) =>
-    (a * stride + d) * stateMul + (hasBerry ? b : 0)
+  const cudEnabled = hasBerry && berry.cudChew === true
+  const harvestChance = hasBerry ? Math.max(0, Math.min(1, berry.harvestChance ?? 0)) : 0
+  // bstate ∈ {0..1}（はんすうなし）or {0..5}（はんすうあり: consumed*3 + cud）
+  const berryUnit = hasBerry ? (cudEnabled ? 6 : 2) : 1
 
-  /** 防御側HP変化後にオボン発動チェック（HP≤threshold && 未消費 → +amount＋クランプ＆消費） */
-  function applyBerry(d: number, b: 0 | 1): { d: number; b: 0 | 1 } {
-    if (!hasBerry) return { d, b }
-    if (b === 0 && d > 0 && d <= berry.threshold) {
+  const packB = (consumed: number, cud: number): number =>
+    cudEnabled ? consumed * 3 + cud : consumed
+  const decConsumed = (bstate: number): number =>
+    cudEnabled ? Math.floor(bstate / 3) : bstate
+  const decCud = (bstate: number): number =>
+    cudEnabled ? bstate % 3 : 0
+
+  const enc = (a: number, d: number, bstate = 0): number =>
+    (a * stride + d) * berryUnit + (hasBerry ? bstate : 0)
+
+  /** 防御側HP減少後のきのみ発動チェック（HP≤threshold && 未消費 → +amount＋消費＋はんすう予約） */
+  function triggerBerry(d: number, consumed: number, cud: number): { d: number; bstate: number } {
+    if (hasBerry && consumed === 0 && d > 0 && d <= berry.threshold) {
       return {
         d: Math.min(defenderMaxHp, d + berry.amount),
-        b: 1,
+        bstate: packB(1, cudEnabled ? 2 : 0),
       }
     }
-    return { d, b }
+    return { d, bstate: packB(consumed, cud) }
   }
 
   const a0 = clamp(opts.attackerStartHp ?? attackerMaxHp, 0, attackerMaxHp)
   const d0 = clamp(opts.defenderStartHp ?? defenderMaxHp, 0, defenderMaxHp)
 
-  // 初期状態でも HP ≤ threshold ならオボンを即発動
-  const init0 = applyBerry(d0, 0)
-  let joint = new Map<number, number>([[enc(a0, init0.d, init0.b), 1]])
+  // 初期状態でも HP ≤ threshold ならきのみを即発動
+  const init = triggerBerry(d0, 0, 0)
+  let joint = new Map<number, number>([[enc(a0, init.d, init.bstate), 1]])
   let koProb = 0
   let faintProb = 0
   const steps: SeqStepResult[] = []
@@ -133,16 +156,18 @@ export function runBattleSequence(
   for (let i = 0; i < events.length; i++) {
     const ev = events[i]
     const next = new Map<number, number>()
-    const addLive = (a: number, d: number, b: 0 | 1, p: number) => {
-      const k = enc(a, d, b)
+    const addLive = (a: number, d: number, bstate: number, p: number) => {
+      const k = enc(a, d, bstate)
       next.set(k, (next.get(k) ?? 0) + p)
     }
 
     for (const [key, p] of joint) {
-      const baseAD = hasBerry ? Math.floor(key / 2) : key
+      const baseAD = hasBerry ? Math.floor(key / berryUnit) : key
+      const bstate = hasBerry ? key % berryUnit : 0
       const a = Math.floor(baseAD / stride)
       const d = baseAD % stride
-      const b: 0 | 1 = hasBerry ? ((key & 1) as 0 | 1) : 0
+      const consumed = decConsumed(bstate)
+      const cud = decCud(bstate)
 
       switch (ev.kind) {
         case 'attack': {
@@ -158,8 +183,8 @@ export function runBattleSequence(
             }
             if (nd0 <= 0) koProb += p * rp
             else {
-              const ab = applyBerry(nd0, b)
-              addLive(na, ab.d, ab.b, p * rp)
+              const t = triggerBerry(nd0, consumed, cud)
+              addLive(na, t.d, t.bstate, p * rp)
             }
           }
           break
@@ -167,7 +192,7 @@ export function runBattleSequence(
         case 'incoming': {
           for (const [r, rp] of iterDist(ev.dmg)) {
             const na = a - r
-            // 吸収: 相手（防御側）が被ダメに応じて回復
+            // 吸収: 相手（防御側）が被ダメに応じて回復（HP上昇なのできのみは発動しない）
             let nd = d
             if (ev.drain && ev.drain > 0) {
               const actual = Math.min(r, a)
@@ -176,7 +201,7 @@ export function runBattleSequence(
               }
             }
             if (na <= 0) faintProb += p * rp
-            else addLive(na, nd, b, p * rp)
+            else addLive(na, nd, bstate, p * rp)
           }
           break
         }
@@ -184,15 +209,14 @@ export function runBattleSequence(
           if (ev.attackerHp !== undefined) {
             // 攻撃側HP固定（総合累積モード）: 防御側のみ均し、攻撃側HPは不変
             const nd0 = clamp(Math.floor((ev.attackerHp + d) / 2), 0, defenderMaxHp)
-            const ab = applyBerry(nd0, b)
-            addLive(a, ab.d, ab.b, p)
+            const t = triggerBerry(nd0, consumed, cud)
+            addLive(a, t.d, t.bstate, p)
           } else {
             const v = Math.floor((a + d) / 2)
             const na = clamp(v, 0, attackerMaxHp)
             const nd0 = clamp(v, 0, defenderMaxHp)
-            // a,d >= 1 なので v >= 1、瀕死にはならない
-            const ab = applyBerry(nd0, b)
-            addLive(na, ab.d, ab.b, p)
+            const t = triggerBerry(nd0, consumed, cud)
+            addLive(na, t.d, t.bstate, p)
           }
           break
         }
@@ -200,23 +224,28 @@ export function runBattleSequence(
           const nd0 = d - ev.amount
           if (nd0 <= 0) koProb += p
           else {
-            const ab = applyBerry(nd0, b)
-            addLive(a, ab.d, ab.b, p)
+            const t = triggerBerry(nd0, consumed, cud)
+            addLive(a, t.d, t.bstate, p)
           }
           break
         }
         case 'attackerConst': {
           const na = a - ev.amount
           if (na <= 0) faintProb += p
-          else addLive(na, d, b, p)
+          else addLive(na, d, bstate, p)
           break
         }
         case 'defenderRecover': {
-          addLive(a, clamp(d + ev.amount, 0, defenderMaxHp), b, p)
+          addLive(a, clamp(d + ev.amount, 0, defenderMaxHp), bstate, p)
           break
         }
         case 'attackerRecover': {
-          addLive(clamp(a + ev.amount, 0, attackerMaxHp), d, b, p)
+          addLive(clamp(a + ev.amount, 0, attackerMaxHp), d, bstate, p)
+          break
+        }
+        case 'rearmBerry': {
+          // リサイクル等: 消費済みのきのみを未消費に戻す（はんすう予約カウントは維持）
+          addLive(a, d, packB(0, cud), p)
           break
         }
       }
@@ -224,12 +253,44 @@ export function runBattleSequence(
 
     joint = next
 
-    // ステップ後の周辺分布を記録（berry ビットは集約）
+    // 攻撃イベント = ターン境界。はんすう再発動・しゅうかく再装填を処理
+    if (ev.kind === 'attack' && hasBerry && (cudEnabled || harvestChance > 0)) {
+      const after = new Map<number, number>()
+      const addAfter = (a: number, d: number, bstate: number, p: number) => {
+        const k = enc(a, d, bstate)
+        after.set(k, (after.get(k) ?? 0) + p)
+      }
+      for (const [key, p] of joint) {
+        const baseAD = Math.floor(key / berryUnit)
+        const bstate = key % berryUnit
+        const a = Math.floor(baseAD / stride)
+        let d = baseAD % stride
+        const consumed = decConsumed(bstate)
+        let cud = decCud(bstate)
+
+        // はんすう: cud カウントダウン（2→1、1→今ターン末に再回復）
+        if (cudEnabled) {
+          if (cud === 1) { d = Math.min(defenderMaxHp, d + berry.amount); cud = 0 }
+          else if (cud === 2) { cud = 1 }
+        }
+
+        // しゅうかく/ものひろい: 消費済みなら確率で再装填
+        if (harvestChance > 0 && consumed === 1) {
+          addAfter(a, d, packB(0, cud), p * harvestChance)
+          if (harvestChance < 1) addAfter(a, d, packB(1, cud), p * (1 - harvestChance))
+        } else {
+          addAfter(a, d, packB(consumed, cud), p)
+        }
+      }
+      joint = after
+    }
+
+    // ステップ後の周辺分布を記録（きのみ状態は集約）
     const aDist = new Map<number, number>()
     const dDist = new Map<number, number>()
     let bothAlive = 0
     for (const [key, p] of joint) {
-      const baseAD = hasBerry ? Math.floor(key / 2) : key
+      const baseAD = hasBerry ? Math.floor(key / berryUnit) : key
       const a = Math.floor(baseAD / stride)
       const d = baseAD % stride
       aDist.set(a, (aDist.get(a) ?? 0) + p)
