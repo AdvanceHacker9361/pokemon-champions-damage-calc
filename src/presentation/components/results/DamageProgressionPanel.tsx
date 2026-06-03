@@ -20,10 +20,6 @@ const CONST_DMG_FRACTIONS = [
 const CONST_REC_FRACTIONS = [
   { label: '1/16', num: 1, den: 16 },
   { label: '1/8',  num: 1, den: 8  },
-  { label: '1/4',  num: 1, den: 4  },
-  { label: '1/3',  num: 1, den: 3  },
-  { label: '1/2',  num: 1, den: 2  },
-  { label: '2/3',  num: 2, den: 3  },
 ]
 
 /** 通常イベント追加ボタン（leechSeed は方向別に別途扱う） */
@@ -619,7 +615,7 @@ function BackgroundEffectsSection({
       {/* 定数回復（たべのこし等の per-turn passive） */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-fg-muted w-14 flex-shrink-0">定数回復</span>
+          <span className="text-xs text-fg-muted w-20 flex-shrink-0">食べ残し/黒ヘド</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -639,10 +635,10 @@ function BackgroundEffectsSection({
               onClick={() => setConstRec(constRec + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-fg-subtle">たべのこし/黒ヘド等</span>
+          <span className="text-xs text-fg-subtle">毎ターン回復</span>
         </div>
         <div className="pl-[3.75rem] text-[10px] text-fg-faint">
-          ※各与ダメ攻撃の直後に毎回適用（たべのこし=1/16 等の per-turn passive 回復）
+          ※各与ダメ攻撃の直後に毎回適用（食べ残し=1/16・黒いヘドロ=1/8）。再生技は「＋回復」イベントで挟む
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {
