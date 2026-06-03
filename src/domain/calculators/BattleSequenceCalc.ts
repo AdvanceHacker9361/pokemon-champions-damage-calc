@@ -11,6 +11,10 @@
  *   T3: 祟り目（威力130）でカバルドン撃破できるか？
  *
  * 痛み分けで両HPが結合するため、防御側だけの1D分布では表現できない。
+ *
+ * defenderBerry オプション指定時は「オボン相当」の1回限り条件回復を再現する:
+ *   防御側HPが threshold 以下になった時点で amount だけ回復し、以後発動しない。
+ *   状態に berryConsumed ビット (0/1) を加えて追跡。
  */
 
 /** ダメージ分布: 一様ロール配列、または事前計算済み (ダメージ→確率) Map */
@@ -78,13 +82,16 @@ export interface RunSequenceOptions {
   attackerStartHp?: number
   defenderStartHp?: number
   labels?: string[]
+  /** 防御側のオボン相当回復（1回限り、HP≤threshold で自動発動） */
+  defenderBerry?: { threshold: number; amount: number }
 }
 
 /**
  * バトルシーケンスを実行し、各ステップ後のHP分布と最終的な撃破/生存確率を返す。
  *
- * 状態は (攻撃側HP, 防御側HP) の同時分布を `Map<number, number>` で保持する。
- * key = aHP * stride + dHP（stride = defenderMaxHp + 1）。
+ * 状態は (攻撃側HP, 防御側HP[, berryConsumed]) の同時分布を `Map<number, number>` で保持する。
+ * defenderBerry なし: key = aHP * stride + dHP
+ * defenderBerry あり: key = (aHP * stride + dHP) * 2 + berry（berry=0 未消費, 1 消費済み）
  * 両者HP > 0 のマスのみ live として保持し、
  * 防御側が0以下 → koProb（吸収）、攻撃側が0以下 → faintProb（吸収）。
  */
@@ -95,12 +102,30 @@ export function runBattleSequence(
   opts: RunSequenceOptions = {},
 ): BattleSequenceResult {
   const stride = defenderMaxHp + 1
-  const enc = (a: number, d: number) => a * stride + d
+  const berry = opts.defenderBerry
+  const hasBerry = berry != null && berry.amount > 0
+  const stateMul = hasBerry ? 2 : 1
+  const enc = (a: number, d: number, b: 0 | 1 = 0) =>
+    (a * stride + d) * stateMul + (hasBerry ? b : 0)
+
+  /** 防御側HP変化後にオボン発動チェック（HP≤threshold && 未消費 → +amount＋クランプ＆消費） */
+  function applyBerry(d: number, b: 0 | 1): { d: number; b: 0 | 1 } {
+    if (!hasBerry) return { d, b }
+    if (b === 0 && d > 0 && d <= berry.threshold) {
+      return {
+        d: Math.min(defenderMaxHp, d + berry.amount),
+        b: 1,
+      }
+    }
+    return { d, b }
+  }
 
   const a0 = clamp(opts.attackerStartHp ?? attackerMaxHp, 0, attackerMaxHp)
   const d0 = clamp(opts.defenderStartHp ?? defenderMaxHp, 0, defenderMaxHp)
 
-  let joint = new Map<number, number>([[enc(a0, d0), 1]])
+  // 初期状態でも HP ≤ threshold ならオボンを即発動
+  const init0 = applyBerry(d0, 0)
+  let joint = new Map<number, number>([[enc(a0, init0.d, init0.b), 1]])
   let koProb = 0
   let faintProb = 0
   const steps: SeqStepResult[] = []
@@ -108,19 +133,21 @@ export function runBattleSequence(
   for (let i = 0; i < events.length; i++) {
     const ev = events[i]
     const next = new Map<number, number>()
-    const addLive = (a: number, d: number, p: number) => {
-      const k = enc(a, d)
+    const addLive = (a: number, d: number, b: 0 | 1, p: number) => {
+      const k = enc(a, d, b)
       next.set(k, (next.get(k) ?? 0) + p)
     }
 
     for (const [key, p] of joint) {
-      const a = Math.floor(key / stride)
-      const d = key % stride
+      const baseAD = hasBerry ? Math.floor(key / 2) : key
+      const a = Math.floor(baseAD / stride)
+      const d = baseAD % stride
+      const b: 0 | 1 = hasBerry ? ((key & 1) as 0 | 1) : 0
 
       switch (ev.kind) {
         case 'attack': {
           for (const [r, rp] of iterDist(ev.dmg)) {
-            const nd = d - r
+            const nd0 = d - r
             // 吸収: 実際に与えたダメージ（防御側残HPでクランプ）に応じて攻撃側が回復
             let na = a
             if (ev.drain && ev.drain > 0) {
@@ -129,9 +156,11 @@ export function runBattleSequence(
                 na = clamp(a + Math.max(1, Math.floor(actual * ev.drain)), 0, attackerMaxHp)
               }
             }
-            // 防御側がKO → koProb（吸収状態。撃破済みなので攻撃側回復は以後不要）
-            if (nd <= 0) koProb += p * rp
-            else addLive(na, nd, p * rp)
+            if (nd0 <= 0) koProb += p * rp
+            else {
+              const ab = applyBerry(nd0, b)
+              addLive(na, ab.d, ab.b, p * rp)
+            }
           }
           break
         }
@@ -147,42 +176,47 @@ export function runBattleSequence(
               }
             }
             if (na <= 0) faintProb += p * rp
-            else addLive(na, nd, p * rp)
+            else addLive(na, nd, b, p * rp)
           }
           break
         }
         case 'painSplit': {
           if (ev.attackerHp !== undefined) {
             // 攻撃側HP固定（総合累積モード）: 防御側のみ均し、攻撃側HPは不変
-            const nd = clamp(Math.floor((ev.attackerHp + d) / 2), 0, defenderMaxHp)
-            addLive(a, nd, p)
+            const nd0 = clamp(Math.floor((ev.attackerHp + d) / 2), 0, defenderMaxHp)
+            const ab = applyBerry(nd0, b)
+            addLive(a, ab.d, ab.b, p)
           } else {
             const v = Math.floor((a + d) / 2)
             const na = clamp(v, 0, attackerMaxHp)
-            const nd = clamp(v, 0, defenderMaxHp)
+            const nd0 = clamp(v, 0, defenderMaxHp)
             // a,d >= 1 なので v >= 1、瀕死にはならない
-            addLive(na, nd, p)
+            const ab = applyBerry(nd0, b)
+            addLive(na, ab.d, ab.b, p)
           }
           break
         }
         case 'defenderConst': {
-          const nd = d - ev.amount
-          if (nd <= 0) koProb += p
-          else addLive(a, nd, p)
+          const nd0 = d - ev.amount
+          if (nd0 <= 0) koProb += p
+          else {
+            const ab = applyBerry(nd0, b)
+            addLive(a, ab.d, ab.b, p)
+          }
           break
         }
         case 'attackerConst': {
           const na = a - ev.amount
           if (na <= 0) faintProb += p
-          else addLive(na, d, p)
+          else addLive(na, d, b, p)
           break
         }
         case 'defenderRecover': {
-          addLive(a, clamp(d + ev.amount, 0, defenderMaxHp), p)
+          addLive(a, clamp(d + ev.amount, 0, defenderMaxHp), b, p)
           break
         }
         case 'attackerRecover': {
-          addLive(clamp(a + ev.amount, 0, attackerMaxHp), d, p)
+          addLive(clamp(a + ev.amount, 0, attackerMaxHp), d, b, p)
           break
         }
       }
@@ -190,13 +224,14 @@ export function runBattleSequence(
 
     joint = next
 
-    // ステップ後の周辺分布を記録
+    // ステップ後の周辺分布を記録（berry ビットは集約）
     const aDist = new Map<number, number>()
     const dDist = new Map<number, number>()
     let bothAlive = 0
     for (const [key, p] of joint) {
-      const a = Math.floor(key / stride)
-      const d = key % stride
+      const baseAD = hasBerry ? Math.floor(key / 2) : key
+      const a = Math.floor(baseAD / stride)
+      const d = baseAD % stride
       aDist.set(a, (aDist.get(a) ?? 0) + p)
       dDist.set(d, (dDist.get(d) ?? 0) + p)
       bothAlive += p

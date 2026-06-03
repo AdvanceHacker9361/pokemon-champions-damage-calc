@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.4**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.5**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,31 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.8.5: 「定数回復」をオボン正確仕様（HP≤50%で1回限り発動）に変更
+
+#### 不具合（v3.8.4）
+- 「定数回復」を各与ダメ攻撃の直後に毎回適用するセマンティクスだったため、N回攻撃時に N×constRec の回復が乗り、最終HPが過大評価されていた
+- 例: ブリジュラス流星群×2 (ガブHP=183, オボン=45)
+  - 旧: Draco1後+45・Draco2後+45 = +90 → 最終HP 57〜90（実際の +45 のみ＝12〜45 と45差）
+
+#### 修正
+- `BattleSequenceCalc.ts`: `RunSequenceOptions` に `defenderBerry?: { threshold; amount }` を追加。状態に `berryConsumed` ビット (0/1) を加え、防御側HPが threshold 以下になった瞬間に1回限り `amount` 回復・以後消費して再発動しない
+- 状態エンコーディング: `key = (aHP * stride + dHP) * 2 + berryConsumed`（オボン未指定時は従来通り 1x）
+- 適用範囲: 攻撃・防御側定数ダメ・痛み分けの後にトリガー判定。被ダメ・攻撃側変化・回復イベントでは判定しない（HP上昇では発動しない原則）
+- `useAccumulatedDamage.ts` / `useBattleSequence.ts`: 攻撃直後の `defenderRecover` 挿入を撤回し、`runBattleSequence` に `defenderBerry = { threshold: floor(defenderMaxHp/2), amount: constRec }` を渡す方式へ変更
+- `DamageProgressionPanel.tsx`: 定数回復のヒントを「オボン相当（HP50%以下で1回限り自動発動）」に更新
+
+#### 動作確認（ブリジュラス流星群×2）
+- 修正後: ko=0、ダメ **138〜171**（残HP 12〜45。オボン1回切りで正確）
+- オボンなし対照: ko=1（確定撃破）
+
+#### テスト（`BattleSequenceCalc.test.ts`）
+- ブリジュラス流星群×2 vs ガブ(オボン)で `defenderBerry` 経由で min/max dmg = 138/171 を厳密検証
+- HP50%超に留まる弱攻撃ではオボン未発動を検証
+- 1回消費後、2発目以降は再発動しないことを検証
+
+---
 
 ### V3.8.4: 「定数回復」を攻撃ごとの自動適用に変更（オボン等の位置依存対応・UI簡素化）
 

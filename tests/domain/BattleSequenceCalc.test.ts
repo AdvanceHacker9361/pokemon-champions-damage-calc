@@ -107,21 +107,51 @@ describe('BattleSequenceCalc', () => {
       expect(r.defenderKoProb).toBeCloseTo(1, 6)
     })
 
-    it('ブリジュラス流星群×2 vs ガブリアス(オボン): オボンが2発の間に挟まると生存', () => {
-      // HP=183、流星群1=122〜144、流星群2(C-2)=61〜72、オボン=45
-      // 「+加算→+加算」の間にオボン(=defenderRecover 45)が自動挿入される想定
+    it('オボン相当: ブリジュラス流星群×2 vs ガブリアス、1回限り発動で生存しダメは138〜171', () => {
+      // HP=183、流星群1=122〜144、流星群2(C-2)=61〜72、オボン=45（HP50%以下で1回限り）
+      // Draco1で残39-61 ≤91=50% → オボン+45 → 84-106
+      // Draco2で12-45 → オボンは消費済みで再発動しない → ダメ138-171
       const HP = 183
       const draco1 = [122,124,126,128,130,132,134,136,138,140,141,142,143,144,144,144]
       const draco2 = [61,62,63,64,65,66,67,68,69,70,71,71,72,72,72,72]
       const events: SeqEvent[] = [
         { kind: 'attack', dmg: draco1 },
-        { kind: 'defenderRecover', amount: 45 }, // 1発目直後の constRec
         { kind: 'attack', dmg: draco2 },
-        { kind: 'defenderRecover', amount: 45 }, // 2発目直後の constRec（終端で結果に影響しない）
       ]
-      const r = runBattleSequence(events, 1, HP)
-      // 確定撃破ではなく、全乱数で生存していること
+      const r = runBattleSequence(events, 1, HP, {
+        defenderBerry: { threshold: Math.floor(HP / 2), amount: 45 },
+      })
       expect(r.defenderKoProb).toBeCloseTo(0, 6)
+      const dist = extractDefenderDamageDistribution(r, HP)
+      let mn = Infinity, mx = -Infinity
+      for (const d of dist.keys()) { if (d < mn) mn = d; if (d > mx) mx = d }
+      // 最小ダメ = 122+61-45 = 138, 最大ダメ = 144+72-45 = 171（オボン1回切りであることを保証）
+      expect(mn).toBe(138)
+      expect(mx).toBe(171)
+    })
+
+    it('オボン相当: HP50%超に留まる弱攻撃ではオボンが発動しない', () => {
+      // HP=200、攻撃確定50ダメ → 残150 (>100=50%) → オボン未発動
+      const events: SeqEvent[] = [{ kind: 'attack', dmg: [50] }]
+      const r = runBattleSequence(events, 1, 200, {
+        defenderBerry: { threshold: 100, amount: 50 },
+      })
+      const dist = extractDefenderDamageDistribution(r, 200)
+      expect(dist.get(50)).toBeCloseTo(1, 6)
+    })
+
+    it('オボン相当: 1回消費したら2発目以降は発動しない', () => {
+      // HP=100, 攻撃60確定 → 残40 ≤50 → オボン+30 → 70、攻撃40確定 → 残30 (オボン消費済み)
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [60] },
+        { kind: 'attack', dmg: [40] },
+      ]
+      const r = runBattleSequence(events, 1, 100, {
+        defenderBerry: { threshold: 50, amount: 30 },
+      })
+      const dist = extractDefenderDamageDistribution(r, 100)
+      // 60-30 = 30 + 40 = 70 ダメ
+      expect(dist.get(70)).toBeCloseTo(1, 6)
     })
 
     it('定数回復は攻撃の後に適用すると正味ダメージを減らす（残飯）', () => {

@@ -113,7 +113,7 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
-    // 定数ダメ・もうどくは末尾で累計適用、定数回復は攻撃の合間に毎回適用（オボン等の位置依存条件回復も再現）
+    // 定数ダメ・もうどくは末尾で累計適用、定数回復はオボン相当の1回限り条件回復として扱う
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
       Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
     )
@@ -131,14 +131,12 @@ export function useBattleSequence(): BattleSequenceComputed {
 
     let firstHadMultiscale = false
     let attackSeen = 0
-    let attackCount = 0
 
     for (const ev of events) {
       switch (ev.kind) {
         case 'attack': {
           if (attackSeen === 0) firstHadMultiscale = ev.hadMultiscale
           attackSeen++
-          attackCount++
           const drainRate = (() => {
             const fromLabel = MoveRepository.findByName(ev.label.replace(/（.+?）$/g, ''))?.drain
             return fromLabel
@@ -159,10 +157,6 @@ export function useBattleSequence(): BattleSequenceComputed {
             } else {
               pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate }, seqLabel)
             }
-          }
-          // 攻撃直後に定数回復を適用（オボン等の位置依存条件回復）
-          if (constRec > 0) {
-            pushSeq({ kind: 'defenderRecover', amount: constRec }, `定数回復 ${constRec}`)
           }
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${usageTag}` })
@@ -222,19 +216,21 @@ export function useBattleSequence(): BattleSequenceComputed {
     if (bgDamageTotal > 0) {
       pushSeq({ kind: 'defenderConst', amount: bgDamageTotal }, `背景ダメ ${bgDamageTotal}`)
     }
-    // 攻撃が無い場合は定数回復を末尾でも適用（取りこぼし防止）
-    if (attackCount === 0 && constRec > 0) {
-      pushSeq({ kind: 'defenderRecover', amount: constRec }, `定数回復 ${constRec}`)
-    }
 
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
       return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
     }
 
+    // 定数回復をオボン相当に渡す（HP≤50% で1回限り自動発動）
+    const defenderBerry = constRec > 0
+      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRec }
+      : undefined
+
     const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, {
       attackerStartHp: attackerStartHp ?? undefined,
       defenderStartHp: defenderStartHp ?? undefined,
       labels,
+      defenderBerry,
     })
 
     return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result }

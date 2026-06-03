@@ -537,10 +537,10 @@ function BackgroundEffectsSection({
               onClick={() => setConstRec(constRec + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-fg-subtle">残飯/オボン等</span>
+          <span className="text-xs text-fg-subtle">オボン等</span>
         </div>
         <div className="pl-[3.75rem] text-[10px] text-fg-faint">
-          ※各与ダメ攻撃の直後に毎回適用（残飯/オボン等の位置依存回復に対応。撃破判定は正確、最終HPは過大評価になる場合あり）
+          ※オボン相当（防御側HPが50%以下に達した時点で1回限り自動発動・以後消費）
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {
