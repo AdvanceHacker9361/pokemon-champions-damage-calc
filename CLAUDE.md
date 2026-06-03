@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.1**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.2**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -810,7 +810,7 @@ src/
 #### 変更（`DamageProgressionPanel.tsx`）
 - 回復イベント（`defenderRecover` / `attackerRecover`）の EventRow に **`1/3` `1/2` `2/3` プリセットボタン** を追加
   - クリックで対象側の最大HP（防御側回復→防御側HP、攻撃側回復→攻撃側HP）から該当割合を一発入力
-  - つきのひかり等の天候別回復（通常1/2・雨砂霧1/3・晴2/3）に対応
+  - つきのひかり等の天候別回復（通常1/2・雨砂雪1/3・晴2/3）に対応
 - `EventRow` に `defenderMaxHp` プロップを追加して伝搬
 - 「定数回復」フィールドの毎ターン自動挙動は たべのこし用としてそのまま維持（住み分け）
 

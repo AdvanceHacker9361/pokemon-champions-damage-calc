@@ -496,7 +496,7 @@ function EventRow({
             type="button"
             onClick={() => onUpdate({ amount: val } as Partial<ProgressionEvent>)}
             className="text-[10px] px-1 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
-            title={`再生技: ${f.label} 回復 (${val})${f.label === '1/2' ? ' = つきのひかり通常/じこさいせい等' : f.label === '1/3' ? ' = つきのひかり雨/砂/霧' : ' = つきのひかり晴'}`}
+            title={`再生技: ${f.label} 回復 (${val})${f.label === '1/2' ? ' = つきのひかり通常/じこさいせい等' : f.label === '1/3' ? ' = つきのひかり雨/砂/雪' : ' = つきのひかり晴'}`}
           >
             {f.label}<span className="ml-0.5 opacity-60">{val}</span>
           </button>
