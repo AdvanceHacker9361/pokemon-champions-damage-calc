@@ -61,6 +61,7 @@ export function useBattleSequence(): BattleSequenceComputed {
   const events = useProgressionStore(s => s.events)
   const constDmg = useProgressionStore(s => s.constDmg)
   const constRec = useProgressionStore(s => s.constRec)
+  const constRecBerry = useProgressionStore(s => s.constRecBerry)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp = useProgressionStore(s => s.defenderStartHp)
@@ -158,6 +159,10 @@ export function useBattleSequence(): BattleSequenceComputed {
               pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate }, seqLabel)
             }
           }
+          // 攻撃直後に定数回復（たべのこし等の per-turn 回復）を適用
+          if (constRec > 0) {
+            pushSeq({ kind: 'defenderRecover', amount: constRec }, `定数回復 ${constRec}`)
+          }
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${usageTag}` })
           break
@@ -221,9 +226,9 @@ export function useBattleSequence(): BattleSequenceComputed {
       return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
     }
 
-    // 定数回復をオボン相当に渡す（HP≤50% で1回限り自動発動）
-    const defenderBerry = constRec > 0
-      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRec }
+    // オボン回復: HP≤50% で1回限り自動発動
+    const defenderBerry = constRecBerry > 0
+      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRecBerry }
       : undefined
 
     const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, {
@@ -235,7 +240,7 @@ export function useBattleSequence(): BattleSequenceComputed {
 
     return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result }
   }, [
-    events, constDmg, constRec, poisonTurns,
+    events, constDmg, constRec, constRecBerry, poisonTurns,
     attackerStartHp, defenderStartHp,
     attacker, defender, field,
   ])

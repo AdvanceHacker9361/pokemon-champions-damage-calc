@@ -100,10 +100,11 @@ function expandAttack(
 }
 
 export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
-  const events      = useProgressionStore(s => s.events)
-  const constDmg    = useProgressionStore(s => s.constDmg)
-  const constRec    = useProgressionStore(s => s.constRec)
-  const poisonTurns = useProgressionStore(s => s.poisonTurns)
+  const events         = useProgressionStore(s => s.events)
+  const constDmg       = useProgressionStore(s => s.constDmg)
+  const constRec       = useProgressionStore(s => s.constRec)
+  const constRecBerry  = useProgressionStore(s => s.constRecBerry)
+  const poisonTurns    = useProgressionStore(s => s.poisonTurns)
 
   return useMemo(() => {
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
@@ -111,9 +112,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     )
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
     // 定数ダメ・もうどくは累計で末尾適用（砂/毒/火傷の合計）。
-    // 定数回復はオボン相当の1回限り条件回復として扱う（HP≤50% で自動発動・以後消費）。
+    // 定数回復（たべのこし等）は各与ダメ攻撃の直後に毎回適用。
+    // オボン回復は HP≤50% で1回限り自動発動（runBattleSequence の defenderBerry オプションで）。
     const bgDamageTotal = constDmg + poisonTotal
-    const totalConst = bgDamageTotal - constRec
+    const totalConst = bgDamageTotal - constRec - constRecBerry
 
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
@@ -141,6 +143,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           const { normal, crit } = expandAttack(ev, isFirstOverall, firstHadMultiscale)
           normalEvents.push(...normal)
           critEvents.push(...crit)
+          // 攻撃直後に定数回復（たべのこし等の per-turn 回復）を適用
+          if (constRec > 0) {
+            pushBoth({ kind: 'defenderRecover', amount: constRec })
+          }
           break
         }
         case 'painSplit': {
@@ -168,10 +174,14 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     if (bgDamageTotal > 0) {
       pushBoth({ kind: 'defenderConst', amount: bgDamageTotal })
     }
+    // 攻撃が無いときは定数回復を末尾でも適用（取りこぼし防止）
+    if (attackEvents.length === 0 && constRec > 0) {
+      pushBoth({ kind: 'defenderRecover', amount: constRec })
+    }
 
-    // 定数回復をオボン相当に渡す（HP≤50% で1回限り自動発動）
-    const defenderBerry = constRec > 0
-      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRec }
+    // オボン回復: HP≤50% で1回限り自動発動
+    const defenderBerry = constRecBerry > 0
+      ? { threshold: Math.floor(defenderMaxHp / 2), amount: constRecBerry }
       : undefined
 
     const ATT_DUMMY = 1
@@ -216,5 +226,5 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb, combinedProbWithCrit,
       distribution, accumKoResult,
     }
-  }, [events, constDmg, constRec, poisonTurns, defenderMaxHp])
+  }, [events, constDmg, constRec, constRecBerry, poisonTurns, defenderMaxHp])
 }

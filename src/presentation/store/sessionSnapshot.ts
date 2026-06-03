@@ -26,6 +26,7 @@ export interface ProgressionSnapshot {
   events: ProgressionEvent[]
   constDmg: number
   constRec: number
+  constRecBerry: number
   poisonTurns: number
   attackerStartHp: number | null
   defenderStartHp: number | null
@@ -95,6 +96,7 @@ function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
     events: p.events.map(cloneProgressionEvent),
     constDmg: p.constDmg,
     constRec: p.constRec,
+    constRecBerry: p.constRecBerry ?? 0,
     poisonTurns: p.poisonTurns,
     attackerStartHp: p.attackerStartHp,
     defenderStartHp: p.defenderStartHp,
@@ -131,6 +133,7 @@ export function snapshotLiveState(): SessionSnapshot {
       events: prog.events,
       constDmg: prog.constDmg,
       constRec: prog.constRec,
+      constRecBerry: prog.constRecBerry,
       poisonTurns: prog.poisonTurns,
       attackerStartHp: prog.attackerStartHp,
       defenderStartHp: prog.defenderStartHp,

@@ -61,6 +61,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const events           = useProgressionStore(s => s.events)
   const constDmg         = useProgressionStore(s => s.constDmg)
   const constRec         = useProgressionStore(s => s.constRec)
+  const constRecBerry    = useProgressionStore(s => s.constRecBerry)
   const poisonTurns      = useProgressionStore(s => s.poisonTurns)
   const attackerStartHp  = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp  = useProgressionStore(s => s.defenderStartHp)
@@ -72,6 +73,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const updateEvent           = useProgressionStore(s => s.updateEvent)
   const setConstDmg           = useProgressionStore(s => s.setConstDmg)
   const setConstRec           = useProgressionStore(s => s.setConstRec)
+  const setConstRecBerry      = useProgressionStore(s => s.setConstRecBerry)
   const setPoisonTurns        = useProgressionStore(s => s.setPoisonTurns)
   const setAttackerStartHp    = useProgressionStore(s => s.setAttackerStartHp)
   const setDefenderStartHp    = useProgressionStore(s => s.setDefenderStartHp)
@@ -92,7 +94,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
 
   const hasEvents = events.length > 0
-  const hasAnything = hasEvents || constDmg > 0 || constRec > 0 || poisonTurns > 0
+  const hasAnything = hasEvents || constDmg > 0 || constRec > 0 || constRecBerry > 0 || poisonTurns > 0
   const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp })
 
   const { result: seqResult } = useBattleSequence()
@@ -174,12 +176,14 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       <BackgroundEffectsSection
         constDmg={constDmg}
         constRec={constRec}
+        constRecBerry={constRecBerry}
         poisonTurns={poisonTurns}
         poisonPerTurn={poisonPerTurn}
         poisonTotal={poisonTotal}
         defenderMaxHp={defenderMaxHp}
         setConstDmg={setConstDmg}
         setConstRec={setConstRec}
+        setConstRecBerry={setConstRecBerry}
         setPoisonTurns={setPoisonTurns}
       />
 
@@ -448,18 +452,20 @@ function RowControls({ idx, total, onMoveUp, onMoveDown, onRemove }: {
 interface BgProps {
   constDmg: number
   constRec: number
+  constRecBerry: number
   poisonTurns: number
   poisonPerTurn: number[]
   poisonTotal: number
   defenderMaxHp: number
   setConstDmg: (v: number) => void
   setConstRec: (v: number) => void
+  setConstRecBerry: (v: number) => void
   setPoisonTurns: (n: number) => void
 }
 
 function BackgroundEffectsSection({
-  constDmg, constRec, poisonTurns, poisonPerTurn, poisonTotal, defenderMaxHp,
-  setConstDmg, setConstRec, setPoisonTurns,
+  constDmg, constRec, constRecBerry, poisonTurns, poisonPerTurn, poisonTotal, defenderMaxHp,
+  setConstDmg, setConstRec, setConstRecBerry, setPoisonTurns,
 }: BgProps) {
   return (
     <>
@@ -514,7 +520,7 @@ function BackgroundEffectsSection({
         )}
       </div>
 
-      {/* 定数回復 */}
+      {/* 定数回復（たべのこし等の per-turn passive） */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-fg-muted w-14 flex-shrink-0">定数回復</span>
@@ -537,10 +543,10 @@ function BackgroundEffectsSection({
               onClick={() => setConstRec(constRec + 1)}
             >+</button>
           </div>
-          <span className="text-xs text-fg-subtle">オボン等</span>
+          <span className="text-xs text-fg-subtle">たべのこし/黒ヘド等</span>
         </div>
         <div className="pl-[3.75rem] text-[10px] text-fg-faint">
-          ※オボン相当（防御側HPが50%以下に達した時点で1回限り自動発動・以後消費）
+          ※各与ダメ攻撃の直後に毎回適用（たべのこし=1/16 等の per-turn passive 回復）
         </div>
         <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
           {CONST_REC_FRACTIONS.map(f => {
@@ -563,6 +569,64 @@ function BackgroundEffectsSection({
             <ConstBar value={constRec} maxHp={defenderMaxHp} isRecovery />
             <span className="text-xs text-success font-mono">
               {(constRec / defenderMaxHp * 100).toFixed(1)}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* オボン回復（HP≤50% で1回限り） */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-fg-muted w-14 flex-shrink-0">オボン</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
+              onClick={() => setConstRecBerry(Math.max(0, constRecBerry - 1))}
+            >−</button>
+            <input
+              type="number"
+              min={0}
+              value={constRecBerry}
+              onChange={e => setConstRecBerry(Math.max(0, Number(e.target.value)))}
+              className="input-base w-14 text-center text-xs px-1"
+            />
+            <button
+              type="button"
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
+              onClick={() => setConstRecBerry(constRecBerry + 1)}
+            >+</button>
+          </div>
+          <span className="text-xs text-fg-subtle">条件付き1回限り</span>
+        </div>
+        <div className="pl-[3.75rem] text-[10px] text-fg-faint">
+          ※防御側HPが50%以下に達した時点で1回限り自動発動・以後消費（オボンのみ=1/4）
+        </div>
+        <div className="flex items-center gap-1 pl-[3.75rem] flex-wrap">
+          {[
+            { label: '1/8', num: 1, den: 8 },
+            { label: '1/4', num: 1, den: 4 },
+            { label: '1/3', num: 1, den: 3 },
+          ].map(f => {
+            const val = Math.floor(defenderMaxHp * f.num / f.den)
+            return (
+              <button
+                key={f.label}
+                type="button"
+                onClick={() => setConstRecBerry(val)}
+                className="text-xs px-1 py-0.5 rounded border transition-colors bg-surface-3 border-edge text-fg-muted hover:border-success hover:text-success"
+                title={`${val} に設定 (${f.label})`}
+              >
+                {f.label}<span className="ml-0.5 opacity-60">{val}</span>
+              </button>
+            )
+          })}
+        </div>
+        {constRecBerry > 0 && (
+          <div className="pl-[3.75rem]">
+            <ConstBar value={constRecBerry} maxHp={defenderMaxHp} isRecovery />
+            <span className="text-xs text-success font-mono">
+              {(constRecBerry / defenderMaxHp * 100).toFixed(1)}%
             </span>
           </div>
         )}

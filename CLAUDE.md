@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.5**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.8.6**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,31 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.8.6: 「定数回復」と「オボン回復」を別フィールドに分離
+
+#### 背景
+- v3.8.5 で「定数回復」をオボン専用（HP≤50%で1回限り）にしたため、たべのこし（毎ターン1/16）等の per-turn passive 回復が表現できなくなっていた
+- 両セマンティクスを分離し、同時設定も可能に
+
+#### 変更
+- `progressionStore.ts`: `constRecBerry: number` フィールド・`setConstRecBerry` アクション追加。`constRec` は v3.8.4 セマンティクス（各与ダメ攻撃の直後に毎回適用）に復帰
+  - **定数回復** (`constRec`): たべのこし/黒ヘド等の per-turn passive。各 attack の直後に `defenderRecover` イベントとして挿入
+  - **オボン回復** (`constRecBerry`): HP≤50% で1回限り自動発動。`runBattleSequence` に `defenderBerry={threshold:floor(HP/2), amount:constRecBerry}` で渡す
+- `useAccumulatedDamage.ts` / `useBattleSequence.ts`: 両セマンティクスを併用適用
+- `DamageProgressionPanel.tsx`: 「オボン」セクションを「定数回復」の下に追加（プリセット: 1/8, 1/4, 1/3）
+- `AccumDurabilityPanel.tsx`: 耐久調整の静的回復量を `constRec * attackTurns + constRecBerry` で近似
+- `AccumExportButton.tsx`: 両者を別々に出力
+- `sessionSnapshot.ts`: `ProgressionSnapshot.constRecBerry` を追加
+
+#### 動作確認
+- たべのこしのみ: 攻撃50×3 + 12回復×3 = ダメ114（残78）
+- たべのこし+オボン併用 (HP=192, オボン=48): T3 で HP=66 ≤96 → +48→114 → +12→126 = **ダメ66**
+
+#### テスト
+- `BattleSequenceCalc.test.ts` に併用シナリオ1件追加（計151件全パス）
+
+---
 
 ### V3.8.5: 「定数回復」をオボン正確仕様（HP≤50%で1回限り発動）に変更
 
