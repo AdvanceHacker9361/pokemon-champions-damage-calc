@@ -154,6 +154,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               idx={idx}
               total={events.length}
               attackerMaxHp={attackerMaxHp}
+              defenderMaxHp={defenderMaxHp}
               defenderMoveOptions={defenderMoveOptions}
               onSetAttackUsages={setAttackUsages}
               onRemove={() => removeEvent(ev.id)}
@@ -325,6 +326,7 @@ interface EventRowProps {
   idx: number
   total: number
   attackerMaxHp: number
+  defenderMaxHp: number
   defenderMoveOptions: string[]
   onSetAttackUsages: (id: string, usages: number) => void
   onRemove: () => void
@@ -336,7 +338,7 @@ interface EventRowProps {
 
 function EventRow({
   ev, idx, total,
-  attackerMaxHp, defenderMoveOptions,
+  attackerMaxHp, defenderMaxHp, defenderMoveOptions,
   onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onUpdate,
 }: EventRowProps) {
   if (ev.kind === 'attack') {
@@ -467,8 +469,16 @@ function EventRow({
     attackerRecover: { text: '攻撃側回復', color: 'text-success' },
   }
   const meta = labels[ev.kind]
+  // 回復イベントには再生技（つきのひかり等）用の天候プリセット（1/2・1/3・2/3）を表示
+  const isRecover = ev.kind === 'defenderRecover' || ev.kind === 'attackerRecover'
+  const recoverBaseHp = ev.kind === 'attackerRecover' ? attackerMaxHp : defenderMaxHp
+  const RECOVER_FRACTIONS = [
+    { label: '1/3', num: 1, den: 3 },
+    { label: '1/2', num: 1, den: 2 },
+    { label: '2/3', num: 2, den: 3 },
+  ]
   return (
-    <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
+    <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1 flex-wrap">
       <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
       <span className={`font-semibold ${meta.color}`}>{meta.text}</span>
       <input
@@ -478,6 +488,20 @@ function EventRow({
         onChange={e => onUpdate({ amount: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
         className="input-base w-16 text-center text-xs px-1 py-0.5"
       />
+      {isRecover && recoverBaseHp > 0 && RECOVER_FRACTIONS.map(f => {
+        const val = Math.floor(recoverBaseHp * f.num / f.den)
+        return (
+          <button
+            key={f.label}
+            type="button"
+            onClick={() => onUpdate({ amount: val } as Partial<ProgressionEvent>)}
+            className="text-[10px] px-1 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
+            title={`再生技: ${f.label} 回復 (${val})${f.label === '1/2' ? ' = つきのひかり通常/じこさいせい等' : f.label === '1/3' ? ' = つきのひかり雨/砂/霧' : ' = つきのひかり晴'}`}
+          >
+            {f.label}<span className="ml-0.5 opacity-60">{val}</span>
+          </button>
+        )
+      })}
       <span className="flex-1" />
       <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
     </div>

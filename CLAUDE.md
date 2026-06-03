@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.1**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,21 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.11.1: 回復イベントに再生技用の天候プリセット（1/2・1/3・2/3）を追加
+
+#### 背景
+- 「定数回復」フィールドは たべのこし用に**毎ターン自動適用**されるため、つきのひかり等の「使ったターンだけ回復する再生技」には不向き（毎ターン乗ってしまう）
+- 再生技は手動の「＋防御側回復／＋攻撃側回復」イベントを使うのが正解だが、回復量を手計算する必要があった
+
+#### 変更（`DamageProgressionPanel.tsx`）
+- 回復イベント（`defenderRecover` / `attackerRecover`）の EventRow に **`1/3` `1/2` `2/3` プリセットボタン** を追加
+  - クリックで対象側の最大HP（防御側回復→防御側HP、攻撃側回復→攻撃側HP）から該当割合を一発入力
+  - つきのひかり等の天候別回復（通常1/2・雨砂霧1/3・晴2/3）に対応
+- `EventRow` に `defenderMaxHp` プロップを追加して伝搬
+- 「定数回復」フィールドの毎ターン自動挙動は たべのこし用としてそのまま維持（住み分け）
+
+---
 
 ### V3.11.0: 宿り木のタネ（攻↔防方向の1ティック）をイベントとして追加
 
