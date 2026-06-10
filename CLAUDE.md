@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.5**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.11.6**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,20 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.11.6: 与ダメ吸収技の回復が攻守シミュレーションに反映されないバグを修正
+
+#### 不具合
+- 与ダメイベント（加算エントリ）の吸収率を **表示用ラベル文字列**（例:「フラエッテ(えいえんのはな) の ドレインキッス」）から `MoveRepository.findByName` で検索していたため、ポケモン名込みのラベルでは技がヒットせず `drain` が常に undefined になっていた
+- ドレインキッス等で削っても攻撃側HPが回復しない（被ダメ側の `incoming` イベントは技名直指定のため正常だった）
+
+#### 修正
+- `progressionStore.ts`: `AttackPayload` に `moveName?: string` を追加（label は表示用、moveName は技データ参照用と分離）
+- `DamageResultRow.tsx`: `+加算` 時に `moveName` を保存
+- `useBattleSequence.ts`: 吸収率を `ev.moveName` から取得するよう修正（ラベルパースを廃止）
+- スナップショットは `cloneProgressionEvent` の `...ev` スプレッドで自動継承
+
+---
 
 ### V3.11.1: 回復イベントに再生技用の天候プリセット（1/2・1/3・2/3）を追加
 
