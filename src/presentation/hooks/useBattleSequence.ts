@@ -141,10 +141,10 @@ export function useBattleSequence(): BattleSequenceComputed {
         case 'attack': {
           if (attackSeen === 0) firstHadMultiscale = ev.hadMultiscale
           attackSeen++
-          const drainRate = (() => {
-            const fromLabel = MoveRepository.findByName(ev.label.replace(/（.+?）$/g, ''))?.drain
-            return fromLabel
-          })()
+          // 吸収率: 加算時に保存した技名から取得（label はポケモン名込みのため不可）
+          const drainRate = ev.moveName
+            ? MoveRepository.findByName(ev.moveName)?.drain
+            : undefined
           const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
           const critTag = ev.isForcedCrit ? '（急所）' : ''
           // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）

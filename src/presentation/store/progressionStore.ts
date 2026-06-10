@@ -6,6 +6,8 @@ import { create } from 'zustand'
  */
 export interface AttackPayload {
   label: string
+  /** 技名（吸収率などの技データ参照用。label はポケモン名等を含む表示用文字列のため別持ち） */
+  moveName?: string
   /** マルチスケイル等が発動した状態のロール（1回分） */
   rolls: number[]
   /** HP満タン特性なしの素ダメロール（hadMultiscale=false のときは rolls と同値） */

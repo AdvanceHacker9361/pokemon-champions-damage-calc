@@ -516,6 +516,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
 
     addEntry({
       label: `${attackerName} の ${moveName}${critLabel}${variableLabelTag}${isParentalBond ? '(おやこあい)' : ''}${isDisguiseIntact ? '+ばけのかわ' : ''}`,
+      moveName,
       rolls: accumRolls,
       rawRolls: accumRawRolls,
       usages: defaultUsages,
