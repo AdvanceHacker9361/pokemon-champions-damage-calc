@@ -11948,7 +11948,8 @@
       "bite": false,
       "slice": true
     },
-    "special": null
+    "special": null,
+    "drain": 0.5
   },
   {
     "name": "ジェットパンチ",
