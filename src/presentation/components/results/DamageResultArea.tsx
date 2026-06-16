@@ -1,7 +1,6 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { DamageResultRow } from './DamageResultRow'
 import { DamageProgressionSection } from './DamageProgressionSection'
-import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { ExportButton } from './ExportButton'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
@@ -30,7 +29,6 @@ export function DamageResultArea() {
           <p className="text-fg-muted text-sm">攻撃側・防御側のポケモンを選択してください</p>
         </div>
         <DamageProgressionSection defenderMaxHp={defenderMaxHp} />
-        <FieldStateBar />
       </>
     )
   }
@@ -39,12 +37,22 @@ export function DamageResultArea() {
     <>
       {results.length > 0 ? (
         <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs text-fg-muted">{attackerName} → {defenderName}</span>
+          <div className="flex items-start justify-between gap-2 px-1">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-fg-muted">技別ダメージ</h3>
+                <span className="rounded border border-edge bg-surface-2 px-1.5 py-0.5 text-[10px] font-mono text-fg-faint">
+                  {results.length}件
+                </span>
+              </div>
+              <div className="mt-0.5 truncate text-[10px] text-fg-faint">
+                {attackerName} → {defenderName}
+              </div>
+            </div>
             <ExportButton results={results} attackerName={attackerName} defenderName={defenderName} />
           </div>
-          {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
-            <div key={moveName} className="bg-surface-2 rounded-lg px-3.5 py-3">
+          {results.map(({ slotIndex, moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
+            <div key={`${slotIndex}:${moveName}`} className="bg-surface-2 rounded-lg px-3.5 py-3">
               <DamageResultRow
                 moveName={moveName}
                 result={result}
@@ -67,7 +75,6 @@ export function DamageResultArea() {
         </div>
       )}
       <DamageProgressionSection defenderMaxHp={defenderMaxHp} />
-      <FieldStateBar />
     </>
   )
 }

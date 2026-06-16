@@ -1,6 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MoveRecord } from '@/data/schemas/types'
+
+const RECENT_MOVES_STORAGE_KEY = 'pokemon-champions:recent-moves'
+const RECENT_MOVES_LIMIT = 12
 
 interface MoveSelectProps {
   value: string | null
@@ -10,21 +13,68 @@ interface MoveSelectProps {
   slot?: number
 }
 
+function readRecentMoveNames(): string[] {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const raw = window.localStorage.getItem(RECENT_MOVES_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+
+    return parsed
+      .filter((name): name is string => typeof name === 'string' && MoveRepository.findByName(name) !== undefined)
+      .slice(0, RECENT_MOVES_LIMIT)
+  } catch {
+    return []
+  }
+}
+
+function writeRecentMoveName(moveName: string): string[] {
+  const next = [
+    moveName,
+    ...readRecentMoveNames().filter(name => name !== moveName),
+  ].slice(0, RECENT_MOVES_LIMIT)
+
+  try {
+    window.localStorage.setItem(RECENT_MOVES_STORAGE_KEY, JSON.stringify(next))
+  } catch {
+    // localStorage が使えない環境では、その場の表示更新だけ行う
+  }
+
+  return next
+}
+
+function findRecentMoves(names: string[]): MoveRecord[] {
+  return names
+    .map(name => MoveRepository.findByName(name))
+    .filter((move): move is MoveRecord => move !== undefined)
+}
+
 export function MoveSelect({ value, onChange, placeholder = '技を選択...', slot }: MoveSelectProps) {
+  const id = useId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<MoveRecord[]>([])
+  const [recentMoveNames, setRecentMoveNames] = useState<string[]>(readRecentMoveNames)
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const activeItemRef = useRef<HTMLButtonElement>(null)
+  const listboxId = `${id}-move-listbox`
+  const activeOptionId = activeIndex >= 0 ? `${id}-move-${activeIndex}` : undefined
+  const isShowingRecent = query.trim().length === 0
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (query.trim().length === 0) {
+        setResults(findRecentMoves(recentMoveNames))
+        return
+      }
       setResults(MoveRepository.search(query, 12))
     }, 80)
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, recentMoveNames])
 
   // キーボードショートカット 1-4 でフォーカス
   useEffect(() => {
@@ -32,6 +82,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
     function handler(e: Event) {
       if ((e as CustomEvent<{ slot: number }>).detail.slot === slot) {
         inputRef.current?.focus()
+        setRecentMoveNames(readRecentMoveNames())
         setIsOpen(true)
       }
     }
@@ -62,9 +113,15 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
 
   function handleSelect(moveName: string) {
     onChange(moveName)
+    setRecentMoveNames(writeRecentMoveName(moveName))
     setQuery('')
     setIsOpen(false)
     setActiveIndex(-1)
+  }
+
+  function openDropdown() {
+    setRecentMoveNames(readRecentMoveNames())
+    setIsOpen(true)
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -105,9 +162,15 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
         placeholder={value || placeholder}
         value={query}
         onChange={e => { setQuery(e.target.value); setIsOpen(true) }}
-        onFocus={() => { setIsOpen(true) }}
+        onFocus={openDropdown}
         onKeyDown={handleKeyDown}
         autoComplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        aria-activedescendant={activeOptionId}
+        aria-label={`${placeholder}を検索`}
       />
       {value && !query && (
         <div className="absolute inset-0 flex items-center px-2 pointer-events-none pr-6">
@@ -119,6 +182,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
           type="button"
           className="absolute right-1 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted text-xs px-1.5 py-1"
           onClick={() => { onChange(null); setQuery(''); setIsOpen(false) }}
+          aria-label={`${value}を解除`}
         >
           ✕
         </button>
@@ -126,20 +190,25 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
 
       {isOpen && (
         <div
+          id={listboxId}
           ref={dropdownRef}
+          role="listbox"
           className="absolute z-50 w-full mt-1 bg-surface-1 border border-edge-strong rounded max-h-60 overflow-hidden flex flex-col"
         >
           <div className="overflow-y-auto">
             {results.length === 0 ? (
               <div className="px-3 py-2 text-xs text-fg-subtle">
-                該当する技がありません
+                {isShowingRecent ? '最近選んだ技がありません' : '該当する技がありません'}
               </div>
             ) : (
               results.map((m, i) => (
                 <button
                   key={m.name}
+                  id={`${id}-move-${i}`}
                   ref={i === activeIndex ? activeItemRef : undefined}
                   type="button"
+                  role="option"
+                  aria-selected={i === activeIndex}
                   className={`w-full flex flex-col px-3 py-1.5 text-left transition-colors ${
                     i === activeIndex
                       ? 'bg-surface-3'

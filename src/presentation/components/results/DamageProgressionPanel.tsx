@@ -1,3 +1,4 @@
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useProgressionStore, hasSequenceImpact } from '@/presentation/store/progressionStore'
 import type { ProgressionEvent, EventKind } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
@@ -22,16 +23,75 @@ const CONST_REC_FRACTIONS = [
   { label: '1/8',  num: 1, den: 8  },
 ]
 
-/** 通常イベント追加ボタン（leechSeed は方向別に別途扱う） */
-const ADD_BUTTONS: { kind: EventKind; label: string }[] = [
-  { kind: 'incoming',        label: '＋被ダメ' },
-  { kind: 'painSplit',       label: '＋痛み分け' },
-  { kind: 'defenderConst',   label: '＋防御側ダメ' },
-  { kind: 'attackerConst',   label: '＋攻撃側ダメ' },
-  { kind: 'defenderRecover', label: '＋防御側回復' },
-  { kind: 'attackerRecover', label: '＋攻撃側回復' },
-  { kind: 'rearmBerry',      label: '＋リサイクル' },
+type AddEventAction =
+  | { type: 'event'; kind: EventKind; label: string; tone?: 'accent' | 'warning' | 'success' }
+  | {
+      type: 'leechSeed'
+      direction: 'fromAttacker' | 'fromDefender'
+      label: string
+      title: string
+      tone?: 'success'
+    }
+
+const ADD_EVENT_GROUPS: {
+  label: string
+  hint: string
+  actions: AddEventAction[]
+}[] = [
+  {
+    label: 'ターン進行',
+    hint: '反撃・HP平均化・きのみ再装填',
+    actions: [
+      { type: 'event', kind: 'incoming', label: '＋被ダメ', tone: 'warning' },
+      { type: 'event', kind: 'painSplit', label: '＋痛み分け', tone: 'accent' },
+      { type: 'event', kind: 'rearmBerry', label: '＋リサイクル', tone: 'success' },
+    ],
+  },
+  {
+    label: '即時HP',
+    hint: '任意のダメージ・回復を時系列に追加',
+    actions: [
+      { type: 'event', kind: 'defenderConst', label: '＋防御側ダメ', tone: 'warning' },
+      { type: 'event', kind: 'defenderRecover', label: '＋防御側回復', tone: 'success' },
+      { type: 'event', kind: 'attackerConst', label: '＋攻撃側ダメ', tone: 'warning' },
+      { type: 'event', kind: 'attackerRecover', label: '＋攻撃側回復', tone: 'success' },
+    ],
+  },
+  {
+    label: '継続効果',
+    hint: '時系列に1ティックずつ挿入',
+    actions: [
+      {
+        type: 'leechSeed',
+        direction: 'fromAttacker',
+        label: '＋宿り木（攻→防）',
+        tone: 'success',
+        title: '攻撃側が宿り木のタネを植えた状態の1ティック（防御側-1/8、攻撃側+同量）',
+      },
+      {
+        type: 'leechSeed',
+        direction: 'fromDefender',
+        label: '＋宿り木（防→攻）',
+        tone: 'success',
+        title: '防御側が宿り木のタネを植えた状態の1ティック（攻撃側-1/8、防御側+同量）',
+      },
+    ],
+  },
 ]
+
+const ADD_BUTTON_BASE_CLASS = 'text-[11px] px-1.5 py-0.5 rounded border border-edge text-fg-muted transition-colors whitespace-nowrap'
+
+function addButtonClass(tone: AddEventAction['tone'] = 'accent') {
+  switch (tone) {
+    case 'warning':
+      return `${ADD_BUTTON_BASE_CLASS} hover:border-warning hover:text-warning`
+    case 'success':
+      return `${ADD_BUTTON_BASE_CLASS} hover:border-success hover:text-success`
+    case 'accent':
+    default:
+      return `${ADD_BUTTON_BASE_CLASS} hover:border-accent hover:text-accent`
+  }
+}
 
 function hpRange(dist: Map<number, number>): { min: number; max: number } | null {
   if (dist.size === 0) return null
@@ -44,7 +104,7 @@ function hpRange(dist: Map<number, number>): { min: number; max: number } | null
 }
 
 function ConstBar({ value, maxHp, isRecovery = false }: { value: number; maxHp: number; isRecovery?: boolean }) {
-  const pct = Math.min(100, (value / maxHp) * 100)
+  const pct = maxHp > 0 ? Math.min(100, (value / maxHp) * 100) : 0
   return (
     <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
       <div
@@ -53,6 +113,22 @@ function ConstBar({ value, maxHp, isRecovery = false }: { value: number; maxHp: 
       />
     </div>
   )
+}
+
+function hpPercentText(value: number, maxHp: number): string {
+  if (maxHp <= 0) return '0.0%'
+  return `${(value / maxHp * 100).toFixed(1)}%`
+}
+
+function readNonNegative(raw: string): number {
+  const value = Number(raw)
+  return Number.isFinite(value) ? Math.max(0, value) : 0
+}
+
+function readPercent(raw: string): number {
+  const value = Number(raw)
+  if (!Number.isFinite(value)) return 1
+  return Math.max(1, Math.min(100, value))
 }
 
 export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanelProps) {
@@ -100,8 +176,29 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const hasEvents = events.length > 0
   const hasAnything = hasEvents || constDmg > 0 || constRec > 0 || constRecBerry > 0 || poisonTurns > 0
   const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp })
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
+  const previousEventIdsRef = useRef(events.map(ev => ev.id))
 
   const { result: seqResult } = useBattleSequence()
+
+  useEffect(() => {
+    const previousIds = previousEventIdsRef.current
+    if (events.length > previousIds.length) {
+      const previousSet = new Set(previousIds)
+      const inserted = events.find(ev => !previousSet.has(ev.id))
+      if (!inserted) {
+        previousEventIdsRef.current = events.map(ev => ev.id)
+        return
+      }
+      setHighlightedEventId(inserted.id)
+      const timer = window.setTimeout(() => {
+        setHighlightedEventId(id => id === inserted.id ? null : id)
+      }, 1200)
+      previousEventIdsRef.current = events.map(ev => ev.id)
+      return () => window.clearTimeout(timer)
+    }
+    previousEventIdsRef.current = events.map(ev => ev.id)
+  }, [events])
 
   function addAfter(kind: EventKind, targetId: string | null) {
     if (kind === 'painSplit') {
@@ -119,10 +216,30 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     addEventAfter(null, { kind: 'leechSeed', direction })
   }
 
+  function addAction(action: AddEventAction) {
+    if (action.type === 'event') {
+      addAfter(action.kind, null)
+    } else {
+      addLeechSeed(action.direction)
+    }
+  }
+
   return (
     <div className="panel space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h3 className="text-xs font-semibold text-fg-muted">イベント時系列</h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-xs font-semibold text-fg-muted">イベント時系列</h3>
+          <span
+            aria-live="polite"
+            className={`rounded border px-1.5 py-0.5 text-[10px] font-mono ${
+              hasEvents
+                ? 'border-accent-border bg-accent-bg text-accent'
+                : 'border-edge bg-surface-2 text-fg-faint'
+            }`}
+          >
+            {events.length}件
+          </span>
+        </div>
         {hasAnything && (
           <button
             type="button"
@@ -137,7 +254,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       </div>
 
       <div className="text-[10px] text-fg-faint">
-        ダメージ結果から「+加算」で与ダメを追加。被ダメ・痛み分け・定数イベントは下のボタンで追加できます。
+        与ダメは各技の「+ 加算」から追加。その他のイベントは用途別に末尾へ追加できます。
       </div>
 
       {/* イベント一覧 */}
@@ -149,6 +266,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               ev={ev}
               idx={idx}
               total={events.length}
+              isHighlighted={ev.id === highlightedEventId}
               attackerMaxHp={attackerMaxHp}
               defenderMaxHp={defenderMaxHp}
               defenderMoveOptions={defenderMoveOptions}
@@ -168,33 +286,34 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       )}
 
       {/* イベント追加ボタン群（末尾追加） */}
-      <div className="flex flex-wrap gap-1">
-        {ADD_BUTTONS.map(b => (
-          <button
-            key={b.kind}
-            type="button"
-            onClick={() => addAfter(b.kind, null)}
-            className="text-[11px] px-1.5 py-0.5 rounded border border-edge text-fg-muted hover:border-accent hover:text-accent transition-colors"
-          >
-            {b.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => addLeechSeed('fromAttacker')}
-          className="text-[11px] px-1.5 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
-          title="攻撃側が宿り木のタネを植えた状態の1ティック（防御側-1/8、攻撃側+同量）"
-        >
-          ＋宿り木（攻→防）
-        </button>
-        <button
-          type="button"
-          onClick={() => addLeechSeed('fromDefender')}
-          className="text-[11px] px-1.5 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
-          title="防御側が宿り木のタネを植えた状態の1ティック（攻撃側-1/8、防御側+同量）"
-        >
-          ＋宿り木（防→攻）
-        </button>
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="label">イベント追加</span>
+          <span className="text-[10px] text-fg-faint">末尾に追加</span>
+        </div>
+        <div className="space-y-1">
+          {ADD_EVENT_GROUPS.map(group => (
+            <div key={group.label} className="flex items-start gap-2">
+              <div className="w-16 flex-shrink-0 pt-0.5">
+                <div className="text-[11px] font-medium text-fg-muted leading-tight">{group.label}</div>
+                <div className="text-[10px] text-fg-faint leading-tight">{group.hint}</div>
+              </div>
+              <div className="flex flex-wrap gap-1 min-w-0">
+                {group.actions.map(action => (
+                  <button
+                    key={action.type === 'event' ? action.kind : `${action.type}-${action.direction}`}
+                    type="button"
+                    onClick={() => addAction(action)}
+                    className={addButtonClass(action.tone)}
+                    title={action.type === 'leechSeed' ? action.title : undefined}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="border-t border-edge" />
@@ -321,6 +440,7 @@ interface EventRowProps {
   ev: ProgressionEvent
   idx: number
   total: number
+  isHighlighted: boolean
   attackerMaxHp: number
   defenderMaxHp: number
   defenderMoveOptions: string[]
@@ -332,8 +452,50 @@ interface EventRowProps {
   onUpdate: (patch: Partial<ProgressionEvent>) => void
 }
 
+type TimelineRowTone = 'attack' | 'accent' | 'warning' | 'success' | 'default'
+
+function timelineRowClass(tone: TimelineRowTone) {
+  const base = 'grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-start gap-2 rounded border border-l-2 px-2 py-1.5 text-xs'
+  switch (tone) {
+    case 'attack':
+      return `${base} border-edge border-l-accent bg-surface-1`
+    case 'accent':
+      return `${base} border-accent-border border-l-accent bg-accent-bg/30`
+    case 'warning':
+      return `${base} border-edge border-l-warning bg-surface-2`
+    case 'success':
+      return `${base} border-edge border-l-success bg-surface-2`
+    case 'default':
+    default:
+      return `${base} border-edge border-l-edge bg-surface-2`
+  }
+}
+
+function TimelineRow({
+  idx, total, tone, isHighlighted, children,
+  onMoveUp, onMoveDown, onRemove,
+}: {
+  idx: number
+  total: number
+  tone: TimelineRowTone
+  isHighlighted: boolean
+  children: ReactNode
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onRemove: () => void
+}) {
+  return (
+    <div className={`${timelineRowClass(tone)} transition-colors ${isHighlighted ? 'ring-1 ring-accent-border bg-accent-bg/40' : ''}`}>
+      <span className="text-fg-faint text-right font-mono pt-0.5">{idx + 1}</span>
+      <div className="min-w-0">{children}</div>
+      <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
+    </div>
+  )
+}
+
 function EventRow({
   ev, idx, total,
+  isHighlighted,
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
   onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onUpdate,
 }: EventRowProps) {
@@ -341,119 +503,120 @@ function EventRow({
     const subMin = ev.minDmg * ev.usages
     const subMax = ev.maxDmg * ev.usages
     return (
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
-        <span className="text-fg truncate flex-1 min-w-0">{ev.label}</span>
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+      <TimelineRow idx={idx} total={total} tone="attack" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-[8rem] flex-1 truncate font-medium text-fg">{ev.label}</span>
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => onSetAttackUsages(ev.id, ev.usages - 1)}
+              disabled={ev.usages <= 1}
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40"
+              title="回数を減らす"
+            >−</button>
+            <span className="w-6 text-center font-mono text-accent font-medium">×{ev.usages}</span>
+            <button
+              type="button"
+              onClick={() => onSetAttackUsages(ev.id, ev.usages + 1)}
+              disabled={ev.usages >= 9}
+              className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40"
+              title="回数を増やす"
+            >+</button>
+          </div>
+          <span className="font-mono text-fg-muted">{subMin}〜{subMax}</span>
           <button
             type="button"
-            onClick={() => onSetAttackUsages(ev.id, ev.usages - 1)}
-            disabled={ev.usages <= 1}
-            className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40"
-            title="回数を減らす"
-          >−</button>
-          <span className="w-6 text-center font-mono text-accent font-medium">×{ev.usages}</span>
-          <button
-            type="button"
-            onClick={() => onSetAttackUsages(ev.id, ev.usages + 1)}
-            disabled={ev.usages >= 9}
-            className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-40"
-            title="回数を増やす"
-          >+</button>
+            onClick={onAddPainSplit}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
+            title="このエントリの直後に痛み分けを挿入"
+          >+痛み分け</button>
         </div>
-        <span className="text-fg-muted font-mono flex-shrink-0 w-24 text-right">{subMin}〜{subMax}</span>
-        <button
-          type="button"
-          onClick={onAddPainSplit}
-          className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors flex-shrink-0"
-          title="このエントリの直後に痛み分けを挿入"
-        >+痛み分け</button>
-        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
-      </div>
+      </TimelineRow>
     )
   }
 
   if (ev.kind === 'painSplit') {
     return (
-      <div className="flex items-center gap-2 text-xs pl-3 ml-1 border-l-2 border-accent-border bg-accent-bg/30 rounded-r py-1 pr-2">
-        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
-        <span className="text-accent">↺ 痛み分け</span>
-        <span
-          className="text-fg-muted"
-          title="累積モードでの攻撃側HP（被ダメ等を含むシーケンス時は追跡中のHPが使われ、この値は無視されます）"
-        >
-          累積時の攻撃側HP:
-        </span>
-        <input
-          type="number"
-          min={0}
-          value={ev.attackerHp}
-          onChange={e => onUpdate({ attackerHp: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
-          className="input-base w-14 text-center text-xs px-1"
-          title="累積（被ダメなし）モードでのみ使用。シーケンス出力は両者の追跡HPで均します。"
-        />
-        {attackerMaxHp > 0 && (
-          <span className="text-[10px] text-fg-faint">/ 最大{attackerMaxHp}</span>
-        )}
-        <span className="flex-1" />
-        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
-      </div>
+      <TimelineRow idx={idx} total={total} tone="accent" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-semibold text-accent">↺ 痛み分け</span>
+          <span
+            className="text-fg-muted"
+            title="累積モードでの攻撃側HP（被ダメ等を含むシーケンス時は追跡中のHPが使われ、この値は無視されます）"
+          >
+            累積時HP
+          </span>
+          <input
+            type="number"
+            min={0}
+            value={ev.attackerHp}
+            onChange={e => onUpdate({ attackerHp: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
+            className="input-base w-14 text-center text-xs px-1"
+            title="累積（被ダメなし）モードでのみ使用。シーケンス出力は両者の追跡HPで均します。"
+          />
+          {attackerMaxHp > 0 && (
+            <span className="text-[10px] text-fg-faint">/ 最大{attackerMaxHp}</span>
+          )}
+        </div>
+      </TimelineRow>
     )
   }
 
   if (ev.kind === 'incoming') {
+    const hasMoveOptions = defenderMoveOptions.length > 0
     return (
-      <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
-        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
-        <span className="font-semibold text-warning">被ダメ</span>
-        <select
-          value={ev.moveName ?? ''}
-          onChange={e => onUpdate({ moveName: e.target.value || null } as Partial<ProgressionEvent>)}
-          className="input-base text-xs px-1 py-0.5 max-w-[10rem]"
-        >
-          <option value="">技を選択</option>
-          {defenderMoveOptions.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-        <label className="flex items-center gap-1 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={ev.crit}
-            onChange={e => onUpdate({ crit: e.target.checked } as Partial<ProgressionEvent>)}
-            className="accent-accent"
-          />
-          <span className="text-[10px] text-fg-muted">急所</span>
-        </label>
-        <span className="flex-1" />
-        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
-      </div>
+      <TimelineRow idx={idx} total={total} tone="warning" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-semibold text-warning">被ダメ</span>
+          <select
+            value={ev.moveName ?? ''}
+            onChange={e => onUpdate({ moveName: e.target.value || null } as Partial<ProgressionEvent>)}
+            className="input-base min-w-[8rem] max-w-full text-xs px-1 py-0.5"
+            disabled={!hasMoveOptions}
+          >
+            <option value="">{hasMoveOptions ? '技を選択' : '防御側の技未設定'}</option>
+            {defenderMoveOptions.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          {!hasMoveOptions && (
+            <span className="text-[10px] text-fg-faint">
+              防御側の「被ダメ用の技」から追加
+            </span>
+          )}
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={ev.crit}
+              onChange={e => onUpdate({ crit: e.target.checked } as Partial<ProgressionEvent>)}
+              className="accent-accent"
+            />
+            <span className="text-[10px] text-fg-muted">急所</span>
+          </label>
+        </div>
+      </TimelineRow>
     )
   }
 
   if (ev.kind === 'rearmBerry') {
     return (
-      <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
-        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
-        <span className="font-semibold text-success">♻ リサイクル（きのみ再装填）</span>
-        <span className="flex-1" />
-        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
-      </div>
+      <TimelineRow idx={idx} total={total} tone="success" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <span className="font-semibold text-success">リサイクル（きのみ再装填）</span>
+      </TimelineRow>
     )
   }
 
   if (ev.kind === 'leechSeed') {
     const arrow = ev.direction === 'fromAttacker' ? '攻→防' : '防→攻'
     return (
-      <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1">
-        <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
-        <span className="font-semibold text-success">🌱 宿り木 ({arrow})</span>
-        <span className="text-[10px] text-fg-faint">
-          {ev.direction === 'fromAttacker'
-            ? '防御側 -1/8 → 攻撃側 +同量'
-            : '攻撃側 -1/8 → 防御側 +同量'}
-        </span>
-        <span className="flex-1" />
-        <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
-      </div>
+      <TimelineRow idx={idx} total={total} tone="success" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-semibold text-success">宿り木 ({arrow})</span>
+          <span className="text-[10px] text-fg-faint">
+            {ev.direction === 'fromAttacker'
+              ? '防御側 -1/8 → 攻撃側 +同量'
+              : '攻撃側 -1/8 → 防御側 +同量'}
+          </span>
+        </div>
+      </TimelineRow>
     )
   }
 
@@ -474,33 +637,40 @@ function EventRow({
     { label: '2/3', num: 2, den: 3 },
   ]
   return (
-    <div className="flex items-center gap-2 text-xs bg-surface-2 rounded px-2 py-1 flex-wrap">
-      <span className="text-fg-faint w-5 text-right font-mono">{idx + 1}</span>
-      <span className={`font-semibold ${meta.color}`}>{meta.text}</span>
-      <input
-        type="number"
-        min={0}
-        value={ev.amount}
-        onChange={e => onUpdate({ amount: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
-        className="input-base w-16 text-center text-xs px-1 py-0.5"
-      />
-      {isRecover && recoverBaseHp > 0 && RECOVER_FRACTIONS.map(f => {
-        const val = Math.floor(recoverBaseHp * f.num / f.den)
-        return (
-          <button
-            key={f.label}
-            type="button"
-            onClick={() => onUpdate({ amount: val } as Partial<ProgressionEvent>)}
-            className="text-[10px] px-1 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
-            title={`再生技: ${f.label} 回復 (${val})${f.label === '1/2' ? ' = つきのひかり通常/じこさいせい等' : f.label === '1/3' ? ' = つきのひかり雨/砂/雪' : ' = つきのひかり晴'}`}
-          >
-            {f.label}<span className="ml-0.5 opacity-60">{val}</span>
-          </button>
-        )
-      })}
-      <span className="flex-1" />
-      <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
-    </div>
+    <TimelineRow
+      idx={idx}
+      total={total}
+      tone={isRecover ? 'success' : 'warning'}
+      isHighlighted={isHighlighted}
+      onMoveUp={onMoveUp}
+      onMoveDown={onMoveDown}
+      onRemove={onRemove}
+    >
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className={`font-semibold ${meta.color}`}>{meta.text}</span>
+        <input
+          type="number"
+          min={0}
+          value={ev.amount}
+          onChange={e => onUpdate({ amount: readNonNegative(e.target.value) } as Partial<ProgressionEvent>)}
+          className="input-base w-16 text-center text-xs px-1 py-0.5"
+        />
+        {isRecover && recoverBaseHp > 0 && RECOVER_FRACTIONS.map(f => {
+          const val = Math.floor(recoverBaseHp * f.num / f.den)
+          return (
+            <button
+              key={f.label}
+              type="button"
+              onClick={() => onUpdate({ amount: val } as Partial<ProgressionEvent>)}
+              className="text-[10px] px-1 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors"
+              title={`再生技: ${f.label} 回復 (${val})${f.label === '1/2' ? ' = つきのひかり通常/じこさいせい等' : f.label === '1/3' ? ' = つきのひかり雨/砂/雪' : ' = つきのひかり晴'}`}
+            >
+              {f.label}<span className="ml-0.5 opacity-60">{val}</span>
+            </button>
+          )
+        })}
+      </div>
+    </TimelineRow>
   )
 }
 
@@ -514,6 +684,7 @@ function RowControls({ idx, total, onMoveUp, onMoveDown, onRemove }: {
         onClick={onMoveUp}
         disabled={idx === 0}
         className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-30"
+        aria-label="イベントを上へ移動"
         title="上へ"
       >↑</button>
       <button
@@ -521,12 +692,14 @@ function RowControls({ idx, total, onMoveUp, onMoveDown, onRemove }: {
         onClick={onMoveDown}
         disabled={idx === total - 1}
         className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-30"
+        aria-label="イベントを下へ移動"
         title="下へ"
       >↓</button>
       <button
         type="button"
         onClick={onRemove}
-        className="text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0 ml-0.5"
+        className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0 ml-0.5"
+        aria-label="イベントを削除"
         title="削除"
       >✕</button>
     </div>
@@ -559,10 +732,49 @@ function BackgroundEffectsSection({
   setConstDmg, setConstRec, setConstRecBerry, setConstRecBerryThresholdPct,
   setBerryCudChew, setBerryHarvestChance, setPoisonTurns,
 }: BgProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const activeEffectCount =
+    (constDmg > 0 ? 1 : 0) +
+    (constRec > 0 ? 1 : 0) +
+    (constRecBerry > 0 ? 1 : 0) +
+    (poisonTurns > 0 ? 1 : 0)
+  const totalDamage = constDmg + poisonTotal
+  const totalRecovery = constRec + constRecBerry
+  const summaryParts = [
+    constDmg > 0 ? `定数${constDmg}` : null,
+    constRec > 0 ? `回復${constRec}` : null,
+    constRecBerry > 0 ? `きのみ${constRecBerry}` : null,
+    poisonTurns > 0 ? `猛毒${poisonTotal}` : null,
+  ].filter((part): part is string => part !== null)
+
   return (
-    <>
-      {/* 定数ダメージ */}
-      <div className="space-y-1">
+    <div className="space-y-2">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen(v => !v)}
+        className="w-full rounded border border-edge bg-surface-2 px-2 py-1.5 text-left text-xs text-fg-muted transition-colors hover:bg-surface-3"
+      >
+        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="text-[10px] text-fg-faint">{isOpen ? '▲' : '▼'}</span>
+          <span className="font-semibold text-fg-muted">背景効果</span>
+          <span className="font-mono text-fg-subtle">{activeEffectCount}件</span>
+          {activeEffectCount > 0 ? (
+            <>
+              <span className="font-mono text-warning">-{totalDamage}</span>
+              <span className="font-mono text-success">+{totalRecovery}</span>
+              <span className="text-[10px] text-fg-faint">{summaryParts.join(' / ')}</span>
+            </>
+          ) : (
+            <span className="text-[10px] text-fg-faint">未設定</span>
+          )}
+        </span>
+      </button>
+
+      {isOpen && (
+      <div className="space-y-3">
+        {/* 定数ダメージ */}
+        <div className="space-y-1">
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-fg-muted w-14 flex-shrink-0">定数ダメ</span>
           <div className="flex items-center gap-1">
@@ -575,7 +787,7 @@ function BackgroundEffectsSection({
               type="number"
               min={0}
               value={constDmg}
-              onChange={e => setConstDmg(Math.max(0, Number(e.target.value)))}
+              onChange={e => setConstDmg(readNonNegative(e.target.value))}
               className="input-base w-14 text-center text-xs px-1"
             />
             <button
@@ -606,14 +818,14 @@ function BackgroundEffectsSection({
           <div className="pl-[3.75rem]">
             <ConstBar value={constDmg} maxHp={defenderMaxHp} />
             <span className="text-xs text-warning font-mono">
-              {(constDmg / defenderMaxHp * 100).toFixed(1)}%
+              {hpPercentText(constDmg, defenderMaxHp)}
             </span>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* 定数回復（たべのこし等の per-turn passive） */}
-      <div className="space-y-1">
+        {/* 定数回復（たべのこし等の per-turn passive） */}
+        <div className="space-y-1">
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-fg-muted w-20 flex-shrink-0">食べ残し/ポイヒ</span>
           <div className="flex items-center gap-1">
@@ -626,7 +838,7 @@ function BackgroundEffectsSection({
               type="number"
               min={0}
               value={constRec}
-              onChange={e => setConstRec(Math.max(0, Number(e.target.value)))}
+              onChange={e => setConstRec(readNonNegative(e.target.value))}
               className="input-base w-14 text-center text-xs px-1"
             />
             <button
@@ -663,14 +875,14 @@ function BackgroundEffectsSection({
           <div className="pl-[3.75rem]">
             <ConstBar value={constRec} maxHp={defenderMaxHp} isRecovery />
             <span className="text-xs text-success font-mono">
-              {(constRec / defenderMaxHp * 100).toFixed(1)}%
+              {hpPercentText(constRec, defenderMaxHp)}
             </span>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* オボン/混乱実回復（HP≤しきい値 で1回限り） */}
-      <div className="space-y-1">
+        {/* オボン/混乱実回復（HP≤しきい値 で1回限り） */}
+        <div className="space-y-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs text-fg-muted w-14 flex-shrink-0">オボン/混乱実</span>
           <div className="flex items-center gap-1">
@@ -683,7 +895,7 @@ function BackgroundEffectsSection({
               type="number"
               min={0}
               value={constRecBerry}
-              onChange={e => setConstRecBerry(Math.max(0, Number(e.target.value)))}
+              onChange={e => setConstRecBerry(readNonNegative(e.target.value))}
               className="input-base w-14 text-center text-xs px-1"
             />
             <button
@@ -698,7 +910,7 @@ function BackgroundEffectsSection({
             min={1}
             max={100}
             value={berryThresholdPct}
-            onChange={e => setConstRecBerryThresholdPct(Number(e.target.value))}
+            onChange={e => setConstRecBerryThresholdPct(readPercent(e.target.value))}
             className="input-base w-10 text-center text-xs px-1"
             title="発動しきい値（防御側HPの%）"
           />
@@ -792,17 +1004,17 @@ function BackgroundEffectsSection({
           <div className="pl-[3.75rem]">
             <ConstBar value={constRecBerry} maxHp={defenderMaxHp} isRecovery />
             <span className="text-xs text-success font-mono">
-              {(constRecBerry / defenderMaxHp * 100).toFixed(1)}%
+              {hpPercentText(constRecBerry, defenderMaxHp)}
             </span>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* もうどく累積 */}
-      <div className="space-y-1">
+        {/* もうどく累積 */}
+        <div className="space-y-1">
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-fg-muted w-14 flex-shrink-0">もうどく</span>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
               <button
                 key={n}
@@ -833,7 +1045,7 @@ function BackgroundEffectsSection({
               <span className="text-xs font-mono font-bold text-fg-muted">
                 累計 {poisonTotal}
                 <span className="font-normal text-fg-subtle ml-1">
-                  ({(poisonTotal / defenderMaxHp * 100).toFixed(1)}%)
+                  ({hpPercentText(poisonTotal, defenderMaxHp)})
                 </span>
               </span>
               <span className="text-[10px] text-fg-subtle">→ ダメ進行に自動加算</span>
@@ -841,6 +1053,8 @@ function BackgroundEffectsSection({
           </div>
         )}
       </div>
-    </>
+      </div>
+      )}
+    </div>
   )
 }
