@@ -15,7 +15,7 @@ interface ExportButtonProps {
 }
 
 export function ExportButton({ results, attackerName, defenderName }: ExportButtonProps) {
-  const [copied, setCopied] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
 
   function buildText(): string {
     const header = `${attackerName} → ${defenderName}`
@@ -32,21 +32,27 @@ export function ExportButton({ results, attackerName, defenderName }: ExportButt
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(buildText())
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopyStatus('copied')
+      setTimeout(() => setCopyStatus('idle'), 2000)
     } catch {
-      // clipboard API unavailable (e.g. non-HTTPS dev env)
+      setCopyStatus('error')
+      setTimeout(() => setCopyStatus('idle'), 2000)
     }
   }
+
+  const isError = copyStatus === 'error'
 
   return (
     <button
       type="button"
       onClick={handleCopy}
-      className="text-xs text-fg-subtle hover:text-fg transition-colors px-1.5 py-0.5 rounded hover:bg-surface-3"
-      title="計算結果をテキストでコピー"
+      aria-live="polite"
+      className={`text-xs transition-colors px-1.5 py-0.5 rounded hover:bg-surface-3 ${
+        isError ? 'text-danger-2 hover:text-danger-2' : 'text-fg-subtle hover:text-fg'
+      }`}
+      title={isError ? 'クリップボードへコピーできませんでした' : '計算結果をテキストでコピー'}
     >
-      {copied ? '✓ コピー済み' : 'コピー'}
+      {copyStatus === 'copied' ? '✓ コピー済み' : isError ? 'コピー失敗' : 'コピー'}
     </button>
   )
 }
