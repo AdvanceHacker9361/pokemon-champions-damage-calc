@@ -88,6 +88,14 @@ interface ProgressionStore {
   /** しゅうかく/ものひろい: 各ターン終了時にこの確率で再装填（0=なし, 0.5, 1=晴れ/ものひろい） */
   berryHarvestChance: number
   poisonTurns: number
+  /** 背景効果: 攻撃側への1回限りの直接ダメージ */
+  attackerDirectDmg: number
+  /** 背景効果: 攻撃側への1回限りの直接回復 */
+  attackerDirectRec: number
+  /** 背景効果: 防御側への1回限りの直接ダメージ */
+  defenderDirectDmg: number
+  /** 背景効果: 防御側への1回限りの直接回復 */
+  defenderDirectRec: number
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
   defenderStartHp: number | null
@@ -112,6 +120,10 @@ interface ProgressionStore {
   setBerryCudChew: (v: boolean) => void
   setBerryHarvestChance: (v: number) => void
   setPoisonTurns: (n: number) => void
+  setAttackerDirectDmg: (v: number) => void
+  setAttackerDirectRec: (v: number) => void
+  setDefenderDirectDmg: (v: number) => void
+  setDefenderDirectRec: (v: number) => void
   setAttackerStartHp: (v: number | null) => void
   setDefenderStartHp: (v: number | null) => void
 
@@ -132,6 +144,10 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   berryCudChew: false,
   berryHarvestChance: 0,
   poisonTurns: 0,
+  attackerDirectDmg: 0,
+  attackerDirectRec: 0,
+  defenderDirectDmg: 0,
+  defenderDirectRec: 0,
   attackerStartHp: null,
   defenderStartHp: null,
 
@@ -196,6 +212,10 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   setBerryCudChew: (v) => set({ berryCudChew: v }),
   setBerryHarvestChance: (v) => set({ berryHarvestChance: Math.max(0, Math.min(1, v)) }),
   setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
+  setAttackerDirectDmg: (v) => set({ attackerDirectDmg: Math.max(0, Math.floor(v)) }),
+  setAttackerDirectRec: (v) => set({ attackerDirectRec: Math.max(0, Math.floor(v)) }),
+  setDefenderDirectDmg: (v) => set({ defenderDirectDmg: Math.max(0, Math.floor(v)) }),
+  setDefenderDirectRec: (v) => set({ defenderDirectRec: Math.max(0, Math.floor(v)) }),
   setAttackerStartHp: (v) => set({ attackerStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
   setDefenderStartHp: (v) => set({ defenderStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
 
@@ -203,13 +223,20 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
     events: [],
     constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50,
     berryCudChew: false, berryHarvestChance: 0, poisonTurns: 0,
+    attackerDirectDmg: 0, attackerDirectRec: 0, defenderDirectDmg: 0, defenderDirectRec: 0,
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))
 
 /** 攻撃側に影響するイベントがあるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用） */
-export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attackerStartHp'>): boolean {
+export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attackerStartHp'> & {
+  attackerDirectDmg?: number
+  attackerDirectRec?: number
+  defenderDirectDmg?: number
+  defenderDirectRec?: number
+}): boolean {
   if (s.attackerStartHp !== null) return true
+  if ((s.attackerDirectDmg ?? 0) > 0 || (s.attackerDirectRec ?? 0) > 0) return true
   return s.events.some(e =>
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
     e.kind === 'attackerRecover' || e.kind === 'painSplit'

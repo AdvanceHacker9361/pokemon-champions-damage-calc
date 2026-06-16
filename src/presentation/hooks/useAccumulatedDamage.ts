@@ -110,6 +110,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const berryCudChew      = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns       = useProgressionStore(s => s.poisonTurns)
+  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
+  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
   // 宿り木: 防御側→攻撃側 ティックで「攻撃側最大HPの1/8」を防御側回復として使用
   const attackerBaseHp    = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp      = useAttackerStore(s => s.sp.hp)
@@ -123,7 +125,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     // 定数回復（たべのこし等）は各与ダメ攻撃の直後に毎回適用。
     // オボン回復は HP≤50% で1回限り自動発動（runBattleSequence の defenderBerry オプションで）。
     const bgDamageTotal = constDmg + poisonTotal
-    const totalConst = bgDamageTotal - constRec - constRecBerry
+    const totalConst = bgDamageTotal + defenderDirectDmg - constRec - constRecBerry - defenderDirectRec
 
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
@@ -201,6 +203,12 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     if (bgDamageTotal > 0) {
       pushBoth({ kind: 'defenderConst', amount: bgDamageTotal })
     }
+    if (defenderDirectDmg > 0) {
+      pushBoth({ kind: 'defenderConst', amount: defenderDirectDmg })
+    }
+    if (defenderDirectRec > 0) {
+      pushBoth({ kind: 'defenderRecover', amount: defenderDirectRec })
+    }
     // 攻撃が無いときは定数回復を末尾でも適用（取りこぼし防止）
     if (attackEvents.length === 0 && constRec > 0) {
       pushBoth({ kind: 'defenderRecover', amount: constRec })
@@ -258,5 +266,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb, combinedProbWithCrit,
       distribution, accumKoResult,
     }
-  }, [events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns, defenderMaxHp, attackerBaseHp, attackerSpHp])
+  }, [
+    events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
+    defenderDirectDmg, defenderDirectRec,
+    defenderMaxHp, attackerBaseHp, attackerSpHp,
+  ])
 }

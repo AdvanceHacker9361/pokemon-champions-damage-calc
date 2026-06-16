@@ -66,6 +66,10 @@ export function useBattleSequence(): BattleSequenceComputed {
   const berryCudChew = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
+  const attackerDirectDmg = useProgressionStore(s => s.attackerDirectDmg)
+  const attackerDirectRec = useProgressionStore(s => s.attackerDirectRec)
+  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
+  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp = useProgressionStore(s => s.defenderStartHp)
 
@@ -75,7 +79,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     const defenderMaxHp = defender.baseStats.hp > 0
       ? calculateHP(defender.baseStats.hp, defender.sp.hp) : 0
 
-    const showSequence = hasSequenceImpact({ events, attackerStartHp })
+    const showSequence = hasSequenceImpact({ events, attackerStartHp, attackerDirectDmg, attackerDirectRec })
 
     if (!showSequence || !attacker.pokemonId || !defender.pokemonId) {
       return { showSequence: false, attackerMaxHp, defenderMaxHp, resolved: [], result: null }
@@ -178,17 +182,17 @@ export function useBattleSequence(): BattleSequenceComputed {
         }
         case 'incoming': {
           if (!ev.moveName) {
-            resolved.push({ event: ev, label: '被ダメ（技未選択）', error: '防御側の技を選択してください' })
+            resolved.push({ event: ev, label: '攻撃側被ダメ（技未選択）', error: '防御側の技を選択してください' })
             continue
           }
           const rolls = incomingRolls(ev.moveName, ev.crit)
           if (!rolls) {
-            resolved.push({ event: ev, label: `被ダメ ${ev.moveName}`, error: '計算できませんでした' })
+            resolved.push({ event: ev, label: `攻撃側被ダメ ${ev.moveName}`, error: '計算できませんでした' })
             continue
           }
           const drain = MoveRepository.findByName(ev.moveName)?.drain
           const drainTag = drain ? `（相手吸収${Math.round(drain * 100)}%）` : ''
-          const label = `被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}`
+          const label = `攻撃側被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}`
           pushSeq({ kind: 'incoming', dmg: rolls, drain }, label)
           resolved.push({ event: ev, label })
           break
@@ -240,6 +244,18 @@ export function useBattleSequence(): BattleSequenceComputed {
     if (bgDamageTotal > 0) {
       pushSeq({ kind: 'defenderConst', amount: bgDamageTotal }, `背景ダメ ${bgDamageTotal}`)
     }
+    if (defenderDirectDmg > 0) {
+      pushSeq({ kind: 'defenderConst', amount: defenderDirectDmg }, `HP直接補正 防御側ダメ ${defenderDirectDmg}`)
+    }
+    if (defenderDirectRec > 0) {
+      pushSeq({ kind: 'defenderRecover', amount: defenderDirectRec }, `HP直接補正 防御側回復 ${defenderDirectRec}`)
+    }
+    if (attackerDirectDmg > 0) {
+      pushSeq({ kind: 'attackerConst', amount: attackerDirectDmg }, `HP直接補正 攻撃側ダメ ${attackerDirectDmg}`)
+    }
+    if (attackerDirectRec > 0) {
+      pushSeq({ kind: 'attackerRecover', amount: attackerDirectRec }, `HP直接補正 攻撃側回復 ${attackerDirectRec}`)
+    }
 
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
       return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
@@ -265,6 +281,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result }
   }, [
     events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
+    attackerDirectDmg, attackerDirectRec, defenderDirectDmg, defenderDirectRec,
     attackerStartHp, defenderStartHp,
     attacker, defender, field,
   ])

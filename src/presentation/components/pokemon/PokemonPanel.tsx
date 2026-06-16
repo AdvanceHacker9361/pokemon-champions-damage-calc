@@ -342,7 +342,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             />
           )}
 
-          {/* 被ダメ用の技（防御側のみ） */}
+          {/* 攻撃側被ダメ用の技（防御側のみ） */}
           {label === '防御側' && (
             <div className="rounded border border-edge bg-surface-2">
               <button
@@ -352,7 +352,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                 className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left transition-colors hover:bg-surface-3"
               >
                 <span>
-                  <span className="label block">被ダメ用の技</span>
+                  <span className="label block">攻撃側被ダメ用の技</span>
                   <span className="text-[11px] text-fg-subtle">{defenderMoveSummary}</span>
                 </span>
                 <span className="text-xs text-fg-muted whitespace-nowrap">
