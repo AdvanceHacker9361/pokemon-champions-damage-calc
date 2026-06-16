@@ -263,8 +263,25 @@ describe('BattleSequenceCalc', () => {
       ]
       const r = runBattleSequence(events, 100, 100)
       expect(r.attackerSurviveProb).toBeCloseTo(0, 6)
+      expect(r.attackerFaintProb).toBeCloseTo(1, 6)
       // 攻撃側が瀕死になった時点で防御側はまだ生存 → koProb=0
       expect(r.defenderKoProb).toBeCloseTo(0, 6)
+    })
+
+    it('攻撃側が途中で瀕死になった後の攻撃は実行されず、瀕死確率として集計される', () => {
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [40] },
+        { kind: 'incoming', dmg: [100] },
+        { kind: 'attack', dmg: [100] },
+      ]
+
+      const r = runBattleSequence(events, 80, 100)
+
+      expect(r.defenderKoProb).toBeCloseTo(0, 6)
+      expect(r.attackerFaintProb).toBeCloseTo(1, 6)
+      expect(r.attackerSurviveProb).toBeCloseTo(0, 6)
+      expect(r.bothAliveProb).toBeCloseTo(0, 6)
+      expect(r.defenderKoProb + r.attackerFaintProb + r.bothAliveProb).toBeCloseTo(1, 6)
     })
   })
 
@@ -439,7 +456,7 @@ describe('BattleSequenceCalc', () => {
         { kind: 'attack', dmg: rolls },
       ]
       const r = runBattleSequence(events, 120, 100)
-      const total = r.defenderKoProb + (1 - r.attackerSurviveProb) + r.bothAliveProb
+      const total = r.defenderKoProb + r.attackerFaintProb + r.bothAliveProb
       expect(total).toBeCloseTo(1, 6)
     })
   })

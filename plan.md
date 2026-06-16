@@ -3,8 +3,8 @@
 ## Context
 
 - Project: Pokemon Champions Damage Calculator.
-- Current production version: V3.12.1.
-- Current focus: Damage progression UI/UX cleanup shipped as V3.12.1.
+- Current production version: V3.12.2.
+- Current focus: Damage progression attacker-faint output fix shipped as V3.12.2.
 - The user found the `イベント追加` -> `即時HP` group hard to use.
 - Desired direction: move one-off HP adjustment affordances into `背景効果`, support both attacker and defender, and make regeneration recovery presets easier to access.
 
@@ -55,3 +55,4 @@
 - Added store fields, tab snapshot persistence, accumulated damage integration, battle sequence integration, and export text support.
 - Added focused progression store tests for direct HP adjustments and snapshot restore behavior.
 - Renamed turn progression `被ダメ` UI labels to `攻撃側被ダメ`.
+- Fixed a post-V3.12.1 battle sequence output issue where attacker-only faint outcomes were tracked internally but missing from the final summary display.

@@ -65,6 +65,8 @@ export interface BattleSequenceResult {
   steps: SeqStepResult[]
   /** 防御側撃破確率（シーケンス完了時点までの累積） */
   defenderKoProb: number
+  /** 攻撃側瀕死確率（シーケンス完了時点までの累積） */
+  attackerFaintProb: number
   /** 攻撃側生存確率（= 1 - 瀕死確率） */
   attackerSurviveProb: number
   /** 両者生存して終了する確率 */
@@ -340,6 +342,7 @@ export function runBattleSequence(
   return {
     steps,
     defenderKoProb: Math.min(1, koProb),
+    attackerFaintProb: Math.min(1, faintProb),
     attackerSurviveProb: Math.min(1, 1 - faintProb),
     bothAliveProb: bothAlive,
   }
