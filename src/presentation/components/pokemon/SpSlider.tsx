@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { SP_MAX_STAT } from '@/domain/constants/spLimits'
 
 interface SpSliderProps {
@@ -20,41 +19,24 @@ const NATURE_OPTIONS: { val: number; label: string }[] = [
 ]
 
 export function SpSlider({ label, value, statValue, remaining, onChange, rank, onChangeRank, nature, onChangeNature }: SpSliderProps) {
-  const [blockedByTotal, setBlockedByTotal] = useState(false)
-  const maxAllowed = Math.max(value, Math.min(SP_MAX_STAT, value + remaining))
-  const isLimitedByTotal = maxAllowed < SP_MAX_STAT
-  const canIncreaseBy = Math.max(0, maxAllowed - value)
+  const max = Math.min(SP_MAX_STAT, value + remaining)
   const hasRank = onChangeRank !== undefined && rank !== undefined
   const hasNature = onChangeNature !== undefined && nature !== undefined
   const hasModifiers = hasRank || hasNature
-
-  useEffect(() => {
-    if (!blockedByTotal) return
-    const timer = window.setTimeout(() => setBlockedByTotal(false), 1400)
-    return () => window.clearTimeout(timer)
-  }, [blockedByTotal])
-
-  function requestChange(raw: number) {
-    const requested = Math.max(0, Math.min(SP_MAX_STAT, raw))
-    if (requested > maxAllowed) setBlockedByTotal(true)
-    onChange(requested)
-  }
 
   return (
     <div className="space-y-0.5">
       {/* メイン行: ラベル + スライダー + 数値入力 + 実数値 */}
       <div className="flex items-center gap-1.5">
-        <span className={`label w-4 text-center flex-shrink-0 ${blockedByTotal ? 'text-warning' : ''}`}>
-          {label}
-        </span>
+        <span className="label w-4 text-center flex-shrink-0">{label}</span>
         <input
           type="range"
           min={0}
           max={SP_MAX_STAT}
           value={value}
-          onChange={e => requestChange(Number(e.target.value))}
+          onChange={e => onChange(Number(e.target.value))}
           className="flex-1 min-w-0 h-1.5 bg-surface-3 rounded appearance-none cursor-pointer accent-accent"
-          title={isLimitedByTotal ? `合計SPの残りにより、この行は${maxAllowed}まで` : undefined}
+          style={{ '--max': max } as React.CSSProperties}
         />
         <input
           type="number"
@@ -62,34 +44,15 @@ export function SpSlider({ label, value, statValue, remaining, onChange, rank, o
           max={SP_MAX_STAT}
           value={value}
           onChange={e => {
-            requestChange(Number(e.target.value))
+            const v = Math.max(0, Math.min(SP_MAX_STAT, Number(e.target.value)))
+            onChange(v)
           }}
-          className={`input-base w-10 text-center text-xs px-1 flex-shrink-0 ${
-            blockedByTotal || (isLimitedByTotal && canIncreaseBy === 0) ? 'border-warning' : ''
-          }`}
+          className="input-base w-10 text-center text-xs px-1 flex-shrink-0"
         />
         <span className="text-sm w-10 text-right font-medium flex-shrink-0 text-fg">
           {statValue}
         </span>
-        {isLimitedByTotal && (
-          <span
-            className={`hidden sm:inline-flex w-12 justify-end text-[10px] font-mono ${
-              blockedByTotal || canIncreaseBy === 0 ? 'text-warning' : 'text-fg-faint'
-            }`}
-            title="合計SPの残りから、この行で追加できる量"
-            aria-live="polite"
-          >
-            {canIncreaseBy === 0 ? '残0' : `+${canIncreaseBy}`}
-          </span>
-        )}
       </div>
-      {blockedByTotal && (
-        <div className="pl-5 text-[10px] leading-4 text-warning" aria-live="polite">
-          {canIncreaseBy === 0
-            ? '残り0: 他の能力を下げてください'
-            : `この能力はあと${canIncreaseBy}まで`}
-        </div>
-      )}
 
       {/* 補正行: ランク + 性格（右寄せ） */}
       {hasModifiers && (
