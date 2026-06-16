@@ -404,12 +404,16 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
                   <span className="font-bold text-danger-2">{(seqResult.defenderKoProb * 100).toFixed(1)}%</span>
                 </span>
                 <span className="font-mono">
-                  <span className="text-fg-muted">攻撃側生存: </span>
-                  <span className="font-bold text-success">{(seqResult.attackerSurviveProb * 100).toFixed(1)}%</span>
+                  <span className="text-fg-muted">攻撃側瀕死: </span>
+                  <span className="font-bold text-warning">{(seqResult.attackerFaintProb * 100).toFixed(1)}%</span>
                 </span>
                 <span className="font-mono">
                   <span className="text-fg-muted">両者生存: </span>
                   <span className="text-fg">{(seqResult.bothAliveProb * 100).toFixed(1)}%</span>
+                </span>
+                <span className="font-mono">
+                  <span className="text-fg-muted">攻撃側生存: </span>
+                  <span className="font-bold text-success">{(seqResult.attackerSurviveProb * 100).toFixed(1)}%</span>
                 </span>
               </div>
 
@@ -444,7 +448,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
                 </table>
               </div>
               <div className="text-[10px] text-fg-faint leading-relaxed">
-                ※ 残HPは両者生存マスでの範囲。被ダメは攻守を入れ替えて自動計算（火傷半減・吸収も反映）。
+                ※ 防御側撃破・攻撃側瀕死・両者生存が最終結果の内訳です。残HPは両者生存マスでの範囲。被ダメは攻守を入れ替えて自動計算（火傷半減・吸収も反映）。
               </div>
             </div>
           )}
