@@ -72,6 +72,7 @@ export interface PokemonStore {
 
   // Actions
   setPokemon: (id: number) => void
+  clearPokemonSelection: () => void
   setStatNature: (stat: StatKey, val: number) => void
   setSp: (stat: StatKey, value: number) => void
   setSpFull: (sp: SpDistribution) => void
@@ -177,6 +178,26 @@ function createPokemonStore() {
         grounded: false,
       })
     },
+
+    clearPokemonSelection: () => set({
+      pokemonId: null,
+      pokemonName: '',
+      abilityName: 'なし',
+      isMega: false,
+      canMega: false,
+      availableMegas: [],
+      megaKey: null,
+      isBlade: false,
+      isMighty: false,
+      abilityActivated: false,
+      proteanType: null,
+      proteanStab: true,
+      grounded: false,
+      baseStats: { ...DEFAULT_BASE_STATS },
+      types: [],
+      weight: 0,
+      effectiveAbility: 'なし',
+    }),
 
     setStatNature: (stat, val) => set(s => ({
       statNatures: { ...s.statNatures, [stat]: val },

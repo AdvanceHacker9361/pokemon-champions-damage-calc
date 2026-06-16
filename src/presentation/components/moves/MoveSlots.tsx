@@ -5,6 +5,7 @@ import type { TypeName } from '@/domain/models/Pokemon'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 import { typeColor } from '@/presentation/components/shared/typeColors'
+import { MoveMetaChips } from './MoveMetaChips'
 
 interface MoveSlotsProps {
   moves: PokemonStore['moves']
@@ -79,6 +80,11 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
                   slot={slot}
                 />
               </div>
+              {moveRecord && (
+                <div className="pl-1">
+                  <MoveMetaChips move={moveRecord} power={movePowers[slot] ?? reversalPower} />
+                </div>
+              )}
 
               {/* ── きしかいせい / じたばた: HP入力 ── */}
               {isReversal && moveName && (
