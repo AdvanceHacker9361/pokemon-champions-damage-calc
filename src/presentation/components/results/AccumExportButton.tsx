@@ -19,6 +19,10 @@ export function AccumExportButton() {
   const constRecBerry = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
+  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
+  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
+  const attackerDirectDmg = useProgressionStore(s => s.attackerDirectDmg)
+  const attackerDirectRec = useProgressionStore(s => s.attackerDirectRec)
   const results = useResultStore(s => s.results)
   const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
   const defenderSpHp = useDefenderStore(s => s.sp.hp)
@@ -48,7 +52,7 @@ export function AccumExportButton() {
           break
         }
         case 'painSplit': lines.push(`痛み分け（攻撃側HP=${ev.attackerHp}）`); break
-        case 'incoming': lines.push(`被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
+        case 'incoming': lines.push(`攻撃側被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
         case 'defenderConst': lines.push(`防御側ダメ ${ev.amount}`); break
         case 'attackerConst': lines.push(`攻撃側ダメ ${ev.amount}`); break
         case 'defenderRecover': lines.push(`防御側回復 ${ev.amount}`); break
@@ -60,6 +64,10 @@ export function AccumExportButton() {
     if (constRec > 0) lines.push(`定数回復(per-turn): -${constRec}`)
     if (constRecBerry > 0) lines.push(`オボン/混乱実(HP≤${berryThresholdPct}%で1回): -${constRecBerry}`)
     if (poisonTurns > 0) lines.push(`もうどく(${poisonTurns}T): 累計 ${accum.poisonTotal}`)
+    if (defenderDirectDmg > 0) lines.push(`HP直接補正 防御側ダメ: ${defenderDirectDmg}`)
+    if (defenderDirectRec > 0) lines.push(`HP直接補正 防御側回復: -${defenderDirectRec}`)
+    if (attackerDirectDmg > 0) lines.push(`HP直接補正 攻撃側ダメ(攻守シミュレーション): ${attackerDirectDmg}`)
+    if (attackerDirectRec > 0) lines.push(`HP直接補正 攻撃側回復(攻守シミュレーション): -${attackerDirectRec}`)
 
     lines.push('─'.repeat(30))
     lines.push(`合計: ${accum.totalMin}〜${accum.totalMax} (${accum.totalMinPct.toFixed(1)}〜${accum.totalMaxPct.toFixed(1)}%)`)
