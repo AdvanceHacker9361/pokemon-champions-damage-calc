@@ -378,6 +378,65 @@ describe('DamageCalculator', () => {
     })
   })
 
+  describe('追加持ち物補正', () => {
+    it('ちからのハチマキで物理技ダメージが上がる', () => {
+      const move = makePhysicalMove('ストーンエッジ', 'いわ', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const itemResult = calculateDamage({ ...baseInput, move, attackerItem: 'ちからのハチマキ' })
+      expect(itemResult.max).toBeGreaterThan(normalResult.max)
+    })
+
+    it('ものしりメガネで特殊技ダメージが上がる', () => {
+      const move = makeSpecialMove('りゅうせいぐん', 'ドラゴン', 130)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const itemResult = calculateDamage({ ...baseInput, move, attackerItem: 'ものしりメガネ' })
+      expect(itemResult.max).toBeGreaterThan(normalResult.max)
+    })
+
+    it('パンチグローブでパンチ技ダメージが上がる', () => {
+      const move: MoveData = {
+        ...makePhysicalMove('ほのおのパンチ', 'ほのお', 75),
+        flags: { contact: true, sound: false, bullet: false, pulse: false, punch: true, bite: false, slice: false },
+      }
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const itemResult = calculateDamage({ ...baseInput, move, attackerItem: 'パンチグローブ' })
+      expect(itemResult.max).toBeGreaterThan(normalResult.max)
+    })
+
+    it('しんかのきせきで防御側の被ダメージが下がる', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const itemResult = calculateDamage({ ...baseInput, move, defenderItem: 'しんかのきせき' })
+      expect(itemResult.max).toBeLessThan(normalResult.max)
+    })
+
+    it('ふうせんで接地していない防御側へのじめん技を無効化する', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const result = calculateDamage({ ...baseInput, move, defenderItem: 'ふうせん' })
+      expect(result.max).toBe(0)
+    })
+
+    it('ふうせんは接地中ならじめん技を無効化しない', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        move,
+        defenderItem: 'ふうせん',
+        defenderGrounded: true,
+      })
+      expect(result.min).toBeGreaterThan(0)
+    })
+
+    it('プレートとジュエルが対応タイプのダメージを上げる', () => {
+      const move = makePhysicalMove('ストーンエッジ', 'いわ', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const plateResult = calculateDamage({ ...baseInput, move, attackerItem: 'がんせきプレート' })
+      const gemResult = calculateDamage({ ...baseInput, move, attackerItem: 'いわのジュエル' })
+      expect(plateResult.max).toBeGreaterThan(normalResult.max)
+      expect(gemResult.max).toBeGreaterThan(plateResult.max)
+    })
+  })
+
   describe('パーセント表示', () => {
     it('percentMax が max / defenderMaxHp * 100 と一致', () => {
       const move = makePhysicalMove('じしん', 'じめん', 100)

@@ -227,6 +227,7 @@ function resolveDef(input: DamageCalcInput): number {
 
   // 持ち物補正（防御側）
   if (defenderItem === 'とつげきチョッキ' && move.category === '特殊') defMod *= 1.5
+  if (defenderItem === 'しんかのきせき') defMod *= 1.5
 
   return Math.floor(def * defMod)
 }
@@ -305,6 +306,8 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   const levitateImmuneToGround =
     defenderAbility === 'ふゆう' && moveType === 'じめん' &&
     !grounded && !MOLD_BREAKER_ABILITIES.has(attackerAbility)
+  const airBalloonImmuneToGround =
+    input.defenderItem === 'ふうせん' && moveType === 'じめん' && !grounded
 
   // ===== 基本ダメージ =====
   // floor((レベル×2÷5+2)) = floor((50×2÷5+2)) = floor(22) = 22
@@ -390,7 +393,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効
   }
   // ふゆう: じめん技を無効化（接地・かたやぶり系で解除済みの場合は false）
-  if (levitateImmuneToGround) typeEffCheck = 0
+  if (levitateImmuneToGround || airBalloonImmuneToGround) typeEffCheck = 0
   const effectiveRolls = typeEffCheck === 0
     ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
     : (finalRolls as DamageResult['rolls'])
@@ -548,6 +551,15 @@ function applyOtherModifiers(
   if (attackerItem === 'たつじんのおび' && typeEff > 1) {
     d = Math.floor(d * 1.2)
   }
+  if (attackerItem === 'ちからのハチマキ' && move.category === '物理') {
+    d = Math.floor(d * 1.1)
+  }
+  if (attackerItem === 'ものしりメガネ' && move.category === '特殊') {
+    d = Math.floor(d * 1.1)
+  }
+  if (attackerItem === 'パンチグローブ' && move.flags.punch) {
+    d = Math.floor(d * 1.1)
+  }
   // タイプ強化アイテム（各種+1.2倍）
   const typeBoostItems: Record<string, TypeName> = {
     'シルクのスカーフ': 'ノーマル',
@@ -555,11 +567,31 @@ function applyOtherModifiers(
     'きせきのたね': 'くさ', 'とけないこおり': 'こおり', 'くろおび': 'かくとう',
     'どくバリ': 'どく', 'やわらかいすな': 'じめん', 'するどいくちばし': 'ひこう',
     'まがったスプーン': 'エスパー', 'ぎんのこな': 'むし', 'かたいいし': 'いわ',
-    'のろいのおふだ': 'ゴースト', 'りゅうのキバ': 'ドラゴン', 'くろいめがね': 'あく',
+    'のろいのおふだ': 'ゴースト', 'りゅうのキバ': 'ドラゴン', 'くろいメガネ': 'あく', 'くろいめがね': 'あく',
     'メタルコート': 'はがね', 'ようせいのはね': 'フェアリー',
+    'さざなみのおこう': 'みず', 'うしおのおこう': 'みず',
+    'おはなのおこう': 'くさ', 'がんせきおこう': 'いわ', 'あやしいおこう': 'エスパー',
+    'ひのたまプレート': 'ほのお', 'しずくプレート': 'みず', 'いかずちプレート': 'でんき',
+    'みどりのプレート': 'くさ', 'つららのプレート': 'こおり', 'こぶしのプレート': 'かくとう',
+    'もうどくプレート': 'どく', 'だいちのプレート': 'じめん', 'あおぞらプレート': 'ひこう',
+    'ふしぎのプレート': 'エスパー', 'たまむしプレート': 'むし', 'がんせきプレート': 'いわ',
+    'もののけプレート': 'ゴースト', 'りゅうのプレート': 'ドラゴン', 'こわもてプレート': 'あく',
+    'こうてつプレート': 'はがね', 'せいれいプレート': 'フェアリー',
   }
   if (attackerItem && typeBoostItems[attackerItem] === moveType) {
     d = Math.floor(d * 1.2)
+  }
+  const typeGemItems: Record<string, TypeName> = {
+    'ノーマルジュエル': 'ノーマル',
+    'ほのおのジュエル': 'ほのお', 'みずのジュエル': 'みず', 'でんきのジュエル': 'でんき',
+    'くさのジュエル': 'くさ', 'こおりのジュエル': 'こおり', 'かくとうジュエル': 'かくとう',
+    'どくのジュエル': 'どく', 'じめんのジュエル': 'じめん', 'ひこうのジュエル': 'ひこう',
+    'エスパージュエル': 'エスパー', 'むしのジュエル': 'むし', 'いわのジュエル': 'いわ',
+    'ゴーストジュエル': 'ゴースト', 'ドラゴンジュエル': 'ドラゴン', 'あくのジュエル': 'あく',
+    'はがねのジュエル': 'はがね', 'フェアリージュエル': 'フェアリー',
+  }
+  if (attackerItem && typeGemItems[attackerItem] === moveType) {
+    d = Math.floor(d * 1.3)
   }
   // 半減実
   // - 通常: 該当タイプ かつ 効果抜群（typeEff > 1）のとき 0.5 倍

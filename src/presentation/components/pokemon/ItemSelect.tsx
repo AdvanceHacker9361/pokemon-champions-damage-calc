@@ -21,7 +21,7 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setResults(ItemRepository.search(query, 12))
+      setResults(ItemRepository.search(query, 20))
     }, 80)
     return () => clearTimeout(timer)
   }, [query])
@@ -97,7 +97,7 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
           ref={inputRef}
           type="text"
           className="input-base w-full text-sm pr-7"
-          placeholder={value ? '' : '持ち物検索...'}
+          placeholder={value ? '' : '入力して持ち物検索...'}
           value={query}
           onChange={e => { setQuery(e.target.value); setIsOpen(true) }}
           onFocus={() => setIsOpen(true)}
@@ -155,7 +155,6 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
                     onClick={() => handleSelect(item.name)}
                   >
                     <span className="text-sm text-fg">{item.name}</span>
-                    <span className="text-[11px] text-fg-subtle">{item.nameEn}</span>
                   </button>
                 ))
               )}
