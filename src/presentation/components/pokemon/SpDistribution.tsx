@@ -35,7 +35,7 @@ export function SpDistributionPanel({ sp, stats, onChangeSp, onSetPreset, ranks,
         <span className="label">能力ポイント(SP)</span>
         <span className={`text-xs ${isOver ? 'text-warning' : 'text-fg-muted'}`}>
           {total}/{SP_MAX_TOTAL}
-          {isOver && <span className="ml-1 text-warning">超過!</span>}
+          {isOver && <span className="ml-1 text-warning">合計を{-remaining}下げてください</span>}
           {!isOver && <span className="ml-1 text-fg-subtle">(残{remaining})</span>}
         </span>
       </div>

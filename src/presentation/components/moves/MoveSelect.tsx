@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useId } from 'react'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MoveRecord } from '@/data/schemas/types'
+import { MoveMetaChips } from './MoveMetaChips'
 
 const RECENT_MOVES_STORAGE_KEY = 'pokemon-champions:recent-moves'
 const RECENT_MOVES_LIMIT = 12
@@ -209,7 +210,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
                   type="button"
                   role="option"
                   aria-selected={i === activeIndex}
-                  className={`w-full flex flex-col px-3 py-1.5 text-left transition-colors ${
+                  className={`w-full flex flex-col gap-1 px-3 py-1.5 text-left transition-colors ${
                     i === activeIndex
                       ? 'bg-surface-3'
                       : 'hover:bg-surface-2'
@@ -217,11 +218,7 @@ export function MoveSelect({ value, onChange, placeholder = '技を選択...', s
                   onClick={() => handleSelect(m.name)}
                 >
                   <span className="text-sm text-fg">{m.name}</span>
-                  <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
-                    <span>{m.type}</span>
-                    <span>{m.category}</span>
-                    {m.power != null && <span className="text-fg-muted">{m.power}</span>}
-                  </div>
+                  <MoveMetaChips move={m} />
                 </button>
               ))
             )}
