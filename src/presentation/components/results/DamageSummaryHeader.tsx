@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useResultStore } from '@/presentation/store/resultStore'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
@@ -6,7 +5,6 @@ import { useDefenderStore } from '@/presentation/store/pokemonStore'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { DamageBar } from './DamageBar'
 import { AccumHistogram } from './AccumHistogram'
-import { AccumDurabilityPanel } from './AccumDurabilityPanel'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 function koLabelColor(koResult: KoResult): string {
@@ -20,6 +18,14 @@ function koLabelColor(koResult: KoResult): string {
   return 'text-neutral'
 }
 
+function koLabel(koResult: KoResult): string {
+  if (koResult.type === 'guaranteed') return `確定${koResult.hits}発`
+  if (koResult.type === 'chance') {
+    return `乱数${koResult.hits}発 (${(koResult.probability * 100).toFixed(1)}%)`
+  }
+  return '倒せない'
+}
+
 export function DamageSummaryHeader() {
   const results = useResultStore(s => s.results)
   const events = useProgressionStore(s => s.events)
@@ -31,7 +37,6 @@ export function DamageSummaryHeader() {
     results[0]?.result.defenderMaxHp
     ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : storeDefHp)
   const accum = useAccumulatedDamage(defenderMaxHp)
-  const [durabilityExpanded, setDurabilityExpanded] = useState(false)
 
   const accumProbDisplay = accum.combinedProb >= 1.0
     ? '確定KO'
@@ -46,13 +51,46 @@ export function DamageSummaryHeader() {
     : `${(accum.combinedProbWithCrit * 100).toFixed(1)}%`
 
   const critAffects = Math.abs(accum.combinedProbWithCrit - accum.combinedProb) > 1e-6
+  const strongestResult = results.length > 0
+    ? results.reduce((best, current) => current.result.max > best.result.max ? current : best)
+    : null
 
   return (
     <div className="panel mb-3 sm:mb-4">
       {!accum.hasAnything ? (
-        <div className="text-xs text-fg-faint text-center py-1">
-          加算されると結果が表示されます
-        </div>
+        strongestResult ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-fg-muted">最大ダメージ</span>
+              <span className="text-sm font-medium text-fg">{strongestResult.moveName}</span>
+              <span className="text-sm font-mono font-bold text-fg">
+                {strongestResult.result.min}〜{strongestResult.result.max}
+              </span>
+              <span className="text-xs font-mono text-fg-muted">
+                ({strongestResult.result.percentMin.toFixed(1)}〜{strongestResult.result.percentMax.toFixed(1)}%)
+              </span>
+              <span className="text-xs text-fg-subtle">/{strongestResult.result.defenderMaxHp}</span>
+              <span className={`text-sm font-bold ml-auto ${koLabelColor(strongestResult.result.koResult)}`}>
+                {koLabel(strongestResult.result.koResult)}
+              </span>
+            </div>
+
+            <div>
+              <DamageBar
+                percentMin={strongestResult.result.percentMin}
+                percentMax={strongestResult.result.percentMax}
+                koResult={strongestResult.result.koResult}
+              />
+              <div className="flex justify-end text-[10px] font-mono text-fg-faint mt-0.5">
+                残HP {Math.max(0, strongestResult.result.defenderMaxHp - strongestResult.result.max)}〜{Math.max(0, strongestResult.result.defenderMaxHp - strongestResult.result.min)}/{strongestResult.result.defenderMaxHp}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-xs text-fg-faint text-center py-1">
+            加算されると結果が表示されます
+          </div>
+        )
       ) : (
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
@@ -96,19 +134,6 @@ export function DamageSummaryHeader() {
               totalMax={accum.totalMax}
             />
           )}
-
-          {/* 耐久調整トグル */}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setDurabilityExpanded(v => !v)}
-              className="text-xs text-fg-subtle hover:text-fg transition-colors"
-            >
-              {durabilityExpanded ? '▲ 耐久調整を閉じる' : '▼ 耐久調整（HP投資）'}
-            </button>
-          </div>
-
-          {durabilityExpanded && <AccumDurabilityPanel />}
         </div>
       )}
     </div>

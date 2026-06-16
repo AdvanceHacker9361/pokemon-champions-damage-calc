@@ -19,9 +19,30 @@ const TERRAINS: { value: TerrainField; label: string }[] = [
 
 export function FieldStateBar() {
   const field = useFieldStore()
+  const activeCount = [
+    field.weather,
+    field.terrain,
+    field.isReflect,
+    field.isLightScreen,
+    field.isAuroraVeil,
+    field.isGravity,
+    field.isTrickRoom,
+  ].filter(Boolean).length
 
   return (
     <div className="panel">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-fg">フィールド条件</h2>
+          <p className="text-xs text-fg-muted">天候・フィールド・壁・場の効果をまとめて設定</p>
+        </div>
+        <span className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium ${
+          activeCount > 0 ? 'bg-accent-bg text-accent' : 'bg-surface-3 text-fg-muted'
+        }`}>
+          {activeCount > 0 ? `${activeCount}件 有効` : '条件なし'}
+        </span>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
         {/* 天候 */}
         <div className="flex items-center gap-1.5">
@@ -98,6 +119,18 @@ export function FieldStateBar() {
             }`}
           >
             じゅうりょく
+          </button>
+          <button
+            type="button"
+            onClick={() => field.setTrickRoom(!field.isTrickRoom)}
+            title="素早さ順が逆転する場の状態"
+            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+              field.isTrickRoom
+                ? 'bg-accent-bg border-accent-border text-accent font-medium'
+                : 'border-edge text-fg-muted hover:border-accent-border hover:text-accent'
+            }`}
+          >
+            トリックルーム
           </button>
         </div>
       </div>
