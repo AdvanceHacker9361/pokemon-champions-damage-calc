@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import { usePokemonSearch } from '@/presentation/hooks/usePokemonSearch'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { PokemonRecord } from '@/data/schemas/types'
@@ -13,11 +13,14 @@ interface PokemonSearchProps {
 }
 
 export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検索...', listenFocusShortcut }: PokemonSearchProps) {
+  const id = useId()
   const { query, setQuery, results, isOpen, setIsOpen } = usePokemonSearch()
   const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const activeItemRef = useRef<HTMLButtonElement>(null)
+  const listboxId = `${id}-pokemon-listbox`
+  const activeOptionId = activeIndex >= 0 ? `${id}-pokemon-${activeIndex}` : undefined
 
   // Cmd+K ショートカットでフォーカス
   useEffect(() => {
@@ -101,6 +104,12 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
         autoComplete="off"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={isOpen}
+        aria-controls={listboxId}
+        aria-activedescendant={activeOptionId}
+        aria-label="ポケモンを検索"
       />
       {value && !query && (
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-fg-muted pointer-events-none truncate max-w-[60%]">
@@ -110,14 +119,19 @@ export function PokemonSearch({ value, onSelect, placeholder = 'ポケモン検�
 
       {isOpen && results.length > 0 && (
         <div
+          id={listboxId}
           ref={dropdownRef}
+          role="listbox"
           className="absolute z-50 w-full mt-1 bg-surface-1 border border-edge-strong rounded-lg max-h-64 overflow-y-auto"
         >
           {results.map((p, i) => (
             <button
               key={p.id}
+              id={`${id}-pokemon-${i}`}
               ref={i === activeIndex ? activeItemRef : undefined}
               type="button"
+              role="option"
+              aria-selected={i === activeIndex}
               className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors ${
                 i === activeIndex
                   ? 'bg-surface-3'

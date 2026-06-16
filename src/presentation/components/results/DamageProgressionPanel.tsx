@@ -104,7 +104,7 @@ function hpRange(dist: Map<number, number>): { min: number; max: number } | null
 }
 
 function ConstBar({ value, maxHp, isRecovery = false }: { value: number; maxHp: number; isRecovery?: boolean }) {
-  const pct = Math.min(100, (value / maxHp) * 100)
+  const pct = maxHp > 0 ? Math.min(100, (value / maxHp) * 100) : 0
   return (
     <div className="h-1.5 bg-surface-3 rounded-full overflow-hidden">
       <div
@@ -113,6 +113,22 @@ function ConstBar({ value, maxHp, isRecovery = false }: { value: number; maxHp: 
       />
     </div>
   )
+}
+
+function hpPercentText(value: number, maxHp: number): string {
+  if (maxHp <= 0) return '0.0%'
+  return `${(value / maxHp * 100).toFixed(1)}%`
+}
+
+function readNonNegative(raw: string): number {
+  const value = Number(raw)
+  return Number.isFinite(value) ? Math.max(0, value) : 0
+}
+
+function readPercent(raw: string): number {
+  const value = Number(raw)
+  if (!Number.isFinite(value)) return 1
+  return Math.max(1, Math.min(100, value))
 }
 
 export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanelProps) {
@@ -161,21 +177,27 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const hasAnything = hasEvents || constDmg > 0 || constRec > 0 || constRecBerry > 0 || poisonTurns > 0
   const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp })
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
-  const previousEventCountRef = useRef(events.length)
+  const previousEventIdsRef = useRef(events.map(ev => ev.id))
 
   const { result: seqResult } = useBattleSequence()
 
   useEffect(() => {
-    if (events.length > previousEventCountRef.current) {
-      const newest = events[events.length - 1]
-      setHighlightedEventId(newest.id)
+    const previousIds = previousEventIdsRef.current
+    if (events.length > previousIds.length) {
+      const previousSet = new Set(previousIds)
+      const inserted = events.find(ev => !previousSet.has(ev.id))
+      if (!inserted) {
+        previousEventIdsRef.current = events.map(ev => ev.id)
+        return
+      }
+      setHighlightedEventId(inserted.id)
       const timer = window.setTimeout(() => {
-        setHighlightedEventId(id => id === newest.id ? null : id)
+        setHighlightedEventId(id => id === inserted.id ? null : id)
       }, 1200)
-      previousEventCountRef.current = events.length
+      previousEventIdsRef.current = events.map(ev => ev.id)
       return () => window.clearTimeout(timer)
     }
-    previousEventCountRef.current = events.length
+    previousEventIdsRef.current = events.map(ev => ev.id)
   }, [events])
 
   function addAfter(kind: EventKind, targetId: string | null) {
@@ -541,6 +563,7 @@ function EventRow({
   }
 
   if (ev.kind === 'incoming') {
+    const hasMoveOptions = defenderMoveOptions.length > 0
     return (
       <TimelineRow idx={idx} total={total} tone="warning" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -549,10 +572,16 @@ function EventRow({
             value={ev.moveName ?? ''}
             onChange={e => onUpdate({ moveName: e.target.value || null } as Partial<ProgressionEvent>)}
             className="input-base min-w-[8rem] max-w-full text-xs px-1 py-0.5"
+            disabled={!hasMoveOptions}
           >
-            <option value="">技を選択</option>
+            <option value="">{hasMoveOptions ? '技を選択' : '防御側の技未設定'}</option>
             {defenderMoveOptions.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
+          {!hasMoveOptions && (
+            <span className="text-[10px] text-fg-faint">
+              防御側の「被ダメ用の技」から追加
+            </span>
+          )}
           <label className="flex items-center gap-1 cursor-pointer">
             <input
               type="checkbox"
@@ -570,7 +599,7 @@ function EventRow({
   if (ev.kind === 'rearmBerry') {
     return (
       <TimelineRow idx={idx} total={total} tone="success" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
-        <span className="font-semibold text-success">♻ リサイクル（きのみ再装填）</span>
+        <span className="font-semibold text-success">リサイクル（きのみ再装填）</span>
       </TimelineRow>
     )
   }
@@ -580,7 +609,7 @@ function EventRow({
     return (
       <TimelineRow idx={idx} total={total} tone="success" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-semibold text-success">🌱 宿り木 ({arrow})</span>
+          <span className="font-semibold text-success">宿り木 ({arrow})</span>
           <span className="text-[10px] text-fg-faint">
             {ev.direction === 'fromAttacker'
               ? '防御側 -1/8 → 攻撃側 +同量'
@@ -623,7 +652,7 @@ function EventRow({
           type="number"
           min={0}
           value={ev.amount}
-          onChange={e => onUpdate({ amount: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
+          onChange={e => onUpdate({ amount: readNonNegative(e.target.value) } as Partial<ProgressionEvent>)}
           className="input-base w-16 text-center text-xs px-1 py-0.5"
         />
         {isRecover && recoverBaseHp > 0 && RECOVER_FRACTIONS.map(f => {
@@ -655,6 +684,7 @@ function RowControls({ idx, total, onMoveUp, onMoveDown, onRemove }: {
         onClick={onMoveUp}
         disabled={idx === 0}
         className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-30"
+        aria-label="イベントを上へ移動"
         title="上へ"
       >↑</button>
       <button
@@ -662,12 +692,14 @@ function RowControls({ idx, total, onMoveUp, onMoveDown, onRemove }: {
         onClick={onMoveDown}
         disabled={idx === total - 1}
         className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted disabled:opacity-30"
+        aria-label="イベントを下へ移動"
         title="下へ"
       >↓</button>
       <button
         type="button"
         onClick={onRemove}
         className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-faint hover:text-danger-2 transition-colors flex-shrink-0 ml-0.5"
+        aria-label="イベントを削除"
         title="削除"
       >✕</button>
     </div>
@@ -755,7 +787,7 @@ function BackgroundEffectsSection({
               type="number"
               min={0}
               value={constDmg}
-              onChange={e => setConstDmg(Math.max(0, Number(e.target.value)))}
+              onChange={e => setConstDmg(readNonNegative(e.target.value))}
               className="input-base w-14 text-center text-xs px-1"
             />
             <button
@@ -786,7 +818,7 @@ function BackgroundEffectsSection({
           <div className="pl-[3.75rem]">
             <ConstBar value={constDmg} maxHp={defenderMaxHp} />
             <span className="text-xs text-warning font-mono">
-              {(constDmg / defenderMaxHp * 100).toFixed(1)}%
+              {hpPercentText(constDmg, defenderMaxHp)}
             </span>
           </div>
         )}
@@ -806,7 +838,7 @@ function BackgroundEffectsSection({
               type="number"
               min={0}
               value={constRec}
-              onChange={e => setConstRec(Math.max(0, Number(e.target.value)))}
+              onChange={e => setConstRec(readNonNegative(e.target.value))}
               className="input-base w-14 text-center text-xs px-1"
             />
             <button
@@ -843,7 +875,7 @@ function BackgroundEffectsSection({
           <div className="pl-[3.75rem]">
             <ConstBar value={constRec} maxHp={defenderMaxHp} isRecovery />
             <span className="text-xs text-success font-mono">
-              {(constRec / defenderMaxHp * 100).toFixed(1)}%
+              {hpPercentText(constRec, defenderMaxHp)}
             </span>
           </div>
         )}
@@ -863,7 +895,7 @@ function BackgroundEffectsSection({
               type="number"
               min={0}
               value={constRecBerry}
-              onChange={e => setConstRecBerry(Math.max(0, Number(e.target.value)))}
+              onChange={e => setConstRecBerry(readNonNegative(e.target.value))}
               className="input-base w-14 text-center text-xs px-1"
             />
             <button
@@ -878,7 +910,7 @@ function BackgroundEffectsSection({
             min={1}
             max={100}
             value={berryThresholdPct}
-            onChange={e => setConstRecBerryThresholdPct(Number(e.target.value))}
+            onChange={e => setConstRecBerryThresholdPct(readPercent(e.target.value))}
             className="input-base w-10 text-center text-xs px-1"
             title="発動しきい値（防御側HPの%）"
           />
@@ -972,7 +1004,7 @@ function BackgroundEffectsSection({
           <div className="pl-[3.75rem]">
             <ConstBar value={constRecBerry} maxHp={defenderMaxHp} isRecovery />
             <span className="text-xs text-success font-mono">
-              {(constRecBerry / defenderMaxHp * 100).toFixed(1)}%
+              {hpPercentText(constRecBerry, defenderMaxHp)}
             </span>
           </div>
         )}
@@ -1013,7 +1045,7 @@ function BackgroundEffectsSection({
               <span className="text-xs font-mono font-bold text-fg-muted">
                 累計 {poisonTotal}
                 <span className="font-normal text-fg-subtle ml-1">
-                  ({(poisonTotal / defenderMaxHp * 100).toFixed(1)}%)
+                  ({hpPercentText(poisonTotal, defenderMaxHp)})
                 </span>
               </span>
               <span className="text-[10px] text-fg-subtle">→ ダメ進行に自動加算</span>

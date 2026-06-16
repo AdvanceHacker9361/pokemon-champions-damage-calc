@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { ItemRepository } from '@/data/repositories/ItemRepository'
 import type { ItemRecord } from '@/data/schemas/types'
 
@@ -8,6 +8,7 @@ interface ItemSelectProps {
 }
 
 export function ItemSelect({ value, onChange }: ItemSelectProps) {
+  const id = useId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ItemRecord[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -15,6 +16,8 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const activeItemRef = useRef<HTMLButtonElement>(null)
+  const listboxId = `${id}-item-listbox`
+  const activeOptionId = activeIndex >= 0 ? `${id}-item-${activeIndex}` : undefined
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -100,6 +103,12 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           autoComplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-controls={listboxId}
+          aria-activedescendant={activeOptionId}
+          aria-label="持ち物を検索"
         />
         {value && !query && (
           <div className="absolute inset-0 flex items-center px-2 pointer-events-none pr-7">
@@ -111,6 +120,7 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
             type="button"
             className="absolute right-1 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted text-xs px-1.5 py-1"
             onClick={handleClear}
+            aria-label="持ち物を解除"
           >
             ✕
           </button>
@@ -118,7 +128,9 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
 
         {isOpen && (
           <div
+            id={listboxId}
             ref={dropdownRef}
+            role="listbox"
             className="absolute z-50 w-full mt-1 bg-surface-1 border border-edge-strong rounded max-h-60 overflow-hidden flex flex-col"
           >
             <div className="overflow-y-auto">
@@ -130,8 +142,11 @@ export function ItemSelect({ value, onChange }: ItemSelectProps) {
                 results.map((item, i) => (
                   <button
                     key={item.name}
+                    id={`${id}-item-${i}`}
                     ref={i === activeIndex ? activeItemRef : undefined}
                     type="button"
+                    role="option"
+                    aria-selected={i === activeIndex}
                     className={`w-full flex flex-col px-3 py-1.5 text-left transition-colors ${
                       i === activeIndex
                         ? 'bg-surface-3'

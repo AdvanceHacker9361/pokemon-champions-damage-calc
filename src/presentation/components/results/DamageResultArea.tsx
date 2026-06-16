@@ -51,8 +51,8 @@ export function DamageResultArea() {
             </div>
             <ExportButton results={results} attackerName={attackerName} defenderName={defenderName} />
           </div>
-          {results.map(({ moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
-            <div key={moveName} className="bg-surface-2 rounded-lg px-3.5 py-3">
+          {results.map(({ slotIndex, moveName, result, critResult, perHitResults, critPerHitResults, rawResult, rawCritResult, weakArmorPerHitResults, weakArmorCritPerHitResults, weakArmorVariableRawResults, weakArmorVariableRawCritResults }) => (
+            <div key={`${slotIndex}:${moveName}`} className="bg-surface-2 rounded-lg px-3.5 py-3">
               <DamageResultRow
                 moveName={moveName}
                 result={result}

@@ -18,6 +18,7 @@ export interface MoveSelectionState extends PokemonBattleState {
 }
 
 export interface CalculatedMoveResult {
+  slotIndex: number
   moveName: string
   result: DamageResult
   critResult: DamageResult
@@ -189,7 +190,7 @@ export function calculateMoveResults({
 
           const { totalResult: result, hitResults: perHitResults } = calcEscalating(alwaysCrit)
           const { totalResult: critResult, hitResults: critPerHitResults } = calcEscalating(true)
-          return { moveName, result, critResult, perHitResults, critPerHitResults }
+          return { slotIndex: slotIdx, moveName, result, critResult, perHitResults, critPerHitResults }
         }
 
         const result = executeDamageCalculation({ ...calcInput, isCritical: alwaysCrit })
@@ -227,14 +228,14 @@ export function calculateMoveResults({
           const rawResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: alwaysCrit })
           const rawCritResult = executeDamageCalculation({ ...rawSubsequentInput, isCritical: true })
           return {
-            moveName, result, critResult, rawResult, rawCritResult,
+            slotIndex: slotIdx, moveName, result, critResult, rawResult, rawCritResult,
             weakArmorPerHitResults, weakArmorCritPerHitResults,
             weakArmorVariableRawResults, weakArmorVariableRawCritResults,
           }
         }
 
         return {
-          moveName, result, critResult,
+          slotIndex: slotIdx, moveName, result, critResult,
           weakArmorPerHitResults, weakArmorCritPerHitResults,
           weakArmorVariableRawResults, weakArmorVariableRawCritResults,
         }

@@ -582,24 +582,29 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {/* 主操作 */}
       <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-1.5 rounded border border-edge bg-surface-2 px-2 py-1.5">
         <span className="shrink-0 text-[10px] font-semibold text-fg-subtle">主操作</span>
-        {/* 急所トグル */}
-        <button
-          type="button"
-          onClick={() => setIsCritical(v => !v)}
-          aria-pressed={isCritical}
-          className={`min-w-0 text-xs px-2.5 py-1 rounded border transition-colors ${
-            isCritical
-              ? 'bg-surface-3 border-warning text-warning font-semibold'
-              : 'border-edge text-fg-muted hover:border-warning hover:text-warning'
-          }`}
-          title="急所ダメージに切り替え"
-        >
-          急所
-        </button>
+        {isAlwaysCrit ? (
+          <span className="min-w-0 rounded border border-warning bg-surface-3 px-2.5 py-1 text-xs font-semibold text-warning">
+            確定急所
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsCritical(v => !v)}
+            aria-pressed={isCritical}
+            className={`min-w-0 text-xs px-2.5 py-1 rounded border transition-colors ${
+              isCritical
+                ? 'bg-surface-3 border-warning text-warning font-semibold'
+                : 'border-edge text-fg-muted hover:border-warning hover:text-warning'
+            }`}
+            title="急所ダメージに切り替え"
+          >
+            急所
+          </button>
+        )}
         <button
           type="button"
           onClick={handleAddToAccum}
-          aria-live="polite"
+          aria-label={`${moveName}をダメージ進行へ追加`}
           className={`min-w-0 text-xs px-2.5 py-1 rounded border transition-colors ${
             added
               ? 'bg-accent-bg border-accent-border text-accent font-medium'
@@ -610,9 +615,10 @@ export function DamageResultRow(props: DamageResultRowProps) {
           {added ? '✓ 時系列へ' : '+ 加算'}
         </button>
         <span
-          aria-live="polite"
+          role="status"
+          aria-hidden={!added}
           className={`min-w-[4.75rem] text-[10px] transition-opacity ${
-            added ? 'text-accent opacity-100' : 'text-fg-faint opacity-0'
+            added ? 'text-accent opacity-100' : 'text-fg-faint invisible opacity-0'
           }`}
         >
           末尾に追加
