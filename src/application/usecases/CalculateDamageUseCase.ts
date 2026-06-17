@@ -24,6 +24,8 @@ export interface PokemonBattleState {
   weight?: number
   /** じゅうでん状態: 次の電気技の威力2倍 */
   chargeActive?: boolean
+  /** メトロノーム: 同じ技の連続使用による威力倍率 */
+  metronomeMultiplier?: number
   /** うちおとす等による接地状態: じめん技が ひこう/ふゆう にも当たる */
   grounded?: boolean
 }
@@ -82,6 +84,7 @@ export function executeDamageCalculation(
     attackerRankModifiers: input.attacker.ranks as Record<string, number>,
     attackerWeight: input.attacker.weight,
     attackerChargeActive: input.attacker.chargeActive,
+    attackerMetronomeMultiplier: input.attacker.metronomeMultiplier,
     defenderStats,
     defenderTypes: input.defender.types,
     defenderAbility: input.defender.abilityName,

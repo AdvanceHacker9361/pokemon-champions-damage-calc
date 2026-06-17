@@ -148,3 +148,57 @@
   - `pokemon-champions-data-completeness-strategy.md`
   - `src/data/raw/`
   - `乱数幅の変更（Champions固有仕様）.md`
+
+## 2026-06-17 Reg.M-B Metronome Item Support
+
+### User Request
+
+- Reg.M-B leak/update context indicates `メトロノーム` is likely relevant for implementation.
+- Confirm the item behavior and implement it as a manual damage multiplier.
+- When the held item is `メトロノーム`, show `×1.0`, `×1.2`, `×1.4`, `×1.6`, `×1.8`, and `×2.0` buttons below the `持ち物` / `状態異常` area.
+- Deploy the completed update to production.
+
+### Confirmed Spec
+
+- Metronome held item boosts the power of a move used consecutively by the holder.
+- From Generation V onward, each previous consecutive successful use adds 20% power, capped at +100%.
+- Manual calculator states map to:
+  - first use: `×1.0`
+  - second use: `×1.2`
+  - third use: `×1.4`
+  - fourth use: `×1.6`
+  - fifth use: `×1.8`
+  - sixth and later use: `×2.0`
+
+### Implemented Scope
+
+- Added `metronomeMultiplier` to `PokemonStore`, defaulting to `1`.
+- Reset `metronomeMultiplier` to `1` when the held item is changed away from `メトロノーム`.
+- Added `setMetronomeMultiplier`, clamped to the safe range `1.0` through `2.0`.
+- Added conditional UI in `PokemonPanel`:
+  - shown only when `store.itemName === 'メトロノーム'`
+  - placed directly below `状態異常`
+  - uses the existing compact segmented-button visual language.
+- Passed the multiplier through:
+  - `CalculateDamageUseCase`
+  - `CalculateMoveResultsUseCase`
+  - `useDamageCalc`
+  - `useBattleSequence`
+  - tab snapshots via `sessionSnapshot`
+  - attack/defense swapping via `Calculator.swapStores`
+- Applied the multiplier in `DamageCalculator.resolvePower` only when `attackerItem === 'メトロノーム'`.
+- Added regression tests verifying:
+  - `メトロノーム` with `×2.0` equals doubled base power.
+  - the multiplier is ignored when the held item is not `メトロノーム`.
+
+### Validation
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/domain/DamageCalculator.test.ts`
+- `npm run build`
+
+### Notes
+
+- `items.json` already contained `メトロノーム`, so no item data addition was needed.
+- The multiplier is modeled as manual state rather than automatic turn counting, matching the app's current approach for conditional battle context.
