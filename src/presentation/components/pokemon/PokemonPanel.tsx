@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { PokemonStore } from '@/presentation/store/pokemonStore'
 import { useStatCalc } from '@/presentation/hooks/useStatCalc'
 import { PokemonSearch } from './PokemonSearch'
@@ -32,7 +33,13 @@ const ACTIVATABLE_ABILITIES: Record<string, string> = {
 }
 
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {
+  const [showDefenderMoves, setShowDefenderMoves] = useState(false)
   const computedStats = useStatCalc(store.baseStats, store.sp, store.statNatures, store.ranks)
+  const defenderMoveNames = store.moves.filter((move): move is string => move !== null)
+  const defenderMoveSummary =
+    defenderMoveNames.length > 0
+      ? `${defenderMoveNames.length}件: ${defenderMoveNames.slice(0, 2).join(' / ')}${defenderMoveNames.length > 2 ? ' ほか' : ''}`
+      : '未設定'
 
   function handleSelectPokemon(pokemon: PokemonRecord) {
     store.setPokemon(pokemon.id)
@@ -73,6 +80,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
         <PokemonSearch
           value={store.pokemonName}
           onSelect={handleSelectPokemon}
+          onClear={store.clearPokemonSelection}
           listenFocusShortcut={label === '攻撃側'}
         />
         {store.pokemonId && (
@@ -325,7 +333,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           )}
 
           {/* 技（攻撃側のみ） */}
-          {showMoves && (
+          {showMoves && label === '攻撃側' && (
             <MoveSlots
               moves={store.moves}
               setMove={store.setMove}
@@ -333,6 +341,37 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
               setMovePower={store.setMovePower}
               maxHP={computedStats.hp}
             />
+          )}
+
+          {/* 攻撃側被ダメ用の技（防御側のみ） */}
+          {label === '防御側' && (
+            <div className="rounded border border-edge bg-surface-2">
+              <button
+                type="button"
+                onClick={() => setShowDefenderMoves(!showDefenderMoves)}
+                aria-expanded={showDefenderMoves}
+                className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left transition-colors hover:bg-surface-3"
+              >
+                <span>
+                  <span className="label block">攻撃側被ダメ用の技</span>
+                  <span className="text-[11px] text-fg-subtle">{defenderMoveSummary}</span>
+                </span>
+                <span className="text-xs text-fg-muted whitespace-nowrap">
+                  {showDefenderMoves ? '閉じる' : '設定'}
+                </span>
+              </button>
+              {showDefenderMoves && (
+                <div className="border-t border-edge px-2 py-2">
+                  <MoveSlots
+                    moves={store.moves}
+                    setMove={store.setMove}
+                    movePowers={store.movePowers}
+                    setMovePower={store.setMovePower}
+                    maxHP={computedStats.hp}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </>
       )}

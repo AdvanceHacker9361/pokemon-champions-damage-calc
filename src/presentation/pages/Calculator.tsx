@@ -6,6 +6,7 @@ import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar
 import { TabMemo } from '@/presentation/components/session/TabMemo'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
 import { DamageSummaryHeader } from '@/presentation/components/results/DamageSummaryHeader'
+import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
 import { useKeyboardShortcuts } from '@/presentation/hooks/useKeyboardShortcuts'
 
@@ -98,6 +99,11 @@ export function Calculator() {
 
         {/* サマリーヘッダー: 最大ダメージ技の概要 */}
         <DamageSummaryHeader />
+
+        {/* フィールド条件: 計算結果に影響する場の状態 */}
+        <div className="my-3 sm:my-4">
+          <FieldStateBar />
+        </div>
 
         {/* モバイル: 攻守交代ボタンを最上部に表示 */}
         <div className="flex justify-center mb-3 lg:hidden">

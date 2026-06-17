@@ -16,7 +16,6 @@ import { MoveRepository } from '@/data/repositories/MoveRepository'
 import type { MultiHitData } from '@/domain/models/Move'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { TypeName } from '@/domain/models/Pokemon'
-import { DurabilityPanel } from './DurabilityPanel'
 
 interface DamageResultRowProps {
   moveName: string
@@ -318,7 +317,6 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const [rollsExpanded, setRollsExpanded] = useState(false)
   const [multiHitExpanded, setMultiHitExpanded] = useState(false)
   const [pbExpanded, setPbExpanded] = useState(false)
-  const [durabilityExpanded, setDurabilityExpanded] = useState(false)
   const [added, setAdded] = useState(false)
   const [isCritical, setIsCritical] = useState(false)
 
@@ -556,10 +554,10 @@ export function DamageResultRow(props: DamageResultRowProps) {
 
   return (
     <div>
-      {/* ヘッダー: 技名バッジ + KOラベル + 加算回数セレクター */}
-      <div className="flex items-baseline justify-between mb-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-fg">{moveName}</span>
+      {/* ヘッダー: 技名バッジ + KOラベル */}
+      <div className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1 mb-1">
+        <div className="min-w-0 flex flex-1 flex-wrap items-center gap-1.5">
+          <span className="block min-w-0 max-w-full text-sm font-medium text-fg truncate">{moveName}</span>
           {moveRecord?.type && <TypeBadge type={moveRecord.type as TypeName} size="sm" />}
           {multiHit && (
             <span className="text-[10px] px-1 py-0 rounded bg-surface-3 text-fg-muted font-medium">
@@ -576,15 +574,24 @@ export function DamageResultRow(props: DamageResultRowProps) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className={`text-xs font-bold ${koLabelColor(displayKoResult)}`}>
-            {koLabel(displayKoResult)}
+        <span className={`shrink-0 text-xs font-bold text-right ${koLabelColor(displayKoResult)}`}>
+          {koLabel(displayKoResult)}
+        </span>
+      </div>
+
+      {/* 主操作 */}
+      <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-1.5 rounded border border-edge bg-surface-2 px-2 py-1.5">
+        <span className="shrink-0 text-[10px] font-semibold text-fg-subtle">主操作</span>
+        {isAlwaysCrit ? (
+          <span className="min-w-0 rounded border border-warning bg-surface-3 px-2.5 py-1 text-xs font-semibold text-warning">
+            確定急所
           </span>
-          {/* 急所トグル */}
+        ) : (
           <button
             type="button"
             onClick={() => setIsCritical(v => !v)}
-            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+            aria-pressed={isCritical}
+            className={`min-w-0 text-xs px-2.5 py-1 rounded border transition-colors ${
               isCritical
                 ? 'bg-surface-3 border-warning text-warning font-semibold'
                 : 'border-edge text-fg-muted hover:border-warning hover:text-warning'
@@ -593,80 +600,90 @@ export function DamageResultRow(props: DamageResultRowProps) {
           >
             急所
           </button>
-          <button
-            type="button"
-            onClick={handleAddToAccum}
-            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-              added
-                ? 'bg-accent-bg border-accent-border text-accent font-medium'
-                : 'bg-surface-3 border-edge text-fg-muted hover:border-accent-border hover:text-accent'
-            }`}
-            title="加算リストに追加"
-          >
-            {added ? '✓ 追加' : '+ 加算'}
-          </button>
-          {/* 使用後の自ステータス変化ボタン（りゅうせいぐん・フレアソング等: 単一） */}
-          {moveRecord?.selfStatDrop && (() => {
-            const { stat, stages } = moveRecord.selfStatDrop
-            const letter = STAT_LETTER[stat] ?? stat
-            const isBoost = stages > 0
-            const sign = isBoost ? '+' : '−'
-            const abs = Math.abs(stages)
-            const arrow = isBoost ? '↑' : '↓'
-            const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
-            const targetRank = currentRank + stages
-            const clamped = Math.max(-6, Math.min(6, targetRank))
-            const willApply = clamped !== currentRank
-            return (
-              <button
-                key={stat}
-                type="button"
-                onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
-                disabled={!willApply}
-                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                  willApply
-                    ? isBoost
-                      ? 'border-accent-border text-accent hover:bg-accent-bg'
-                      : 'border-danger-2 text-danger-2 hover:bg-surface-3'
-                    : 'border-edge text-fg-faint cursor-not-allowed'
-                }`}
-                title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
-              >
-                {arrow}{letter}{sign}{abs}
-              </button>
-            )
-          })()}
-          {/* 使用後の自ステータス変化ボタン（アーマーキャノン等: 複数） */}
-          {moveRecord?.selfStatDrops?.map(({ stat, stages }) => {
-            const letter = STAT_LETTER[stat] ?? stat
-            const isBoost = stages > 0
-            const sign = isBoost ? '+' : '−'
-            const abs = Math.abs(stages)
-            const arrow = isBoost ? '↑' : '↓'
-            const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
-            const targetRank = currentRank + stages
-            const clamped = Math.max(-6, Math.min(6, targetRank))
-            const willApply = clamped !== currentRank
-            return (
-              <button
-                key={stat}
-                type="button"
-                onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
-                disabled={!willApply}
-                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                  willApply
-                    ? isBoost
-                      ? 'border-accent-border text-accent hover:bg-accent-bg'
-                      : 'border-danger-2 text-danger-2 hover:bg-surface-3'
-                    : 'border-edge text-fg-faint cursor-not-allowed'
-                }`}
-                title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
-              >
-                {arrow}{letter}{sign}{abs}
-              </button>
-            )
-          })}
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={handleAddToAccum}
+          aria-label={`${moveName}をダメージ進行へ追加`}
+          className={`min-w-0 text-xs px-2.5 py-1 rounded border transition-colors ${
+            added
+              ? 'bg-accent-bg border-accent-border text-accent font-medium'
+              : 'bg-surface-3 border-accent-border text-accent hover:bg-accent-bg'
+          }`}
+          title="時系列に追加"
+        >
+          {added ? '✓ 時系列へ' : '+ 加算'}
+        </button>
+        <span
+          role="status"
+          aria-hidden={!added}
+          className={`min-w-[4.75rem] text-[10px] transition-opacity ${
+            added ? 'text-accent opacity-100' : 'text-fg-faint invisible opacity-0'
+          }`}
+        >
+          末尾に追加
+        </span>
+        {/* 使用後の自ステータス変化ボタン（りゅうせいぐん・フレアソング等: 単一） */}
+        {moveRecord?.selfStatDrop && (() => {
+          const { stat, stages } = moveRecord.selfStatDrop
+          const letter = STAT_LETTER[stat] ?? stat
+          const isBoost = stages > 0
+          const sign = isBoost ? '+' : '−'
+          const abs = Math.abs(stages)
+          const arrow = isBoost ? '↑' : '↓'
+          const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
+          const targetRank = currentRank + stages
+          const clamped = Math.max(-6, Math.min(6, targetRank))
+          const willApply = clamped !== currentRank
+          return (
+            <button
+              key={stat}
+              type="button"
+              onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
+              disabled={!willApply}
+              className={`min-w-0 text-xs px-2 py-1 rounded border transition-colors ${
+                willApply
+                  ? isBoost
+                    ? 'border-accent-border text-accent hover:bg-accent-bg'
+                    : 'border-danger-2 text-danger-2 hover:bg-surface-3'
+                  : 'border-edge text-fg-faint cursor-not-allowed'
+              }`}
+              title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
+            >
+              {arrow}{letter}{sign}{abs}
+            </button>
+          )
+        })()}
+        {/* 使用後の自ステータス変化ボタン（アーマーキャノン等: 複数） */}
+        {moveRecord?.selfStatDrops?.map(({ stat, stages }) => {
+          const letter = STAT_LETTER[stat] ?? stat
+          const isBoost = stages > 0
+          const sign = isBoost ? '+' : '−'
+          const abs = Math.abs(stages)
+          const arrow = isBoost ? '↑' : '↓'
+          const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
+          const targetRank = currentRank + stages
+          const clamped = Math.max(-6, Math.min(6, targetRank))
+          const willApply = clamped !== currentRank
+          return (
+            <button
+              key={stat}
+              type="button"
+              onClick={() => setAttackerRank(stat as keyof typeof attackerRanks, clamped)}
+              disabled={!willApply}
+              className={`min-w-0 text-xs px-2 py-1 rounded border transition-colors ${
+                willApply
+                  ? isBoost
+                    ? 'border-accent-border text-accent hover:bg-accent-bg'
+                    : 'border-danger-2 text-danger-2 hover:bg-surface-3'
+                  : 'border-edge text-fg-faint cursor-not-allowed'
+              }`}
+              title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
+            >
+              {arrow}{letter}{sign}{abs}
+            </button>
+          )
+        })}
       </div>
 
       {/* ばけのかわ発動ライン */}
@@ -692,19 +709,23 @@ export function DamageResultRow(props: DamageResultRowProps) {
         </div>
       )}
 
-      {/* ダメージ範囲 + トグルボタン群 */}
-      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-        <span className="text-sm font-mono text-fg">{displayMin}〜{displayMax}</span>
-        <span className="text-xs text-fg-muted font-mono">
-          ({displayPercentMin.toFixed(1)}%〜{displayPercentMax.toFixed(1)}%)
-        </span>
-        <span className="text-xs text-fg-subtle">/{defenderMaxHp}</span>
-        <div className="ml-auto flex items-center gap-1">
+      {/* ダメージ範囲 + 詳細分析 */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 mb-1.5">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <span className="text-sm font-mono text-fg">{displayMin}〜{displayMax}</span>
+          <span className="text-xs text-fg-muted font-mono">
+            ({displayPercentMin.toFixed(1)}%〜{displayPercentMax.toFixed(1)}%)
+          </span>
+          <span className="text-xs text-fg-subtle">/{defenderMaxHp}</span>
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-1 rounded border border-edge bg-surface-2 px-1.5 py-0.5 sm:ml-auto">
+          <span className="text-[10px] font-medium text-fg-faint">詳細</span>
           {multiHit?.type === 'variable' && (
             <button
               type="button"
               onClick={() => setMultiHitExpanded(v => !v)}
-              className="text-xs text-fg-muted hover:text-fg transition-colors"
+              aria-pressed={multiHitExpanded}
+              className="rounded px-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:bg-surface-3 hover:text-fg"
               title="連続技 KO確率"
             >
               {multiHitExpanded ? '▲' : '▼'}連続技
@@ -713,22 +734,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
           <button
             type="button"
             onClick={() => setRollsExpanded(v => !v)}
-            className="text-xs text-fg-muted hover:text-fg transition-colors"
+            aria-pressed={rollsExpanded}
+            className="rounded px-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:bg-surface-3 hover:text-fg"
             title="16乱数を表示"
           >
             {rollsExpanded ? '▲' : '▼'}乱数
-          </button>
-          <button
-            type="button"
-            onClick={() => setDurabilityExpanded(v => !v)}
-            className={`text-xs transition-colors ${
-              durabilityExpanded
-                ? 'text-success'
-                : 'text-fg-muted hover:text-fg'
-            }`}
-            title="耐久調整（H+B/Dの最適SP配分）"
-          >
-            {durabilityExpanded ? '▲' : '▼'}耐久
           </button>
         </div>
       </div>
@@ -757,13 +767,6 @@ export function DamageResultRow(props: DamageResultRowProps) {
           残HP {Math.max(0, defenderMaxHp - displayMax)}〜{Math.max(0, defenderMaxHp - displayMin)}/{defenderMaxHp}
         </span>
       </div>
-
-      {/* 耐久調整パネル */}
-      {durabilityExpanded && (
-        <div className="mt-2 pt-2 border-t border-edge">
-          <DurabilityPanel moveName={moveName} />
-        </div>
-      )}
 
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (

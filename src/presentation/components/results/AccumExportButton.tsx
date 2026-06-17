@@ -12,13 +12,17 @@ function formatProb(prob: number): string {
 }
 
 export function AccumExportButton() {
-  const [copied, setCopied] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const events = useProgressionStore(s => s.events)
   const constDmg = useProgressionStore(s => s.constDmg)
   const constRec = useProgressionStore(s => s.constRec)
   const constRecBerry = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const poisonTurns = useProgressionStore(s => s.poisonTurns)
+  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
+  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
+  const attackerDirectDmg = useProgressionStore(s => s.attackerDirectDmg)
+  const attackerDirectRec = useProgressionStore(s => s.attackerDirectRec)
   const results = useResultStore(s => s.results)
   const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
   const defenderSpHp = useDefenderStore(s => s.sp.hp)
@@ -48,7 +52,7 @@ export function AccumExportButton() {
           break
         }
         case 'painSplit': lines.push(`痛み分け（攻撃側HP=${ev.attackerHp}）`); break
-        case 'incoming': lines.push(`被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
+        case 'incoming': lines.push(`攻撃側被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
         case 'defenderConst': lines.push(`防御側ダメ ${ev.amount}`); break
         case 'attackerConst': lines.push(`攻撃側ダメ ${ev.amount}`); break
         case 'defenderRecover': lines.push(`防御側回復 ${ev.amount}`); break
@@ -60,6 +64,10 @@ export function AccumExportButton() {
     if (constRec > 0) lines.push(`定数回復(per-turn): -${constRec}`)
     if (constRecBerry > 0) lines.push(`オボン/混乱実(HP≤${berryThresholdPct}%で1回): -${constRecBerry}`)
     if (poisonTurns > 0) lines.push(`もうどく(${poisonTurns}T): 累計 ${accum.poisonTotal}`)
+    if (defenderDirectDmg > 0) lines.push(`HP直接補正 防御側ダメ: ${defenderDirectDmg}`)
+    if (defenderDirectRec > 0) lines.push(`HP直接補正 防御側回復: -${defenderDirectRec}`)
+    if (attackerDirectDmg > 0) lines.push(`HP直接補正 攻撃側ダメ(攻守シミュレーション): ${attackerDirectDmg}`)
+    if (attackerDirectRec > 0) lines.push(`HP直接補正 攻撃側回復(攻守シミュレーション): -${attackerDirectRec}`)
 
     lines.push('─'.repeat(30))
     lines.push(`合計: ${accum.totalMin}〜${accum.totalMax} (${accum.totalMinPct.toFixed(1)}〜${accum.totalMaxPct.toFixed(1)}%)`)
@@ -76,21 +84,27 @@ export function AccumExportButton() {
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(buildText())
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopyStatus('copied')
+      setTimeout(() => setCopyStatus('idle'), 2000)
     } catch {
-      // clipboard API unavailable (e.g. non-HTTPS dev env)
+      setCopyStatus('error')
+      setTimeout(() => setCopyStatus('idle'), 2000)
     }
   }
+
+  const isError = copyStatus === 'error'
 
   return (
     <button
       type="button"
       onClick={handleCopy}
-      className="text-xs text-fg-subtle hover:text-fg transition-colors px-1.5 py-0.5 rounded hover:bg-surface-3"
-      title="総合累積の内訳をテキストでコピー"
+      aria-live="polite"
+      className={`text-xs transition-colors px-1.5 py-0.5 rounded hover:bg-surface-3 ${
+        isError ? 'text-danger-2 hover:text-danger-2' : 'text-fg-subtle hover:text-fg'
+      }`}
+      title={isError ? 'クリップボードへコピーできませんでした' : '総合累積の内訳をテキストでコピー'}
     >
-      {copied ? '✓ コピー済み' : '累積コピー'}
+      {copyStatus === 'copied' ? '✓ コピー済み' : isError ? 'コピー失敗' : '累積コピー'}
     </button>
   )
 }
