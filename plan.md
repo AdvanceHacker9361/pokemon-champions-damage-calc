@@ -249,6 +249,9 @@
 - `メガカエンジシ`: `ほのおのたてがみ`
   - Added as a new ability record.
   - Implemented as Fire-type move damage 1.5x.
+- Deployment integrity fix:
+  - Normalized legacy `Forewarn` ability data to Japanese `よちむ`.
+  - This keeps `スリープ`, `スリーパー`, and newly added `ムシャーナ` aligned with `abilities.json`.
 
 ### Changed Files
 
