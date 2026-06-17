@@ -9444,7 +9444,8 @@
       "bite": false,
       "slice": false
     },
-    "special": null
+    "special": null,
+    "powerOptions": [50, 100, 150, 200, 250, 300, 350]
   },
   {
     "name": "ぶんまわす",
@@ -12074,6 +12075,30 @@
       "slice": true
     },
     "special": null
+  },
+  {
+    "name": "ゴールドラッシュ",
+    "nameEn": "Make It Rain",
+    "type": "はがね",
+    "category": "特殊",
+    "power": 120,
+    "accuracy": 95,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "selfStatDrop": {
+      "stat": "spa",
+      "stages": -2
+    }
   },
   {
     "name": "うらみつらみ",

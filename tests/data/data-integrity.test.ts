@@ -243,6 +243,28 @@ describe('moves.json integrity', () => {
     }
     expect(errors).toHaveLength(0)
   })
+
+  it('ふんどのこぶし should expose 50-350 power options and punch flag', () => {
+    const move = moves.find(m => m.name === 'ふんどのこぶし')
+    expect(move).toBeDefined()
+    expect(move?.power).toBe(50)
+    expect(move?.powerOptions).toEqual([50, 100, 150, 200, 250, 300, 350])
+    expect(move?.flags.punch).toBe(true)
+  })
+
+  it('ゴールドラッシュ should have Champions-adjusted data and SpA drop', () => {
+    const move = moves.find(m => m.name === 'ゴールドラッシュ')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Make It Rain',
+      type: 'はがね',
+      category: '特殊',
+      power: 120,
+      accuracy: 95,
+      pp: 8,
+      selfStatDrop: { stat: 'spa', stages: -2 },
+    })
+  })
 })
 
 // ────────────────────────────────────────────────
