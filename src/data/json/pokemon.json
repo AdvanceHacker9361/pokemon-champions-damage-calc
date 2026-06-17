@@ -9614,6 +9614,28 @@
     "weight": 20.1
   },
   {
+    "id": 518,
+    "name": "ムシャーナ",
+    "nameEn": "Musharna",
+    "types": [
+      "エスパー"
+    ],
+    "baseStats": {
+      "hp": 116,
+      "atk": 55,
+      "def": 85,
+      "spa": 107,
+      "spd": 95,
+      "spe": 29
+    },
+    "abilities": [
+      "よちむ",
+      "シンクロ",
+      "テレパシー"
+    ],
+    "weight": 60.5
+  },
+  {
     "id": 580,
     "name": "コアルヒー",
     "nameEn": "Ducklett",
@@ -9942,7 +9964,8 @@
     "abilities": [
       "ふゆう"
     ],
-    "weight": 80.5
+    "weight": 80.5,
+    "megaEvolutionKey": "mega-eelektross"
   },
   {
     "id": 607,
@@ -11485,6 +11508,30 @@
     "megaEvolutionKey": "mega-malamar"
   },
   {
+    "id": 689,
+    "name": "ガメノデス",
+    "nameEn": "Barbaracle",
+    "types": [
+      "いわ",
+      "みず"
+    ],
+    "baseStats": {
+      "hp": 72,
+      "atk": 105,
+      "def": 115,
+      "spa": 54,
+      "spd": 86,
+      "spe": 68
+    },
+    "abilities": [
+      "かたいツメ",
+      "スナイパー",
+      "わるいてぐせ"
+    ],
+    "weight": 96,
+    "megaEvolutionKey": "mega-barbaracle"
+  },
+  {
     "id": 690,
     "name": "クズモー",
     "nameEn": "Skrelp",
@@ -11528,7 +11575,8 @@
       "どくしゅ",
       "てきおうりょく"
     ],
-    "weight": 81.5
+    "weight": 81.5,
+    "megaEvolutionKey": "mega-dragalge"
   },
   {
     "id": 692,
@@ -14411,7 +14459,8 @@
       "カブトアーマー",
       "まけんき"
     ],
-    "weight": 62
+    "weight": 62,
+    "megaEvolutionKey": "mega-falinks"
   },
   {
     "id": 871,

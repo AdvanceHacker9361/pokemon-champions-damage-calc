@@ -205,6 +205,11 @@
     "calcTag": "levitate"
   },
   {
+    "name": "うなぎのぼり",
+    "nameEn": "Unagi Nobori",
+    "calcTag": "unagi-nobori"
+  },
+  {
     "name": "クリアボディ",
     "nameEn": "Clear Body",
     "calcTag": "clear-body"
@@ -278,6 +283,11 @@
     "name": "ほのおのからだ",
     "nameEn": "Flame Body",
     "calcTag": "flame-body"
+  },
+  {
+    "name": "ほのおのたてがみ",
+    "nameEn": "Honoo no Tategami",
+    "calcTag": "honoo-no-tategami"
   },
   {
     "name": "せいでんき",

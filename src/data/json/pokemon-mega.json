@@ -986,7 +986,7 @@
       "spe": 110
     },
     "ability": "サージサーファー",
-    "weight": 30.0
+    "weight": 38.0
   },
   {
     "key": "mega-raichu-y",
@@ -1005,7 +1005,7 @@
       "spe": 130
     },
     "ability": "サージサーファー",
-    "weight": 30.0
+    "weight": 26.0
   },
   {
     "key": "mega-dragonite",
@@ -1105,7 +1105,7 @@
       "spe": 110
     },
     "ability": "いかく",
-    "weight": 24.9
+    "weight": 50.0
   },
   {
     "key": "mega-froslass",
@@ -1184,7 +1184,7 @@
       "spe": 62
     },
     "ability": "かそく",
-    "weight": 200.5
+    "weight": 230.5
   },
   {
     "key": "mega-scrafty",
@@ -1204,7 +1204,26 @@
       "spe": 68
     },
     "ability": "いかく",
-    "weight": 30.0
+    "weight": 31.0
+  },
+  {
+    "key": "mega-eelektross",
+    "basePokemonId": 604,
+    "name": "メガシビルドン",
+    "nameEn": "Mega Eelektross",
+    "types": [
+      "でんき"
+    ],
+    "baseStats": {
+      "hp": 85,
+      "atk": 145,
+      "def": 80,
+      "spa": 135,
+      "spd": 90,
+      "spe": 80
+    },
+    "ability": "うなぎのぼり",
+    "weight": 180.0
   },
   {
     "key": "mega-chandelure",
@@ -1263,8 +1282,8 @@
       "spd": 86,
       "spe": 126
     },
-    "ability": "とうそうしん",
-    "weight": 81.5
+    "ability": "ほのおのたてがみ",
+    "weight": 93.3
   },
   {
     "key": "mega-malamar",
@@ -1284,7 +1303,66 @@
       "spe": 88
     },
     "ability": "あまのじゃく",
-    "weight": 47.0
+    "weight": 69.8
+  },
+  {
+    "key": "mega-barbaracle",
+    "basePokemonId": 689,
+    "name": "メガガメノデス",
+    "nameEn": "Mega Barbaracle",
+    "types": [
+      "いわ",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 72,
+      "atk": 140,
+      "def": 130,
+      "spa": 64,
+      "spd": 106,
+      "spe": 88
+    },
+    "ability": "かたいツメ",
+    "weight": 100.0
+  },
+  {
+    "key": "mega-dragalge",
+    "basePokemonId": 691,
+    "name": "メガドラミドロ",
+    "nameEn": "Mega Dragalge",
+    "types": [
+      "どく",
+      "ドラゴン"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 85,
+      "def": 105,
+      "spa": 132,
+      "spd": 163,
+      "spe": 44
+    },
+    "ability": "さいせいりょく",
+    "weight": 100.3
+  },
+  {
+    "key": "mega-falinks",
+    "basePokemonId": 870,
+    "name": "メガタイレーツ",
+    "nameEn": "Mega Falinks",
+    "types": [
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 135,
+      "def": 135,
+      "spa": 70,
+      "spd": 65,
+      "spe": 100
+    },
+    "ability": "まけんき",
+    "weight": 99.0
   },
   {
     "key": "mega-zygarde",

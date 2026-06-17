@@ -148,25 +148,27 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
             </div>
           )}
 
-          {/* うちおとす（接地）: 防御側がひこうタイプ or ふゆう特性のときのみ表示 */}
+          {/* うちおとす（接地）: 防御側がひこうタイプ or 浮遊系特性のときのみ表示 */}
           {label === '防御側' &&
-            (store.types.includes('ひこう') || store.effectiveAbility === 'ふゆう') && (
-            <div>
-              <label className="label block mb-1">接地状態</label>
-              <button
-                type="button"
-                onClick={() => store.setGrounded(!store.grounded)}
-                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                  store.grounded
-                    ? 'bg-accent-bg text-accent border-accent-border'
-                    : 'text-fg-muted border-edge hover:bg-surface-3'
-                }`}
-              >
-                {store.grounded ? '✓ うちおとす（接地）' : 'うちおとす（接地）'}
-              </button>
-              <p className="text-[11px] text-fg-subtle mt-0.5">じめん技が当たるようになる</p>
-            </div>
-          )}
+            (store.types.includes('ひこう') ||
+              store.effectiveAbility === 'ふゆう' ||
+              store.effectiveAbility === 'うなぎのぼり') && (
+              <div>
+                <label className="label block mb-1">接地状態</label>
+                <button
+                  type="button"
+                  onClick={() => store.setGrounded(!store.grounded)}
+                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                    store.grounded
+                      ? 'bg-accent-bg text-accent border-accent-border'
+                      : 'text-fg-muted border-edge hover:bg-surface-3'
+                  }`}
+                >
+                  {store.grounded ? '✓ うちおとす（接地）' : 'うちおとす（接地）'}
+                </button>
+                <p className="text-[11px] text-fg-subtle mt-0.5">じめん技が当たるようになる</p>
+              </div>
+            )}
 
           {/* きあいだめ + じゅうでん（攻撃側のみ） */}
           {label === '攻撃側' && (
