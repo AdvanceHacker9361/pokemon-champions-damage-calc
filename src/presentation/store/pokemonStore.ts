@@ -62,6 +62,8 @@ export interface PokemonStore {
   focusEnergyActive: boolean
   /** じゅうでん状態（次の電気技の威力2倍） */
   chargeActive: boolean
+  /** メトロノーム: 同じ技の連続使用による威力倍率 */
+  metronomeMultiplier: number
   /** 接地状態（うちおとす等）: じめん技が ひこう/ふゆう にも当たる */
   grounded: boolean
   // Derived (cached)
@@ -92,6 +94,7 @@ export interface PokemonStore {
   setSupremeOverlordBoost: (v: 0 | 1 | 2) => void
   setFocusEnergyActive: (v: boolean) => void
   setChargeActive: (v: boolean) => void
+  setMetronomeMultiplier: (v: number) => void
   setGrounded: (v: boolean) => void
   reset: () => void
 }
@@ -123,6 +126,7 @@ function createPokemonStore() {
     supremeOverlordBoost: 0,
     focusEnergyActive: false,
     chargeActive: false,
+    metronomeMultiplier: 1,
     grounded: false,
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
@@ -175,6 +179,7 @@ function createPokemonStore() {
         supremeOverlordBoost: 0,
         focusEnergyActive: false,
         chargeActive: false,
+        metronomeMultiplier: get().itemName === 'メトロノーム' ? get().metronomeMultiplier : 1,
         grounded: false,
       })
     },
@@ -227,7 +232,10 @@ function createPokemonStore() {
       set({ abilityName: name, effectiveAbility: name, abilityActivated: defaultAbilityActivated(name) })
     },
 
-    setItem: (name) => set({ itemName: name }),
+    setItem: (name) => set(s => ({
+      itemName: name,
+      metronomeMultiplier: name === 'メトロノーム' ? s.metronomeMultiplier : 1,
+    })),
 
     setMega: (enable) => {
       const { pokemonId, canMega, abilityName, availableMegas } = get()
@@ -350,6 +358,8 @@ function createPokemonStore() {
 
     setChargeActive: (v) => set({ chargeActive: v }),
 
+    setMetronomeMultiplier: (v) => set({ metronomeMultiplier: Math.min(2, Math.max(1, v)) }),
+
     setGrounded: (v) => set({ grounded: v }),
 
     reset: () => set({
@@ -364,6 +374,7 @@ function createPokemonStore() {
       supremeOverlordBoost: 0,
       focusEnergyActive: false,
       chargeActive: false,
+      metronomeMultiplier: 1,
       grounded: false,
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',

@@ -50,6 +50,7 @@ function toBattleState(s: PokemonStore): PokemonBattleState {
     proteanStab: s.proteanStab,
     weight: s.weight,
     chargeActive: s.chargeActive,
+    metronomeMultiplier: s.metronomeMultiplier,
     grounded: s.grounded,
   }
 }

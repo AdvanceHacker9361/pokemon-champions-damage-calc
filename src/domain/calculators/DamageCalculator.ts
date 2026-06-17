@@ -21,6 +21,8 @@ export interface DamageCalcInput {
   attackerWeight?: number
   /** じゅうでん状態: 次の電気技の威力2倍 */
   attackerChargeActive?: boolean
+  /** メトロノーム: 同じ技の連続使用による威力倍率 */
+  attackerMetronomeMultiplier?: number
   defenderStats: ComputedStats
   defenderTypes: TypeName[]
   defenderAbility: string
@@ -77,11 +79,17 @@ function pokeRound(n: number): number {
 
 /** 技の基本威力を解決（特殊技を含む） */
 function resolvePower(input: DamageCalcInput): number {
-  const power = resolveBasePower(input)
+  let power = resolveBasePower(input)
 
   // じゅうでん: 次の電気技の威力2倍（エレキスキン変換後の判定も含む）
   if (input.attackerChargeActive && resolveMoveType(input) === 'でんき') {
-    return power * 2
+    power *= 2
+  }
+
+  // メトロノーム: 同じ技の連続成功回数に応じて威力上昇（手動指定）
+  if (input.attackerItem === 'メトロノーム') {
+    const multiplier = Math.min(2, Math.max(1, input.attackerMetronomeMultiplier ?? 1))
+    power = Math.floor(power * multiplier)
   }
 
   // Gのちから: じゅうりょく中は威力1.5倍

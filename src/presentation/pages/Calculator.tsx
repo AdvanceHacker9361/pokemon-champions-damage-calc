@@ -38,6 +38,7 @@ function swapStores() {
     supremeOverlordBoost: s.supremeOverlordBoost,
     focusEnergyActive: s.focusEnergyActive,
     chargeActive: s.chargeActive,
+    metronomeMultiplier: s.metronomeMultiplier,
     grounded: s.grounded,
     baseStats: s.baseStats,
     types: s.types,

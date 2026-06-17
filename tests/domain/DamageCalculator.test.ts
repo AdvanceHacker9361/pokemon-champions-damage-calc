@@ -435,6 +435,37 @@ describe('DamageCalculator', () => {
       expect(plateResult.max).toBeGreaterThan(normalResult.max)
       expect(gemResult.max).toBeGreaterThan(plateResult.max)
     })
+
+    it('メトロノームは指定倍率で技威力を上げる', () => {
+      const move = makePhysicalMove('ストーンエッジ', 'いわ', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const boostedResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerItem: 'メトロノーム',
+        attackerMetronomeMultiplier: 2,
+      })
+      const doubledPowerResult = calculateDamage({
+        ...baseInput,
+        move: { ...move, power: 200 },
+      })
+
+      expect(boostedResult.max).toBeGreaterThan(normalResult.max)
+      expect(Array.from(boostedResult.rolls)).toEqual(Array.from(doubledPowerResult.rolls))
+    })
+
+    it('メトロノーム以外の持ち物では倍率指定を無視する', () => {
+      const move = makePhysicalMove('ストーンエッジ', 'いわ', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const ignoredResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerItem: null,
+        attackerMetronomeMultiplier: 2,
+      })
+
+      expect(Array.from(ignoredResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
   })
 
   describe('パーセント表示', () => {
