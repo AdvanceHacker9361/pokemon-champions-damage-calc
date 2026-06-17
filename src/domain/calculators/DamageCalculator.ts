@@ -271,6 +271,8 @@ function resolveMoveType(input: DamageCalcInput): TypeName {
 export function calculateDamage(input: DamageCalcInput): DamageResult {
   const { move, attackerAbility, defenderAbility,
           attackerStatus, defenderStats, field, isCritical = false } = input
+  const effectiveCritical =
+    isCritical && defenderAbility !== 'シェルアーマー' && defenderAbility !== 'カブトアーマー'
 
   const power = resolvePower(input)
   if (power === 0) {
@@ -336,7 +338,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   damage = applyFieldModifier(damage, moveType, field.terrain, move.name)
 
   // 3. 急所補正（1.5倍）
-  if (isCritical) {
+  if (effectiveCritical) {
     damage = pokeRound(damage * 1.5)
   }
 
@@ -471,9 +473,11 @@ function applyOtherModifiers(
   let d = damage
   const { attackerAbility, attackerItem, defenderAbility, defenderItem,
           move, field, isCritical = false } = input
+  const effectiveCritical =
+    isCritical && defenderAbility !== 'シェルアーマー' && defenderAbility !== 'カブトアーマー'
 
   // 壁補正（急所時は壁無効）
-  if (!isCritical) {
+  if (!effectiveCritical) {
     if (field.isAuroraVeil) {
       d = pokeRound(d * 0.5)
     } else if (field.isReflect && move.category === '物理') {

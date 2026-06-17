@@ -3,8 +3,8 @@
 ## Context
 
 - Project: Pokemon Champions Damage Calculator.
-- Current production version: V3.12.3.
-- Current focus: UI/UX polish shipped as V3.12.3.
+- Current production version: V3.13.0.
+- Current focus: Reg.M-B Mega Pokemon / ability support shipped as V3.13.0.
 - The user found the `イベント追加` -> `即時HP` group hard to use.
 - Desired direction: move one-off HP adjustment affordances into `背景効果`, support both attacker and defender, and make regeneration recovery presets easier to access.
 
@@ -280,3 +280,30 @@
   - `src/data/raw/`
   - `pokemon-champions-data-completeness-strategy.md`
   - `乱数幅の変更（Champions固有仕様）.md`
+
+## 2026-06-17 V3.13.0 Mega Scolipede Ability Fix
+
+### User Request
+
+- Correct `メガペンドラー`.
+- Confirmed ability:
+  - `シェルアーマー`
+  - Opponent attacks cannot land critical hits.
+- After the fix, bump app version to `V3.13.0` and deploy to production.
+
+### Implemented Scope
+
+- Updated `メガペンドラー` ability from `かそく` to `シェルアーマー`.
+- Added critical-hit blocking in `DamageCalculator` for:
+  - `シェルアーマー`
+  - `カブトアーマー`
+- Critical-hit blocking also keeps screen damage reduction active, because the attack is treated as non-critical.
+- Added regression coverage verifying that `シェルアーマー` makes forced critical damage equal normal damage.
+- Updated package version from `3.12.3` to `3.13.0`.
+
+### Validation Plan
+
+- JSON parse check for Pokemon / Mega / ability data.
+- `npm run typecheck`
+- `npm test -- --run tests/data/data-integrity.test.ts tests/domain/DamageCalculator.test.ts`
+- `npm run build`
