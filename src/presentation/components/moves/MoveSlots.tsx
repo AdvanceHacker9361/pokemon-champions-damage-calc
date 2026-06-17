@@ -111,13 +111,13 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
 
               {/* ── 可変威力ボタン (powerOptions, おはかまいり等) ── */}
               {hasPowerOpts && moveName && (
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1">
                   {moveRecord!.powerOptions!.map(p => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setMovePower(slot, p)}
-                      className={`flex-1 text-xs py-0.5 rounded border transition-colors ${
+                      className={`min-w-10 flex-1 text-xs py-0.5 rounded border transition-colors ${
                         (movePowers[slot] ?? moveRecord!.power) === p
                           ? 'bg-accent-bg border-accent-border text-accent font-medium'
                           : 'text-fg-muted border-edge hover:bg-surface-3'
