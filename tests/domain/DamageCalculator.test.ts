@@ -503,6 +503,21 @@ describe('DamageCalculator', () => {
 
       expect(Array.from(abilityResult.rolls)).toEqual(Array.from(normalResult.rolls))
     })
+
+    it('シェルアーマーは急所ダメージを無効化する', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const criticalResult = calculateDamage({ ...baseInput, move, isCritical: true })
+      const shellArmorResult = calculateDamage({
+        ...baseInput,
+        move,
+        defenderAbility: 'シェルアーマー',
+        isCritical: true,
+      })
+
+      expect(criticalResult.max).toBeGreaterThan(normalResult.max)
+      expect(Array.from(shellArmorResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
   })
 
   describe('パーセント表示', () => {
