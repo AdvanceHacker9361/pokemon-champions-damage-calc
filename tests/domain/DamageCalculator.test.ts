@@ -191,6 +191,17 @@ describe('DamageCalculator', () => {
       expect(result.max).toBe(0)
     })
 
+    it('うなぎのぼりはじめん技を無効化（0ダメージ）', () => {
+      const move = makeSpecialMove('じしん', 'じめん', 100)
+      const result = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['でんき'],
+        defenderAbility: 'うなぎのぼり',
+        move,
+      })
+      expect(result.max).toBe(0)
+    })
+
     it('接地中はふゆうでもじめん技が当たる', () => {
       const move = makeSpecialMove('じしん', 'じめん', 100)
       const result = calculateDamage({
@@ -465,6 +476,32 @@ describe('DamageCalculator', () => {
       })
 
       expect(Array.from(ignoredResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
+  })
+
+  describe('追加特性補正', () => {
+    it('ほのおのたてがみでほのお技ダメージが上がる', () => {
+      const move = makeSpecialMove('かえんほうしゃ', 'ほのお', 90)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const abilityResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'ほのおのたてがみ',
+      })
+
+      expect(abilityResult.max).toBeGreaterThan(normalResult.max)
+    })
+
+    it('ほのおのたてがみは非ほのお技には影響しない', () => {
+      const move = makeSpecialMove('ハイパーボイス', 'ノーマル', 90)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const abilityResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'ほのおのたてがみ',
+      })
+
+      expect(Array.from(abilityResult.rolls)).toEqual(Array.from(normalResult.rolls))
     })
   })
 

@@ -302,7 +302,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     ? baseDefenderTypes.filter(t => t !== 'ゴースト')
     : baseDefenderTypes
 
-  // 接地: じめん技に対して ひこうタイプ / ふゆう の無効化を解除
+  // 接地: じめん技に対して ひこうタイプ / 浮遊系特性の無効化を解除
   // うちおとす（個別トグル） または じゅうりょく（場全体）で発生
   const grounded = input.defenderGrounded === true || field.isGravity === true
   // 接地中はひこうタイプのじめん無効化を解除（他タイプの相性は維持）
@@ -310,9 +310,11 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     moveType === 'じめん' && grounded
       ? effectiveDefenderTypes.filter(t => t !== 'ひこう')
       : effectiveDefenderTypes
-  // ふゆう: じめん技を無効化（接地時 または かたやぶり系特性で解除）
+  // ふゆう / うなぎのぼり: じめん技を無効化（接地時 または かたやぶり系特性で解除）
+  const hasLevitateLikeGroundImmunity =
+    defenderAbility === 'ふゆう' || defenderAbility === 'うなぎのぼり'
   const levitateImmuneToGround =
-    defenderAbility === 'ふゆう' && moveType === 'じめん' &&
+    hasLevitateLikeGroundImmunity && moveType === 'じめん' &&
     !grounded && !MOLD_BREAKER_ABILITIES.has(attackerAbility)
   const airBalloonImmuneToGround =
     input.defenderItem === 'ふうせん' && moveType === 'じめん' && !grounded
@@ -400,7 +402,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     // みずタイプへの無効化はない（こおりに免疫なし）
     typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効
   }
-  // ふゆう: じめん技を無効化（接地・かたやぶり系で解除済みの場合は false）
+  // 浮遊系特性: じめん技を無効化（接地・かたやぶり系で解除済みの場合は false）
   if (levitateImmuneToGround || airBalloonImmuneToGround) typeEffCheck = 0
   const effectiveRolls = typeEffCheck === 0
     ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
@@ -518,6 +520,10 @@ function applyOtherModifiers(
   // かたいツメ: 接触技の威力1.3倍
   if (attackerAbility === 'かたいツメ' && move.flags.contact) {
     d = pokeRound(d * 1.3)
+  }
+  // ほのおのたてがみ: ほのお技の威力1.5倍
+  if (attackerAbility === 'ほのおのたてがみ' && moveType === 'ほのお') {
+    d = pokeRound(d * 1.5)
   }
   // すてみ: 反動技の威力1.2倍
   if (attackerAbility === 'すてみ' && move.flags.recoil) {

@@ -202,3 +202,78 @@
 
 - `items.json` already contained `メトロノーム`, so no item data addition was needed.
 - The multiplier is modeled as manual state rather than automatic turn counting, matching the app's current approach for conditional battle context.
+
+## 2026-06-17 Reg.M-B New Mega Pokemon And Ability Support
+
+### User Request
+
+- Reg.M-B formally started, so add newly unlocked Mega Pokemon data to the working implementation.
+- First implementation pass should prioritize Japanese name, type, base stats, and weight.
+- After that, confirmed new Mega abilities should be reflected where they affect the calculator.
+
+### Implemented Pokemon Data
+
+- Added or connected Reg.M-B Mega evolution data for:
+  - `メガシビルドン`
+  - `メガガメノデス`
+  - `メガドラミドロ`
+  - `メガタイレーツ`
+- Added base Pokemon records / Mega evolution keys needed for lookup:
+  - `ムシャーナ`
+  - `ガメノデス`
+  - `シビルドン`
+  - `ドラミドロ`
+  - `タイレーツ`
+- Updated confirmed weights for newly listed Mega forms including:
+  - `メガライチュウX`
+  - `メガライチュウY`
+  - `メガムクホーク`
+  - `メガペンドラー`
+  - `メガズルズキン`
+  - `メガカエンジシ`
+  - `メガカラマネロ`
+
+### Implemented Ability Data
+
+- `メガシビルドン`: `うなぎのぼり`
+  - Added as a new ability record.
+  - Treated as `ふゆう`-like Ground immunity for damage calculation.
+  - Defense-side `うちおとす（接地）` toggle is shown for this ability.
+  - The post-KO highest-stat boost is not automated because the calculator does not currently model KO-triggered turn progression.
+- `メガガメノデス`: `かたいツメ`
+  - Existing contact-move 1.3x damage logic applies automatically.
+- `メガドラミドロ`: `さいせいりょく`
+  - Data-only for now; switching recovery does not directly affect single-hit damage calculation.
+- `メガタイレーツ`: `まけんき`
+  - Data-only for now; stat drop reaction is represented by manual rank controls when needed.
+- `メガカエンジシ`: `ほのおのたてがみ`
+  - Added as a new ability record.
+  - Implemented as Fire-type move damage 1.5x.
+
+### Changed Files
+
+- `src/data/json/pokemon.json`
+- `src/data/json/pokemon-mega.json`
+- `src/data/json/abilities.json`
+- `src/domain/calculators/DamageCalculator.ts`
+- `src/presentation/components/pokemon/PokemonPanel.tsx`
+- `tests/domain/DamageCalculator.test.ts`
+
+### Validation
+
+- `npm run typecheck`
+- `npm test -- --run tests/domain/DamageCalculator.test.ts` (41 tests passed)
+- `npm run build`
+
+### Deployment Notes
+
+- Include UTF-8 preservation files from the previous debug context:
+  - `.editorconfig`
+  - `.gitattributes`
+  - `debug.md`
+- Do not include local-only work artifacts:
+  - `.codex-remote-attachments/`
+  - `.codex/`
+  - `src/data/raw/`
+  - `pokemon-champions-data-completeness-strategy.md`
+  - `乱数幅の変更（Champions固有仕様）.md`
