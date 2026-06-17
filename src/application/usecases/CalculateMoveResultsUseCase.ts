@@ -105,6 +105,7 @@ export function calculateMoveResults({
             proteanStab: attacker.proteanStab,
             weight: attacker.weight,
             chargeActive: attacker.chargeActive,
+            metronomeMultiplier: attacker.metronomeMultiplier,
           },
           defender: {
             baseStats: defender.baseStats,

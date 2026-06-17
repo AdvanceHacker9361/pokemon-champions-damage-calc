@@ -32,6 +32,8 @@ const ACTIVATABLE_ABILITIES: Record<string, string> = {
   'ばけのかわ':   'ばけのかわ有効',
 }
 
+const METRONOME_MULTIPLIERS = [1, 1.2, 1.4, 1.6, 1.8, 2] as const
+
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {
   const [showDefenderMoves, setShowDefenderMoves] = useState(false)
   const computedStats = useStatCalc(store.baseStats, store.sp, store.statNatures, store.ranks)
@@ -120,6 +122,31 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
           {/* 状態異常 */}
           <StatusToggle value={store.status} onChange={store.setStatus} />
+
+          {store.itemName === 'メトロノーム' && (
+            <div>
+              <label className="label block mb-1">メトロノーム</label>
+              <div className="flex flex-wrap gap-1.5">
+                {METRONOME_MULTIPLIERS.map(multiplier => (
+                  <button
+                    key={multiplier}
+                    type="button"
+                    onClick={() => store.setMetronomeMultiplier(multiplier)}
+                    className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                      store.metronomeMultiplier === multiplier
+                        ? 'bg-accent-bg text-accent border-accent-border font-medium'
+                        : 'text-fg-muted border-edge hover:bg-surface-3'
+                    }`}
+                  >
+                    ×{multiplier.toFixed(1)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-fg-subtle mt-0.5">
+                同じ技を連続使用した回数に応じて威力を補正
+              </p>
+            </div>
+          )}
 
           {/* うちおとす（接地）: 防御側がひこうタイプ or ふゆう特性のときのみ表示 */}
           {label === '防御側' &&
