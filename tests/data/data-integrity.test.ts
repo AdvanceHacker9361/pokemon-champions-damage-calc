@@ -135,6 +135,14 @@ describe('pokemon-mega.json integrity', () => {
     // Allow up to 5 unreferenced
     expect(unreferenced.length).toBeLessThanOrEqual(10)
   })
+
+  it('Reg.M-B corrected mega abilities should stay pinned', () => {
+    const byKey = new Map(mega.map(m => [m.key, m]))
+    expect(byKey.get('mega-manectric')?.ability).toBe('いかく')
+    expect(byKey.get('mega-blaziken')?.ability).toBe('かそく')
+    expect(byKey.get('mega-staraptor')?.ability).toBe('あまのじゃく')
+    expect(byKey.get('mega-scolipede')?.ability).toBe('シェルアーマー')
+  })
 })
 
 // ────────────────────────────────────────────────
