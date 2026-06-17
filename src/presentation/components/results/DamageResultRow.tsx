@@ -626,15 +626,17 @@ export function DamageResultRow(props: DamageResultRowProps) {
         {/* 使用後の自ステータス変化ボタン（りゅうせいぐん・フレアソング等: 単一） */}
         {moveRecord?.selfStatDrop && (() => {
           const { stat, stages } = moveRecord.selfStatDrop
+          const effectiveStages = attackerAbility === 'あまのじゃく' ? -stages : stages
           const letter = STAT_LETTER[stat] ?? stat
-          const isBoost = stages > 0
+          const isBoost = effectiveStages > 0
           const sign = isBoost ? '+' : '−'
-          const abs = Math.abs(stages)
+          const abs = Math.abs(effectiveStages)
           const arrow = isBoost ? '↑' : '↓'
           const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
-          const targetRank = currentRank + stages
+          const targetRank = currentRank + effectiveStages
           const clamped = Math.max(-6, Math.min(6, targetRank))
           const willApply = clamped !== currentRank
+          const contraryNote = attackerAbility === 'あまのじゃく' ? '（あまのじゃくで反転）' : ''
           return (
             <button
               key={stat}
@@ -648,7 +650,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
                     : 'border-danger-2 text-danger-2 hover:bg-surface-3'
                   : 'border-edge text-fg-faint cursor-not-allowed'
               }`}
-              title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
+              title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}${contraryNote}（現在: ${currentRank} → ${clamped}）`}
             >
               {arrow}{letter}{sign}{abs}
             </button>
@@ -656,15 +658,17 @@ export function DamageResultRow(props: DamageResultRowProps) {
         })()}
         {/* 使用後の自ステータス変化ボタン（アーマーキャノン等: 複数） */}
         {moveRecord?.selfStatDrops?.map(({ stat, stages }) => {
+          const effectiveStages = attackerAbility === 'あまのじゃく' ? -stages : stages
           const letter = STAT_LETTER[stat] ?? stat
-          const isBoost = stages > 0
+          const isBoost = effectiveStages > 0
           const sign = isBoost ? '+' : '−'
-          const abs = Math.abs(stages)
+          const abs = Math.abs(effectiveStages)
           const arrow = isBoost ? '↑' : '↓'
           const currentRank = attackerRanks[stat as keyof typeof attackerRanks] ?? 0
-          const targetRank = currentRank + stages
+          const targetRank = currentRank + effectiveStages
           const clamped = Math.max(-6, Math.min(6, targetRank))
           const willApply = clamped !== currentRank
+          const contraryNote = attackerAbility === 'あまのじゃく' ? '（あまのじゃくで反転）' : ''
           return (
             <button
               key={stat}
@@ -678,7 +682,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
                     : 'border-danger-2 text-danger-2 hover:bg-surface-3'
                   : 'border-edge text-fg-faint cursor-not-allowed'
               }`}
-              title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}（現在: ${currentRank} → ${clamped}）`}
+              title={`攻撃側の${letter}ランクを${abs}段階${isBoost ? '上げる' : '下げる'}${contraryNote}（現在: ${currentRank} → ${clamped}）`}
             >
               {arrow}{letter}{sign}{abs}
             </button>
