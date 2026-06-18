@@ -31,10 +31,6 @@ export interface ProgressionSnapshot {
   berryCudChew: boolean
   berryHarvestChance: number
   poisonTurns: number
-  attackerDirectDmg: number
-  attackerDirectRec: number
-  defenderDirectDmg: number
-  defenderDirectRec: number
   attackerStartHp: number | null
   defenderStartHp: number | null
 }
@@ -109,10 +105,6 @@ function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
     berryCudChew: p.berryCudChew ?? false,
     berryHarvestChance: p.berryHarvestChance ?? 0,
     poisonTurns: p.poisonTurns,
-    attackerDirectDmg: p.attackerDirectDmg ?? 0,
-    attackerDirectRec: p.attackerDirectRec ?? 0,
-    defenderDirectDmg: p.defenderDirectDmg ?? 0,
-    defenderDirectRec: p.defenderDirectRec ?? 0,
     attackerStartHp: p.attackerStartHp,
     defenderStartHp: p.defenderStartHp,
   }
@@ -153,10 +145,6 @@ export function snapshotLiveState(): SessionSnapshot {
       berryCudChew: prog.berryCudChew,
       berryHarvestChance: prog.berryHarvestChance,
       poisonTurns: prog.poisonTurns,
-      attackerDirectDmg: prog.attackerDirectDmg,
-      attackerDirectRec: prog.attackerDirectRec,
-      defenderDirectDmg: prog.defenderDirectDmg,
-      defenderDirectRec: prog.defenderDirectRec,
       attackerStartHp: prog.attackerStartHp,
       defenderStartHp: prog.defenderStartHp,
     }),

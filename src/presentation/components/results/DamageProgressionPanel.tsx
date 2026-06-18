@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { useProgressionStore, hasSequenceImpact } from '@/presentation/store/progressionStore'
-import type { ProgressionEvent, EventKind } from '@/presentation/store/progressionStore'
+import type { ProgressionEvent, EventKind, ProgressionEventInput } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
@@ -146,10 +146,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const berryCudChew     = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns      = useProgressionStore(s => s.poisonTurns)
-  const attackerDirectDmg = useProgressionStore(s => s.attackerDirectDmg)
-  const attackerDirectRec = useProgressionStore(s => s.attackerDirectRec)
-  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
-  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
   const attackerStartHp  = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp  = useProgressionStore(s => s.defenderStartHp)
 
@@ -165,10 +161,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const setBerryCudChew       = useProgressionStore(s => s.setBerryCudChew)
   const setBerryHarvestChance = useProgressionStore(s => s.setBerryHarvestChance)
   const setPoisonTurns        = useProgressionStore(s => s.setPoisonTurns)
-  const setAttackerDirectDmg  = useProgressionStore(s => s.setAttackerDirectDmg)
-  const setAttackerDirectRec  = useProgressionStore(s => s.setAttackerDirectRec)
-  const setDefenderDirectDmg  = useProgressionStore(s => s.setDefenderDirectDmg)
-  const setDefenderDirectRec  = useProgressionStore(s => s.setDefenderDirectRec)
   const setAttackerStartHp    = useProgressionStore(s => s.setAttackerStartHp)
   const setDefenderStartHp    = useProgressionStore(s => s.setDefenderStartHp)
   const clear                 = useProgressionStore(s => s.clear)
@@ -190,9 +182,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const hasEvents = events.length > 0
   const hasAnything =
     hasEvents ||
-    constDmg > 0 || constRec > 0 || constRecBerry > 0 || poisonTurns > 0 ||
-    attackerDirectDmg > 0 || attackerDirectRec > 0 || defenderDirectDmg > 0 || defenderDirectRec > 0
-  const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp, attackerDirectDmg, attackerDirectRec })
+    constDmg > 0 || constRec > 0 || constRecBerry > 0 || poisonTurns > 0
+  const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp })
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
   const previousEventIdsRef = useRef(events.map(ev => ev.id))
 
@@ -225,8 +216,47 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     } else if (kind === 'rearmBerry') {
       addEventAfter(targetId, { kind: 'rearmBerry' })
     } else if (kind === 'defenderConst' || kind === 'attackerConst' || kind === 'defenderRecover' || kind === 'attackerRecover') {
-      addEventAfter(targetId, { kind, amount: 0 })
+      addEventAfter(targetId, { kind, amount: 0, source: 'manual' })
     }
+  }
+
+  function moveBackgroundEventToTimeline(ev: ProgressionEventInput) {
+    addEventAfter(null, ev)
+  }
+
+  function moveConstDmgToTimeline() {
+    if (constDmg <= 0) return
+    moveBackgroundEventToTimeline({
+      kind: 'defenderConst',
+      amount: constDmg,
+      label: `背景 定数ダメ ${constDmg}`,
+      source: 'background',
+    })
+    setConstDmg(0)
+  }
+
+  function moveConstRecToTimeline() {
+    if (constRec <= 0) return
+    moveBackgroundEventToTimeline({
+      kind: 'defenderRecover',
+      amount: constRec,
+      label: `背景 毎ターン回復 ${constRec}`,
+      source: 'background',
+    })
+    setConstRec(0)
+  }
+
+  function movePoisonToTimeline() {
+    if (poisonPerTurn.length === 0) return
+    for (const [i, amount] of poisonPerTurn.entries()) {
+      moveBackgroundEventToTimeline({
+        kind: 'defenderConst',
+        amount,
+        label: `背景 もうどく ${i + 1}T ${amount}`,
+        source: 'background',
+      })
+    }
+    setPoisonTurns(0)
   }
 
   function addLeechSeed(direction: 'fromAttacker' | 'fromDefender') {
@@ -345,16 +375,9 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         berryCudChew={berryCudChew}
         berryHarvestChance={berryHarvestChance}
         poisonTurns={poisonTurns}
-        attackerDirectDmg={attackerDirectDmg}
-        attackerDirectRec={attackerDirectRec}
-        defenderDirectDmg={defenderDirectDmg}
-        defenderDirectRec={defenderDirectRec}
         poisonPerTurn={poisonPerTurn}
         poisonTotal={poisonTotal}
-        attackerMaxHp={attackerMaxHp}
         defenderMaxHp={defenderMaxHp}
-        attackerName={attackerName}
-        defenderName={defenderName}
         setConstDmg={setConstDmg}
         setConstRec={setConstRec}
         setConstRecBerry={setConstRecBerry}
@@ -362,10 +385,9 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         setBerryCudChew={setBerryCudChew}
         setBerryHarvestChance={setBerryHarvestChance}
         setPoisonTurns={setPoisonTurns}
-        setAttackerDirectDmg={setAttackerDirectDmg}
-        setAttackerDirectRec={setAttackerDirectRec}
-        setDefenderDirectDmg={setDefenderDirectDmg}
-        setDefenderDirectRec={setDefenderDirectRec}
+        moveConstDmgToTimeline={moveConstDmgToTimeline}
+        moveConstRecToTimeline={moveConstRecToTimeline}
+        movePoisonToTimeline={movePoisonToTimeline}
       />
 
       {/* シーケンス出力（被ダメ・痛み分け・開始HP指定がある場合のみ） */}
@@ -700,7 +722,12 @@ function EventRow({
       onRemove={onRemove}
     >
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className={`font-semibold ${meta.color}`}>{meta.text}</span>
+        <span className={`font-semibold ${meta.color}`}>{ev.label ?? meta.text}</span>
+        {ev.source === 'background' && (
+          <span className="rounded border border-accent-border bg-accent-bg px-1 py-0.5 text-[10px] text-accent">
+            背景
+          </span>
+        )}
         <input
           type="number"
           min={0}
@@ -767,16 +794,9 @@ interface BgProps {
   berryCudChew: boolean
   berryHarvestChance: number
   poisonTurns: number
-  attackerDirectDmg: number
-  attackerDirectRec: number
-  defenderDirectDmg: number
-  defenderDirectRec: number
   poisonPerTurn: number[]
   poisonTotal: number
-  attackerMaxHp: number
   defenderMaxHp: number
-  attackerName: string
-  defenderName: string
   setConstDmg: (v: number) => void
   setConstRec: (v: number) => void
   setConstRecBerry: (v: number) => void
@@ -784,144 +804,32 @@ interface BgProps {
   setBerryCudChew: (v: boolean) => void
   setBerryHarvestChance: (v: number) => void
   setPoisonTurns: (n: number) => void
-  setAttackerDirectDmg: (v: number) => void
-  setAttackerDirectRec: (v: number) => void
-  setDefenderDirectDmg: (v: number) => void
-  setDefenderDirectRec: (v: number) => void
-}
-
-interface HpDirectAdjustmentRowProps {
-  sideLabel: string
-  maxHp: number
-  damage: number
-  recovery: number
-  setDamage: (v: number) => void
-  setRecovery: (v: number) => void
-}
-
-function HpDirectAdjustmentRow({
-  sideLabel, maxHp, damage, recovery, setDamage, setRecovery,
-}: HpDirectAdjustmentRowProps) {
-  return (
-    <div className="rounded border border-edge bg-surface-2/60 p-2 space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-fg-muted truncate">{sideLabel}</span>
-        <span className="text-[10px] text-fg-faint font-mono">最大HP {maxHp || '-'}</span>
-      </div>
-
-      <div className="grid gap-1.5 sm:grid-cols-2">
-        <div className="flex items-center gap-1">
-          <span className="w-8 flex-shrink-0 text-[11px] text-warning">ダメ</span>
-          <button
-            type="button"
-            className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
-            onClick={() => setDamage(Math.max(0, damage - 1))}
-          >−</button>
-          <input
-            type="number"
-            min={0}
-            value={damage}
-            onChange={e => setDamage(readNonNegative(e.target.value))}
-            className="input-base w-14 text-center text-xs px-1"
-          />
-          <button
-            type="button"
-            className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
-            onClick={() => setDamage(damage + 1)}
-          >+</button>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="w-8 flex-shrink-0 text-[11px] text-success">回復</span>
-          <button
-            type="button"
-            className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
-            onClick={() => setRecovery(Math.max(0, recovery - 1))}
-          >−</button>
-          <input
-            type="number"
-            min={0}
-            value={recovery}
-            onChange={e => setRecovery(readNonNegative(e.target.value))}
-            className="input-base w-14 text-center text-xs px-1"
-          />
-          <button
-            type="button"
-            className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted"
-            onClick={() => setRecovery(recovery + 1)}
-          >+</button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 flex-wrap">
-        <span className="text-[10px] text-fg-faint">再生回復</span>
-        {RECOVER_FRACTIONS.map(f => {
-          const val = maxHp > 0 ? Math.floor(maxHp * f.num / f.den) : 0
-          return (
-            <button
-              key={f.label}
-              type="button"
-              disabled={maxHp <= 0}
-              onClick={() => setRecovery(recovery + val)}
-              className="text-[10px] px-1 py-0.5 rounded border border-edge text-fg-muted hover:border-success hover:text-success transition-colors disabled:opacity-40 disabled:hover:border-edge disabled:hover:text-fg-muted"
-              title={`${sideLabel}を${f.label}回復 (${val})`}
-            >
-              +{f.label}<span className="ml-0.5 opacity-60">{val}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {(damage > 0 || recovery > 0) && (
-        <div className="grid gap-1 sm:grid-cols-2">
-          {damage > 0 ? (
-            <div>
-              <ConstBar value={damage} maxHp={maxHp} />
-              <span className="text-[10px] text-warning font-mono">{hpPercentText(damage, maxHp)}</span>
-            </div>
-          ) : <span />}
-          {recovery > 0 ? (
-            <div>
-              <ConstBar value={recovery} maxHp={maxHp} isRecovery />
-              <span className="text-[10px] text-success font-mono">{hpPercentText(recovery, maxHp)}</span>
-            </div>
-          ) : <span />}
-        </div>
-      )}
-    </div>
-  )
+  moveConstDmgToTimeline: () => void
+  moveConstRecToTimeline: () => void
+  movePoisonToTimeline: () => void
 }
 
 function BackgroundEffectsSection({
   constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
   poisonTurns,
-  attackerDirectDmg, attackerDirectRec, defenderDirectDmg, defenderDirectRec,
-  poisonPerTurn, poisonTotal, attackerMaxHp, defenderMaxHp, attackerName, defenderName,
+  poisonPerTurn, poisonTotal, defenderMaxHp,
   setConstDmg, setConstRec, setConstRecBerry, setConstRecBerryThresholdPct,
   setBerryCudChew, setBerryHarvestChance, setPoisonTurns,
-  setAttackerDirectDmg, setAttackerDirectRec, setDefenderDirectDmg, setDefenderDirectRec,
+  moveConstDmgToTimeline, moveConstRecToTimeline, movePoisonToTimeline,
 }: BgProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const attackerDirectTotal = attackerDirectDmg + attackerDirectRec
-  const defenderDirectTotal = defenderDirectDmg + defenderDirectRec
   const activeEffectCount =
     (constDmg > 0 ? 1 : 0) +
     (constRec > 0 ? 1 : 0) +
     (constRecBerry > 0 ? 1 : 0) +
-    (poisonTurns > 0 ? 1 : 0) +
-    (attackerDirectTotal > 0 ? 1 : 0) +
-    (defenderDirectTotal > 0 ? 1 : 0)
-  const totalDamage = constDmg + poisonTotal + attackerDirectDmg + defenderDirectDmg
-  const totalRecovery = constRec + constRecBerry + attackerDirectRec + defenderDirectRec
-  const attackerLabel = attackerName || '攻撃側'
-  const defenderLabel = defenderName || '防御側'
+    (poisonTurns > 0 ? 1 : 0)
+  const totalDamage = constDmg + poisonTotal
+  const totalRecovery = constRec + constRecBerry
   const summaryParts = [
-    attackerDirectTotal > 0 ? `攻HP -${attackerDirectDmg}/+${attackerDirectRec}` : null,
-    defenderDirectTotal > 0 ? `防HP -${defenderDirectDmg}/+${defenderDirectRec}` : null,
-    constDmg > 0 ? `定数${constDmg}` : null,
-    constRec > 0 ? `回復${constRec}` : null,
+    constDmg > 0 ? `定数候補${constDmg}` : null,
+    constRec > 0 ? `回復候補${constRec}` : null,
     constRecBerry > 0 ? `きのみ${constRecBerry}` : null,
-    poisonTurns > 0 ? `猛毒${poisonTotal}` : null,
+    poisonTurns > 0 ? `猛毒候補${poisonTotal}` : null,
   ].filter((part): part is string => part !== null)
 
   return (
@@ -934,7 +842,7 @@ function BackgroundEffectsSection({
       >
         <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="text-[10px] text-fg-faint">{isOpen ? '▲' : '▼'}</span>
-          <span className="font-semibold text-fg-muted">背景効果</span>
+          <span className="font-semibold text-fg-muted">背景効果プリセット</span>
           <span className="font-mono text-fg-subtle">{activeEffectCount}件</span>
           {activeEffectCount > 0 ? (
             <>
@@ -950,30 +858,8 @@ function BackgroundEffectsSection({
 
       {isOpen && (
       <div className="space-y-3">
-        {/* HP直接補正 */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-fg-muted">HP直接補正</span>
-            <span className="text-[10px] text-fg-faint">最終補正。順序が必要な場合はイベント追加のHP補正へ</span>
-          </div>
-          <div className="grid gap-2">
-            <HpDirectAdjustmentRow
-              sideLabel={attackerLabel}
-              maxHp={attackerMaxHp}
-              damage={attackerDirectDmg}
-              recovery={attackerDirectRec}
-              setDamage={setAttackerDirectDmg}
-              setRecovery={setAttackerDirectRec}
-            />
-            <HpDirectAdjustmentRow
-              sideLabel={defenderLabel}
-              maxHp={defenderMaxHp}
-              damage={defenderDirectDmg}
-              recovery={defenderDirectRec}
-              setDamage={setDefenderDirectDmg}
-              setRecovery={setDefenderDirectRec}
-            />
-          </div>
+        <div className="rounded border border-accent-border bg-accent-bg/30 px-2 py-1.5 text-[10px] text-fg-muted leading-relaxed">
+          定数ダメージ・毎ターン回復・もうどくは、値を作ってから時系列イベントへ移動します。任意値だけを直接入れる場合は上の「イベント追加 / HP補正」を使います。
         </div>
 
         {/* 定数ダメージ */}
@@ -1018,11 +904,21 @@ function BackgroundEffectsSection({
           })}
         </div>
         {constDmg > 0 && (
-          <div className="pl-[3.75rem]">
-            <ConstBar value={constDmg} maxHp={defenderMaxHp} />
-            <span className="text-xs text-warning font-mono">
-              {hpPercentText(constDmg, defenderMaxHp)}
-            </span>
+          <div className="pl-[3.75rem] space-y-1">
+            <div>
+              <ConstBar value={constDmg} maxHp={defenderMaxHp} />
+              <span className="text-xs text-warning font-mono">
+                {hpPercentText(constDmg, defenderMaxHp)}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={moveConstDmgToTimeline}
+              className="text-[11px] px-1.5 py-0.5 rounded border border-warning text-warning hover:bg-surface-3 transition-colors"
+              title="この定数ダメージを時系列イベント末尾へ移し、プリセット値を0にします"
+            >
+              イベントへ移動
+            </button>
           </div>
         )}
         </div>
@@ -1075,11 +971,21 @@ function BackgroundEffectsSection({
           })}
         </div>
         {constRec > 0 && (
-          <div className="pl-[3.75rem]">
-            <ConstBar value={constRec} maxHp={defenderMaxHp} isRecovery />
-            <span className="text-xs text-success font-mono">
-              {hpPercentText(constRec, defenderMaxHp)}
-            </span>
+          <div className="pl-[3.75rem] space-y-1">
+            <div>
+              <ConstBar value={constRec} maxHp={defenderMaxHp} isRecovery />
+              <span className="text-xs text-success font-mono">
+                {hpPercentText(constRec, defenderMaxHp)}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={moveConstRecToTimeline}
+              className="text-[11px] px-1.5 py-0.5 rounded border border-success text-success hover:bg-surface-3 transition-colors"
+              title="この毎ターン回復を時系列イベント末尾へ移し、プリセット値を0にします"
+            >
+              イベントへ移動
+            </button>
           </div>
         )}
         </div>
@@ -1251,7 +1157,14 @@ function BackgroundEffectsSection({
                   ({hpPercentText(poisonTotal, defenderMaxHp)})
                 </span>
               </span>
-              <span className="text-[10px] text-fg-subtle">→ ダメ進行に自動加算</span>
+              <button
+                type="button"
+                onClick={movePoisonToTimeline}
+                className="text-[11px] px-1.5 py-0.5 rounded border border-warning text-warning hover:bg-surface-3 transition-colors"
+                title="もうどく各ターンを時系列イベント末尾へ移し、もうどく候補を0にします"
+              >
+                イベントへ移動
+              </button>
             </div>
           </div>
         )}

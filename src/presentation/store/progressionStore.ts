@@ -52,11 +52,11 @@ export type ProgressionEvent =
   | { kind: 'painSplit'; id: string; attackerHp: number }
   /** 被ダメ（防御側の技を攻守入替で自動計算） */
   | { kind: 'incoming'; id: string; moveName: string | null; crit: boolean }
-  /** 定数イベント */
-  | { kind: 'defenderConst'; id: string; amount: number }
-  | { kind: 'attackerConst'; id: string; amount: number }
-  | { kind: 'defenderRecover'; id: string; amount: number }
-  | { kind: 'attackerRecover'; id: string; amount: number }
+  /** 定数イベント。label/source は背景プリセット由来の表示用メタ情報 */
+  | { kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
+  | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
+  | { kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
+  | { kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
   /** きのみ再装填（リサイクル等）。直後の与ダメで再びきのみが発動できる */
   | { kind: 'rearmBerry'; id: string }
   /**
@@ -75,9 +75,9 @@ export type ProgressionEventInput = DistributiveOmit<ProgressionEvent, 'id'>
 interface ProgressionStore {
   /** イベント時系列。順序がそのままシミュレーション順 */
   events: ProgressionEvent[]
-  /** 背景効果オフセット（イベントとは独立） */
+  /** 背景効果プリセット値。順序付き計算ではイベントへ移して使う */
   constDmg: number
-  /** 定数回復: 各与ダメ攻撃の直後に毎回適用（たべのこし/黒ヘド等） */
+  /** 定数回復プリセット（たべのこし/黒ヘド等） */
   constRec: number
   /** オボン/混乱実回復: 防御側HPがしきい値以下になった時点で1回限り適用 */
   constRecBerry: number
@@ -88,14 +88,6 @@ interface ProgressionStore {
   /** しゅうかく/ものひろい: 各ターン終了時にこの確率で再装填（0=なし, 0.5, 1=晴れ/ものひろい） */
   berryHarvestChance: number
   poisonTurns: number
-  /** 背景効果: 攻撃側への1回限りの直接ダメージ */
-  attackerDirectDmg: number
-  /** 背景効果: 攻撃側への1回限りの直接回復 */
-  attackerDirectRec: number
-  /** 背景効果: 防御側への1回限りの直接ダメージ */
-  defenderDirectDmg: number
-  /** 背景効果: 防御側への1回限りの直接回復 */
-  defenderDirectRec: number
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
   defenderStartHp: number | null
@@ -120,10 +112,6 @@ interface ProgressionStore {
   setBerryCudChew: (v: boolean) => void
   setBerryHarvestChance: (v: number) => void
   setPoisonTurns: (n: number) => void
-  setAttackerDirectDmg: (v: number) => void
-  setAttackerDirectRec: (v: number) => void
-  setDefenderDirectDmg: (v: number) => void
-  setDefenderDirectRec: (v: number) => void
   setAttackerStartHp: (v: number | null) => void
   setDefenderStartHp: (v: number | null) => void
 
@@ -144,10 +132,6 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   berryCudChew: false,
   berryHarvestChance: 0,
   poisonTurns: 0,
-  attackerDirectDmg: 0,
-  attackerDirectRec: 0,
-  defenderDirectDmg: 0,
-  defenderDirectRec: 0,
   attackerStartHp: null,
   defenderStartHp: null,
 
@@ -212,10 +196,6 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
   setBerryCudChew: (v) => set({ berryCudChew: v }),
   setBerryHarvestChance: (v) => set({ berryHarvestChance: Math.max(0, Math.min(1, v)) }),
   setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
-  setAttackerDirectDmg: (v) => set({ attackerDirectDmg: Math.max(0, Math.floor(v)) }),
-  setAttackerDirectRec: (v) => set({ attackerDirectRec: Math.max(0, Math.floor(v)) }),
-  setDefenderDirectDmg: (v) => set({ defenderDirectDmg: Math.max(0, Math.floor(v)) }),
-  setDefenderDirectRec: (v) => set({ defenderDirectRec: Math.max(0, Math.floor(v)) }),
   setAttackerStartHp: (v) => set({ attackerStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
   setDefenderStartHp: (v) => set({ defenderStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
 
@@ -223,20 +203,13 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
     events: [],
     constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50,
     berryCudChew: false, berryHarvestChance: 0, poisonTurns: 0,
-    attackerDirectDmg: 0, attackerDirectRec: 0, defenderDirectDmg: 0, defenderDirectRec: 0,
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))
 
 /** 攻撃側に影響するイベントがあるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用） */
-export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attackerStartHp'> & {
-  attackerDirectDmg?: number
-  attackerDirectRec?: number
-  defenderDirectDmg?: number
-  defenderDirectRec?: number
-}): boolean {
+export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attackerStartHp'>): boolean {
   if (s.attackerStartHp !== null) return true
-  if ((s.attackerDirectDmg ?? 0) > 0 || (s.attackerDirectRec ?? 0) > 0) return true
   return s.events.some(e =>
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
     e.kind === 'attackerRecover' || e.kind === 'defenderConst' ||
