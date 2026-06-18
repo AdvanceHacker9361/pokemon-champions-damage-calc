@@ -189,3 +189,48 @@ GitHub Actions:
 
 - 今後、同じ特性名を持つ複数メガ個体を修正する場合は、特性文字列の単純置換ではなく `key` 単位で確認する。
 - 今回は本番データの誤りなので、バージョン更新なしで修正デプロイする。
+
+## 2026-06-18: 攻守シミュレーションHP補正順序修正 / エレクトロビーム追加
+
+### 依頼内容
+
+- 攻守シミュレーションで、攻撃技の打ち合いの間に定数回復・定数ダメージを入れると、定数回復が無条件で最末尾に送られる。
+- 定数回復・定数ダメージを操作順通りに並べてシミュレーションできるようにする。
+- 未実装だった技 `エレクトロビーム` を追加する。
+- ここまでの修正を本番デプロイ対象に含める。
+
+### 実施した修正
+
+- `src/presentation/components/results/DamageProgressionPanel.tsx`
+  - `イベント追加` に `HP補正` グループを追加し、防御側/攻撃側それぞれのダメージ・回復を時系列イベントとして挿入できるようにした。
+  - 攻撃側の技行には `+防ダメ` / `+防回復`、防御側から受ける技行には `+攻ダメ` / `+攻回復` のクイック挿入ボタンを追加した。
+  - 背景効果側の `HP直接補正` は最終補正として残し、順序が必要な場合はイベント側を使う案内に更新した。
+- `src/presentation/store/progressionStore.ts`
+  - HP補正イベントを任意位置へ追加できるアクションを追加。
+  - 防御側HP補正イベントも時系列結果へ影響するものとして判定するようにした。
+- `tests/presentation/progressionStore.test.ts`
+  - HP補正イベントが指定位置へ挿入されること、防御側HP補正が時系列影響ありとして扱われることを固定テスト化。
+- `src/data/json/moves.json`
+  - `エレクトロビーム` / `Electro Shot` を追加。
+  - タイプ `でんき`、分類 `特殊`、威力 `130`、命中 `100`、PP `12` とした。
+  - 使用後C+1ボタンを出すため `selfStatDrop: { stat: "spa", stages: 1 }` を設定。
+- `src/data/i18n/ja.json`
+  - `electro shot` → `エレクトロビーム` の和訳を追加。
+- `tests/data/data-integrity.test.ts`
+  - `エレクトロビーム` のタイプ・分類・威力・命中・PP・C+1を固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts tests/presentation/progressionStore.test.ts tests/domain/BattleSequenceCalc.test.ts`
+  - 68 tests passed。
+  - sandbox 内では esbuild の `spawn EPERM` が出たため、通常権限で再実行。
+- `npm run build`
+  - sandbox 内では esbuild の `spawn EPERM` が出たため、通常権限で再実行。
+
+### 判断メモ
+
+- `エレクトロビーム` の溜めターン・雨時即発動は単発ダメージ倍率へ直接影響しないため、現状は通常の攻撃技として登録し、使用後のC+1を既存のランク変化ボタンで表現する。
+- 攻守シミュレーションで順序が重要なHP補正はイベント時系列へ入れ、背景効果側の `HP直接補正` は従来通り最終補正として扱う。
+- 今回はバグ修正と技データ追加のため、バージョン更新なしで修正デプロイする。

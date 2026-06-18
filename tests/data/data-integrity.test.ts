@@ -273,6 +273,20 @@ describe('moves.json integrity', () => {
       selfStatDrop: { stat: 'spa', stages: -2 },
     })
   })
+
+  it('エレクトロビーム should be available as Electro Shot with SpA boost', () => {
+    const move = moves.find(m => m.name === 'エレクトロビーム')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Electro Shot',
+      type: 'でんき',
+      category: '特殊',
+      power: 130,
+      accuracy: 100,
+      pp: 12,
+      selfStatDrop: { stat: 'spa', stages: 1 },
+    })
+  })
 })
 
 // ────────────────────────────────────────────────

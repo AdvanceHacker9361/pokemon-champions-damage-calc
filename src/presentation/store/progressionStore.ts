@@ -239,6 +239,7 @@ export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attacker
   if ((s.attackerDirectDmg ?? 0) > 0 || (s.attackerDirectRec ?? 0) > 0) return true
   return s.events.some(e =>
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
-    e.kind === 'attackerRecover' || e.kind === 'painSplit'
+    e.kind === 'attackerRecover' || e.kind === 'defenderConst' ||
+    e.kind === 'defenderRecover' || e.kind === 'painSplit'
   )
 }
