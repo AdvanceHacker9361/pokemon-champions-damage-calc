@@ -54,6 +54,16 @@ const ADD_EVENT_GROUPS: {
     ],
   },
   {
+    label: 'HP補正',
+    hint: '順序を固定する定数ダメージ・回復',
+    actions: [
+      { type: 'event', kind: 'defenderConst', label: '＋防御側ダメ', tone: 'warning' },
+      { type: 'event', kind: 'defenderRecover', label: '＋防御側回復', tone: 'success' },
+      { type: 'event', kind: 'attackerConst', label: '＋攻撃側ダメ', tone: 'warning' },
+      { type: 'event', kind: 'attackerRecover', label: '＋攻撃側回復', tone: 'success' },
+    ],
+  },
+  {
     label: '継続効果',
     hint: '時系列に1ティックずつ挿入',
     actions: [
@@ -282,6 +292,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               onMoveUp={() => moveEvent(ev.id, -1)}
               onMoveDown={() => moveEvent(ev.id, 1)}
               onAddPainSplit={() => addAfter('painSplit', ev.id)}
+              onAddAfter={kind => addAfter(kind, ev.id)}
               onUpdate={patch => updateEvent(ev.id, patch)}
             />
           ))}
@@ -471,6 +482,7 @@ interface EventRowProps {
   onMoveUp: () => void
   onMoveDown: () => void
   onAddPainSplit: () => void
+  onAddAfter: (kind: EventKind) => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
 }
 
@@ -519,7 +531,7 @@ function EventRow({
   ev, idx, total,
   isHighlighted,
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
-  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onUpdate,
+  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddAfter, onUpdate,
 }: EventRowProps) {
   if (ev.kind === 'attack') {
     const subMin = ev.minDmg * ev.usages
@@ -552,6 +564,18 @@ function EventRow({
             className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
             title="このエントリの直後に痛み分けを挿入"
           >+痛み分け</button>
+          <button
+            type="button"
+            onClick={() => onAddAfter('defenderConst')}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-warning hover:text-warning transition-colors"
+            title="このエントリの直後に防御側への定数ダメージを挿入"
+          >+防ダメ</button>
+          <button
+            type="button"
+            onClick={() => onAddAfter('defenderRecover')}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors"
+            title="このエントリの直後に防御側の定数回復を挿入"
+          >+防回復</button>
         </div>
       </TimelineRow>
     )
@@ -613,6 +637,18 @@ function EventRow({
             />
             <span className="text-[10px] text-fg-muted">急所</span>
           </label>
+          <button
+            type="button"
+            onClick={() => onAddAfter('attackerConst')}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-warning hover:text-warning transition-colors"
+            title="このエントリの直後に攻撃側への定数ダメージを挿入"
+          >+攻ダメ</button>
+          <button
+            type="button"
+            onClick={() => onAddAfter('attackerRecover')}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors"
+            title="このエントリの直後に攻撃側の定数回復を挿入"
+          >+攻回復</button>
         </div>
       </TimelineRow>
     )
@@ -918,7 +954,7 @@ function BackgroundEffectsSection({
         <div className="space-y-2">
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-fg-muted">HP直接補正</span>
-            <span className="text-[10px] text-fg-faint">順序を問わない1回分のダメージ・回復</span>
+            <span className="text-[10px] text-fg-faint">最終補正。順序が必要な場合はイベント追加のHP補正へ</span>
           </div>
           <div className="grid gap-2">
             <HpDirectAdjustmentRow
