@@ -103,15 +103,11 @@ function expandAttack(
 
 export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const events            = useProgressionStore(s => s.events)
-  const constDmg          = useProgressionStore(s => s.constDmg)
-  const constRec          = useProgressionStore(s => s.constRec)
   const constRecBerry     = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const berryCudChew      = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns       = useProgressionStore(s => s.poisonTurns)
-  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
-  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
   // 宿り木: 防御側→攻撃側 ティックで「攻撃側最大HPの1/8」を防御側回復として使用
   const attackerBaseHp    = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp      = useAttackerStore(s => s.sp.hp)
@@ -121,15 +117,13 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
     )
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
-    // 定数ダメ・もうどくは累計で末尾適用（砂/毒/火傷の合計）。
-    // 定数回復（たべのこし等）は各与ダメ攻撃の直後に毎回適用。
+    // 定数ダメ・毎ターン回復・もうどくは背景プリセットから時系列イベントへ移して扱う。
     // オボン回復は HP≤50% で1回限り自動発動（runBattleSequence の defenderBerry オプションで）。
-    const bgDamageTotal = constDmg + poisonTotal
-    const totalConst = bgDamageTotal + defenderDirectDmg - constRec - constRecBerry - defenderDirectRec
+    const totalConst = 0
 
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
-    const hasAnything = events.length > 0 || totalConst !== 0
+    const hasAnything = events.length > 0 || totalConst !== 0 || constRecBerry > 0
 
     // 最初の attack イベントがマルチスケイル発動中なら、2発目以降は素ダメ
     const firstAttack = attackEvents[0]
@@ -153,10 +147,6 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           const { normal, crit } = expandAttack(ev, isFirstOverall, firstHadMultiscale)
           normalEvents.push(...normal)
           critEvents.push(...crit)
-          // 攻撃直後に定数回復（たべのこし等の per-turn 回復）を適用
-          if (constRec > 0) {
-            pushBoth({ kind: 'defenderRecover', amount: constRec })
-          }
           break
         }
         case 'painSplit': {
@@ -197,21 +187,6 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         case 'attackerRecover':
           break
       }
-    }
-
-    // 背景の累計ダメ（砂・もうどく・固定の定数ダメ）を末尾で適用
-    if (bgDamageTotal > 0) {
-      pushBoth({ kind: 'defenderConst', amount: bgDamageTotal })
-    }
-    if (defenderDirectDmg > 0) {
-      pushBoth({ kind: 'defenderConst', amount: defenderDirectDmg })
-    }
-    if (defenderDirectRec > 0) {
-      pushBoth({ kind: 'defenderRecover', amount: defenderDirectRec })
-    }
-    // 攻撃が無いときは定数回復を末尾でも適用（取りこぼし防止）
-    if (attackEvents.length === 0 && constRec > 0) {
-      pushBoth({ kind: 'defenderRecover', amount: constRec })
     }
 
     // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう=2回・しゅうかく=再装填対応）
@@ -267,8 +242,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       distribution, accumKoResult,
     }
   }, [
-    events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
-    defenderDirectDmg, defenderDirectRec,
+    events, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
     defenderMaxHp, attackerBaseHp, attackerSpHp,
   ])
 }

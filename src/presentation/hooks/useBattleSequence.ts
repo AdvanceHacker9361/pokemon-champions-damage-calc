@@ -60,17 +60,10 @@ export function useBattleSequence(): BattleSequenceComputed {
   const defender = useDefenderStore()
   const field = useFieldStore()
   const events = useProgressionStore(s => s.events)
-  const constDmg = useProgressionStore(s => s.constDmg)
-  const constRec = useProgressionStore(s => s.constRec)
   const constRecBerry = useProgressionStore(s => s.constRecBerry)
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const berryCudChew = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
-  const poisonTurns = useProgressionStore(s => s.poisonTurns)
-  const attackerDirectDmg = useProgressionStore(s => s.attackerDirectDmg)
-  const attackerDirectRec = useProgressionStore(s => s.attackerDirectRec)
-  const defenderDirectDmg = useProgressionStore(s => s.defenderDirectDmg)
-  const defenderDirectRec = useProgressionStore(s => s.defenderDirectRec)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp = useProgressionStore(s => s.defenderStartHp)
 
@@ -80,7 +73,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     const defenderMaxHp = defender.baseStats.hp > 0
       ? calculateHP(defender.baseStats.hp, defender.sp.hp) : 0
 
-    const showSequence = hasSequenceImpact({ events, attackerStartHp, attackerDirectDmg, attackerDirectRec })
+    const showSequence = hasSequenceImpact({ events, attackerStartHp })
 
     if (!showSequence || !attacker.pokemonId || !defender.pokemonId) {
       return { showSequence: false, attackerMaxHp, defenderMaxHp, resolved: [], result: null }
@@ -122,13 +115,6 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
-    // 定数ダメ・もうどくは末尾で累計適用、定数回復はオボン相当の1回限り条件回復として扱う
-    const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
-      Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
-    )
-    const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
-    const bgDamageTotal = constDmg + poisonTotal
-
     const seqEvents: SeqEvent[] = []
     const labels: string[] = []
     const resolved: ResolvedEvent[] = []
@@ -167,10 +153,6 @@ export function useBattleSequence(): BattleSequenceComputed {
               pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate }, seqLabel)
             }
           }
-          // 攻撃直後に定数回復（たべのこし等の per-turn 回復）を適用
-          if (constRec > 0) {
-            pushSeq({ kind: 'defenderRecover', amount: constRec }, `定数回復 ${constRec}`)
-          }
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${usageTag}` })
           break
@@ -199,25 +181,25 @@ export function useBattleSequence(): BattleSequenceComputed {
           break
         }
         case 'defenderConst': {
-          const label = `防御側ダメ ${ev.amount}`
+          const label = ev.label ?? `防御側ダメ ${ev.amount}`
           pushSeq({ kind: 'defenderConst', amount: ev.amount }, label)
           resolved.push({ event: ev, label })
           break
         }
         case 'attackerConst': {
-          const label = `攻撃側ダメ ${ev.amount}`
+          const label = ev.label ?? `攻撃側ダメ ${ev.amount}`
           pushSeq({ kind: 'attackerConst', amount: ev.amount }, label)
           resolved.push({ event: ev, label })
           break
         }
         case 'defenderRecover': {
-          const label = `防御側回復 ${ev.amount}`
+          const label = ev.label ?? `防御側回復 ${ev.amount}`
           pushSeq({ kind: 'defenderRecover', amount: ev.amount }, label)
           resolved.push({ event: ev, label })
           break
         }
         case 'attackerRecover': {
-          const label = `攻撃側回復 ${ev.amount}`
+          const label = ev.label ?? `攻撃側回復 ${ev.amount}`
           pushSeq({ kind: 'attackerRecover', amount: ev.amount }, label)
           resolved.push({ event: ev, label })
           break
@@ -239,23 +221,6 @@ export function useBattleSequence(): BattleSequenceComputed {
           break
         }
       }
-    }
-
-    // 背景の累計ダメ（砂・もうどく・固定の定数ダメ）を末尾で適用
-    if (bgDamageTotal > 0) {
-      pushSeq({ kind: 'defenderConst', amount: bgDamageTotal }, `背景ダメ ${bgDamageTotal}`)
-    }
-    if (defenderDirectDmg > 0) {
-      pushSeq({ kind: 'defenderConst', amount: defenderDirectDmg }, `HP直接補正 防御側ダメ ${defenderDirectDmg}`)
-    }
-    if (defenderDirectRec > 0) {
-      pushSeq({ kind: 'defenderRecover', amount: defenderDirectRec }, `HP直接補正 防御側回復 ${defenderDirectRec}`)
-    }
-    if (attackerDirectDmg > 0) {
-      pushSeq({ kind: 'attackerConst', amount: attackerDirectDmg }, `HP直接補正 攻撃側ダメ ${attackerDirectDmg}`)
-    }
-    if (attackerDirectRec > 0) {
-      pushSeq({ kind: 'attackerRecover', amount: attackerDirectRec }, `HP直接補正 攻撃側回復 ${attackerDirectRec}`)
     }
 
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
@@ -281,8 +246,7 @@ export function useBattleSequence(): BattleSequenceComputed {
 
     return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result }
   }, [
-    events, constDmg, constRec, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
-    attackerDirectDmg, attackerDirectRec, defenderDirectDmg, defenderDirectRec,
+    events, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
     attackerStartHp, defenderStartHp,
     attacker, defender, field,
   ])
