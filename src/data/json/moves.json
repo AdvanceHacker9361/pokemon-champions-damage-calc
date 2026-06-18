@@ -1454,6 +1454,31 @@
     "multiHit": null
   },
   {
+    "name": "エレクトロビーム",
+    "nameEn": "Electro Shot",
+    "type": "でんき",
+    "category": "特殊",
+    "power": 130,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": null,
+    "selfStatDrop": {
+      "stat": "spa",
+      "stages": 1
+    }
+  },
+  {
     "name": "えんまく",
     "nameEn": "Smokescreen",
     "type": "ノーマル",
