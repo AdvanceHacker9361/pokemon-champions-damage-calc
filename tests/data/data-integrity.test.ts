@@ -215,6 +215,18 @@ describe('moves.json integrity', () => {
     expect(errors, errors.slice(0, 5).join('\n')).toHaveLength(0)
   })
 
+  it('recoil moves should have both recoil flag and recoil rate', () => {
+    const errors: string[] = []
+    for (const m of moves) {
+      const hasFlag = m.flags.recoil === true
+      const hasRate = typeof m.recoil === 'number' && m.recoil > 0
+      if (hasFlag !== hasRate) {
+        errors.push(`${m.name}: flags.recoil=${String(m.flags.recoil)} recoil=${String(m.recoil)}`)
+      }
+    }
+    expect(errors, errors.join('\n')).toHaveLength(0)
+  })
+
   it('damaging moves should have power > 0 or be special (power=null for variable)', () => {
     const errors: string[] = []
     for (const m of moves) {
@@ -293,6 +305,32 @@ describe('moves.json integrity', () => {
       pp: 12,
       selfStatDrop: { stat: 'spa', stages: 1 },
     })
+  })
+
+  it('反動技 should expose proportional recoil rates for battle progression', () => {
+    const expected: Record<string, number> = {
+      ウェーブタックル: 1 / 3,
+      ウッドハンマー: 1 / 3,
+      すてみタックル: 1 / 3,
+      とっしん: 1 / 4,
+      はめつのひかり: 1 / 2,
+      フレアドライブ: 1 / 3,
+      ブレイブバード: 1 / 3,
+      ボルテッカー: 1 / 3,
+      もろはのずつき: 1 / 2,
+      ワイルドボルト: 1 / 3,
+    }
+
+    for (const [name, rate] of Object.entries(expected)) {
+      const move = moves.find(m => m.name === name)
+      expect(move, `${name} should exist`).toBeDefined()
+      expect(move?.flags.recoil, `${name} should have recoil flag`).toBe(true)
+      expect(move?.recoil, `${name} recoil rate`).toBeCloseTo(rate, 8)
+    }
+
+    const steelBeam = moves.find(m => m.name === 'てっていこうせん')
+    expect(steelBeam?.flags.recoil).toBeUndefined()
+    expect(steelBeam?.recoil).toBeUndefined()
   })
 })
 

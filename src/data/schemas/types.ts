@@ -56,6 +56,8 @@ export interface MoveRecord {
   critChance?: number
   /** 吸収技の回復率（与ダメに対する割合。0.5 = 半分回復、ドレインキッス = 0.75） */
   drain?: number
+  /** 反動技の自傷率（実ダメに対する割合。1/3, 1/2, 1/4 など） */
+  recoil?: number
 }
 
 export interface AbilityRecord {

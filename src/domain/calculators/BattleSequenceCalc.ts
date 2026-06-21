@@ -21,12 +21,14 @@
 export type DmgDist = number[] | Map<number, number>
 
 export type SeqEvent =
-  /** 防御側へのダメージ（攻撃側の技）。drain 指定時は与ダメに応じて攻撃側が回復 */
-  | { kind: 'attack'; dmg: DmgDist; drain?: number }
-  /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain 指定時は防御側が回復 */
-  | { kind: 'incoming'; dmg: DmgDist; drain?: number }
+  /** 防御側へのダメージ（攻撃側の技）。drain/recoil 指定時は実ダメに応じて攻撃側HPを増減 */
+  | { kind: 'attack'; dmg: DmgDist; drain?: number; recoil?: number }
+  /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain/recoil 指定時は実ダメに応じて防御側HPを増減 */
+  | { kind: 'incoming'; dmg: DmgDist; drain?: number; recoil?: number }
   /** ダメージを伴わない補助技・積み技ターン。HPは変えず、ターン経過だけを記録する */
   | { kind: 'setupTurn'; side: 'attacker' | 'defender' }
+  /** メガシンカのタイミング。HPは変えず、表示ステップだけを記録する */
+  | { kind: 'megaEvolve'; side: 'attacker' | 'defender' }
   /** 痛み分け: 両者HPを floor((aHP + dHP) / 2) に均す。
    *  attackerHp 指定時は防御側のみを floor((attackerHp + dHP) / 2) に変換し
    *  攻撃側HPは変えない（総合累積=攻撃側HP固定の特殊ケース用） */
@@ -186,14 +188,21 @@ export function runBattleSequence(
             const nd0 = d - r
             // 吸収: 実際に与えたダメージ（防御側残HPでクランプ）に応じて攻撃側が回復
             let na = a
+            const actual = Math.min(r, d)
             if (ev.drain && ev.drain > 0) {
-              const actual = Math.min(r, d)
               if (actual > 0) {
                 na = clamp(a + Math.max(1, Math.floor(actual * ev.drain)), 0, attackerMaxHp)
               }
             }
+            if (ev.recoil && ev.recoil > 0 && actual > 0) {
+              na -= Math.max(1, Math.round(actual * ev.recoil))
+            }
             if (nd0 <= 0) koProb += p * rp
             else {
+              if (na <= 0) {
+                faintProb += p * rp
+                continue
+              }
               const t = triggerBerry(nd0, consumed, cud)
               addLive(na, t.d, t.bstate, p * rp)
             }
@@ -205,18 +214,26 @@ export function runBattleSequence(
             const na = a - r
             // 吸収: 相手（防御側）が被ダメに応じて回復（HP上昇なのできのみは発動しない）
             let nd = d
+            const actual = Math.min(r, a)
             if (ev.drain && ev.drain > 0) {
-              const actual = Math.min(r, a)
               if (actual > 0) {
                 nd = clamp(d + Math.max(1, Math.floor(actual * ev.drain)), 0, defenderMaxHp)
               }
             }
+            if (ev.recoil && ev.recoil > 0 && actual > 0) {
+              nd -= Math.max(1, Math.round(actual * ev.recoil))
+            }
             if (na <= 0) faintProb += p * rp
+            else if (nd <= 0) koProb += p * rp
             else addLive(na, nd, bstate, p * rp)
           }
           break
         }
         case 'setupTurn': {
+          addLive(a, d, bstate, p)
+          break
+        }
+        case 'megaEvolve': {
           addLive(a, d, bstate, p)
           break
         }
