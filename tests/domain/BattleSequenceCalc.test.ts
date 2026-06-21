@@ -66,6 +66,30 @@ describe('BattleSequenceCalc', () => {
     })
   })
 
+  describe('メガシンカイベント', () => {
+    it('HPを変えずに1ステップとして記録される', () => {
+      const r = runBattleSequence([{ kind: 'megaEvolve', side: 'attacker' }], 150, 100)
+      const step = r.steps[0]
+
+      expect(step.attackerHpDist.get(150)).toBeCloseTo(1, 6)
+      expect(step.defenderHpDist.get(100)).toBeCloseTo(1, 6)
+    })
+
+    it('メガシンカだけではターン末のはんすう再回復を進めない', () => {
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [60] },
+        { kind: 'megaEvolve', side: 'defender' },
+      ]
+
+      const r = runBattleSequence(events, 1, 100, {
+        defenderBerry: { threshold: 50, amount: 30, cudChew: true },
+      })
+      const dist = extractDefenderDamageDistribution(r, 100)
+
+      expect(dist.get(30)).toBeCloseTo(1, 6)
+    })
+  })
+
   describe('痛み分け', () => {
     it('攻撃側HP満タン > 防御側残HP のとき防御側が回復する', () => {
       // 防御側200, 攻撃80確定 → 残120
@@ -388,6 +412,39 @@ describe('BattleSequenceCalc', () => {
       ]
       const r2 = runBattleSequence(noDrain, 200, 200)
       expect(r2.attackerSurviveProb).toBeCloseTo(0, 6)
+    })
+  })
+
+  describe('反動技（recoil）', () => {
+    it('与えた実ダメージに応じて攻撃側が反動ダメージを受ける', () => {
+      // 攻撃側100、防御側200に90ダメ、1/3反動 = round(30) → 攻撃側70
+      const r = runBattleSequence([{ kind: 'attack', dmg: [90], recoil: 1 / 3 }], 100, 200)
+      const last = r.steps[0]
+
+      expect(last.attackerHpDist.get(70)).toBeCloseTo(1, 6)
+      expect(last.defenderHpDist.get(110)).toBeCloseTo(1, 6)
+    })
+
+    it('攻撃側が反動で瀕死になったら後続攻撃は実行されない', () => {
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [90], recoil: 1 / 3 },
+        { kind: 'attack', dmg: [200] },
+      ]
+
+      const r = runBattleSequence(events, 20, 200)
+
+      expect(r.attackerFaintProb).toBeCloseTo(1, 6)
+      expect(r.defenderKoProb).toBeCloseTo(0, 6)
+      expect(r.bothAliveProb).toBeCloseTo(0, 6)
+    })
+
+    it('被ダメ側の反動技では防御側が反動ダメージを受ける', () => {
+      // 防御側が反動技で攻撃側へ90ダメ、1/3反動 = 30 → 防御側70
+      const r = runBattleSequence([{ kind: 'incoming', dmg: [90], recoil: 1 / 3 }], 200, 100)
+      const last = r.steps[0]
+
+      expect(last.attackerHpDist.get(110)).toBeCloseTo(1, 6)
+      expect(last.defenderHpDist.get(70)).toBeCloseTo(1, 6)
     })
   })
 

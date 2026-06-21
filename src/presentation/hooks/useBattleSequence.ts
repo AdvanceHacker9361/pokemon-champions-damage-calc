@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
+import { PokemonRepository } from '@/data/repositories/PokemonRepository'
 import {
   useProgressionStore,
   hasSequenceImpact,
@@ -17,6 +18,8 @@ import {
 import {
   calcVariableHitsSingleUsageDist,
 } from '@/domain/calculators/KoProbabilityCalc'
+import type { MoveRecord } from '@/data/schemas/types'
+import type { BaseStats, TypeName } from '@/domain/models/Pokemon'
 
 export interface ResolvedEvent {
   event: ProgressionEvent
@@ -55,6 +58,46 @@ function toBattleState(s: PokemonStore): PokemonBattleState {
   }
 }
 
+const RECOIL_PREVENT_ABILITIES = new Set(['いしあたま', 'マジックガード'])
+const DEFAULT_ACTIVE_ABILITIES = new Set(['マルチスケイル', 'ファントムガード', 'ばけのかわ'])
+
+function defaultAbilityActivated(ability: string): boolean {
+  return DEFAULT_ACTIVE_ABILITIES.has(ability)
+}
+
+function recoilRateForMove(move: MoveRecord | undefined, attackerAbility: string | null): number | undefined {
+  if (!move || !move.recoil || move.recoil <= 0) return undefined
+  if (attackerAbility && RECOIL_PREVENT_ABILITIES.has(attackerAbility)) return undefined
+  return move.recoil
+}
+
+function toBaseBattleState(s: PokemonStore): PokemonBattleState {
+  const base = s.pokemonId != null ? PokemonRepository.findById(s.pokemonId) : undefined
+  if (!base) return toBattleState(s)
+  return {
+    ...toBattleState(s),
+    baseStats: base.baseStats as BaseStats,
+    types: base.types as TypeName[],
+    abilityName: s.abilityName,
+    weight: base.weight,
+    abilityActivated: defaultAbilityActivated(s.abilityName),
+  }
+}
+
+function toMegaBattleState(s: PokemonStore, megaKey: string): PokemonBattleState {
+  const mega = PokemonRepository.getMegaByKey(megaKey)
+  const base = s.pokemonId != null ? PokemonRepository.findById(s.pokemonId) : undefined
+  if (!mega) return toBattleState(s)
+  return {
+    ...toBattleState(s),
+    baseStats: mega.baseStats as BaseStats,
+    types: mega.types as TypeName[],
+    abilityName: mega.ability,
+    weight: mega.weight !== undefined ? mega.weight : (base?.weight ?? s.weight),
+    abilityActivated: defaultAbilityActivated(mega.ability),
+  }
+}
+
 export function useBattleSequence(): BattleSequenceComputed {
   const attacker = useAttackerStore()
   const defender = useDefenderStore()
@@ -89,6 +132,11 @@ export function useBattleSequence(): BattleSequenceComputed {
       isGravity: field.isGravity,
     }
 
+    const attackerHasMegaEvent = events.some(ev => ev.kind === 'megaEvolve' && ev.side === 'attacker')
+    const defenderHasMegaEvent = events.some(ev => ev.kind === 'megaEvolve' && ev.side === 'defender')
+    let seqAttacker = attackerHasMegaEvent ? toBaseBattleState(attacker) : toBattleState(attacker)
+    let seqDefender = defenderHasMegaEvent ? toBaseBattleState(defender) : toBattleState(defender)
+
     // 防御側の技（攻守入替）で攻撃側への被ダメロールを算出
     function incomingRolls(moveName: string, crit: boolean): number[] | null {
       const move = MoveRepository.findByName(moveName)
@@ -103,8 +151,8 @@ export function useBattleSequence(): BattleSequenceComputed {
 
       try {
         const res = executeDamageCalculation({
-          attacker: toBattleState(defender),
-          defender: toBattleState(attacker),
+          attacker: seqDefender,
+          defender: seqAttacker,
           move: m,
           field: battleField,
           isCritical: crit || m.alwaysCrit === true,
@@ -133,10 +181,11 @@ export function useBattleSequence(): BattleSequenceComputed {
           if (attackSeen === 0) firstHadMultiscale = ev.hadMultiscale
           attackSeen++
           // 吸収率: 加算時に保存した技名から取得（label はポケモン名込みのため不可）
-          const drainRate = ev.moveName
-            ? MoveRepository.findByName(ev.moveName)?.drain
-            : undefined
+          const move = ev.moveName ? MoveRepository.findByName(ev.moveName) : undefined
+          const drainRate = move?.drain
+          const recoilRate = recoilRateForMove(move, seqAttacker.abilityName)
           const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
+          const recoilTag = recoilRate ? `（反動${Math.round(recoilRate * 100)}%）` : ''
           const critTag = ev.isForcedCrit ? '（急所）' : ''
           // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）
           for (let u = 0; u < ev.usages; u++) {
@@ -145,16 +194,16 @@ export function useBattleSequence(): BattleSequenceComputed {
             const baseRolls = useRaw ? ev.rawRolls : ev.rolls
 
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
-            const seqLabel = `与ダメ ${ev.label}${critTag}${drainTag}${usageSuffix}`
+            const seqLabel = `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageSuffix}`
             if (ev.variableHitDist) {
               const dist = calcVariableHitsSingleUsageDist(baseRolls, ev.variableHitDist, ev.rawRolls)
-              pushSeq({ kind: 'attack', dmg: dist, drain: drainRate }, seqLabel)
+              pushSeq({ kind: 'attack', dmg: dist, drain: drainRate, recoil: recoilRate }, seqLabel)
             } else {
-              pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate }, seqLabel)
+              pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate, recoil: recoilRate }, seqLabel)
             }
           }
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
-          resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${usageTag}` })
+          resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageTag}` })
           break
         }
         case 'painSplit': {
@@ -173,10 +222,13 @@ export function useBattleSequence(): BattleSequenceComputed {
             resolved.push({ event: ev, label: `攻撃側被ダメ ${ev.moveName}`, error: '計算できませんでした' })
             continue
           }
-          const drain = MoveRepository.findByName(ev.moveName)?.drain
+          const move = MoveRepository.findByName(ev.moveName)
+          const drain = move?.drain
+          const recoil = recoilRateForMove(move, seqDefender.abilityName)
           const drainTag = drain ? `（相手吸収${Math.round(drain * 100)}%）` : ''
-          const label = `攻撃側被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}`
-          pushSeq({ kind: 'incoming', dmg: rolls, drain }, label)
+          const recoilTag = recoil ? `（相手反動${Math.round(recoil * 100)}%）` : ''
+          const label = `攻撃側被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}${recoilTag}`
+          pushSeq({ kind: 'incoming', dmg: rolls, drain, recoil }, label)
           resolved.push({ event: ev, label })
           break
         }
@@ -184,6 +236,19 @@ export function useBattleSequence(): BattleSequenceComputed {
           const side = ev.side === 'attacker' ? '攻撃側' : '防御側'
           const label = ev.label?.trim() || `${side}補助技使用`
           pushSeq({ kind: 'setupTurn', side: ev.side }, label)
+          resolved.push({ event: ev, label })
+          break
+        }
+        case 'megaEvolve': {
+          const side = ev.side === 'attacker' ? '攻撃側' : '防御側'
+          const mega = PokemonRepository.getMegaByKey(ev.megaKey)
+          const label = `${side}メガシンカ${mega ? `（${mega.name}）` : ''}`
+          if (ev.side === 'attacker') {
+            seqAttacker = toMegaBattleState(attacker, ev.megaKey)
+          } else {
+            seqDefender = toMegaBattleState(defender, ev.megaKey)
+          }
+          pushSeq({ kind: 'megaEvolve', side: ev.side }, label)
           resolved.push({ event: ev, label })
           break
         }

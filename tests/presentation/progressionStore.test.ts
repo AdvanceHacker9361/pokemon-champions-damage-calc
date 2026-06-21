@@ -40,6 +40,17 @@ describe('progressionStore', () => {
     })).toBe(true)
   })
 
+  it('メガシンカイベントは攻守シミュレーション表示条件になる', () => {
+    expect(hasSequenceImpact({
+      events: [{ kind: 'megaEvolve', id: 'mega-1', side: 'attacker', megaKey: 'mega-example' }],
+      attackerStartHp: null,
+    })).toBe(true)
+    expect(hasSequenceImpact({
+      events: [{ kind: 'megaEvolve', id: 'mega-2', side: 'defender', megaKey: 'mega-example' }],
+      attackerStartHp: null,
+    })).toBe(true)
+  })
+
   it('HP補正イベントを指定位置の直後に挿入できる', () => {
     const s = useProgressionStore.getState()
     s.addEventAfter(null, { kind: 'incoming', moveName: null, crit: false })

@@ -472,3 +472,64 @@
   - `pokemon-champions-data-completeness-strategy.md`
   - `src/data/raw/`
   - `乱数幅の変更（Champions固有仕様）.md`
+
+## 2026-06-21 Recoil Damage And Mega Timing For Battle Progression
+
+### User Request
+
+- Apply recoil damage from moves such as `ブレイブバード` and `フレアドライブ` to the attack-defense simulation.
+- Keep `てっていこうせん` out of proportional recoil handling because it is a fixed self-damage rule based on original/max HP, not half of dealt damage.
+- Add Mega Evolution timing to the attack-defense simulation:
+  - Instead of forcing the entire simulation into either pre-Mega or post-Mega state, a side should use Mega stats only from the Mega Evolution event onward.
+
+### Implemented Scope
+
+- Move data/model:
+  - Added `recoil?: number` to the move domain model and JSON schema.
+  - Added proportional recoil rates to recoil moves:
+    - `ウェーブタックル`: 1/3
+    - `ウッドハンマー`: 1/3
+    - `すてみタックル`: 1/3
+    - `とっしん`: 1/4
+    - `はめつのひかり`: 1/2
+    - `フレアドライブ`: 1/3
+    - `ブレイブバード`: 1/3
+    - `ボルテッカー`: 1/3
+    - `もろはのずつき`: 1/2
+    - `ワイルドボルト`: 1/3
+  - Added data-integrity checks so recoil flags and recoil rates cannot drift.
+- Battle sequence recoil behavior:
+  - `BattleSequenceCalc.SeqEvent` now supports recoil on both player attack events and incoming attack events.
+  - Recoil is calculated from actual HP damage dealt to the target, clamped by remaining HP.
+  - Recoil damage uses `Math.round(actualDamage * recoil)` with a minimum of 1.
+  - `いしあたま` and `マジックガード` suppress proportional recoil in the sequence hook.
+  - If recoil KOs the acting side before later actions, later actions are not evaluated in that branch.
+- Mega Evolution timing:
+  - Added a new progression event kind: `megaEvolve`.
+  - `megaEvolve` can target either `attacker` or `defender` and stores the selected `megaKey`.
+  - `megaEvolve` is a HP pass-through event and does not advance turn-end recovery/damage counters.
+  - If a side has a Mega Evolution event in the sequence, that side's initial sequence state is forced to the base form even when the live panel is currently Mega.
+  - From the Mega Evolution event onward, dynamic sequence calculations use the selected Mega form's stats, type, ability, and weight.
+  - Existing saved attack rolls remain fixed at the point they were added, so the intended workflow is:
+    - add pre-Mega attacks before the Mega event
+    - insert the Mega event
+    - switch the panel to Mega and add post-Mega attacks after it
+- UI/export integration:
+  - Added `＋攻撃側メガ` and `＋防御側メガ` controls to the battle progression panel.
+  - Added quick insert buttons for `+攻メガ` and `+防メガ`.
+  - Mega rows support selecting a Mega form when multiple forms exist.
+  - Export text now includes Mega Evolution events.
+  - Accumulated damage ignores Mega Evolution as damage because saved attack rolls are already fixed.
+
+### Validation
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- --run` (194 tests passed)
+- `npm run build`
+
+### Deployment Plan
+
+- Commit this implementation together with the `plan.md` context update.
+- Push the resulting commit history to `main`.
+- Confirm GitHub Actions CI and GitHub Pages deployment.

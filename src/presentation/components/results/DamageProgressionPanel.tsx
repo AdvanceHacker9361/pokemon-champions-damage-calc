@@ -4,6 +4,7 @@ import type { ProgressionEvent, EventKind, ProgressionEventInput } from '@/prese
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
+import type { MegaPokemonRecord } from '@/data/schemas/types'
 
 interface DamageProgressionPanelProps {
   defenderMaxHp: number
@@ -32,6 +33,7 @@ const RECOVER_FRACTIONS = [
 type AddEventAction =
   | { type: 'event'; kind: EventKind; label: string; tone?: 'accent' | 'warning' | 'success' }
   | { type: 'setupTurn'; side: 'attacker' | 'defender'; label: string; title: string; tone?: 'accent' }
+  | { type: 'megaEvolve'; side: 'attacker' | 'defender'; label: string; title: string; tone?: 'accent' }
   | {
       type: 'leechSeed'
       direction: 'fromAttacker' | 'fromDefender'
@@ -50,6 +52,20 @@ const ADD_EVENT_GROUPS: {
     hint: '反撃・補助技・HP平均化',
     actions: [
       { type: 'event', kind: 'incoming', label: '＋攻撃側被ダメ', tone: 'warning' },
+      {
+        type: 'megaEvolve',
+        side: 'attacker',
+        label: '＋攻撃側メガ',
+        tone: 'accent',
+        title: 'この時点以降、攻撃側をメガシンカ後のステータス・特性として扱います',
+      },
+      {
+        type: 'megaEvolve',
+        side: 'defender',
+        label: '＋防御側メガ',
+        tone: 'accent',
+        title: 'この時点以降、防御側をメガシンカ後のステータス・特性として扱います',
+      },
       {
         type: 'setupTurn',
         side: 'attacker',
@@ -185,7 +201,13 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const attackerSpHp   = useAttackerStore(s => s.sp.hp)
   const attackerMaxHp  = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const attackerName   = useAttackerStore(s => s.pokemonName)
+  const attackerCanMega = useAttackerStore(s => s.canMega)
+  const attackerAvailableMegas = useAttackerStore(s => s.availableMegas)
+  const attackerMegaKey = useAttackerStore(s => s.megaKey)
   const defenderName   = useDefenderStore(s => s.pokemonName)
+  const defenderCanMega = useDefenderStore(s => s.canMega)
+  const defenderAvailableMegas = useDefenderStore(s => s.availableMegas)
+  const defenderMegaKey = useDefenderStore(s => s.megaKey)
   const defenderMoves  = useDefenderStore(s => s.moves)
   const defenderMoveOptions = defenderMoves.filter((m): m is string => !!m)
 
@@ -239,6 +261,14 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     addEventAfter(targetId, { kind: 'setupTurn', side })
   }
 
+  function addMegaEvolve(side: 'attacker' | 'defender', targetId: string | null) {
+    const options = side === 'attacker' ? attackerAvailableMegas : defenderAvailableMegas
+    const selected = side === 'attacker' ? attackerMegaKey : defenderMegaKey
+    const megaKey = selected ?? options[0]?.key
+    if (!megaKey) return
+    addEventAfter(targetId, { kind: 'megaEvolve', side, megaKey })
+  }
+
   function moveBackgroundEventToTimeline(ev: ProgressionEventInput) {
     addEventAfter(null, ev)
   }
@@ -287,6 +317,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       addAfter(action.kind, null)
     } else if (action.type === 'setupTurn') {
       addSetupTurn(action.side, null)
+    } else if (action.type === 'megaEvolve') {
+      addMegaEvolve(action.side, null)
     } else {
       addLeechSeed(action.direction)
     }
@@ -338,6 +370,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               attackerMaxHp={attackerMaxHp}
               defenderMaxHp={defenderMaxHp}
               defenderMoveOptions={defenderMoveOptions}
+              attackerMegaOptions={attackerAvailableMegas}
+              defenderMegaOptions={defenderAvailableMegas}
               onSetAttackUsages={setAttackUsages}
               onRemove={() => removeEvent(ev.id)}
               onMoveUp={() => moveEvent(ev.id, -1)}
@@ -345,6 +379,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               onAddPainSplit={() => addAfter('painSplit', ev.id)}
               onAddAfter={kind => addAfter(kind, ev.id)}
               onAddSetupTurn={side => addSetupTurn(side, ev.id)}
+              onAddMegaEvolve={side => addMegaEvolve(side, ev.id)}
               onUpdate={patch => updateEvent(ev.id, patch)}
             />
           ))}
@@ -370,21 +405,35 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               </div>
               <div className="flex flex-wrap gap-1 min-w-0">
                 {group.actions.map(action => (
+                  (() => {
+                    const disabled =
+                      action.type === 'megaEvolve' &&
+                      (action.side === 'attacker' ? !attackerCanMega : !defenderCanMega)
+                    return (
                   <button
                     key={
                       action.type === 'event'
                         ? action.kind
                         : action.type === 'setupTurn'
                           ? `${action.type}-${action.side}`
-                          : `${action.type}-${action.direction}`
+                          : action.type === 'megaEvolve'
+                            ? `${action.type}-${action.side}`
+                            : `${action.type}-${action.direction}`
                     }
                     type="button"
                     onClick={() => addAction(action)}
+                    disabled={disabled}
                     className={addButtonClass(action.tone)}
-                    title={action.type === 'leechSeed' || action.type === 'setupTurn' ? action.title : undefined}
+                    title={
+                      action.type === 'leechSeed' || action.type === 'setupTurn' || action.type === 'megaEvolve'
+                        ? action.title
+                        : undefined
+                    }
                   >
                     {action.label}
                   </button>
+                    )
+                  })()
                 ))}
               </div>
             </div>
@@ -527,6 +576,8 @@ interface EventRowProps {
   attackerMaxHp: number
   defenderMaxHp: number
   defenderMoveOptions: string[]
+  attackerMegaOptions: MegaPokemonRecord[]
+  defenderMegaOptions: MegaPokemonRecord[]
   onSetAttackUsages: (id: string, usages: number) => void
   onRemove: () => void
   onMoveUp: () => void
@@ -534,6 +585,7 @@ interface EventRowProps {
   onAddPainSplit: () => void
   onAddAfter: (kind: EventKind) => void
   onAddSetupTurn: (side: 'attacker' | 'defender') => void
+  onAddMegaEvolve: (side: 'attacker' | 'defender') => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
 }
 
@@ -582,7 +634,8 @@ function EventRow({
   ev, idx, total,
   isHighlighted,
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
-  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddAfter, onAddSetupTurn, onUpdate,
+  attackerMegaOptions, defenderMegaOptions,
+  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddAfter, onAddSetupTurn, onAddMegaEvolve, onUpdate,
 }: EventRowProps) {
   if (ev.kind === 'attack') {
     const subMin = ev.minDmg * ev.usages
@@ -633,6 +686,13 @@ function EventRow({
             className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
             title="このエントリの直後に防御側の補助技ターンを挿入"
           >+防補助</button>
+          <button
+            type="button"
+            onClick={() => onAddMegaEvolve('defender')}
+            disabled={defenderMegaOptions.length === 0}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-30"
+            title="このエントリの直後に防御側のメガシンカを挿入"
+          >+防メガ</button>
         </div>
       </TimelineRow>
     )
@@ -712,6 +772,13 @@ function EventRow({
             className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
             title="このエントリの直後に攻撃側の補助技ターンを挿入"
           >+攻補助</button>
+          <button
+            type="button"
+            onClick={() => onAddMegaEvolve('attacker')}
+            disabled={attackerMegaOptions.length === 0}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-30"
+            title="このエントリの直後に攻撃側のメガシンカを挿入"
+          >+攻メガ</button>
         </div>
       </TimelineRow>
     )
@@ -731,6 +798,31 @@ function EventRow({
             className="input-base min-w-[7rem] max-w-full text-xs px-1 py-0.5"
           />
           <span className="text-[10px] text-fg-faint">ターン経過</span>
+        </div>
+      </TimelineRow>
+    )
+  }
+
+  if (ev.kind === 'megaEvolve') {
+    const sideLabel = ev.side === 'attacker' ? '攻撃側' : '防御側'
+    const options = ev.side === 'attacker' ? attackerMegaOptions : defenderMegaOptions
+    const selectedMega = options.find(m => m.key === ev.megaKey)
+    return (
+      <TimelineRow idx={idx} total={total} tone="accent" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-semibold text-accent">{sideLabel}メガシンカ</span>
+          {options.length > 1 ? (
+            <select
+              value={ev.megaKey}
+              onChange={e => onUpdate({ megaKey: e.target.value } as Partial<ProgressionEvent>)}
+              className="input-base min-w-[8rem] max-w-full text-xs px-1 py-0.5"
+            >
+              {options.map(mega => <option key={mega.key} value={mega.key}>{mega.name}</option>)}
+            </select>
+          ) : (
+            <span className="text-fg-muted">{selectedMega?.name ?? ev.megaKey}</span>
+          )}
+          <span className="text-[10px] text-fg-faint">以降メガ後で計算</span>
         </div>
       </TimelineRow>
     )

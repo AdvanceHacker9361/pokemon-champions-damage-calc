@@ -1055,7 +1055,8 @@
       "slice": false,
       "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "ウェザーボール",
@@ -1200,7 +1201,8 @@
       "slice": false,
       "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "ウッドホーン",
@@ -4766,7 +4768,8 @@
       "slice": false,
       "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "ステルスロック",
@@ -6712,9 +6715,11 @@
       "pulse": false,
       "punch": false,
       "bite": false,
-      "slice": false
+      "slice": false,
+      "recoil": true
     },
     "special": null,
+    "recoil": 0.25,
     "multiHit": null
   },
   {
@@ -8554,6 +8559,7 @@
       "recoil": true
     },
     "special": null,
+    "recoil": 0.5,
     "multiHit": null
   },
   {
@@ -9323,7 +9329,8 @@
       "slice": false,
       "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "ブレイククロー",
@@ -9386,7 +9393,8 @@
       "slice": false,
       "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "プレゼント",
@@ -9989,7 +9997,8 @@
       "slice": false,
       "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "ボルトチェンジ",
@@ -11055,9 +11064,11 @@
       "pulse": false,
       "punch": false,
       "bite": false,
-      "slice": false
+      "slice": false,
+      "recoil": true
     },
     "special": null,
+    "recoil": 0.5,
     "multiHit": null
   },
   {
@@ -11791,9 +11802,11 @@
       "pulse": false,
       "punch": false,
       "bite": false,
-      "slice": false
+      "slice": false,
+      "recoil": true
     },
-    "special": null
+    "special": null,
+    "recoil": 0.3333333333333333
   },
   {
     "name": "わたほうし",

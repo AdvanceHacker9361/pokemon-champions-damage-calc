@@ -47,6 +47,7 @@ export function AccumExportButton() {
         case 'painSplit': lines.push(`痛み分け（攻撃側HP=${ev.attackerHp}）`); break
         case 'incoming': lines.push(`攻撃側被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
         case 'setupTurn': lines.push(ev.label?.trim() || `${ev.side === 'attacker' ? '攻撃側' : '防御側'}補助技使用`); break
+        case 'megaEvolve': lines.push(`${ev.side === 'attacker' ? '攻撃側' : '防御側'}メガシンカ`); break
         case 'defenderConst': lines.push(`${ev.label ?? '防御側ダメ'}: ${ev.amount}`); break
         case 'attackerConst': lines.push(`${ev.label ?? '攻撃側ダメ'}: ${ev.amount}`); break
         case 'defenderRecover': lines.push(`${ev.label ?? '防御側回復'}: -${ev.amount}`); break
