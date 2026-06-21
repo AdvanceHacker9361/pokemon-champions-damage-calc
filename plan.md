@@ -307,3 +307,168 @@
 - `npm run typecheck`
 - `npm test -- --run tests/data/data-integrity.test.ts tests/domain/DamageCalculator.test.ts`
 - `npm run build`
+
+## 2026-06-18 Ordered HP Corrections And Electro Shot
+
+### User Request
+
+- Confirm the notebook-side implementation state and integrate the useful parts only.
+- Add timeline-aware constant damage/recovery handling so background-style effects can be inserted between attack events in the actual operation order.
+- Add `エレクトロビーム` / `Electro Shot`.
+
+### Implemented Scope
+
+- Added ordered HP correction events to the attack/defense progression timeline:
+  - defender constant damage
+  - defender recovery
+  - attacker constant damage
+  - attacker recovery
+- Added quick insert controls after attack and incoming-attack events so constant damage/recovery can be placed exactly between attacks.
+- Extended `progressionStore` and sequence calculation to preserve event ordering for manual HP corrections.
+- Added `エレクトロビーム` / `Electro Shot`:
+  - Type: Electric
+  - Category: Special
+  - Power: 130
+  - Accuracy: 100
+  - PP: 12
+  - Self effect represented as a manual `C+1` button through `selfStatDrop: { stat: "spa", stages: 1 }`.
+- Added Japanese i18n entry for `electro shot`.
+
+### Deployment Notes
+
+- Production `main` already includes this work.
+- Commit on `main`: `d21872c Add Electro Shot and ordered HP corrections`.
+- This commit was kept as the base for the subsequent V3.14.0 cleanup instead of duplicating the same notebook-side work.
+
+## 2026-06-18 V3.14.0 Progression Effect Cleanup
+
+### User Decision
+
+- Adopt the following MECE structure for damage/recovery modifiers:
+  - `イベント時系列`: the only ordered input that affects actual calculation.
+  - `背景効果欄`: presets for common effects such as leftovers, poison, bad poison, and sand-style constants.
+  - `HP補正`: arbitrary manual timeline event.
+  - `きのみ条件回復`: a special HP-threshold auto rule.
+  - `最終HP補正`: abolished.
+- Reasoning:
+  - Final corrections no longer had a clear role once the timeline became the single source of ordered calculation truth.
+  - Keeping final correction would create duplicate concepts and make HP movement harder to audit.
+
+### Implemented Scope
+
+- Removed final HP correction from the application:
+  - Removed final direct correction UI from `DamageProgressionPanel`.
+  - Removed final correction state from `progressionStore`.
+  - Removed snapshot/restore plumbing for final correction fields.
+  - Removed final correction application from accumulated and sequence damage calculations.
+  - Removed final correction text from accumulated export output.
+- Reorganized background effects into presets:
+  - Background panel is now `背景効果プリセット`.
+  - Preset values do not affect calculation directly.
+  - Pressing `イベントへ移動` converts preset values into ordered timeline events and clears the preset input.
+  - Background-origin events carry metadata such as `source: "background"` and show a `背景` badge.
+- Preserved berry conditional recovery as a special threshold rule:
+  - `オボンのみ`
+  - confusion berries
+  - `はんすう`
+  - `しゅうかく` / `ものひろい`
+- Updated progression store tests for the removed final correction fields and new event-centered behavior.
+
+### Validation
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- --run` (182 tests passed)
+- `npm run build`
+
+### Deployment
+
+- Version updated to `3.14.0`.
+- Commit on `main`: `2cf14a8 Release V3.14.0 progression effect cleanup`.
+- Pushed to `origin/main`.
+- GitHub Actions results:
+  - CI run `27752133250`: success
+  - GitHub Pages deploy run `27752133211`: success
+- Production URL:
+  - `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
+
+### Current Working Tree Notes
+
+- Local branch:
+  - `codex/electro-shot-progression-hp`
+- Current HEAD:
+  - `2cf14a8 Release V3.14.0 progression effect cleanup`
+- `origin/main` is also at `2cf14a8`, so production is current through V3.14.0.
+- The local feature branch is ahead/behind its own remote branch because the production-ready history was rebased and pushed to `main`.
+- Local untracked files were intentionally left untouched:
+  - `.codex-remote-attachments/`
+  - `.codex/`
+  - `AGENTS.md`
+  - `pokemon-champions-data-completeness-strategy.md`
+  - `src/data/raw/`
+  - `乱数幅の変更（Champions固有仕様）.md`
+
+## 2026-06-21 Setup Turn Events For Battle Progression
+
+### User Request
+
+- Add a turn branch for non-damaging support/setup moves in the attack-defense simulation.
+- Current issue:
+  - When ranks are changed in advance to represent setup moves, the simulator has no explicit turn for that setup action.
+  - As a result, the damage change can appear within the same sequence step instead of after a consumed setup turn.
+
+### Implemented Scope
+
+- Added a new timeline event:
+  - `setupTurn`
+  - `side: "attacker" | "defender"`
+  - optional free-text `label`
+- `setupTurn` represents a non-damaging support/setup move turn:
+  - It does not change attacker or defender HP.
+  - It is recorded as a normal battle-sequence step.
+  - It counts as a turn boundary for turn-end mechanics.
+- Battle sequence engine changes:
+  - `BattleSequenceCalc.SeqEvent` now supports `setupTurn`.
+  - `runBattleSequence()` passes HP through unchanged for setup turns.
+  - `はんすう` and `しゅうかく/ものひろい` turn-end processing now advances after both `attack` and `setupTurn` events.
+- UI changes in `DamageProgressionPanel`:
+  - Added `＋攻撃側補助`.
+  - Added `＋防御側補助`.
+  - Setup rows include a text input for an optional move name such as a boosting move.
+  - Attack rows can insert `＋防補助` immediately after the attack.
+  - Incoming-damage rows can insert `＋攻補助` immediately after the incoming attack.
+- Hook/export integration:
+  - `useBattleSequence()` converts progression setup events to sequence setup events.
+  - `useAccumulatedDamage()` preserves setup turns so berry turn progression remains consistent.
+  - `AccumExportButton` includes setup turns in copied text.
+- Store integration:
+  - `progressionStore.ProgressionEvent` includes `setupTurn`.
+  - `hasSequenceImpact()` returns true when setup turns are present.
+
+### Validation
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test -- --run` (186 tests passed)
+- `npm run build`
+
+### Deployment
+
+- Commit on `main`: `d307f43 Add setup turn events to battle progression`.
+- Pushed to `origin/main`.
+- GitHub Actions results:
+  - CI run `27905778915`: success
+  - GitHub Pages deploy run `27905778933`: success
+- Production URL:
+  - `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
+
+### Working Tree Notes
+
+- `plan.md` remains modified locally because this context update was requested after production deployment.
+- Local untracked files remain intentionally untouched:
+  - `.codex-remote-attachments/`
+  - `.codex/`
+  - `AGENTS.md`
+  - `pokemon-champions-data-completeness-strategy.md`
+  - `src/data/raw/`
+  - `乱数幅の変更（Champions固有仕様）.md`
