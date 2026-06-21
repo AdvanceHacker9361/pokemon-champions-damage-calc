@@ -166,6 +166,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           pushBoth({ kind: 'rearmBerry' })
           break
         }
+        case 'setupTurn': {
+          pushBoth({ kind: 'setupTurn', side: ev.side })
+          break
+        }
         case 'leechSeed': {
           // 累積モード（防御側のみ追跡）: 攻撃側のHP変化は無視し、防御側へのダメ/回復のみ
           if (ev.direction === 'fromAttacker') {

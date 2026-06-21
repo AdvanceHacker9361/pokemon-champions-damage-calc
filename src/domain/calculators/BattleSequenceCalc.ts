@@ -25,6 +25,8 @@ export type SeqEvent =
   | { kind: 'attack'; dmg: DmgDist; drain?: number }
   /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain 指定時は防御側が回復 */
   | { kind: 'incoming'; dmg: DmgDist; drain?: number }
+  /** ダメージを伴わない補助技・積み技ターン。HPは変えず、ターン経過だけを記録する */
+  | { kind: 'setupTurn'; side: 'attacker' | 'defender' }
   /** 痛み分け: 両者HPを floor((aHP + dHP) / 2) に均す。
    *  attackerHp 指定時は防御側のみを floor((attackerHp + dHP) / 2) に変換し
    *  攻撃側HPは変えない（総合累積=攻撃側HP固定の特殊ケース用） */
@@ -214,6 +216,10 @@ export function runBattleSequence(
           }
           break
         }
+        case 'setupTurn': {
+          addLive(a, d, bstate, p)
+          break
+        }
         case 'painSplit': {
           if (ev.attackerHp !== undefined) {
             // 攻撃側HP固定（総合累積モード）: 防御側のみ均し、攻撃側HPは不変
@@ -282,8 +288,8 @@ export function runBattleSequence(
 
     joint = next
 
-    // 攻撃イベント = ターン境界。はんすう再発動・しゅうかく再装填を処理
-    if (ev.kind === 'attack' && hasBerry && (cudEnabled || harvestChance > 0)) {
+    // 攻撃・補助技イベント = ターン境界。はんすう再発動・しゅうかく再装填を処理
+    if ((ev.kind === 'attack' || ev.kind === 'setupTurn') && hasBerry && (cudEnabled || harvestChance > 0)) {
       const after = new Map<number, number>()
       const addAfter = (a: number, d: number, bstate: number, p: number) => {
         const k = enc(a, d, bstate)

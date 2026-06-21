@@ -180,6 +180,13 @@ export function useBattleSequence(): BattleSequenceComputed {
           resolved.push({ event: ev, label })
           break
         }
+        case 'setupTurn': {
+          const side = ev.side === 'attacker' ? '攻撃側' : '防御側'
+          const label = ev.label?.trim() || `${side}補助技使用`
+          pushSeq({ kind: 'setupTurn', side: ev.side }, label)
+          resolved.push({ event: ev, label })
+          break
+        }
         case 'defenderConst': {
           const label = ev.label ?? `防御側ダメ ${ev.amount}`
           pushSeq({ kind: 'defenderConst', amount: ev.amount }, label)

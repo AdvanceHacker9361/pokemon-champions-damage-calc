@@ -31,6 +31,7 @@ const RECOVER_FRACTIONS = [
 
 type AddEventAction =
   | { type: 'event'; kind: EventKind; label: string; tone?: 'accent' | 'warning' | 'success' }
+  | { type: 'setupTurn'; side: 'attacker' | 'defender'; label: string; title: string; tone?: 'accent' }
   | {
       type: 'leechSeed'
       direction: 'fromAttacker' | 'fromDefender'
@@ -46,9 +47,23 @@ const ADD_EVENT_GROUPS: {
 }[] = [
   {
     label: 'ターン進行',
-    hint: '反撃・HP平均化・きのみ再装填',
+    hint: '反撃・補助技・HP平均化',
     actions: [
       { type: 'event', kind: 'incoming', label: '＋攻撃側被ダメ', tone: 'warning' },
+      {
+        type: 'setupTurn',
+        side: 'attacker',
+        label: '＋攻撃側補助',
+        tone: 'accent',
+        title: '攻撃側が積み技などの補助技を使うターンを時系列に追加',
+      },
+      {
+        type: 'setupTurn',
+        side: 'defender',
+        label: '＋防御側補助',
+        tone: 'accent',
+        title: '防御側が積み技などの補助技を使うターンを時系列に追加',
+      },
       { type: 'event', kind: 'painSplit', label: '＋痛み分け', tone: 'accent' },
       { type: 'event', kind: 'rearmBerry', label: '＋リサイクル', tone: 'success' },
     ],
@@ -220,6 +235,10 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     }
   }
 
+  function addSetupTurn(side: 'attacker' | 'defender', targetId: string | null) {
+    addEventAfter(targetId, { kind: 'setupTurn', side })
+  }
+
   function moveBackgroundEventToTimeline(ev: ProgressionEventInput) {
     addEventAfter(null, ev)
   }
@@ -266,6 +285,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   function addAction(action: AddEventAction) {
     if (action.type === 'event') {
       addAfter(action.kind, null)
+    } else if (action.type === 'setupTurn') {
+      addSetupTurn(action.side, null)
     } else {
       addLeechSeed(action.direction)
     }
@@ -323,6 +344,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               onMoveDown={() => moveEvent(ev.id, 1)}
               onAddPainSplit={() => addAfter('painSplit', ev.id)}
               onAddAfter={kind => addAfter(kind, ev.id)}
+              onAddSetupTurn={side => addSetupTurn(side, ev.id)}
               onUpdate={patch => updateEvent(ev.id, patch)}
             />
           ))}
@@ -349,11 +371,17 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               <div className="flex flex-wrap gap-1 min-w-0">
                 {group.actions.map(action => (
                   <button
-                    key={action.type === 'event' ? action.kind : `${action.type}-${action.direction}`}
+                    key={
+                      action.type === 'event'
+                        ? action.kind
+                        : action.type === 'setupTurn'
+                          ? `${action.type}-${action.side}`
+                          : `${action.type}-${action.direction}`
+                    }
                     type="button"
                     onClick={() => addAction(action)}
                     className={addButtonClass(action.tone)}
-                    title={action.type === 'leechSeed' ? action.title : undefined}
+                    title={action.type === 'leechSeed' || action.type === 'setupTurn' ? action.title : undefined}
                   >
                     {action.label}
                   </button>
@@ -505,6 +533,7 @@ interface EventRowProps {
   onMoveDown: () => void
   onAddPainSplit: () => void
   onAddAfter: (kind: EventKind) => void
+  onAddSetupTurn: (side: 'attacker' | 'defender') => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
 }
 
@@ -553,7 +582,7 @@ function EventRow({
   ev, idx, total,
   isHighlighted,
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
-  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddAfter, onUpdate,
+  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddAfter, onAddSetupTurn, onUpdate,
 }: EventRowProps) {
   if (ev.kind === 'attack') {
     const subMin = ev.minDmg * ev.usages
@@ -598,6 +627,12 @@ function EventRow({
             className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors"
             title="このエントリの直後に防御側の定数回復を挿入"
           >+防回復</button>
+          <button
+            type="button"
+            onClick={() => onAddSetupTurn('defender')}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
+            title="このエントリの直後に防御側の補助技ターンを挿入"
+          >+防補助</button>
         </div>
       </TimelineRow>
     )
@@ -671,6 +706,31 @@ function EventRow({
             className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors"
             title="このエントリの直後に攻撃側の定数回復を挿入"
           >+攻回復</button>
+          <button
+            type="button"
+            onClick={() => onAddSetupTurn('attacker')}
+            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
+            title="このエントリの直後に攻撃側の補助技ターンを挿入"
+          >+攻補助</button>
+        </div>
+      </TimelineRow>
+    )
+  }
+
+  if (ev.kind === 'setupTurn') {
+    const sideLabel = ev.side === 'attacker' ? '攻撃側' : '防御側'
+    return (
+      <TimelineRow idx={idx} total={total} tone="default" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-semibold text-fg-muted">{sideLabel}補助技</span>
+          <input
+            type="text"
+            value={ev.label ?? ''}
+            onChange={e => onUpdate({ label: e.target.value } as Partial<ProgressionEvent>)}
+            placeholder="補助技名"
+            className="input-base min-w-[7rem] max-w-full text-xs px-1 py-0.5"
+          />
+          <span className="text-[10px] text-fg-faint">ターン経過</span>
         </div>
       </TimelineRow>
     )
