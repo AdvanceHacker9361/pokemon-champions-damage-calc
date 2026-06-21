@@ -29,6 +29,17 @@ describe('progressionStore', () => {
     })).toBe(true)
   })
 
+  it('補助技ターンは攻守シミュレーション表示条件になる', () => {
+    expect(hasSequenceImpact({
+      events: [{ kind: 'setupTurn', id: 'setup-1', side: 'attacker' }],
+      attackerStartHp: null,
+    })).toBe(true)
+    expect(hasSequenceImpact({
+      events: [{ kind: 'setupTurn', id: 'setup-2', side: 'defender' }],
+      attackerStartHp: null,
+    })).toBe(true)
+  })
+
   it('HP補正イベントを指定位置の直後に挿入できる', () => {
     const s = useProgressionStore.getState()
     s.addEventAfter(null, { kind: 'incoming', moveName: null, crit: false })

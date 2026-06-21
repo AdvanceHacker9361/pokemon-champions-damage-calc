@@ -52,6 +52,8 @@ export type ProgressionEvent =
   | { kind: 'painSplit'; id: string; attackerHp: number }
   /** 被ダメ（防御側の技を攻守入替で自動計算） */
   | { kind: 'incoming'; id: string; moveName: string | null; crit: boolean }
+  /** ダメージを伴わない補助技・積み技ターン。ターン経過だけを時系列へ明示する */
+  | { kind: 'setupTurn'; id: string; side: 'attacker' | 'defender'; label?: string }
   /** 定数イベント。label/source は背景プリセット由来の表示用メタ情報 */
   | { kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
   | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
@@ -213,6 +215,7 @@ export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attacker
   return s.events.some(e =>
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
     e.kind === 'attackerRecover' || e.kind === 'defenderConst' ||
-    e.kind === 'defenderRecover' || e.kind === 'painSplit'
+    e.kind === 'defenderRecover' || e.kind === 'painSplit' ||
+    e.kind === 'setupTurn'
   )
 }

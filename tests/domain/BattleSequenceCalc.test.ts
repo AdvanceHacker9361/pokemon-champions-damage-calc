@@ -40,6 +40,32 @@ describe('BattleSequenceCalc', () => {
     })
   })
 
+  describe('補助技ターン', () => {
+    it('HPを変えずに1ステップとして記録される', () => {
+      const r = runBattleSequence([{ kind: 'setupTurn', side: 'attacker' }], 150, 100)
+      const step = r.steps[0]
+
+      expect(step.attackerHpDist.get(150)).toBeCloseTo(1, 6)
+      expect(step.defenderHpDist.get(100)).toBeCloseTo(1, 6)
+      expect(r.defenderKoProb).toBeCloseTo(0, 6)
+      expect(r.attackerFaintProb).toBeCloseTo(0, 6)
+    })
+
+    it('補助技ターンもターン境界としてはんすう再回復を進める', () => {
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: [60] },
+        { kind: 'setupTurn', side: 'attacker' },
+      ]
+
+      const r = runBattleSequence(events, 1, 100, {
+        defenderBerry: { threshold: 50, amount: 30, cudChew: true },
+      })
+      const dist = extractDefenderDamageDistribution(r, 100)
+
+      expect(dist.get(0)).toBeCloseTo(1, 6)
+    })
+  })
+
   describe('痛み分け', () => {
     it('攻撃側HP満タン > 防御側残HP のとき防御側が回復する', () => {
       // 防御側200, 攻撃80確定 → 残120
