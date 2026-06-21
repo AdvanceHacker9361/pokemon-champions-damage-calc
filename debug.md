@@ -234,3 +234,34 @@ GitHub Actions:
 - `エレクトロビーム` の溜めターン・雨時即発動は単発ダメージ倍率へ直接影響しないため、現状は通常の攻撃技として登録し、使用後のC+1を既存のランク変化ボタンで表現する。
 - 攻守シミュレーションで順序が重要なHP補正はイベント時系列へ入れ、背景効果側の `HP直接補正` は従来通り最終補正として扱う。
 - 今回はバグ修正と技データ追加のため、バージョン更新なしで修正デプロイする。
+
+## 2026-06-21: サーフゴー特性の英語表記修正
+
+### 発覚内容
+
+- サーフゴーの特性が UI 上で `Good as Gold` のまま表示されていた。
+- `abilities.json` の表示名と `pokemon.json` のサーフゴー個体データの両方が英語名を参照していた。
+
+### 実施した修正
+
+- `src/data/json/abilities.json`
+  - `Good as Gold` の表示名 `name` を `おうごんのからだ` に変更。
+  - `nameEn: "Good as Gold"` と `calcTag: "good-as-gold"` は英語参照・計算タグとして維持。
+- `src/data/json/pokemon.json`
+  - サーフゴー / `Gholdengo` の特性を `おうごんのからだ` に変更。
+- `tests/data/data-integrity.test.ts`
+  - サーフゴーの特性が `おうごんのからだ` であることを固定テスト化。
+  - 対応する特性データに `nameEn: "Good as Gold"` が残っていることも確認対象にした。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 31 tests passed。
+- `npm run lint`
+
+### 判断メモ
+
+- 表示名だけを日本語化し、英語名・計算タグは既存のデータ連携や内部識別用に残す。
+- 今後、英語名が UI に出ているデータ修正では、ポケモン側の参照値と特性/技/道具側の表示名の両方を確認する。

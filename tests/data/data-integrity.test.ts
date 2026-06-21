@@ -99,6 +99,13 @@ describe('pokemon.json integrity', () => {
     }
     expect(errors, errors.join('\n')).toHaveLength(0)
   })
+
+  it('Gholdengo ability should use Japanese display name', () => {
+    const gholdengo = pokemon.find(p => p.nameEn === 'Gholdengo')
+    expect(gholdengo?.name).toBe('サーフゴー')
+    expect(gholdengo?.abilities).toEqual(['おうごんのからだ'])
+    expect(abilities.some(a => a.name === 'おうごんのからだ' && a.nameEn === 'Good as Gold')).toBe(true)
+  })
 })
 
 // ────────────────────────────────────────────────
