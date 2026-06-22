@@ -44,7 +44,10 @@ export function executeDamageCalculation(
 ): DamageResult {
   /** かたやぶり系: 相手の特性を無効化する特性 */
   const MOLD_BREAKER_ABILITIES = new Set(['かたやぶり', 'ターボブレイズ', 'テラボルテージ'])
+  const CRITICAL_BLOCKER_ABILITIES = new Set(['シェルアーマー', 'カブトアーマー'])
   const attackerHasMoldBreaker = MOLD_BREAKER_ABILITIES.has(input.attacker.abilityName)
+  const effectiveCritical =
+    input.isCritical === true && !CRITICAL_BLOCKER_ABILITIES.has(input.defender.abilityName)
 
   // てんねん: 相手の攻撃/防御ランク補正を無効化して実数値を再計算
   // ただし攻撃側がかたやぶり系の場合はてんねんを無視してランク補正をそのまま採用
@@ -53,10 +56,19 @@ export function executeDamageCalculation(
       ? { ...input.attacker.ranks, atk: 0, spa: 0 }
       : input.attacker.ranks
 
-  const defenderRanks =
+  const baseDefenderRanks =
     input.attacker.abilityName === 'てんねん'
       ? { ...input.defender.ranks, def: 0, spd: 0 }
       : input.defender.ranks
+
+  const defenderRanks =
+    effectiveCritical
+      ? {
+          ...baseDefenderRanks,
+          def: Math.min(0, baseDefenderRanks.def ?? 0),
+          spd: Math.min(0, baseDefenderRanks.spd ?? 0),
+        }
+      : baseDefenderRanks
 
   const attackerStats = calculateStats({
     baseStats: input.attacker.baseStats,

@@ -3,8 +3,8 @@
 ## Context
 
 - Project: Pokemon Champions Damage Calculator.
-- Current production version: V3.13.0.
-- Current focus: Reg.M-B Mega Pokemon / ability support shipped as V3.13.0.
+- Current app version: V3.14.1.
+- Current focus: critical-hit defense rank handling fix after V3.14.0 progression updates.
 - The user found the `イベント追加` -> `即時HP` group hard to use.
 - Desired direction: move one-off HP adjustment affordances into `背景効果`, support both attacker and defender, and make regeneration recovery presets easier to access.
 
@@ -533,3 +533,46 @@
 - Commit this implementation together with the `plan.md` context update.
 - Push the resulting commit history to `main`.
 - Confirm GitHub Actions CI and GitHub Pages deployment.
+
+## 2026-06-22 V3.14.1 Critical Hit Defense Rank Fix
+
+### User Request
+
+- Fix a bug where critical hits did not correctly ignore the defender's positive Defense / Special Defense rank modifiers.
+- Record the implementation context in `plan.md` and `debug.md`.
+- Update app version information to `V3.14.1`.
+
+### Implemented Scope
+
+- Updated `src/application/usecases/CalculateDamageUseCase.ts`.
+- Critical-hit handling now strips only the defender's positive `def` / `spd` rank stages before stat calculation:
+  - `def +1..+6` and `spd +1..+6` are treated as rank 0 during an effective critical hit.
+  - negative defender ranks are preserved, so defensive debuffs still increase critical-hit damage.
+  - if the defender has `シェルアーマー` or `カブトアーマー`, the hit is not treated as an effective critical hit and positive defensive ranks remain active.
+- The fix is implemented in the use-case layer because `calculateDamage()` receives already rank-adjusted computed stats.
+- Updated app version from `3.14.0` to `3.14.1` in:
+  - `package.json`
+  - `package-lock.json`
+
+### Tests Added
+
+- Added regression coverage in `tests/application/CalculateDamageUseCase.test.ts` for:
+  - critical hits ignoring defender `B+2` on physical damage.
+  - critical hits ignoring defender `D+2` on special damage.
+  - critical hits preserving defender `B-2`.
+  - `シェルアーマー` preventing both the critical multiplier and the defensive-rank ignore behavior.
+
+### Validation
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/application/CalculateDamageUseCase.test.ts tests/domain/DamageCalculator.test.ts tests/domain/pkdxCrossCheck.test.ts`
+  - 61 tests passed.
+  - sandbox 内では esbuild の `spawn EPERM` が出たため、通常権限で再実行。
+- `npm run build`
+  - sandbox 内では esbuild の `spawn EPERM` が出たため、通常権限で再実行。
+
+### Current Status
+
+- Implementation and local validation are complete.
+- Deployment has not been performed in this step.
