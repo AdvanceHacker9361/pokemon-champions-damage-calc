@@ -61,6 +61,19 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
     special: null,
   }
 
+  const shadowBallMove: MoveData = {
+    name: 'シャドーボール',
+    nameEn: 'Shadow Ball',
+    type: 'ゴースト',
+    category: '特殊',
+    power: 80,
+    accuracy: 100,
+    pp: 16,
+    priority: 0,
+    flags: { contact: false, sound: false, bullet: true, pulse: false, punch: false, bite: false, slice: false },
+    special: null,
+  }
+
   it('スペック計算 - ガブリアスのHP実数値が正しい (sp=2: 185)', () => {
     const stats = calculateStats({
       baseStats: garchompInput.baseStats,
@@ -118,5 +131,127 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
 
     const expectedPercent = (result.max / result.defenderMaxHp) * 100
     expect(result.percentMax).toBeCloseTo(expectedPercent, 1)
+  })
+
+  it('急所時は防御側のBランク上昇を無視する', () => {
+    const boostedDefender = {
+      ...megaGengarInput,
+      ranks: { def: 2 },
+    }
+
+    const normalBoosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: boostedDefender,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+    })
+    const normalUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+    })
+    const critBoosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: boostedDefender,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+    const critUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(normalBoosted.max).toBeLessThan(normalUnboosted.max)
+    expect(critBoosted.rolls).toEqual(critUnboosted.rolls)
+  })
+
+  it('急所時は防御側のDランク上昇を無視する', () => {
+    const boostedDefender = {
+      ...megaGengarInput,
+      ranks: { spd: 2 },
+    }
+
+    const normalBoosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: boostedDefender,
+      move: shadowBallMove,
+      field: createDefaultBattleField(),
+    })
+    const normalUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: shadowBallMove,
+      field: createDefaultBattleField(),
+    })
+    const critBoosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: boostedDefender,
+      move: shadowBallMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+    const critUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: shadowBallMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(normalBoosted.max).toBeLessThan(normalUnboosted.max)
+    expect(critBoosted.rolls).toEqual(critUnboosted.rolls)
+  })
+
+  it('急所時も防御側の防御ランク低下は維持する', () => {
+    const loweredDefender = {
+      ...megaGengarInput,
+      ranks: { def: -2 },
+    }
+
+    const critLowered = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: loweredDefender,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+    const critUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(critLowered.max).toBeGreaterThan(critUnboosted.max)
+  })
+
+  it('急所無効特性の場合は防御側のBランク上昇を無視しない', () => {
+    const shellArmorDefender = {
+      ...megaGengarInput,
+      abilityName: 'シェルアーマー',
+      ranks: { def: 2 },
+    }
+
+    const normal = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: shellArmorDefender,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+    })
+    const blockedCrit = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: shellArmorDefender,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(blockedCrit.rolls).toEqual(normal.rolls)
   })
 })
