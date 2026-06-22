@@ -265,3 +265,43 @@ GitHub Actions:
 
 - 表示名だけを日本語化し、英語名・計算タグは既存のデータ連携や内部識別用に残す。
 - 今後、英語名が UI に出ているデータ修正では、ポケモン側の参照値と特性/技/道具側の表示名の両方を確認する。
+
+## 2026-06-22: V3.14.1 急所時の防御ランク補正無効化修正
+
+### 発覚内容
+
+- 急所判定時に、防御側の `ぼうぎょ` / `とくぼう` ランク上昇が無視されていなかった。
+- 原因は `executeDamageCalculation()` が先に `calculateStats()` でランク込みの実数値を作り、その後 `calculateDamage()` へ渡していたこと。
+  - `calculateDamage()` 内では、急所かどうかは分かるが、防御側の元ランク情報がない。
+  - そのため、急所補正 1.5倍や壁無効は働いていても、防御側ランク上昇だけが残っていた。
+
+### 実施した修正
+
+- `src/application/usecases/CalculateDamageUseCase.ts`
+  - 急所が有効な場合、防御側の `def` / `spd` のプラスランクだけを 0 として実数値を再計算するようにした。
+  - 防御側のマイナスランクは維持する。
+  - `シェルアーマー` / `カブトアーマー` で急所が無効化される場合は、防御ランク上昇も無視しない。
+  - 既存の `てんねん` 処理と競合しないよう、`てんねん` で防御ランクを 0 にした後、急所時のプラスランク無視を適用する順序にした。
+- `tests/application/CalculateDamageUseCase.test.ts`
+  - 物理技で防御側 `B+2` が急所時に無視されることを固定テスト化。
+  - 特殊技で防御側 `D+2` が急所時に無視されることを固定テスト化。
+  - 防御側 `B-2` は急所時にも維持されることを固定テスト化。
+  - `シェルアーマー` では急所無効に加えて、防御ランク上昇も無視されないことを固定テスト化。
+- `package.json` / `package-lock.json`
+  - バージョンを `3.14.0` から `3.14.1` に更新。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/application/CalculateDamageUseCase.test.ts tests/domain/DamageCalculator.test.ts tests/domain/pkdxCrossCheck.test.ts`
+  - 61 tests passed。
+  - sandbox 内では esbuild の `spawn EPERM` が出たため、通常権限で再実行。
+- `npm run build`
+  - sandbox 内では esbuild の `spawn EPERM` が出たため、通常権限で再実行。
+
+### 判断メモ
+
+- 急所時に無視するのは防御側のプラス防御ランクのみ。
+- 防御側のランク低下は急所時にも攻撃側に有利な状態として残す。
+- 急所無効特性がある場合は「急所として成立していない」ため、防御ランク上昇の無視も発生させない。
