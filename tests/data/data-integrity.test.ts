@@ -150,6 +150,14 @@ describe('pokemon-mega.json integrity', () => {
     expect(byKey.get('mega-staraptor')?.ability).toBe('あまのじゃく')
     expect(byKey.get('mega-scolipede')?.ability).toBe('シェルアーマー')
   })
+
+  it('Mega Raichu X/Y abilities should stay pinned', () => {
+    const byKey = new Map(mega.map(m => [m.key, m]))
+    expect(byKey.get('mega-raichu-x')?.name).toBe('メガライチュウX')
+    expect(byKey.get('mega-raichu-x')?.ability).toBe('エレキメイカー')
+    expect(byKey.get('mega-raichu-y')?.name).toBe('メガライチュウY')
+    expect(byKey.get('mega-raichu-y')?.ability).toBe('ノーガード')
+  })
 })
 
 // ────────────────────────────────────────────────

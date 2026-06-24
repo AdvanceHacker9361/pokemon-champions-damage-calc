@@ -305,3 +305,34 @@ GitHub Actions:
 - 急所時に無視するのは防御側のプラス防御ランクのみ。
 - 防御側のランク低下は急所時にも攻撃側に有利な状態として残す。
 - 急所無効特性がある場合は「急所として成立していない」ため、防御ランク上昇の無視も発生させない。
+
+## 2026-06-24: メガライチュウX/Y 特性修正
+
+### 発覚内容
+
+- メガライチュウX/Y の特性が誤っていた。
+- 現状データでは両方とも `サージサーファー` になっていた。
+- 正しい特性は、メガライチュウX が `エレキメイカー`、メガライチュウY が `ノーガード`。
+
+### 実施した修正
+
+- `src/data/json/pokemon-mega.json`
+  - `mega-raichu-x` の `ability` を `エレキメイカー` に変更。
+  - `mega-raichu-y` の `ability` を `ノーガード` に変更。
+- `tests/data/data-integrity.test.ts`
+  - メガライチュウX/Y の特性を固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 34 tests passed。
+- `npm run build`
+  - production build passed。
+
+### 判断メモ
+
+- 今回はデータ不備の修正のため、計算ロジック変更は行わない。
+- 過去の Reg.M-B メガ特性誤適用と同様に、`key` 単位で固定テストを置いて再発を検知する。
