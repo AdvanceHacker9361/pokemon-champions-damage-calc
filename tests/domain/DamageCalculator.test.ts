@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { calculateDamage } from '@/domain/calculators/DamageCalculator'
+import { resolveWeatherAwareMovePower, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import type { DamageCalcInput } from '@/domain/calculators/DamageCalculator'
 import type { ComputedStats } from '@/domain/models/Pokemon'
 import type { MoveData } from '@/domain/models/Move'
@@ -61,6 +62,41 @@ const baseInput: Omit<DamageCalcInput, 'move'> = {
 }
 
 describe('DamageCalculator', () => {
+  describe('技表示用のタイプ・威力解決', () => {
+    it('ウェザーボールの表示タイプと表示威力は天候に追随する', () => {
+      const base = {
+        moveType: 'ノーマル' as const,
+        moveSpecial: 'weather-ball' as const,
+        attackerAbility: '',
+        defenderAbility: '',
+      }
+
+      expect(resolveWeatherAwareMoveType({ ...base, weather: null })).toBe('ノーマル')
+      expect(resolveWeatherAwareMovePower({ movePower: 50, moveSpecial: 'weather-ball', weather: null })).toBe(50)
+
+      expect(resolveWeatherAwareMoveType({ ...base, weather: 'はれ' })).toBe('ほのお')
+      expect(resolveWeatherAwareMoveType({ ...base, weather: 'あめ' })).toBe('みず')
+      expect(resolveWeatherAwareMoveType({ ...base, weather: 'すなあらし' })).toBe('いわ')
+      expect(resolveWeatherAwareMoveType({ ...base, weather: 'ゆき' })).toBe('こおり')
+      expect(resolveWeatherAwareMovePower({ movePower: 50, moveSpecial: 'weather-ball', weather: 'はれ' })).toBe(100)
+    })
+
+    it('メガソーラーはウェザーボール表示でも晴れ扱いになる', () => {
+      expect(resolveWeatherAwareMoveType({
+        moveType: 'ノーマル',
+        moveSpecial: 'weather-ball',
+        weather: null,
+        attackerAbility: 'メガソーラー',
+      })).toBe('ほのお')
+      expect(resolveWeatherAwareMovePower({
+        movePower: 50,
+        moveSpecial: 'weather-ball',
+        weather: null,
+        defenderAbility: 'メガソーラー',
+      })).toBe(100)
+    })
+  })
+
   describe('基本ダメージ計算', () => {
     it('物理技が正のダメージを返す', () => {
       const move = makePhysicalMove('じしん', 'じめん', 100)
@@ -337,6 +373,59 @@ describe('DamageCalculator', () => {
         field: { ...createDefaultBattleField(), weather: 'あめ' },
       })
       expect(rainResult.max).toBeGreaterThan(normalResult.max)
+    })
+
+    it('ウェザーボールはメガソーラーを晴れとして扱う', () => {
+      const move: MoveData = {
+        ...makeSpecialMove('ウェザーボール', 'ノーマル', 50),
+        special: 'weather-ball',
+      }
+      const sunnyResult = calculateDamage({
+        ...baseInput,
+        attackerTypes: ['ノーマル'],
+        move,
+        field: { ...createDefaultBattleField(), weather: 'はれ' },
+      })
+      const megaSolarResult = calculateDamage({
+        ...baseInput,
+        attackerTypes: ['ノーマル'],
+        attackerAbility: 'メガソーラー',
+        move,
+        field: createDefaultBattleField(),
+      })
+      const normalResult = calculateDamage({
+        ...baseInput,
+        attackerTypes: ['ノーマル'],
+        move,
+        field: createDefaultBattleField(),
+      })
+
+      expect(Array.from(megaSolarResult.rolls)).toEqual(Array.from(sunnyResult.rolls))
+      expect(megaSolarResult.min).toBe(sunnyResult.min)
+      expect(megaSolarResult.max).toBe(sunnyResult.max)
+      expect(megaSolarResult.max).toBeGreaterThan(normalResult.max)
+    })
+
+    it('防御側のメガソーラーでもウェザーボールは晴れ扱いになる', () => {
+      const move: MoveData = {
+        ...makeSpecialMove('ウェザーボール', 'ノーマル', 50),
+        special: 'weather-ball',
+      }
+      const sunnyResult = calculateDamage({
+        ...baseInput,
+        attackerTypes: ['ノーマル'],
+        move,
+        field: { ...createDefaultBattleField(), weather: 'はれ' },
+      })
+      const defenderMegaSolarResult = calculateDamage({
+        ...baseInput,
+        attackerTypes: ['ノーマル'],
+        defenderAbility: 'メガソーラー',
+        move,
+        field: createDefaultBattleField(),
+      })
+
+      expect(Array.from(defenderMegaSolarResult.rolls)).toEqual(Array.from(sunnyResult.rolls))
     })
   })
 

@@ -13,6 +13,7 @@ import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
+import { resolveWeatherAwareMovePower, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import type { MultiHitData } from '@/domain/models/Move'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { TypeName } from '@/domain/models/Pokemon'
@@ -329,12 +330,31 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const setAttackerRank = useAttackerStore(s => s.setRank)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
+  const weather = useFieldStore(s => s.weather)
   const isGravity = useFieldStore(s => s.isGravity)
 
   const isParentalBond = attackerAbility === 'おやこあい'
   const isDisguiseIntact = defenderAbility === 'ばけのかわ' && defenderAbilityActivated
 
   const moveRecord = MoveRepository.findByName(moveName)
+  const displayMoveType = moveRecord
+    ? resolveWeatherAwareMoveType({
+        moveType: moveRecord.type as TypeName,
+        moveSpecial: moveRecord.special,
+        weather,
+        attackerAbility,
+        defenderAbility,
+      })
+    : null
+  const displayMovePower = moveRecord
+    ? resolveWeatherAwareMovePower({
+        movePower: moveRecord.power,
+        moveSpecial: moveRecord.special,
+        weather,
+        attackerAbility,
+        defenderAbility,
+      })
+    : null
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
   const variableMultiHitDist = getVariableMultiHitDist(attackerAbility, attackerItem)
   const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
@@ -558,7 +578,12 @@ export function DamageResultRow(props: DamageResultRowProps) {
       <div className="flex min-w-0 flex-wrap items-start gap-x-2 gap-y-1 mb-1">
         <div className="min-w-0 flex flex-1 flex-wrap items-center gap-1.5">
           <span className="block min-w-0 max-w-full text-sm font-medium text-fg truncate">{moveName}</span>
-          {moveRecord?.type && <TypeBadge type={moveRecord.type as TypeName} size="sm" />}
+          {displayMoveType && <TypeBadge type={displayMoveType} size="sm" />}
+          {moveRecord?.special === 'weather-ball' && displayMovePower != null && (
+            <span className="text-[10px] px-1 py-0 rounded bg-surface-3 text-fg-muted font-mono">
+              威力{displayMovePower}
+            </span>
+          )}
           {multiHit && (
             <span className="text-[10px] px-1 py-0 rounded bg-surface-3 text-fg-muted font-medium">
               {multiHit.type === 'fixed' ? `固定${multiHit.count}回`

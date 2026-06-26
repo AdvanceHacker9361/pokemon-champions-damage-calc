@@ -5,6 +5,7 @@ import type { DamageResult } from '@/domain/models/DamageResult'
 import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { resolveSpecialMove } from '@/domain/calculators/SpecialMoveCalc'
+import { resolveEffectiveWeather, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { calcRollPercent } from '@/domain/models/DamageResult'
 
 export interface DamageCalcInput {
@@ -118,7 +119,11 @@ function resolveBasePower(input: DamageCalcInput): number {
   }
 
   // ウェザーボール: 天候時に威力2倍
-  if (move.special === 'weather-ball' && input.field.weather !== null) {
+  if (move.special === 'weather-ball' && resolveEffectiveWeather({
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  }) !== null) {
     return 100
   }
 
@@ -155,7 +160,12 @@ function resolveAtk(input: DamageCalcInput): number {
   if (attackerAbility === 'ちからもち' || attackerAbility === 'ヨガパワー') {
     if (move.category === '物理') atkMod *= 2
   }
-  if (attackerAbility === 'サンパワー' && input.field.weather === 'はれ') {
+  const effectiveWeather = resolveEffectiveWeather({
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  })
+  if (attackerAbility === 'サンパワー' && effectiveWeather === 'はれ') {
     if (move.category === '特殊') atkMod *= 1.5
   }
   // こんじょう: 状態異常時に物理攻撃1.5倍
@@ -221,13 +231,18 @@ function resolveDef(input: DamageCalcInput): number {
   }
 
   // 砂嵐時の岩タイプ特防1.5倍
-  if (input.field.weather === 'すなあらし') {
+  const effectiveWeather = resolveEffectiveWeather({
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  })
+  if (effectiveWeather === 'すなあらし') {
     if (move.category === '特殊') {
       if (input.defenderTypes?.includes('いわ')) defMod *= 1.5
     }
   }
   // 雪時の氷タイプ防御1.5倍
-  if (input.field.weather === 'ゆき') {
+  if (effectiveWeather === 'ゆき') {
     if (move.category === '物理') {
       if (input.defenderTypes?.includes('こおり')) defMod *= 1.5
     }
@@ -242,25 +257,13 @@ function resolveDef(input: DamageCalcInput): number {
 
 /** 技のタイプを解決（スキン特性によるタイプ変換を含む） */
 function resolveMoveType(input: DamageCalcInput): TypeName {
-  const { move, attackerAbility } = input
-  // ウェザーボール: 天候によってタイプ変化
-  if (move.special === 'weather-ball') {
-    switch (input.field.weather) {
-      case 'はれ': return 'ほのお'
-      case 'あめ': return 'みず'
-      case 'すなあらし': return 'いわ'
-      case 'ゆき': return 'こおり'
-      default: return 'ノーマル'
-    }
-  }
-
-  if (move.type === 'ノーマル') {
-    if (attackerAbility === 'フェアリースキン') return 'フェアリー'
-    if (attackerAbility === 'スカイスキン')    return 'ひこう'
-    if (attackerAbility === 'エレキスキン')    return 'でんき'
-    if (attackerAbility === 'フリーズスキン')  return 'こおり'
-  }
-  return move.type
+  return resolveWeatherAwareMoveType({
+    moveType: input.move.type,
+    moveSpecial: input.move.special,
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  })
 }
 
 /**
@@ -332,7 +335,11 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   let damage = baseDamage
 
   // 1. 天候補正
-  damage = applyWeatherModifier(damage, moveType, field.weather, defenderAbility)
+  damage = applyWeatherModifier(damage, moveType, resolveEffectiveWeather({
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  }), defenderAbility)
 
   // 2. フィールド補正（乱数より前に適用: Gen8+ / Showdown 準拠）
   damage = applyFieldModifier(damage, moveType, field.terrain, move.name)
@@ -550,7 +557,11 @@ function applyOtherModifiers(
     d = pokeRound(d * 2)
   }
   // すなのちから: すなあらし時にいわ/はがね/じめん技1.3倍
-  if (attackerAbility === 'すなのちから' && input.field.weather === 'すなあらし') {
+  if (attackerAbility === 'すなのちから' && resolveEffectiveWeather({
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  }) === 'すなあらし') {
     if (moveType === 'いわ' || moveType === 'はがね' || moveType === 'じめん') {
       d = pokeRound(d * 1.3)
     }

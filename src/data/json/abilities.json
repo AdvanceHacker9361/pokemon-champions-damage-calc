@@ -15,6 +15,11 @@
     "calcTag": "pure-power"
   },
   {
+    "name": "おやこあい",
+    "nameEn": "Parental Bond",
+    "calcTag": "parental-bond"
+  },
+  {
     "name": "もふもふ",
     "nameEn": "Fluffy",
     "calcTag": "fluffy"
@@ -23,6 +28,16 @@
     "name": "サンパワー",
     "nameEn": "Solar Power",
     "calcTag": "solar-power"
+  },
+  {
+    "name": "メガソーラー",
+    "nameEn": "Mega Solar",
+    "calcTag": "mega-solar"
+  },
+  {
+    "name": "デルタストリーム",
+    "nameEn": "Delta Stream",
+    "calcTag": "delta-stream"
   },
   {
     "name": "すながくれ",
@@ -1250,9 +1265,14 @@
     "calcTag": "ice-face"
   },
   {
-    "name": "Electric Surge",
+    "name": "エレキメイカー",
     "nameEn": "Electric Surge",
     "calcTag": "electric-surge"
+  },
+  {
+    "name": "ドラゴンスキン",
+    "nameEn": "Dragon Skin",
+    "calcTag": "dragon-skin"
   },
   {
     "name": "Dragon's Maw",

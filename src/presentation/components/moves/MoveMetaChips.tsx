@@ -1,9 +1,11 @@
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { MoveRecord } from '@/data/schemas/types'
+import type { TypeName } from '@/domain/models/Pokemon'
 
 interface MoveMetaChipsProps {
   move: MoveRecord
   power?: number | null
+  displayType?: TypeName
 }
 
 function getPowerLabel(move: MoveRecord, selectedPower?: number | null): string | null {
@@ -23,13 +25,13 @@ function getHitLabel(move: MoveRecord): string | null {
   return `${move.multiHit.powers.length}段`
 }
 
-export function MoveMetaChips({ move, power }: MoveMetaChipsProps) {
+export function MoveMetaChips({ move, power, displayType }: MoveMetaChipsProps) {
   const powerLabel = getPowerLabel(move, power)
   const hitLabel = getHitLabel(move)
 
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1">
-      <TypeBadge type={move.type} />
+      <TypeBadge type={displayType ?? move.type} />
       <span className="rounded bg-surface-3 px-1.5 py-0.5 text-[10px] font-medium text-fg-muted">
         {move.category}
       </span>

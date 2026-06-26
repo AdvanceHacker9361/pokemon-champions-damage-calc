@@ -336,3 +336,58 @@ GitHub Actions:
 
 - 今回はデータ不備の修正のため、計算ロジック変更は行わない。
 - 過去の Reg.M-B メガ特性誤適用と同様に、`key` 単位で固定テストを置いて再発を検知する。
+
+## 2026-06-26: ウェザーボールとメガソーラーの実効天候対応
+
+### 発覚内容
+
+- `ウェザーボール` は通常の場の天候 `field.weather` だけを見ていた。
+- 特性 `メガソーラー` が場にいる場合でも、晴れ相当として扱われず、威力100化・ほのおタイプ化・晴れ補正が反映されていなかった。
+- `メガソーラー` はメガメガニウムの特性として `pokemon-mega.json` に存在する一方、`abilities.json` 側には未登録だった。
+
+### 実施した修正
+
+- `src/domain/calculators/DamageCalculator.ts`
+  - `resolveEffectiveWeather()` を追加。
+  - 攻撃側または防御側の特性が `メガソーラー` の場合、実効天候を `はれ` として扱う。
+  - `ウェザーボール` の威力100化、タイプ変化、天候補正、`サンパワー` などの天候参照を実効天候ベースに統一。
+- `src/domain/calculators/MoveResolution.ts`
+  - 実効天候、天候込みの技タイプ、天候込みの表示威力を解決する helper を追加。
+  - 計算本体・半減実判定・UI表示で同じ解決結果を使えるようにした。
+- `src/application/usecases/CalculateMoveResultsUseCase.ts`
+  - 半減実の事前判定で、`ウェザーボール` の変化後タイプを使うようにした。
+- `src/presentation/components/moves/MoveMetaChips.tsx`
+- `src/presentation/components/moves/MoveSlots.tsx`
+  - 技欄のタイプバッジと威力チップが、天候変更に応じて更新されるようにした。
+  - `ウェザーボール` は天候なしで `ノーマル / 威力50`、晴れで `ほのお / 威力100`、雨で `みず / 威力100`、砂で `いわ / 威力100`、雪で `こおり / 威力100` と表示される。
+- `src/presentation/components/results/DamageResultRow.tsx`
+  - 結果行のタイプバッジを天候込みのタイプ表示に変更。
+  - `ウェザーボール` には結果行にも `威力50/100` の表示を追加。
+- `src/data/json/abilities.json`
+  - `メガソーラー` を追加。
+  - 既存の英語表示 `Electric Surge` を `エレキメイカー` に変更。
+  - メガ個体で参照されていた `おやこあい` / `デルタストリーム` / `ドラゴンスキン` も追加。
+- `src/data/json/pokemon.json`
+  - バチンウニの特性 `Electric Surge` を `エレキメイカー` に変更。
+- `tests/domain/DamageCalculator.test.ts`
+  - `メガソーラー` 下の `ウェザーボール` が、通常の `はれ` と同じダメージになることを固定テスト化。
+  - 防御側が `メガソーラー` の場合も同様に晴れ扱いになることを固定テスト化。
+  - 表示用 helper で、天候ごとの `ウェザーボール` タイプ/威力が正しく解決されることを固定テスト化。
+- `tests/data/data-integrity.test.ts`
+  - メガポケモンの特性も `abilities.json` に存在することを検証するテストを追加。
+  - `メガソーラー` の特性データを固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/domain/DamageCalculator.test.ts tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 82 tests passed。
+- `npm run build`
+  - production build passed。
+
+### 判断メモ
+
+- `メガソーラー` は天候系特性として、明示天候ではなく実効天候の解決層で扱う。
+- 今回は `ウェザーボール` と既存天候参照の整合を優先し、追加の「水技不発」など別仕様は未実装。

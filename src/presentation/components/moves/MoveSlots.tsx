@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { MoveSelect } from './MoveSelect'
-import type { PokemonStore } from '@/presentation/store/pokemonStore'
+import { useAttackerStore, useDefenderStore, type PokemonStore } from '@/presentation/store/pokemonStore'
+import { useFieldStore } from '@/presentation/store/fieldStore'
 import type { TypeName } from '@/domain/models/Pokemon'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
+import { resolveWeatherAwareMovePower, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { typeColor } from '@/presentation/components/shared/typeColors'
 import { MoveMetaChips } from './MoveMetaChips'
 
@@ -17,6 +19,9 @@ interface MoveSlotsProps {
 }
 
 export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: MoveSlotsProps) {
+  const weather = useFieldStore(s => s.weather)
+  const attackerAbility = useAttackerStore(s => s.effectiveAbility)
+  const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   // きしかいせい / じたばた 用の HP テキスト入力（スロットごと）
   const [hpInputs, setHpInputs] = useState<[string, string, string, string]>(['', '', '', ''])
 
@@ -65,7 +70,25 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
               ? resolveReversalPower(Math.min(currentHP, max), max)
               : movePowers[slot] ?? moveRecord?.power ?? null
 
-          const typeBarColor = moveRecord ? typeColor(moveRecord.type as TypeName) : 'transparent'
+          const displayType = moveRecord
+            ? resolveWeatherAwareMoveType({
+                moveType: moveRecord.type as TypeName,
+                moveSpecial: moveRecord.special,
+                weather,
+                attackerAbility,
+                defenderAbility,
+              })
+            : null
+          const displayPower = moveRecord
+            ? resolveWeatherAwareMovePower({
+                movePower: movePowers[slot] ?? reversalPower,
+                moveSpecial: moveRecord.special,
+                weather,
+                attackerAbility,
+                defenderAbility,
+              })
+            : null
+          const typeBarColor = displayType ? typeColor(displayType) : 'transparent'
 
           return (
             <div key={slot} className="space-y-1">
@@ -82,7 +105,7 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
               </div>
               {moveRecord && (
                 <div className="pl-1">
-                  <MoveMetaChips move={moveRecord} power={movePowers[slot] ?? reversalPower} />
+                  <MoveMetaChips move={moveRecord} power={displayPower} displayType={displayType ?? undefined} />
                 </div>
               )}
 

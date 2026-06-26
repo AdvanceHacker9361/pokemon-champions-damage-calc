@@ -6,6 +6,7 @@ import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { calcRollPercent, type DamageResult } from '@/domain/models/DamageResult'
 import { wouldHalfBerryActivate } from '@/domain/calculators/DamageCalculator'
+import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import type { BattleField } from '@/domain/models/BattleField'
 
@@ -135,8 +136,15 @@ export function calculateMoveResults({
            defender.proteanType)
             ? [defender.proteanType]
             : defender.types
-        const typeEffForBerry = getTypeEffectiveness(move.type, defenderEffTypes)
-        const halfBerryActive = wouldHalfBerryActivate(defender.itemName, move.type, typeEffForBerry)
+        const effectiveMoveType = resolveWeatherAwareMoveType({
+          moveType: move.type,
+          moveSpecial: move.special,
+          weather: field.weather,
+          attackerAbility: attacker.abilityName,
+          defenderAbility: defender.abilityName,
+        })
+        const typeEffForBerry = getTypeEffectiveness(effectiveMoveType, defenderEffTypes)
+        const halfBerryActive = wouldHalfBerryActivate(defender.itemName, effectiveMoveType, typeEffForBerry)
 
         const defenderWeakArmor =
           defender.abilityName === 'くだけるよろい' &&

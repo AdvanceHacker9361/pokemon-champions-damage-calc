@@ -377,6 +377,29 @@ describe('abilities.json integrity', () => {
       `${missing.length} pokemon abilities not in abilities.json:\n${missing.slice(0, 10).join('\n')}`
     ).toHaveLength(0)
   })
+
+  it('all mega pokemon abilities should exist in abilities.json', () => {
+    const abilityNames = new Set(abilities.map(a => a.name))
+    const missing: string[] = []
+
+    for (const m of mega) {
+      if (!abilityNames.has(m.ability)) {
+        missing.push(`${m.nameEn}: ability "${m.ability}" not in abilities.json`)
+      }
+    }
+
+    expect(
+      missing,
+      `${missing.length} mega pokemon abilities not in abilities.json:\n${missing.slice(0, 10).join('\n')}`
+    ).toHaveLength(0)
+  })
+
+  it('Mega Solar ability should be available for calculation', () => {
+    expect(abilities.find(a => a.name === 'メガソーラー')).toMatchObject({
+      nameEn: 'Mega Solar',
+      calcTag: 'mega-solar',
+    })
+  })
 })
 
 // ────────────────────────────────────────────────
