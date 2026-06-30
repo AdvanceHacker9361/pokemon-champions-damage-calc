@@ -391,3 +391,33 @@ GitHub Actions:
 
 - `メガソーラー` は天候系特性として、明示天候ではなく実効天候の解決層で扱う。
 - 今回は `ウェザーボール` と既存天候参照の整合を優先し、追加の「水技不発」など別仕様は未実装。
+
+## 2026-06-30: じだんだの威力2倍選択対応
+
+### 発覚内容
+
+- `じだんだ` は前のターンに技が失敗していた場合、威力75から威力150になる。
+- 現状データでは `power: 75` の固定扱いで、UIから2倍威力を選択できなかった。
+
+### 実施した修正
+
+- `src/data/json/moves.json`
+  - `じだんだ` に `powerOptions: [75, 150]` を追加。
+  - 既存の `しっぺがえし` / `ダメおし` と同じ手動選択方式で、通常威力と条件達成時威力を切り替え可能にした。
+- `tests/data/data-integrity.test.ts`
+  - `じだんだ` の基本威力75と `powerOptions: [75, 150]` を固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 37 tests passed。
+- `npm run build`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - production build passed。
+
+### 判断メモ
+
+- 条件「前のターンに技が失敗」はバトル履歴依存のため、既存の可変威力技と同じく自動判定ではなく手動選択方式にする。

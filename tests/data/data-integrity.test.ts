@@ -287,6 +287,13 @@ describe('moves.json integrity', () => {
     expect(move?.flags.punch).toBe(true)
   })
 
+  it('じだんだ should expose normal and failed-previous-move power options', () => {
+    const move = moves.find(m => m.name === 'じだんだ')
+    expect(move).toBeDefined()
+    expect(move?.power).toBe(75)
+    expect(move?.powerOptions).toEqual([75, 150])
+  })
+
   it('ゴールドラッシュ should have Champions-adjusted data and SpA drop', () => {
     const move = moves.find(m => m.name === 'ゴールドラッシュ')
     expect(move).toBeDefined()
