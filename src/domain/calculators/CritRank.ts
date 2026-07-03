@@ -11,7 +11,7 @@ const CRIT_RANK_PLUS1_ITEMS = new Set(['ピントレンズ', 'するどいツメ
 /** 急所ランク +1 を与える特性 */
 const CRIT_RANK_PLUS1_ABILITIES = new Set(['きょううん'])
 
-export interface CritRankParams {
+interface CritRankParams {
   /** 技の急所ランク補正 (move.critChance: 0=通常, 1=高急所技) */
   moveCritBonus: number
   attackerAbility: string

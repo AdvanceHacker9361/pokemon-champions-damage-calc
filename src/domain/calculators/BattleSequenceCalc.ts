@@ -21,8 +21,13 @@
 export type DmgDist = number[] | Map<number, number>
 
 export type SeqEvent =
-  /** 防御側へのダメージ（攻撃側の技）。drain/recoil 指定時は実ダメに応じて攻撃側HPを増減 */
-  | { kind: 'attack'; dmg: DmgDist; drain?: number; recoil?: number }
+  /**
+   * 防御側へのダメージ（攻撃側の技）。drain/recoil 指定時は実ダメに応じて攻撃側HPを増減。
+   * noTurnBoundary=true のとき、このイベントの後にターン境界処理（はんすう cud カウントダウン・
+   * しゅうかく再装填）を実行しない。1ターン内の複数ヒット（おやこあいの親子分割など）で
+   * 中間ヒットに付与し、最終ヒットのみがターンを終了させるために使う。
+   */
+  | { kind: 'attack'; dmg: DmgDist; drain?: number; recoil?: number; noTurnBoundary?: boolean }
   /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain/recoil 指定時は実ダメに応じて防御側HPを増減 */
   | { kind: 'incoming'; dmg: DmgDist; drain?: number; recoil?: number }
   /** ダメージを伴わない補助技・積み技ターン。HPは変えず、ターン経過だけを記録する */
@@ -57,9 +62,9 @@ export interface SeqStepResult {
   attackerHpDist: Map<number, number>
   /** このステップ完了時点の防御側HP周辺分布（両者生存マスのみ） */
   defenderHpDist: Map<number, number>
-  /** 累積: 防御側を撃破した確率（攻撃側生存中のKO） */
+  /** 累積: 防御側撃破確率（両者瀕死＝反動同時死を含む表示用の値） */
   koProb: number
-  /** 累積: 攻撃側が瀕死になった確率 */
+  /** 累積: 攻撃側瀕死確率（両者瀕死＝反動同時死を含む表示用の値） */
   faintProb: number
   /** 両者生存マスの確率 */
   bothAliveProb: number
@@ -67,11 +72,16 @@ export interface SeqStepResult {
 
 export interface BattleSequenceResult {
   steps: SeqStepResult[]
-  /** 防御側撃破確率（シーケンス完了時点までの累積） */
+  /** 防御側撃破確率（シーケンス完了時点までの累積、両者瀕死を含む） */
   defenderKoProb: number
-  /** 攻撃側瀕死確率（シーケンス完了時点までの累積） */
+  /** 攻撃側瀕死確率（シーケンス完了時点までの累積、両者瀕死を含む） */
   attackerFaintProb: number
-  /** 攻撃側生存確率（= 1 - 瀕死確率） */
+  /**
+   * 両者が同時に瀕死になる確率（Gen9: 反動ダメは相手を倒しても適用されるため実在するケース）。
+   * defenderKoProb / attackerFaintProb の両方に含まれている。
+   */
+  bothFaintProb: number
+  /** 攻撃側生存確率（= 1 - 攻撃側瀕死確率、両者瀕死は非生存として扱う） */
   attackerSurviveProb: number
   /** 両者生存して終了する確率 */
   bothAliveProb: number
@@ -162,8 +172,13 @@ export function runBattleSequence(
   // 初期状態でも HP ≤ threshold ならきのみを即発動
   const init = triggerBerry(d0, 0, 0)
   let joint = new Map<number, number>([[enc(a0, init.d, init.bstate), 1]])
+  // 3つの互いに排反な終端バケツ:
+  //   koProb    = 防御側のみ瀕死（攻撃側生存）
+  //   faintProb = 攻撃側のみ瀕死（防御側生存）
+  //   bothFaint = 両者同時瀕死（反動で相手を倒しつつ自分も倒れる Gen9 ケース）
   let koProb = 0
   let faintProb = 0
+  let bothFaint = 0
   const steps: SeqStepResult[] = []
 
   for (let i = 0; i < events.length; i++) {
@@ -197,8 +212,11 @@ export function runBattleSequence(
             if (ev.recoil && ev.recoil > 0 && actual > 0) {
               na -= Math.max(1, Math.round(actual * ev.recoil))
             }
-            if (nd0 <= 0) koProb += p * rp
-            else {
+            if (nd0 <= 0) {
+              // 防御側撃破。反動で攻撃側も同時に瀕死しうる（Gen9: 反動は相手を倒しても適用）
+              if (na <= 0) bothFaint += p * rp
+              else koProb += p * rp
+            } else {
               if (na <= 0) {
                 faintProb += p * rp
                 continue
@@ -223,8 +241,11 @@ export function runBattleSequence(
             if (ev.recoil && ev.recoil > 0 && actual > 0) {
               nd -= Math.max(1, Math.round(actual * ev.recoil))
             }
-            if (na <= 0) faintProb += p * rp
-            else if (nd <= 0) koProb += p * rp
+            if (na <= 0) {
+              // 攻撃側瀕死。防御側が自分の反動で同時に瀕死しうる
+              if (nd <= 0) bothFaint += p * rp
+              else faintProb += p * rp
+            } else if (nd <= 0) koProb += p * rp
             else addLive(na, nd, bstate, p * rp)
           }
           break
@@ -305,8 +326,11 @@ export function runBattleSequence(
 
     joint = next
 
-    // 攻撃・補助技イベント = ターン境界。はんすう再発動・しゅうかく再装填を処理
-    if ((ev.kind === 'attack' || ev.kind === 'setupTurn') && hasBerry && (cudEnabled || harvestChance > 0)) {
+    // 攻撃・補助技イベント = ターン境界。はんすう再発動・しゅうかく再装填を処理。
+    // noTurnBoundary 付き攻撃（1ターン内の中間ヒット）はターンを終了させない。
+    const isTurnBoundary =
+      (ev.kind === 'attack' && ev.noTurnBoundary !== true) || ev.kind === 'setupTurn'
+    if (isTurnBoundary && hasBerry && (cudEnabled || harvestChance > 0)) {
       const after = new Map<number, number>()
       const addAfter = (a: number, d: number, bstate: number, p: number) => {
         const k = enc(a, d, bstate)
@@ -353,8 +377,9 @@ export function runBattleSequence(
       label: opts.labels?.[i] ?? `ステップ ${i + 1}`,
       attackerHpDist: aDist,
       defenderHpDist: dDist,
-      koProb: Math.min(1, koProb),
-      faintProb: Math.min(1, faintProb),
+      // 表示用: 両者瀕死は撃破・瀕死の両方にカウント
+      koProb: Math.min(1, koProb + bothFaint),
+      faintProb: Math.min(1, faintProb + bothFaint),
       bothAliveProb: bothAlive,
     })
   }
@@ -362,11 +387,13 @@ export function runBattleSequence(
   let bothAlive = 0
   for (const p of joint.values()) bothAlive += p
 
+  const attackerFaintProb = faintProb + bothFaint
   return {
     steps,
-    defenderKoProb: Math.min(1, koProb),
-    attackerFaintProb: Math.min(1, faintProb),
-    attackerSurviveProb: Math.min(1, 1 - faintProb),
+    defenderKoProb: Math.min(1, koProb + bothFaint),
+    attackerFaintProb: Math.min(1, attackerFaintProb),
+    bothFaintProb: Math.min(1, bothFaint),
+    attackerSurviveProb: Math.min(1, 1 - attackerFaintProb),
     bothAliveProb: bothAlive,
   }
 }

@@ -102,6 +102,20 @@ export interface PokemonStore {
 const DEFAULT_BASE_STATS: BaseStats = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }
 const DEFAULT_RANKS: Record<StatKey, number> = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }
 
+/**
+ * 共通のリセットフィールド。3つのアクション（setPokemon, clearPokemonSelection, reset）で
+ * 値が同一のフィールドを集約。条件付き・差分フィールドは各アクションで明示的に上書き。
+ */
+const COMMON_RESET_FIELDS = {
+  isBlade: false,
+  isMighty: false,
+  proteanType: null,
+  proteanStab: true,
+  grounded: false,
+  focusEnergyActive: false,
+  chargeActive: false,
+}
+
 function createPokemonStore() {
   return create<PokemonStore>((set, get) => ({
     pokemonId: null,
@@ -165,8 +179,6 @@ function createPokemonStore() {
         availableMegas,
         megaKey,
         isMega,
-        isBlade: false,
-        isMighty: false,
         abilityName: record.abilities[0] ?? 'なし',
         effectiveAbility,
         weight,
@@ -174,13 +186,9 @@ function createPokemonStore() {
         ranks: { ...DEFAULT_RANKS },
         status: null,
         abilityActivated: defaultAbilityActivated(effectiveAbility),
-        proteanType: null,
-        proteanStab: true,
         supremeOverlordBoost: 0,
-        focusEnergyActive: false,
-        chargeActive: false,
         metronomeMultiplier: get().itemName === 'メトロノーム' ? get().metronomeMultiplier : 1,
-        grounded: false,
+        ...COMMON_RESET_FIELDS,
       })
     },
 
@@ -192,16 +200,12 @@ function createPokemonStore() {
       canMega: false,
       availableMegas: [],
       megaKey: null,
-      isBlade: false,
-      isMighty: false,
       abilityActivated: false,
-      proteanType: null,
-      proteanStab: true,
-      grounded: false,
       baseStats: { ...DEFAULT_BASE_STATS },
       types: [],
       weight: 0,
       effectiveAbility: 'なし',
+      ...COMMON_RESET_FIELDS,
     }),
 
     setStatNature: (stat, val) => set(s => ({
@@ -367,17 +371,15 @@ function createPokemonStore() {
       statNatures: { ...DEFAULT_STAT_NATURES },
       sp: createSpDistribution(), abilityName: 'なし', itemName: null,
       isMega: false, canMega: false, availableMegas: [], megaKey: null,
-      isBlade: false, isMighty: false, ranks: { ...DEFAULT_RANKS }, status: null,
-      abilityActivated: false, proteanType: null, proteanStab: true,
+      ranks: { ...DEFAULT_RANKS }, status: null,
+      abilityActivated: false,
       moves: [null, null, null, null],
       movePowers: [null, null, null, null],
       supremeOverlordBoost: 0,
-      focusEnergyActive: false,
-      chargeActive: false,
       metronomeMultiplier: 1,
-      grounded: false,
       baseStats: { ...DEFAULT_BASE_STATS }, types: [], weight: 0,
       effectiveAbility: 'なし',
+      ...COMMON_RESET_FIELDS,
     }),
   }))
 }

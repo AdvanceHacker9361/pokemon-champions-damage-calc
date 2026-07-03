@@ -51,10 +51,20 @@ export function executeDamageCalculation(
 
   // てんねん: 相手の攻撃/防御ランク補正を無効化して実数値を再計算
   // ただし攻撃側がかたやぶり系の場合はてんねんを無視してランク補正をそのまま採用
-  const attackerRanks =
+  const baseAttackerRanks =
     input.defender.abilityName === 'てんねん' && !attackerHasMoldBreaker
       ? { ...input.attacker.ranks, atk: 0, spa: 0 }
       : input.attacker.ranks
+
+  // 急所時: 自分の攻撃/特攻ランク低下を無視する（Gen 9 仕様）
+  const attackerRanks =
+    effectiveCritical
+      ? {
+          ...baseAttackerRanks,
+          atk: Math.max(0, baseAttackerRanks.atk ?? 0),
+          spa: Math.max(0, baseAttackerRanks.spa ?? 0),
+        }
+      : baseAttackerRanks
 
   const baseDefenderRanks =
     input.attacker.abilityName === 'てんねん'

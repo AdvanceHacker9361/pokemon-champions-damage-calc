@@ -421,3 +421,39 @@ GitHub Actions:
 ### 判断メモ
 
 - 条件「前のターンに技が失敗」はバトル履歴依存のため、既存の可変威力技と同じく自動判定ではなく手動選択方式にする。
+
+## 2026-07-03: V3.15.0 マルチエージェント総点検で発見したバグ群
+
+### 進め方
+
+- Fable 5 が司令塔となり、調査を Opus 4.8（ドメイン層）/ Sonnet 5（プレゼンテーション層・リファクタ分析）に並列委任、修正を Opus 4.8 / Sonnet 5 / Haiku 4.5 に振り分けた。
+- 並列エージェント間のファイル競合は担当ファイルの禁止リストで防止した。
+
+### 発見・修正したバグ
+
+1. **きしかいせい/じたばた のオフバイワン**（`SpecialMoveCalc.ts`）
+   - `p = floor(48 × HP/maxHP)` の威力100帯が `p < 9` になっており、p=9（例: HP38/192 = 18.75%）が誤って威力80になっていた。canonical は p∈[5,9]→100。`p < 10` に修正。
+2. **急所時の攻撃側負ランク無視が未実装**（`CalculateDamageUseCase.ts`）
+   - V3.14.1 で防御側の正ランク無視は実装済みだったが、Gen 9 では攻撃側の A/C 下降ランクも急所時に無視される。`effectiveCritical` 時に `atk/spa` を `Math.max(0, rank)` でクランプ（てんねん処理の後段、防御側と対称のパターン）。
+3. **`hex` 分岐の恒真条件**（`SpecialMoveCalc.ts`）
+   - `if (attackerStatus != null || ctx.defenderStats)` の後者は常に truthy で常時2倍。`special: "hex"` は moves.json から撤去済み（powerOptions 方式に移行済み）のためデッドコードとして分岐と `'hex'` タグを削除。
+4. **反動技の両者同時瀕死が「攻撃側生存」扱い**（`BattleSequenceCalc.ts`）
+   - `attack` イベントで `nd0 <= 0`（防御側撃破）を反動死判定より先に吸収しており、「相手を倒しつつ反動で自分も倒れる」ロールが攻撃側生存に計上されていた。第3吸収バケット `bothFaint` を追加し、表示値は 撃破率 = `ko + bothFaint`、攻撃側瀕死率 = `faint + bothFaint`、不変条件 `ko + faint + bothFaint + bothAlive = 1`。`incoming` の対称ケース（被ダメ側の反動）も同時修正。
+5. **おやこあい急所込みパスできのみターン境界が2倍進行**（`useAccumulatedDamage.ts` / `BattleSequenceCalc.ts`）
+   - 急所込みパスは親・子を2つの `attack` イベントに分割するため、はんすう/しゅうかくのターン境界処理が1ターンで2回走っていた。`attack` イベントに `noTurnBoundary?: true` を追加し、親ヒットではターン終了処理を抑止。
+6. **アクティブタブの複製で編集が巻き戻る**（`sessionStore.ts`）
+   - `duplicateTab` が保存前の `tabs` 配列からスナップショットを取っていたため、アクティブタブ複製時に「最後のタブ切替時点」の状態が複製され、`restoreState` でライブUIも巻き戻った。アクティブタブ複製時は `snapshotLiveState()` を複製元とするよう修正。
+7. **リロードで直近編集が消える**（`sessionStore.ts` / `Calculator.tsx`）
+   - タブは localStorage 永続化されるのにスナップショット保存はタブ操作時のみだった。`saveActiveTabSnapshot()` を追加し `beforeunload` / `pagehide` で自動保存（多重登録ガード付き）。
+
+### 健全性確認（問題なしと判定した項目）
+
+- スナップショット/攻守交代 `pick` のフィールド網羅性: pokemonStore 28・progressionStore 10・fieldStore 7 フィールドを全数突合し欠落ゼロ。
+- KO確率DP・きのみ状態機械（berryUnit パッキング）・丸め順序（フィールド補正→乱数→急所→STAB→相性→やけど）・16段階乱数はすべて正確。確率保存も検証済み。
+- `any` 0件、テストの `.only`/`.skip` 0件、V3.8.0 ストア統合の残骸なし。
+
+### 判断メモ
+
+- 累積ビュー（`useAccumulatedDamage`）が `incoming` の drain/recoil による防御側HP変化を無視する件は、「累積=防御側のみ追跡」という設計上の割り切りとして今回は据え置き（シーケンス出力側は正確）。
+- `useAccumulatedDamage` / `useBattleSequence` の attack 展開ロジック共通化は、V3.8.1 の痛み分けバグ再発リスクがあるため見送り（将来はモードを引数で明示する設計で実施すること）。
+- `calcCombinedKoProbability` はプロダクションから未参照だが、2Dエンジンとの整合性検証オラクルとしてテストが使用しているため削除しない。

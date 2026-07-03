@@ -12,8 +12,8 @@ export function resolveReversalPower(currentHP: number, maxHP: number): number {
   const ratio = Math.floor(48 * Math.max(1, currentHP) / maxHP)
   if (ratio < 2)  return 200  // HP ≈ 4% 以下
   if (ratio < 5)  return 150  // HP ≈ 9% 以下
-  if (ratio < 9)  return 100  // HP ≈ 17% 以下
-  if (ratio < 17) return 80   // HP ≈ 34% 以下
+  if (ratio < 10) return 100  // HP ≈ 19% 以下 (p=5..9)
+  if (ratio < 17) return 80   // HP ≈ 34% 以下 (p=10..16)
   if (ratio < 33) return 40   // HP ≈ 68% 以下
   return 20                    // それ以上
 }
@@ -89,14 +89,6 @@ export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMove
     case 'low-kick':
       // 体重依存威力
       return { effectivePower: getWeightPower(defenderWeight ?? 0) }
-
-    case 'hex':
-      // たたりめ: 状態異常があれば威力2倍
-      if (attackerStatus != null || ctx.defenderStats) {
-        // hexは相手の状態異常で威力2倍
-        return { effectivePower: (ctx.originalPower ?? 65) * 2 }
-      }
-      return {}
 
     case 'facade':
       // からげんき: やけど/まひ/どく時威力140

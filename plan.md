@@ -576,3 +576,52 @@
 
 - Implementation and local validation are complete.
 - Deployment has not been performed in this step.
+
+## 2026-07-03 V3.15.0 全体リファクタリング＋バグ修正（マルチエージェント）
+
+### User Request
+
+- Pokemon Champions 加算ダメージ計算ツール全体のリファクタリングとデバッグ。
+- メインエージェント（Fable 5）が計画・監督を担当し、実装は Opus 4.8 / Sonnet 5 / Haiku 4.5 のサブエージェントへ振り分ける（トークン最適化）。
+- `plan.md` / `debug.md` へ記録後、バージョンを 3.15.0 に上げて本番デプロイまで実施。
+
+### Implemented Scope
+
+- バグ修正（7件）:
+  1. きしかいせい/じたばた の威力しきい値オフバイワン修正（p=9 は威力100）。`SpecialMoveCalc.ts`
+  2. 急所時に攻撃側の負の攻撃ランク（A/C 下降）を無視する Gen 9 仕様を実装。`CalculateDamageUseCase.ts`
+  3. `hex` 特殊分岐の恒真条件デッドコードを削除（`SpecialMoveTag` から `'hex'` も除去）
+  4. 反動技での両者同時瀕死を第3吸収バケット `bothFaintProb` で正確に分類。`BattleSequenceCalc.ts`
+  5. おやこあい急所込みパスのきのみターン境界二重進行を `noTurnBoundary` フラグで修正
+  6. アクティブタブ複製時に古いスナップショットが使われライブUIが巻き戻るバグを修正。`sessionStore.ts`
+  7. `beforeunload`/`pagehide` でアクティブタブを自動保存し、リロード時の編集消失を解消
+- リファクタリング:
+  - `DamageProgressionPanel.tsx` 1,335行 → 319行（`EventRow` / `BackgroundEffectsSection` / `SequenceResultPanel` / `AddEventToolbar` に分割）
+  - `DamageResultRow.tsx` 890行 → 502行（`ParentalBondTable` / `VariableMultiHitPanel` / `SelfStatChangeButton` / `buildAttackPayload` に分割、`computeEffectiveRolls` はドメイン層 `RollAggregation.ts` へ）
+  - デッドコード削除（`calcStealthRockDamage`）、内部専用シンボルの非公開化、`getHitRolls` 3重複の統合
+  - `pokemonStore` のリセットフィールドを `COMMON_RESET_FIELDS` に共通化、`PokemonPanel` のフォルム切替UIを `FormToggle` に統合
+
+### Tests Added
+
+- `tests/domain/SpecialMoveCalc.test.ts`（新規8件）: きしかいせい全境界値
+- `tests/application/CalculateDamageUseCase.test.ts`（+4件）: 急所時の攻撃側負ランク無視
+- `tests/domain/BattleSequenceCalc.test.ts`（+5件）: 反動同時瀕死・`noTurnBoundary`
+- `tests/presentation/sessionStore.test.ts`（新規4件）: タブ複製・スナップショット保存
+
+### Known Limitations（今回は見送り・記録のみ）
+
+- 累積ビューは被ダメイベントの吸収/反動による防御側HP変化を無視する（正確な値はシーケンス出力側に表示）。
+- 固定連続技の `usages=ヒット数` 方式では1発ごとにターン境界が進む（はんすう/しゅうかく使用時のみ影響）。
+- `DamageCalculator` のタイプ強化アイテムマップの items.json 駆動化は中期改善案として保留。
+
+### Validation
+
+- `npm run typecheck` パス
+- `npm run lint` エラー0・警告0
+- `npm run test` 13ファイル・227件全パス（206件 → 227件、+21件）
+- `npm run build` production build + PWA 生成成功
+
+### Deployment Plan
+
+- `plan.md` / `debug.md` 追記とバージョン 3.15.0 更新を含めてコミット。
+- origin/main ベースのブランチから main へ push し、GitHub Actions で Pages デプロイ。

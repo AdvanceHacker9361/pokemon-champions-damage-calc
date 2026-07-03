@@ -446,6 +446,96 @@ describe('BattleSequenceCalc', () => {
       expect(last.attackerHpDist.get(110)).toBeCloseTo(1, 6)
       expect(last.defenderHpDist.get(70)).toBeCloseTo(1, 6)
     })
+
+    it('反動で防御側を倒しつつ攻撃側も倒れる（両者瀕死）を正しく分類する', () => {
+      // 攻撃側HP=20、防御側HP=100。100ダメで防御側撃破、実ダメ100の1/3=33の反動で攻撃側(20)も瀕死
+      const r = runBattleSequence([{ kind: 'attack', dmg: [100], recoil: 1 / 3 }], 20, 100)
+      // 防御側撃破確率・攻撃側瀕死確率の両方に両者瀕死が計上される
+      expect(r.defenderKoProb).toBeCloseTo(1, 6)
+      expect(r.attackerFaintProb).toBeCloseTo(1, 6)
+      expect(r.attackerSurviveProb).toBeCloseTo(0, 6)
+      expect(r.bothFaintProb).toBeCloseTo(1, 6)
+      expect(r.bothAliveProb).toBeCloseTo(0, 6)
+      // 内部の互いに排反な確率（koOnly + faintOnly + bothFaint + bothAlive）は 1
+      const koOnly = r.defenderKoProb - r.bothFaintProb
+      const faintOnly = r.attackerFaintProb - r.bothFaintProb
+      expect(koOnly + faintOnly + r.bothFaintProb + r.bothAliveProb).toBeCloseTo(1, 6)
+    })
+
+    it('乱数で「撃破のみ」と「両者瀕死」に分かれる（攻撃側生存率が正しい）', () => {
+      // 攻撃側HP=25、防御側HP=100。ダメ [100,110] → いずれも撃破。
+      // 反動 1/3: 実ダメ100→33, 110→クランプ100の1/3=33 で攻撃側(25)は両ロールとも瀕死
+      const r = runBattleSequence([{ kind: 'attack', dmg: [100, 110], recoil: 1 / 3 }], 25, 100)
+      expect(r.defenderKoProb).toBeCloseTo(1, 6)
+      expect(r.bothFaintProb).toBeCloseTo(1, 6)
+      expect(r.attackerSurviveProb).toBeCloseTo(0, 6)
+
+      // 反動を軽くして攻撃側が生存するケースと対照（攻撃側HP=50）
+      const r2 = runBattleSequence([{ kind: 'attack', dmg: [100], recoil: 1 / 3 }], 50, 100)
+      expect(r2.defenderKoProb).toBeCloseTo(1, 6)
+      expect(r2.bothFaintProb).toBeCloseTo(0, 6)      // 50-33=17 生存
+      expect(r2.attackerSurviveProb).toBeCloseTo(1, 6)
+    })
+
+    it('incoming: 防御側が自分の反動で攻撃側と同時瀕死になるケース', () => {
+      // 防御側HP=20が反動技で攻撃側(HP=100)へ100ダメ → 攻撃側瀕死、
+      // 実ダメ100の1/3=33の反動で防御側(20)も瀕死 → 両者瀕死
+      const r = runBattleSequence([{ kind: 'incoming', dmg: [100], recoil: 1 / 3 }], 100, 20)
+      expect(r.attackerFaintProb).toBeCloseTo(1, 6)
+      expect(r.defenderKoProb).toBeCloseTo(1, 6)
+      expect(r.bothFaintProb).toBeCloseTo(1, 6)
+      expect(r.bothAliveProb).toBeCloseTo(0, 6)
+    })
+  })
+
+  describe('noTurnBoundary（1ターン内の中間ヒット）', () => {
+    it('noTurnBoundary 付き攻撃はしゅうかく再装填を進めない', () => {
+      // しゅうかく100%。防御側HP=100, threshold=50。
+      // 攻撃30 → 残70(未発動)、攻撃30 → 残40≤50 発動 +30 → 残70、消費。
+      // 通常なら次ターン境界でしゅうかく再装填されるが、noTurnBoundary の中間ヒットでは再装填しない。
+      const berry = { threshold: 50, amount: 30, harvestChance: 1.0 }
+
+      // noTurnBoundary 付き中間ヒットで削り切っても再装填は起きない → もう1発でオボン再発動しない
+      const flagged: SeqEvent[] = [
+        { kind: 'attack', dmg: [30] },                       // 残70
+        { kind: 'attack', dmg: [30], noTurnBoundary: true }, // 残40→発動→残70、消費（境界なし=再装填せず）
+        { kind: 'attack', dmg: [30], noTurnBoundary: true }, // 残40（再装填無いので発動せず）
+      ]
+      const rf = runBattleSequence(flagged, 1, 100, { defenderBerry: berry })
+      const lastF = rf.steps[rf.steps.length - 1]
+      expect(lastF.defenderHpDist.get(40)).toBeCloseTo(1, 6)
+
+      // 対照: 通常攻撃（境界あり）だと2発目後にしゅうかく再装填 → 3発目で再びオボン発動
+      const unflagged: SeqEvent[] = [
+        { kind: 'attack', dmg: [30] }, // 残70
+        { kind: 'attack', dmg: [30] }, // 残40→発動→残70、消費 → 境界で再装填（未消費に戻る）
+        { kind: 'attack', dmg: [30] }, // 残40→再発動→残70
+      ]
+      const ru = runBattleSequence(unflagged, 1, 100, { defenderBerry: berry })
+      const lastU = ru.steps[ru.steps.length - 1]
+      expect(lastU.defenderHpDist.get(70)).toBeCloseTo(1, 6)
+    })
+
+    it('きのみ未設定なら flagged と unflagged で結果は完全一致', () => {
+      const rolls = [40, 60]
+      const flagged: SeqEvent[] = [
+        { kind: 'attack', dmg: rolls, noTurnBoundary: true },
+        { kind: 'attack', dmg: rolls },
+      ]
+      const unflagged: SeqEvent[] = [
+        { kind: 'attack', dmg: rolls },
+        { kind: 'attack', dmg: rolls },
+      ]
+      const rf = runBattleSequence(flagged, 1, 200)
+      const ru = runBattleSequence(unflagged, 1, 200)
+      const df = extractDefenderDamageDistribution(rf, 200)
+      const du = extractDefenderDamageDistribution(ru, 200)
+      expect(df.size).toBe(du.size)
+      for (const [dmg, p] of du) {
+        expect(df.get(dmg) ?? 0).toBeCloseTo(p, 9)
+      }
+      expect(rf.defenderKoProb).toBeCloseTo(ru.defenderKoProb, 9)
+    })
   })
 
   describe('宿り木のタネ', () => {

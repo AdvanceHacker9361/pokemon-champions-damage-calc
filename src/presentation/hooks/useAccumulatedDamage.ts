@@ -85,11 +85,13 @@ function expandAttack(
       const parentCrit = useRaw ? (e.pbParentRawCritRolls ?? critRolls) : (e.pbParentCritRolls ?? critRolls)
       const childNorm = e.pbChildRolls
       const childCrit = e.pbChildCritRolls ?? childNorm
+      // おやこあいは親+子で1ターン。親（中間ヒット）はターン境界を発生させず、
+      // 子（最終ヒット）のみがターンを終了させる（通常パスの単一マージイベントと整合）。
       if (e.isForcedCrit) {
-        crit.push({ kind: 'attack', dmg: parentNorm })
+        crit.push({ kind: 'attack', dmg: parentNorm, noTurnBoundary: true })
         crit.push({ kind: 'attack', dmg: childNorm })
       } else {
-        crit.push({ kind: 'attack', dmg: mixToMap(parentNorm, parentCrit, e.critChance) })
+        crit.push({ kind: 'attack', dmg: mixToMap(parentNorm, parentCrit, e.critChance), noTurnBoundary: true })
         crit.push({ kind: 'attack', dmg: mixToMap(childNorm, childCrit, e.critChance) })
       }
     } else if (e.isForcedCrit) {

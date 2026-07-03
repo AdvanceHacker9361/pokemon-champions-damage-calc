@@ -231,6 +231,100 @@ describe('CalculateDamageUseCase - フルパイプライン', () => {
     expect(critLowered.max).toBeGreaterThan(critUnboosted.max)
   })
 
+  it('急所時は攻撃側のAランク低下を無視する（Aランク-2の急所とAランク0の急所が同ダメージ）', () => {
+    const loweredAttacker = {
+      ...garchompInput,
+      ranks: { atk: -2 },
+    }
+
+    const critLowered = executeDamageCalculation({
+      attacker: loweredAttacker,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+    const critUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(critLowered.rolls).toEqual(critUnboosted.rolls)
+  })
+
+  it('急所時は攻撃側のCランク低下を無視する（Cランク-2の急所とCランク0の急所が同ダメージ）', () => {
+    const loweredAttacker = {
+      ...megaGengarInput,
+      ranks: { spa: -2 },
+    }
+
+    const critLowered = executeDamageCalculation({
+      attacker: loweredAttacker,
+      defender: garchompInput,
+      move: shadowBallMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+    const critUnboosted = executeDamageCalculation({
+      attacker: megaGengarInput,
+      defender: garchompInput,
+      move: shadowBallMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(critLowered.rolls).toEqual(critUnboosted.rolls)
+  })
+
+  it('急所でない場合は攻撃側のAランク低下がそのまま反映される（低下時の方がダメージが小さい）', () => {
+    const loweredAttacker = {
+      ...garchompInput,
+      ranks: { atk: -2 },
+    }
+
+    const normalLowered = executeDamageCalculation({
+      attacker: loweredAttacker,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+    })
+    const normalUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+    })
+
+    expect(normalLowered.max).toBeLessThan(normalUnboosted.max)
+  })
+
+  it('急所時も攻撃側の攻撃ランク上昇は維持する', () => {
+    const boostedAttacker = {
+      ...garchompInput,
+      ranks: { atk: 2 },
+    }
+
+    const critBoosted = executeDamageCalculation({
+      attacker: boostedAttacker,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+    const critUnboosted = executeDamageCalculation({
+      attacker: garchompInput,
+      defender: megaGengarInput,
+      move: earthquakeMove,
+      field: createDefaultBattleField(),
+      isCritical: true,
+    })
+
+    expect(critBoosted.max).toBeGreaterThan(critUnboosted.max)
+  })
+
   it('急所無効特性の場合は防御側のBランク上昇を無視しない', () => {
     const shellArmorDefender = {
       ...megaGengarInput,

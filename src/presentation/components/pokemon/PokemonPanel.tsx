@@ -20,6 +20,43 @@ interface PokemonPanelProps {
   showMoves?: boolean
 }
 
+/**
+ * フォルム切り替えコンポーネント（バトルスイッチ、マイティチェンジ等の2択トグル用）
+ */
+interface FormToggleProps {
+  options: Array<{
+    label: string
+    active: boolean
+    onClick: () => void
+  }>
+  description: string | React.ReactNode
+}
+
+function FormToggle({ options, description }: FormToggleProps) {
+  return (
+    <div>
+      <label className="label block mb-1">フォルム</label>
+      <div className="flex gap-1.5">
+        {options.map((opt, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={opt.onClick}
+            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+              opt.active
+                ? 'bg-accent-bg text-accent border-accent-border'
+                : 'text-fg-muted border-edge hover:bg-surface-3'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-fg-subtle mt-0.5">{description}</p>
+    </div>
+  )
+}
+
 /** 手動トグルが必要な条件付き特性。key=特性名、value=表示する条件ラベル */
 const ACTIVATABLE_ABILITIES: Record<string, string> = {
   'げきりゅう':   'HP1/3以下',
@@ -208,70 +245,24 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
           {/* バトルスイッチ: シールド/ブレードフォルム切り替え */}
           {store.effectiveAbility === 'バトルスイッチ' && (
-            <div>
-              <label className="label block mb-1">フォルム</label>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => store.setBlade(false)}
-                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                    !store.isBlade
-                      ? 'bg-accent-bg text-accent border-accent-border'
-                      : 'text-fg-muted border-edge hover:bg-surface-3'
-                  }`}
-                >
-                  シールドフォルム
-                </button>
-                <button
-                  type="button"
-                  onClick={() => store.setBlade(true)}
-                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                    store.isBlade
-                      ? 'bg-accent-bg text-accent border-accent-border'
-                      : 'text-fg-muted border-edge hover:bg-surface-3'
-                  }`}
-                >
-                  ブレードフォルム
-                </button>
-              </div>
-              <p className="text-[11px] text-fg-subtle mt-0.5">
-                {store.isBlade ? '攻撃時（A・C↑ / B・D↓）' : '防御時（B・D↑ / A・C↓）'}
-              </p>
-            </div>
+            <FormToggle
+              options={[
+                { label: 'シールドフォルム', active: !store.isBlade, onClick: () => store.setBlade(false) },
+                { label: 'ブレードフォルム', active: store.isBlade, onClick: () => store.setBlade(true) },
+              ]}
+              description={store.isBlade ? '攻撃時（A・C↑ / B・D↓）' : '防御時（B・D↑ / A・C↓）'}
+            />
           )}
 
           {/* マイティチェンジ: ナイーブ/マイティフォルム切り替え */}
           {store.effectiveAbility === 'マイティチェンジ' && (
-            <div>
-              <label className="label block mb-1">フォルム</label>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => store.setMighty(false)}
-                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                    !store.isMighty
-                      ? 'bg-accent-bg text-accent border-accent-border'
-                      : 'text-fg-muted border-edge hover:bg-surface-3'
-                  }`}
-                >
-                  ナイーブフォルム
-                </button>
-                <button
-                  type="button"
-                  onClick={() => store.setMighty(true)}
-                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                    store.isMighty
-                      ? 'bg-accent-bg text-accent border-accent-border'
-                      : 'text-fg-muted border-edge hover:bg-surface-3'
-                  }`}
-                >
-                  マイティフォルム
-                </button>
-              </div>
-              <p className="text-[11px] text-fg-subtle mt-0.5">
-                {store.isMighty ? '交代後（A160/B97/C106/D87）' : '交代前（A70/B72/C53/D62）'}
-              </p>
-            </div>
+            <FormToggle
+              options={[
+                { label: 'ナイーブフォルム', active: !store.isMighty, onClick: () => store.setMighty(false) },
+                { label: 'マイティフォルム', active: store.isMighty, onClick: () => store.setMighty(true) },
+              ]}
+              description={store.isMighty ? '交代後（A160/B97/C106/D87）' : '交代前（A70/B72/C53/D62）'}
+            />
           )}
 
           {/* そうだいしょう: 倒れた味方の数 */}

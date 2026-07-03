@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
-import { useSessionStore } from '@/presentation/store/sessionStore'
+import { useSessionStore, registerSessionUnloadListener } from '@/presentation/store/sessionStore'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar'
 import { TabMemo } from '@/presentation/components/session/TabMemo'
@@ -84,9 +84,13 @@ export function Calculator() {
 
   // 初回マウント時にデフォルトポケモンを設定し、1つ目のタブを生成
   useEffect(() => {
-    if (useSessionStore.getState().tabs.length > 0) return
+    if (useSessionStore.getState().tabs.length > 0) {
+      registerSessionUnloadListener()
+      return
+    }
     initDefaults()
     useSessionStore.getState().initFirstTab('タブ 1')
+    registerSessionUnloadListener()
   }, [])
 
   return (

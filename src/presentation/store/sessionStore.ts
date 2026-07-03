@@ -28,6 +28,12 @@ interface SessionStore {
   closeTab: (id: string) => void
   /** タブ順を入れ替える（D&D用） */
   moveTab: (fromId: string, toId: string) => void
+  /**
+   * アクティブタブの snapshot をライブストアの最新状態で上書きする（ライブUIは変更しない）。
+   * ページ離脱時（beforeunload/pagehide）に呼び出し、タブ切替を挟まずに行った編集が
+   * リロードで失われないようにするためのもの。
+   */
+  saveActiveTabSnapshot: () => void
 }
 
 function genId(): string {
@@ -67,10 +73,17 @@ export const useSessionStore = create<SessionStore>()(
         const { tabs, activeTabId } = get()
         const source = tabs.find(t => t.id === id)
         if (!source) return
+        // アクティブタブの tabs 配列内 snapshot は前回のタブ切替時点のものであり、
+        // 最新のライブ編集を反映していない。まずライブ状態を取得し、
+        // 複製元がアクティブタブ自身の場合はそれを複製元として使う
+        // （そうしないと複製内容が古くなる上、末尾の restoreState でライブUIが
+        // 巻き戻ってしまう）。
+        const currentLive = id === activeTabId ? snapshotLiveState() : null
+        const baseSnapshot = currentLive ?? source.snapshot
         const saved = tabs.map(t =>
-          t.id === activeTabId ? { ...t, snapshot: snapshotLiveState() } : t
+          t.id === activeTabId ? { ...t, snapshot: currentLive ?? snapshotLiveState() } : t
         )
-        const snapshot = cloneSnapshot(source.snapshot)
+        const snapshot = cloneSnapshot(baseSnapshot)
         const newId = genId()
         const newTab: Tab = { id: newId, name: `${source.name} (コピー)`, memo: source.memo ?? '', snapshot }
         set({ tabs: [...saved, newTab], activeTabId: newId })
@@ -128,6 +141,15 @@ export const useSessionStore = create<SessionStore>()(
         next.splice(toIdx, 0, moved)
         set({ tabs: next })
       },
+
+      saveActiveTabSnapshot: () => {
+        const { tabs, activeTabId } = get()
+        if (tabs.length === 0 || !activeTabId) return
+        const current = snapshotLiveState()
+        set({
+          tabs: tabs.map(t => t.id === activeTabId ? { ...t, snapshot: current } : t),
+        })
+      },
     }),
     {
       name: 'pcma-session-v1',
@@ -139,3 +161,28 @@ export const useSessionStore = create<SessionStore>()(
     }
   )
 )
+
+// ページ離脱時（リロード・タブクローズ・端末スリープ等）にライブ編集をアクティブタブへ
+// 保存する。タブ切替を伴わない編集はこれまで tabs 配列（＝localStorage 永続化対象）に
+// 反映されるタイミングがなく、リロードで失われていた。
+// `beforeunload` はデスクトップ、`pagehide` はモバイル Safari 等の BFCache 環境向け。
+// zustand persist は localStorage 使用時 set() の都度、同期的に書き込むため
+// 非同期処理を待つ必要はない。
+// モジュール読み込みは一度きりだが、開発時の HMR や StrictMode の二重実行に備えて
+// モジュールスコープのフラグで多重登録を防止する。
+let unloadListenerRegistered = false
+
+function saveActiveTabOnUnload(): void {
+  const { tabs, activeTabId } = useSessionStore.getState()
+  // initFirstTab 前（tabs が空）に発火した場合は何もしない
+  if (tabs.length === 0 || !activeTabId) return
+  useSessionStore.getState().saveActiveTabSnapshot()
+}
+
+export function registerSessionUnloadListener(): void {
+  if (unloadListenerRegistered) return
+  if (typeof window === 'undefined') return
+  unloadListenerRegistered = true
+  window.addEventListener('beforeunload', saveActiveTabOnUnload)
+  window.addEventListener('pagehide', saveActiveTabOnUnload)
+}

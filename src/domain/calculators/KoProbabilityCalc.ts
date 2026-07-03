@@ -1,6 +1,29 @@
 import type { KoResult } from '@/domain/models/DamageResult'
 
 /**
+ * ヒット番号に応じた適切なロール列を返す（1発目は rolls、2発目以降は rawRolls）
+ * @param rolls 1発目のロール
+ * @param rawRolls 2発目以降のロール（単一配列または per-hit 配列）
+ * @param hitNum ヒット番号（1-indexed）
+ */
+function getHitRolls(
+  rolls: number[],
+  rawRolls: number[] | number[][] | undefined,
+  hitNum: number,
+): number[] {
+  if (hitNum === 1) return rolls
+  if (!rawRolls) return rolls
+
+  const isPerHit = Array.isArray(rawRolls) && rawRolls.length > 0 && Array.isArray(rawRolls[0])
+  if (isPerHit) {
+    const arr = rawRolls as number[][]
+    const idx = Math.min(hitNum - 2, arr.length - 1)
+    return arr[idx]
+  }
+  return rawRolls as number[]
+}
+
+/**
  * n発KO確率を動的計画法で計算する
  * @param rolls - Champions仕様: 16段階の乱数ロール（昇順、85〜100）
  * @param defenderHp - 防御側HP実数値
@@ -59,24 +82,11 @@ export function calcKoProbabilityForNHits(
   hits: number,
   rawRolls?: number[] | number[][],
 ): number {
-  // 与えられた hit 番号（1-indexed）に対応するロール列を返す
-  const isPerHit = Array.isArray(rawRolls) && rawRolls.length > 0 && Array.isArray(rawRolls[0])
-  function getHitRolls(hitNum: number): number[] {
-    if (hitNum === 1) return rolls
-    if (!rawRolls) return rolls
-    if (isPerHit) {
-      const arr = rawRolls as number[][]
-      const idx = Math.min(hitNum - 2, arr.length - 1)
-      return arr[idx]
-    }
-    return rawRolls as number[]
-  }
-
   // dp[i] = i 発目までの累積ダメージが各値になる確率
   let dp: Map<number, number> = new Map([[0, 1.0]])
 
   for (let hit = 0; hit < hits; hit++) {
-    const hitRolls = getHitRolls(hit + 1)
+    const hitRolls = getHitRolls(rolls, rawRolls, hit + 1)
     const n = hitRolls.length
     const next: Map<number, number> = new Map()
     for (const [dmg, prob] of dp) {
@@ -124,12 +134,12 @@ export const VARIABLE_MULTI_HIT_DIST: { hits: number; prob: number }[] = [
 ]
 
 /** スキルリンク: 確定5発 */
-export const VARIABLE_MULTI_HIT_DIST_SKILL_LINK: { hits: number; prob: number }[] = [
+const VARIABLE_MULTI_HIT_DIST_SKILL_LINK: { hits: number; prob: number }[] = [
   { hits: 5, prob: 1.0 },
 ]
 
 /** いかさまダイス: 4発/5発 各50% */
-export const VARIABLE_MULTI_HIT_DIST_LOADED_DICE: { hits: number; prob: number }[] = [
+const VARIABLE_MULTI_HIT_DIST_LOADED_DICE: { hits: number; prob: number }[] = [
   { hits: 4, prob: 0.5 },
   { hits: 5, prob: 0.5 },
 ]
@@ -171,21 +181,9 @@ export function calcVariableMultiHitKo(
     perHit.reduce((sum, { prob, koProbForHits }) => sum + prob * koProbForHits, 0),
   )
 
-  const isPerHit = Array.isArray(rawRolls) && rawRolls.length > 0 && Array.isArray(rawRolls[0])
-  function getHitRolls(hitNum: number): number[] {
-    if (hitNum === 1) return rolls
-    if (!rawRolls) return rolls
-    if (isPerHit) {
-      const arr = rawRolls as number[][]
-      const idx = Math.min(hitNum - 2, arr.length - 1)
-      return arr[idx]
-    }
-    return rawRolls as number[]
-  }
-
   function sumOverHits(numHits: number, picker: (rolls: number[]) => number): number {
     let total = 0
-    for (let h = 1; h <= numHits; h++) total += picker(getHitRolls(h))
+    for (let h = 1; h <= numHits; h++) total += picker(getHitRolls(rolls, rawRolls, h))
     return total
   }
 
@@ -270,7 +268,7 @@ export interface AttackRollsWithCrit {
 /**
  * 急所込みDP用スロット。通常の攻撃スロットか、変動連続技など事前計算済み分布。
  */
-export type AttackSlot = AttackRollsWithCrit | { precomputed: Map<number, number> }
+type AttackSlot = AttackRollsWithCrit | { precomputed: Map<number, number> }
 
 /**
  * 急所を確率的に混合した複合ダメージ分布をDPで計算。

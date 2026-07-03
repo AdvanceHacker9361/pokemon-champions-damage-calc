@@ -632,15 +632,3 @@ function applyOtherModifiers(
 
   return d
 }
-
-/**
- * ステルスロックのダメージ計算
- * 最大HP × タイプ相性倍率 × 1/8
- */
-export function calcStealthRockDamage(
-  defenderMaxHp: number,
-  defenderTypes: TypeName[],
-): number {
-  const typeEff = getTypeEffectiveness('いわ', defenderTypes)
-  return Math.floor(defenderMaxHp * typeEff / 8)
-}

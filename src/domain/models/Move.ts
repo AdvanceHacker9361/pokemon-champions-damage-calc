@@ -19,7 +19,6 @@ export type SpecialMoveTag =
   | 'gyro-ball'     // ジャイロボール: 威力 = min(150, floor(25 * defSpe / atkSpe))
   | 'grass-knot'    // くさむすび/けたぐり: 体重依存威力
   | 'low-kick'
-  | 'hex'           // たたりめ: 状態異常時威力2倍
   | 'facade'        // からげんき: 状態異常時威力140
   | 'stealth-rock'  // ステルスロック: タイプ相性依存定数ダメージ
   | 'freeze-dry'    // フリーズドライ: みず タイプに対して2倍有効
