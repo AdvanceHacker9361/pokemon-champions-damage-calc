@@ -457,3 +457,34 @@ GitHub Actions:
 - 累積ビュー（`useAccumulatedDamage`）が `incoming` の drain/recoil による防御側HP変化を無視する件は、「累積=防御側のみ追跡」という設計上の割り切りとして今回は据え置き（シーケンス出力側は正確）。
 - `useAccumulatedDamage` / `useBattleSequence` の attack 展開ロジック共通化は、V3.8.1 の痛み分けバグ再発リスクがあるため見送り（将来はモードを引数で明示する設計で実施すること）。
 - `calcCombinedKoProbability` はプロダクションから未参照だが、2Dエンジンとの整合性検証オラクルとしてテストが使用しているため削除しない。
+
+## 2026-07-04: やまあらし追加
+
+### 発覚内容
+
+- 技 `やまあらし` / `Storm Throw` が公開用 `moves.json` に未収録だった。
+- raw データ側には存在しており、仕様は `かくとう` / `物理` / 威力60 / 命中100 / 確定急所。
+
+### 実施した修正
+
+- `src/data/json/moves.json`
+  - `やまあらし` を追加。
+  - `alwaysCrit: true` を設定し、既存の確定急所処理に乗せた。
+  - PP は既存の Champions 向け技データで raw PP10 相当の物理技が `12` で入っていることに合わせ、`pp: 12` とした。
+- `tests/data/data-integrity.test.ts`
+  - `やまあらし` のタイプ・分類・威力・命中・PP・確定急所を固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 38 tests passed。
+- `npm run build`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - production build passed。
+
+### 判断メモ
+
+- 確定急所の計算経路は `トリックフラワー` などで既に実装済みのため、今回は技データ追加で対応する。

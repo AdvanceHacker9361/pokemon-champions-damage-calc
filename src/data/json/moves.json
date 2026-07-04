@@ -11137,6 +11137,28 @@
     "multiHit": null
   },
   {
+    "name": "やまあらし",
+    "nameEn": "Storm Throw",
+    "type": "かくとう",
+    "category": "物理",
+    "power": 60,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": null,
+    "alwaysCrit": true
+  },
+  {
     "name": "ゆきげしき",
     "nameEn": "Snowscape",
     "type": "こおり",

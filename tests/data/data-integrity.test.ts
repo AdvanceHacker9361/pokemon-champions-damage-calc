@@ -294,6 +294,20 @@ describe('moves.json integrity', () => {
     expect(move?.powerOptions).toEqual([75, 150])
   })
 
+  it('やまあらし should be available as an always-critical Fighting move', () => {
+    const move = moves.find(m => m.name === 'やまあらし')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Storm Throw',
+      type: 'かくとう',
+      category: '物理',
+      power: 60,
+      accuracy: 100,
+      pp: 12,
+      alwaysCrit: true,
+    })
+  })
+
   it('ゴールドラッシュ should have Champions-adjusted data and SpA drop', () => {
     const move = moves.find(m => m.name === 'ゴールドラッシュ')
     expect(move).toBeDefined()
