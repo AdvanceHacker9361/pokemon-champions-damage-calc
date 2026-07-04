@@ -488,3 +488,38 @@ GitHub Actions:
 ### 判断メモ
 
 - 確定急所の計算経路は `トリックフラワー` などで既に実装済みのため、今回は技データ追加で対応する。
+
+## 2026-07-04: すなのちから表記修正
+
+### 発覚内容
+
+- 特性 `すなのちから` が一部データで `サンドフォース` と表記されていた。
+- `abilities.json` には `すなのちから` と `サンドフォース` の重複エントリがあり、通常ポケモン側にも `サンドフォース` 参照が残っていた。
+- 計算ロジックは `すなのちから` を参照しているため、`サンドフォース` 表記の個体では砂嵐時の威力補正が漏れる可能性があった。
+
+### 実施した修正
+
+- `src/data/json/abilities.json`
+  - 重複していた `サンドフォース` エントリを削除し、`Sand Force` の日本語名を `すなのちから` に統一。
+- `src/data/json/pokemon.json`
+  - 通常ポケモン側の `サンドフォース` 参照を `すなのちから` に統一。
+  - 既に `すなのちから` と `サンドフォース` が併記されていた個体は重複を削除。
+- `src/data/i18n/ja.json`
+  - `sand force` の和訳を `すなのちから` に変更。
+- `tests/data/data-integrity.test.ts`
+  - `Sand Force` の表示名が `すなのちから` であること、ポケモン側と特性側に `サンドフォース` が残らないことを固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 39 tests passed。
+- `npm run build`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - production build passed。
+
+### 判断メモ
+
+- raw データは外部由来の英語データとして保持し、公開用 JSON と i18n のみ修正対象にした。

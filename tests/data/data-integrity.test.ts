@@ -421,6 +421,19 @@ describe('abilities.json integrity', () => {
       calcTag: 'mega-solar',
     })
   })
+
+  it('Sand Force should use すなのちから as the Japanese display name', () => {
+    expect(abilities.find(a => a.nameEn === 'Sand Force')).toMatchObject({
+      name: 'すなのちから',
+      calcTag: 'sand-force',
+    })
+
+    const stalePokemon = pokemon.filter(p => p.abilities.includes('サンドフォース')).map(p => p.name)
+    const staleAbilities = abilities.filter(a => a.name === 'サンドフォース')
+
+    expect(stalePokemon).toEqual([])
+    expect(staleAbilities).toEqual([])
+  })
 })
 
 // ────────────────────────────────────────────────
