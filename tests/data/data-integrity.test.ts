@@ -106,6 +106,18 @@ describe('pokemon.json integrity', () => {
     expect(gholdengo?.abilities).toEqual(['おうごんのからだ'])
     expect(abilities.some(a => a.name === 'おうごんのからだ' && a.nameEn === 'Good as Gold')).toBe(true)
   })
+
+  it('Sinistcha line should use おもてなし as the Japanese Hospitality display name', () => {
+    const poltchageist = pokemon.find(p => p.nameEn === 'Poltchageist')
+    const sinistcha = pokemon.find(p => p.nameEn === 'Sinistcha')
+
+    expect(poltchageist?.abilities).toEqual(['おもてなし', 'たいねつ'])
+    expect(sinistcha?.abilities).toEqual(['おもてなし', 'たいねつ'])
+    expect(abilities.find(a => a.nameEn === 'Hospitality')).toMatchObject({
+      name: 'おもてなし',
+      calcTag: 'hospitality',
+    })
+  })
 })
 
 // ────────────────────────────────────────────────

@@ -523,3 +523,43 @@ GitHub Actions:
 ### 判断メモ
 
 - raw データは外部由来の英語データとして保持し、公開用 JSON と i18n のみ修正対象にした。
+
+## 2026-07-05: おもてなし表記修正とたいねつ炎半減実装
+
+### 発覚内容
+
+- チャデス / ヤバソチャの特性 `おもてなし` が、公開用 `pokemon.json` で `Hospitality` のまま表示されていた。
+- `abilities.json` 側でも `Hospitality` の表示名が英語のままだった。
+- 特性 `たいねつ` はデータ上存在するが、防御側が受けるほのお技を半減する計算処理が未実装だった。
+
+### 実施した修正
+
+- `src/data/json/abilities.json`
+  - `Hospitality` の表示名を `おもてなし` に変更。
+  - `nameEn: "Hospitality"` と `calcTag: "hospitality"` は内部識別用として維持。
+- `src/data/json/pokemon.json`
+  - チャデス / ヤバソチャの特性を `おもてなし`, `たいねつ` に統一。
+- `src/data/i18n/ja.json`
+  - `hospitality` → `おもてなし` の和訳を追加。
+- `src/domain/calculators/DamageCalculator.ts`
+  - 防御側特性 `たいねつ` かつ実効技タイプが `ほのお` の場合、ダメージを 0.5 倍にする処理を追加。
+- `tests/data/data-integrity.test.ts`
+  - チャデス / ヤバソチャの特性と `Hospitality` の日本語表示名を固定テスト化。
+- `tests/domain/DamageCalculator.test.ts`
+  - `たいねつ` がほのお技を半減し、非ほのお技には影響しないことを固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts tests/domain/DamageCalculator.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 88 tests passed。
+- `npm run build`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - production build passed。
+
+### 判断メモ
+
+- `おもてなし` はダブル向けの回復特性であり、単発ダメージ計算への直接倍率影響はないため、今回は表示名とデータ整合性のみ修正した。
+- `たいねつ` の判定には `moveType` を使うため、スキン系やウェザーボールなどで変化した後の実効タイプにも対応する。

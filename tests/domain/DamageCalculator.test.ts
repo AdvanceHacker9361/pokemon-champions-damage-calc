@@ -593,6 +593,31 @@ describe('DamageCalculator', () => {
       expect(Array.from(abilityResult.rolls)).toEqual(Array.from(normalResult.rolls))
     })
 
+    it('たいねつでほのお技ダメージを半減する', () => {
+      const move = makeSpecialMove('かえんほうしゃ', 'ほのお', 90)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const heatproofResult = calculateDamage({
+        ...baseInput,
+        move,
+        defenderAbility: 'たいねつ',
+      })
+
+      expect(heatproofResult.max).toBeLessThan(normalResult.max)
+      expect(heatproofResult.min).toBeLessThan(normalResult.min)
+    })
+
+    it('たいねつは非ほのお技には影響しない', () => {
+      const move = makeSpecialMove('ハイパーボイス', 'ノーマル', 90)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const heatproofResult = calculateDamage({
+        ...baseInput,
+        move,
+        defenderAbility: 'たいねつ',
+      })
+
+      expect(Array.from(heatproofResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
+
     it('シェルアーマーは急所ダメージを無効化する', () => {
       const move = makePhysicalMove('じしん', 'じめん', 100)
       const normalResult = calculateDamage({ ...baseInput, move })
