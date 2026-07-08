@@ -563,3 +563,33 @@ GitHub Actions:
 
 - `おもてなし` はダブル向けの回復特性であり、単発ダメージ計算への直接倍率影響はないため、今回は表示名とデータ整合性のみ修正した。
 - `たいねつ` の判定には `moveType` を使うため、スキン系やウェザーボールなどで変化した後の実効タイプにも対応する。
+
+## 2026-07-08: みずしゅりけん攻撃回数修正
+
+### 発覚内容
+
+- 技 `みずしゅりけん` / `Water Shuriken` が、公開用 `moves.json` で `multiHit: { type: "fixed", count: 3 }` として登録されていた。
+- 本来は通常の2〜5回連続技系統であり、確定3発ではない。
+
+### 実施した修正
+
+- `src/data/json/moves.json`
+  - `みずしゅりけん` の `multiHit` を `{ type: "variable" }` に変更。
+  - 既存の変動連続技ロジックに乗せ、通常時は2〜5回、スキルリンク時は5回、いかさまダイス時は4〜5回として扱われるようにした。
+- `tests/data/data-integrity.test.ts`
+  - `みずしゅりけん` が `multiHit: { type: "variable" }` であることを固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - 41 tests passed。
+- `npm run build`
+  - sandbox 内では設定ファイル探索時に `Access is denied` が出たため、通常権限で再実行。
+  - production build passed。
+
+### 判断メモ
+
+- 今回は技データの誤りであり、連続技の計算・UI側の実装変更は不要。

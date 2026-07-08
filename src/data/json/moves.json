@@ -10374,8 +10374,7 @@
     },
     "special": null,
     "multiHit": {
-      "type": "fixed",
-      "count": 3
+      "type": "variable"
     }
   },
   {

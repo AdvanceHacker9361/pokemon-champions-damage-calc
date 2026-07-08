@@ -320,6 +320,19 @@ describe('moves.json integrity', () => {
     })
   })
 
+  it('みずしゅりけん should be a variable 2-5 hit move', () => {
+    const move = moves.find(m => m.name === 'みずしゅりけん')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Water Shuriken',
+      type: 'みず',
+      category: '特殊',
+      power: 15,
+      priority: 1,
+      multiHit: { type: 'variable' },
+    })
+  })
+
   it('ゴールドラッシュ should have Champions-adjusted data and SpA drop', () => {
     const move = moves.find(m => m.name === 'ゴールドラッシュ')
     expect(move).toBeDefined()
