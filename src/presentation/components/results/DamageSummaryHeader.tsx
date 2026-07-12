@@ -1,10 +1,7 @@
 import { useResultStore } from '@/presentation/store/resultStore'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
-import { useProgressionStore } from '@/presentation/store/progressionStore'
-import { useDefenderStore } from '@/presentation/store/pokemonStore'
-import { calculateHP } from '@/domain/calculators/StatCalculator'
+import { useDefenderMaxHp } from '@/presentation/hooks/useDefenderMaxHp'
 import { DamageBar } from './DamageBar'
-import { AccumHistogram } from './AccumHistogram'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 function koLabelColor(koResult: KoResult): string {
@@ -28,14 +25,7 @@ function koLabel(koResult: KoResult): string {
 
 export function DamageSummaryHeader() {
   const results = useResultStore(s => s.results)
-  const events = useProgressionStore(s => s.events)
-  const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
-  const defenderSpHp = useDefenderStore(s => s.sp.hp)
-  const firstAttack = events.find(e => e.kind === 'attack')
-  const storeDefHp = defenderBaseHp > 0 ? calculateHP(defenderBaseHp, defenderSpHp) : 0
-  const defenderMaxHp =
-    results[0]?.result.defenderMaxHp
-    ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : storeDefHp)
+  const defenderMaxHp = useDefenderMaxHp()
   const accum = useAccumulatedDamage(defenderMaxHp)
 
   const accumProbDisplay = accum.combinedProb >= 1.0
@@ -56,7 +46,7 @@ export function DamageSummaryHeader() {
     : null
 
   return (
-    <div className="panel mb-3 sm:mb-4">
+    <div className="panel">
       {!accum.hasAnything ? (
         strongestResult ? (
           <div className="space-y-2">
@@ -126,14 +116,6 @@ export function DamageSummaryHeader() {
             </div>
           </div>
 
-          {accum.totalMax > accum.totalMin && (
-            <AccumHistogram
-              distribution={accum.distribution}
-              defenderMaxHp={defenderMaxHp}
-              totalMin={accum.totalMin}
-              totalMax={accum.totalMax}
-            />
-          )}
         </div>
       )}
     </div>

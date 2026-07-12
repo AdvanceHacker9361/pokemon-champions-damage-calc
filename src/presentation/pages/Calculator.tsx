@@ -6,8 +6,11 @@ import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar
 import { TabMemo } from '@/presentation/components/session/TabMemo'
 import { DamageResultArea } from '@/presentation/components/results/DamageResultArea'
 import { DamageSummaryHeader } from '@/presentation/components/results/DamageSummaryHeader'
+import { DamageSequenceSummary } from '@/presentation/components/results/DamageSequenceSummary'
+import { DamageProgressionSection } from '@/presentation/components/results/DamageProgressionSection'
 import { FieldStateBar } from '@/presentation/components/field/FieldStateBar'
 import { useDamageCalc } from '@/presentation/hooks/useDamageCalc'
+import { useDefenderMaxHp } from '@/presentation/hooks/useDefenderMaxHp'
 import { useKeyboardShortcuts } from '@/presentation/hooks/useKeyboardShortcuts'
 
 /** 攻守交代 */
@@ -76,6 +79,7 @@ function initDefaults() {
 export function Calculator() {
   const attackerStore = useAttackerStore()
   const defenderStore = useDefenderStore()
+  const defenderMaxHp = useDefenderMaxHp()
 
   useDamageCalc()
 
@@ -102,33 +106,32 @@ export function Calculator() {
         {/* 構築メモ: タブごとの自由記述メモ */}
         <TabMemo />
 
-        {/* サマリーヘッダー: 最大ダメージ技の概要 */}
-        <DamageSummaryHeader />
+        <div className="calculator-flow mt-3 sm:mt-4">
+          {/* モバイルの開始操作 */}
+          <div className="flow-swap-mobile flex justify-center lg:hidden">
+            <button
+              type="button"
+              onClick={swapStores}
+              className="flex items-center gap-1.5 h-7 px-3 text-xs bg-surface-3 hover:bg-surface-2 text-fg-muted rounded-md transition-colors"
+              title="攻撃側と防御側を入れ替え"
+            >
+              ⇆ 攻守交代
+            </button>
+          </div>
 
-        {/* フィールド条件: 計算結果に影響する場の状態 */}
-        <div className="my-3 sm:my-4">
-          <FieldStateBar />
-        </div>
+          <div className="flow-attacker min-w-0">
+            <PokemonPanel store={attackerStore} label="攻撃側" showMoves />
+          </div>
 
-        {/* モバイル: 攻守交代ボタンを最上部に表示 */}
-        <div className="flex justify-center mb-3 lg:hidden">
-          <button
-            type="button"
-            onClick={swapStores}
-            className="flex items-center gap-1.5 h-7 px-3 text-xs bg-surface-3 hover:bg-surface-2 text-fg-muted rounded-md transition-colors"
-            title="攻撃側と防御側を入れ替え"
-          >
-            ⇆ 攻守交代
-          </button>
-        </div>
+          <div className="flow-defender min-w-0">
+            <PokemonPanel store={defenderStore} label="防御側" />
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
-          {/* 攻撃側 */}
-          <PokemonPanel store={attackerStore} label="攻撃側" showMoves />
+          <div className="flow-field min-w-0">
+            <FieldStateBar />
+          </div>
 
-          {/* ダメージ計算結果 */}
-          <div className="flex flex-col gap-3 sm:gap-4">
-            {/* デスクトップのみ攻守交代ボタン */}
+          <div className="calculator-center-flow">
             <div className="hidden lg:flex justify-center">
               <button
                 type="button"
@@ -139,11 +142,23 @@ export function Calculator() {
                 ⇆ 攻守交代
               </button>
             </div>
-            <DamageResultArea />
+
+            <div className="flow-progression min-w-0">
+              <DamageProgressionSection defenderMaxHp={defenderMaxHp} />
+            </div>
+
+            <div className="flow-results min-w-0">
+              <DamageResultArea />
+            </div>
           </div>
 
-          {/* 防御側 */}
-          <PokemonPanel store={defenderStore} label="防御側" />
+          <div className="flow-summary min-w-0">
+            <DamageSummaryHeader />
+          </div>
+
+          <div className="flow-sequence min-w-0">
+            <DamageSequenceSummary />
+          </div>
         </div>
       </div>
     </>

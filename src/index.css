@@ -136,4 +136,55 @@
   .btn-ghost {
     @apply btn bg-transparent hover:bg-surface-3 text-fg-muted;
   }
+
+  .calculator-flow {
+    display: grid;
+    grid-template-areas:
+      "swap"
+      "attacker"
+      "defender"
+      "field"
+      "progression"
+      "results"
+      "summary"
+      "sequence";
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  .calculator-center-flow {
+    display: contents;
+  }
+
+  .flow-swap-mobile { grid-area: swap; }
+  .flow-attacker { grid-area: attacker; }
+  .flow-defender { grid-area: defender; }
+  .flow-field { grid-area: field; }
+  .flow-progression { grid-area: progression; }
+  .flow-results { grid-area: results; }
+  .flow-summary { grid-area: summary; }
+  .flow-sequence { grid-area: sequence; }
+
+  @media (min-width: 1024px) {
+    .calculator-flow {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-areas:
+        "summary summary summary"
+        "sequence sequence sequence"
+        "field field field"
+        "attacker center defender";
+      gap: 1rem;
+    }
+
+    .calculator-center-flow {
+      grid-area: center;
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .flow-results { order: 1; }
+    .flow-progression { order: 2; }
+  }
 }

@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useProgressionStore, hasSequenceImpact } from '@/presentation/store/progressionStore'
 import type { EventKind, ProgressionEventInput } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
-import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { EventRow } from './EventRow'
 import { BackgroundEffectsSection } from './BackgroundEffectsSection'
-import { SequenceResultPanel } from './SequenceResultPanel'
 import { AddEventToolbar, type AddEventAction } from './AddEventToolbar'
 
 interface DamageProgressionPanelProps {
@@ -45,11 +43,9 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp   = useAttackerStore(s => s.sp.hp)
   const attackerMaxHp  = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
-  const attackerName   = useAttackerStore(s => s.pokemonName)
   const attackerCanMega = useAttackerStore(s => s.canMega)
   const attackerAvailableMegas = useAttackerStore(s => s.availableMegas)
   const attackerMegaKey = useAttackerStore(s => s.megaKey)
-  const defenderName   = useDefenderStore(s => s.pokemonName)
   const defenderCanMega = useDefenderStore(s => s.canMega)
   const defenderAvailableMegas = useDefenderStore(s => s.availableMegas)
   const defenderMegaKey = useDefenderStore(s => s.megaKey)
@@ -68,8 +64,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp })
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
   const previousEventIdsRef = useRef(events.map(ev => ev.id))
-
-  const { result: seqResult } = useBattleSequence()
 
   useEffect(() => {
     const previousIds = previousEventIdsRef.current
@@ -273,8 +267,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         <>
           <div className="border-t border-edge" />
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-semibold text-fg-muted">攻守シミュレーション</h3>
-            <span className="text-[10px] text-fg-faint">攻撃側HPの変動も追跡</span>
+            <h3 className="text-xs font-semibold text-fg-muted">シミュレーション開始HP</h3>
+            <span className="text-[10px] text-fg-faint">結果は総合累積の下に表示</span>
           </div>
 
           {/* 開始HP */}
@@ -307,11 +301,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
             </div>
           </div>
 
-          <SequenceResultPanel
-            seqResult={seqResult}
-            attackerName={attackerName}
-            defenderName={defenderName}
-          />
         </>
       )}
     </div>
