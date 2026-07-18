@@ -80,6 +80,38 @@ describe('CalculateMoveResultsUseCase', () => {
     expect(sheerForce.max).toBeGreaterThan(normal.max)
   })
 
+  it('Iron Fist boosts Thunder Punch but not Poison Jab', () => {
+    const normalThunderPunch = calculateMoveResults({
+      attacker: createAttacker(['かみなりパンチ', null, null, null]),
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+    const ironFistThunderPunch = calculateMoveResults({
+      attacker: {
+        ...createAttacker(['かみなりパンチ', null, null, null]),
+        abilityName: 'てつのこぶし',
+      },
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+    const normalPoisonJab = calculateMoveResults({
+      attacker: createAttacker(['どくづき', null, null, null]),
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+    const ironFistPoisonJab = calculateMoveResults({
+      attacker: {
+        ...createAttacker(['どくづき', null, null, null]),
+        abilityName: 'てつのこぶし',
+      },
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+
+    expect(ironFistThunderPunch.max).toBeGreaterThan(normalThunderPunch.max)
+    expect(Array.from(ironFistPoisonJab.rolls)).toEqual(Array.from(normalPoisonJab.rolls))
+  })
+
   it('Guts boosts poisoned physical attacks and ignores the burn penalty', () => {
     const gutsAttacker = {
       ...createAttacker(['じしん', null, null, null]),

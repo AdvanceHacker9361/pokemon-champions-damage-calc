@@ -197,6 +197,12 @@ describe('moves.json integrity', () => {
     expect(moves.find(m => m.nameEn === 'Earthquake')?.hasSecondaryEffect).toBeUndefined()
   })
 
+  it('Iron Fist targets should retain the canonical punch flag', () => {
+    expect(moves.find(m => m.nameEn === 'Thunder Punch')?.flags.punch).toBe(true)
+    expect(moves.find(m => m.nameEn === 'Poison Jab')?.flags.punch).toBe(false)
+    expect(moves.find(m => m.nameEn === 'Bug Bite')?.flags.punch).toBe(false)
+  })
+
   it('all move types should be valid Japanese type names', () => {
     const invalid = moves.filter(m => !VALID_TYPES.has(m.type))
     expect(invalid.map(m => `${m.nameEn}: type=${m.type}`)).toHaveLength(0)

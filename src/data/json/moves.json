@@ -6638,7 +6638,7 @@
       "sound": false,
       "bullet": false,
       "pulse": false,
-      "punch": true,
+      "punch": false,
       "bite": false,
       "slice": false
     },
@@ -10852,7 +10852,7 @@
       "sound": false,
       "bullet": false,
       "pulse": false,
-      "punch": true,
+      "punch": false,
       "bite": true,
       "slice": false
     },

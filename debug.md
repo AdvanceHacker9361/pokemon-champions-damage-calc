@@ -660,3 +660,38 @@ GitHub Actions:
 ### 判断メモ
 
 - 今回は単体計算だけでなく、実際に画面が使用する `MoveRepository -> CalculateMoveResultsUseCase -> DamageCalculator` の経路を回帰テスト化した。
+
+## 2026-07-18: どくづきのてつのこぶし誤適用を修正
+
+### 発覚内容
+
+- 公開用 `moves.json` の `どくづき` / `Poison Jab` に、誤って `flags.punch: true` が設定されていた。
+- `DamageCalculator` はパンチ属性を正しく参照していたため、この誤データにより `てつのこぶし` と `パンチグローブ` の威力補正が適用されていた。
+- Showdown由来の `moves-filtered.json` では `punch: false` であり、公開用データだけに古い手動設定が残っていた。
+
+### 実施した修正
+
+- `src/data/json/moves.json`
+  - `どくづき` の `flags.punch` を `false` に修正。
+  - パンチ属性を生成元と全件比較し、同じ不整合があった `むしくい` も `false` に修正。
+- `scripts/build-final-data.ts`
+  - データ再生成時は `flags.punch` をフィルタ済みShowdownデータから同期し、古い公開データの誤設定を引き継がないようにした。
+- `tests/data/data-integrity.test.ts`
+  - `かみなりパンチ=true`、`どくづき=false`、`むしくい=false` を固定テスト化。
+- `tests/application/CalculateMoveResultsUseCase.test.ts`
+  - 実技データ経由で、てつのこぶしがかみなりパンチだけを強化し、どくづきには影響しないことを固定テスト化。
+
+### 検証
+
+- 公開データとフィルタ済みデータのパンチ属性を全件比較: 差分0件。
+- `npm run typecheck`
+- `npm run test -- --run tests/data/data-integrity.test.ts tests/application/CalculateMoveResultsUseCase.test.ts`
+  - 48 tests passed。
+- `npm run test`
+  - 13 files / 242 tests passed。
+- `npm run lint`
+- `npm run build`
+
+### 判断メモ
+
+- `てつのこぶし` の計算ロジック変更は不要で、技属性データと再生成時の同期方法を修正した。

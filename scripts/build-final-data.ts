@@ -101,6 +101,7 @@ function main(): void {
       // 既存データがある場合: 手動設定の special/flags/multiHit を優先保持
       // ただし日本語名は ja.json から更新
       finalMove = { ...existing }
+      finalMove.flags = { ...existing.flags, punch: move.flags.punch }
       finalMove.hasSecondaryEffect = move.hasSecondaryEffect
       existingKept++
     } else {
