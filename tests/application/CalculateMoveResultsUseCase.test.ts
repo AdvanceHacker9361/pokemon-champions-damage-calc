@@ -61,4 +61,47 @@ describe('CalculateMoveResultsUseCase', () => {
 
     expect(results.map(result => result.moveName)).toEqual(['じしん'])
   })
+
+  it('repository move data activates Sheer Force for Thunder Punch', () => {
+    const normal = calculateMoveResults({
+      attacker: createAttacker(['かみなりパンチ', null, null, null]),
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+    const sheerForce = calculateMoveResults({
+      attacker: {
+        ...createAttacker(['かみなりパンチ', null, null, null]),
+        abilityName: 'ちからずく',
+      },
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+
+    expect(sheerForce.max).toBeGreaterThan(normal.max)
+  })
+
+  it('Guts boosts poisoned physical attacks and ignores the burn penalty', () => {
+    const gutsAttacker = {
+      ...createAttacker(['じしん', null, null, null]),
+      abilityName: 'こんじょう',
+    }
+    const normal = calculateMoveResults({
+      attacker: gutsAttacker,
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+    const poisoned = calculateMoveResults({
+      attacker: { ...gutsAttacker, status: 'どく' as const },
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+    const burned = calculateMoveResults({
+      attacker: { ...gutsAttacker, status: 'やけど' as const },
+      defender,
+      field: createDefaultBattleField(),
+    })[0].result
+
+    expect(poisoned.max).toBeGreaterThan(normal.max)
+    expect(Array.from(burned.rolls)).toEqual(Array.from(poisoned.rolls))
+  })
 })

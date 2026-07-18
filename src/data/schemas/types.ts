@@ -52,7 +52,7 @@ export interface MoveRecord {
   selfStatDrops?: { stat: StatKey; stages: number }[]
   /** 確定急所技（常に急所補正で計算） */
   alwaysCrit?: boolean
-  /** ちからづくの対象となる追加効果を持つ技 */
+  /** ちからずくの対象となる追加効果を持つ技 */
   hasSecondaryEffect?: boolean
   /** 急所ランク加算値 (1 = 高急所 1/8, 省略 = 通常 1/24) */
   critChance?: number

@@ -569,29 +569,61 @@ describe('DamageCalculator', () => {
   })
 
   describe('追加特性補正', () => {
-    it('ちからづくで追加効果を持つ技のダメージが1.3倍になる', () => {
+    it('ちからずくで追加効果を持つ技のダメージが1.3倍になる', () => {
       const move = { ...makePhysicalMove('かみなりパンチ', 'でんき', 75), hasSecondaryEffect: true }
       const normalResult = calculateDamage({ ...baseInput, move })
       const sheerForceResult = calculateDamage({
         ...baseInput,
         move,
-        attackerAbility: 'ちからづく',
+        attackerAbility: 'ちからずく',
       })
 
       expect(sheerForceResult.max).toBeGreaterThan(normalResult.max)
       expect(sheerForceResult.max / normalResult.max).toBeCloseTo(1.3, 1)
     })
 
-    it('ちからづくは追加効果を持たない技には影響しない', () => {
+    it('ちからずくは追加効果を持たない技には影響しない', () => {
       const move = makePhysicalMove('じしん', 'じめん', 100)
       const normalResult = calculateDamage({ ...baseInput, move })
       const sheerForceResult = calculateDamage({
         ...baseInput,
         move,
-        attackerAbility: 'ちからづく',
+        attackerAbility: 'ちからずく',
       })
 
       expect(Array.from(sheerForceResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
+
+    it('こんじょうで状態異常時の物理攻撃が1.5倍になる', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const normalResult = calculateDamage({ ...baseInput, move, attackerAbility: 'こんじょう' })
+      const poisonedResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'こんじょう',
+        attackerStatus: 'どく',
+      })
+
+      expect(poisonedResult.max).toBeGreaterThan(normalResult.max)
+      expect(poisonedResult.max / normalResult.max).toBeCloseTo(1.5, 1)
+    })
+
+    it('こんじょう発動中はやけどの物理ダメージ半減を無視する', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const poisonedResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'こんじょう',
+        attackerStatus: 'どく',
+      })
+      const burnedResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'こんじょう',
+        attackerStatus: 'やけど',
+      })
+
+      expect(Array.from(burnedResult.rolls)).toEqual(Array.from(poisonedResult.rolls))
     })
 
     it('ほのおのたてがみでほのお技ダメージが上がる', () => {

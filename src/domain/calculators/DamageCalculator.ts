@@ -395,7 +395,8 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     // 6. やけど補正（物理技0.5倍）
     // からげんきはやけどでも威力上昇（2倍）して減衰なし
     const isFacade = move.special === 'facade'
-    if (attackerStatus === 'やけど' && move.category === '物理' && !isFacade) {
+    const gutsActive = attackerAbility === 'こんじょう' && attackerStatus !== null
+    if (attackerStatus === 'やけど' && move.category === '物理' && !isFacade && !gutsActive) {
       d = pokeRound(d * 0.5)
     }
 
@@ -536,8 +537,8 @@ function applyOtherModifiers(
   if (attackerAbility === 'かたいツメ' && move.flags.contact) {
     d = pokeRound(d * 1.3)
   }
-  // ちからづく: 追加効果を持つ技の威力1.3倍
-  if (attackerAbility === 'ちからづく' && move.hasSecondaryEffect) {
+  // ちからずく: 追加効果を持つ技の威力1.3倍
+  if (attackerAbility === 'ちからずく' && move.hasSecondaryEffect) {
     d = pokeRound(d * 1.3)
   }
   // ほのおのたてがみ: ほのお技の威力1.5倍
