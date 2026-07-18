@@ -26,6 +26,7 @@ interface ShowdownMove {
   flags?: Record<string, number | string>
   multihit?: number | [number, number]
   secondary?: unknown
+  secondaries?: unknown[]
   isNonstandard?: string
   isZ?: string
   isMax?: string
@@ -467,6 +468,7 @@ function main(): void {
     }
     special: SpecialMoveTag | null
     multiHit?: MultiHitData | null
+    hasSecondaryEffect?: boolean
   }
 
   const outputMoves: OutputMove[] = []
@@ -510,6 +512,8 @@ function main(): void {
       flags,
       special: getSpecialTag(moveId),
       multiHit: convertMultiHit(move.multihit),
+      hasSecondaryEffect:
+        move.secondary !== undefined || (move.secondaries?.length ?? 0) > 0 || undefined,
     }
 
     outputMoves.push(outputMove)

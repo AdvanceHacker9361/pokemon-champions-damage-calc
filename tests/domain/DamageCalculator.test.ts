@@ -569,6 +569,31 @@ describe('DamageCalculator', () => {
   })
 
   describe('追加特性補正', () => {
+    it('ちからづくで追加効果を持つ技のダメージが1.3倍になる', () => {
+      const move = { ...makePhysicalMove('かみなりパンチ', 'でんき', 75), hasSecondaryEffect: true }
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const sheerForceResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'ちからづく',
+      })
+
+      expect(sheerForceResult.max).toBeGreaterThan(normalResult.max)
+      expect(sheerForceResult.max / normalResult.max).toBeCloseTo(1.3, 1)
+    })
+
+    it('ちからづくは追加効果を持たない技には影響しない', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const sheerForceResult = calculateDamage({
+        ...baseInput,
+        move,
+        attackerAbility: 'ちからづく',
+      })
+
+      expect(Array.from(sheerForceResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
+
     it('ほのおのたてがみでほのお技ダメージが上がる', () => {
       const move = makeSpecialMove('かえんほうしゃ', 'ほのお', 90)
       const normalResult = calculateDamage({ ...baseInput, move })

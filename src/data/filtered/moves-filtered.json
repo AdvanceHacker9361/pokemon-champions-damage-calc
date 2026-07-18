@@ -39,7 +39,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Acid Spray",
@@ -60,7 +61,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "アクロバット",
@@ -228,7 +230,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Alluring Voice",
@@ -249,7 +252,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Ally Switch",
@@ -312,7 +316,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Aqua Cutter",
@@ -482,7 +487,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Attack Order",
@@ -566,7 +572,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "オーロラベール",
@@ -629,7 +636,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Baby-Doll Eyes",
@@ -797,7 +805,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ブラストバーン",
@@ -839,7 +848,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ふぶき",
@@ -860,7 +870,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Block",
@@ -902,7 +913,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ボディプレス",
@@ -944,7 +956,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Bolt Strike",
@@ -965,7 +978,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ボーンラッシュ",
@@ -1030,7 +1044,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Branch Poke",
@@ -1093,7 +1108,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かわらわり",
@@ -1177,7 +1193,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "むしくい",
@@ -1219,7 +1236,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Bulk Up",
@@ -1261,7 +1279,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "バレットパンチ",
@@ -1347,7 +1366,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "めいそう",
@@ -1431,7 +1451,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Charm",
@@ -1473,7 +1494,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Circle Throw",
@@ -1662,7 +1684,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Copycat",
@@ -1872,7 +1895,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かみくだく",
@@ -1893,7 +1917,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Crush Claw",
@@ -1914,7 +1939,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Curse",
@@ -1977,7 +2003,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Dark Void",
@@ -2229,7 +2256,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Dive",
@@ -2403,7 +2431,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Dragon Cheer",
@@ -2529,7 +2558,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ドラゴンテール",
@@ -2700,7 +2730,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "だいちのちから",
@@ -2721,7 +2752,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "じしん",
@@ -2847,7 +2879,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Ember",
@@ -2868,7 +2901,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Encore",
@@ -2952,7 +2986,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Entrainment",
@@ -3057,7 +3092,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "しんそく",
@@ -3141,7 +3177,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Fake Tears",
@@ -3267,7 +3304,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Final Gambit",
@@ -3309,7 +3347,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ほのおのキバ",
@@ -3330,7 +3369,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Fire Lash",
@@ -3351,7 +3391,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Fire Pledge",
@@ -3393,7 +3434,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Fire Spin",
@@ -3498,7 +3540,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Flame Wheel",
@@ -3519,7 +3562,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かえんほうしゃ",
@@ -3540,7 +3584,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "フレアドライブ",
@@ -3561,7 +3606,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "フラッシュキャノン",
@@ -3582,7 +3628,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Flatter",
@@ -3687,7 +3734,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Focus Energy",
@@ -3771,7 +3819,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Forest's Curse",
@@ -3834,7 +3883,8 @@
       "slice": false
     },
     "special": "freeze-dry",
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ハードプラント",
@@ -4090,7 +4140,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Glare",
@@ -4342,7 +4393,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かぜおこし",
@@ -4531,7 +4583,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Heal Bell",
@@ -4636,7 +4689,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ヘビーボンバー",
@@ -4909,7 +4963,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ハイドロカノン",
@@ -5035,7 +5090,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "こおりのキバ",
@@ -5056,7 +5112,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "れいとうパンチ",
@@ -5077,7 +5134,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "こおりのつぶて",
@@ -5140,7 +5198,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "つららばり",
@@ -5184,7 +5243,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Imprison",
@@ -5247,7 +5307,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Infestation",
@@ -5331,7 +5392,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "アイアンテール",
@@ -5352,7 +5414,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "はたきおとす",
@@ -5436,7 +5499,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "リーフブレード",
@@ -5583,7 +5647,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Life Dew",
@@ -5646,7 +5711,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Lock-On",
@@ -5709,7 +5775,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "とびかかる",
@@ -5730,7 +5797,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ルスターパージ",
@@ -5751,7 +5819,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "マッハパンチ",
@@ -6024,7 +6093,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Metal Sound",
@@ -6087,7 +6157,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Metronome",
@@ -6213,7 +6284,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Misty Explosion",
@@ -6276,7 +6348,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Moongeist Beam",
@@ -6360,7 +6433,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Mud-Slap",
@@ -6381,7 +6455,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Muddy Water",
@@ -6402,7 +6477,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Mystical Fire",
@@ -6423,7 +6499,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "わるだくみ",
@@ -6465,7 +6542,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Night Shade",
@@ -6549,7 +6627,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "オリジンパルス",
@@ -6908,7 +6987,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Pluck",
@@ -6950,7 +7030,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Poison Gas",
@@ -6992,7 +7073,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Poison Powder",
@@ -7034,7 +7116,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Poison Tail",
@@ -7055,7 +7138,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Pollen Puff",
@@ -7142,7 +7226,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Pound",
@@ -7184,7 +7269,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Power Gem",
@@ -7415,7 +7501,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Psych Up",
@@ -7457,7 +7544,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Psychic Fangs",
@@ -7499,7 +7587,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Psychic Terrain",
@@ -7583,7 +7672,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "サイコショック",
@@ -7793,7 +7883,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Razor Leaf",
@@ -7835,7 +7926,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "じこさいせい",
@@ -8110,7 +8202,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Rock Smash",
@@ -8131,7 +8224,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Rock Throw",
@@ -8173,7 +8267,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Rock Wrecker",
@@ -8299,7 +8394,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Sacred Sword",
@@ -8404,7 +8500,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "すなあらし",
@@ -8446,7 +8543,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "スケイルショット",
@@ -8511,7 +8609,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Scratch",
@@ -8595,7 +8694,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Seismic Toss",
@@ -8658,7 +8758,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "シャドークロー",
@@ -8910,7 +9011,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Sky Attack",
@@ -8931,7 +9033,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "なまける",
@@ -9057,7 +9160,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ヘドロばくだん",
@@ -9078,7 +9182,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ヘドロウェーブ",
@@ -9099,7 +9204,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "うちおとす",
@@ -9162,7 +9268,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Smokescreen",
@@ -9204,7 +9311,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Snore",
@@ -9225,7 +9333,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ゆき",
@@ -9372,7 +9481,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Sparkling Aria",
@@ -9393,7 +9503,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Speed Swap",
@@ -9477,7 +9588,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Spirit Shackle",
@@ -9498,7 +9610,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Spit Up",
@@ -9666,7 +9779,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Sticky Web",
@@ -9729,7 +9843,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Stomping Tantrum",
@@ -9855,7 +9970,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Stun Spore",
@@ -10529,7 +10645,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かみなり",
@@ -10550,7 +10667,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かみなりのキバ",
@@ -10571,7 +10689,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "かみなりパンチ",
@@ -10592,7 +10711,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Thunder Shock",
@@ -10613,7 +10733,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "でんじは",
@@ -10655,7 +10776,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Tickle",
@@ -10781,7 +10903,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Tri Attack",
@@ -10802,7 +10925,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "トリック",
@@ -10913,7 +11037,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Twister",
@@ -10934,7 +11059,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "とんぼがえり",
@@ -10976,7 +11102,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Uproar",
@@ -11144,7 +11271,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "Water Gun",
@@ -11207,7 +11335,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "みずしゅりけん",
@@ -11272,7 +11401,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "ウェーブタックル",
@@ -11650,7 +11780,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   },
   {
     "name": "しねんのずつき",
@@ -11671,6 +11802,7 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "hasSecondaryEffect": true
   }
 ]

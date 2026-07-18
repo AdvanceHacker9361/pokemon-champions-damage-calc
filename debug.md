@@ -593,3 +593,34 @@ GitHub Actions:
 ### 判断メモ
 
 - 今回は技データの誤りであり、連続技の計算・UI側の実装変更は不要。
+
+## 2026-07-18: ちからづくの追加効果技1.3倍補正を実装
+
+### 発覚内容
+
+- 特性 `ちからづく` はデータ上存在していたが、ダメージ計算側に1.3倍補正が実装されていなかった。
+- 公開用の技データにも「追加効果を持つ技か」を示す情報がなく、`かみなりパンチ` などを対象判定できなかった。
+
+### 実施した修正
+
+- `MoveData` / `MoveRecord` に `hasSecondaryEffect?: boolean` を追加。
+- Showdown技データの `secondary` / `secondaries` を基に、公開対象技へ追加効果フラグを反映。
+  - `moves-filtered.json`: 132件
+  - `moves.json`: 139件
+- `DamageCalculator.ts` で、攻撃側特性が `ちからづく` かつ `hasSecondaryEffect` が有効な場合にダメージを1.3倍にする処理を追加。
+- データ生成スクリプトにも同判定と引き継ぎ処理を追加し、再生成時にフラグが失われないようにした。
+- `かみなりパンチ` に補正が適用され、`じしん` には適用されない回帰テストを追加。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run test -- --run tests/domain/DamageCalculator.test.ts tests/data/data-integrity.test.ts`
+  - 92 tests passed。
+- `npm run test`
+  - 13 files / 236 tests passed。
+- `npm run lint`
+- `npm run build`
+
+### 判断メモ
+
+- 追加効果そのものの発生処理はダメージ計算ツールの範囲外であり、今回は `ちからづく` の威力補正判定に必要なメタデータのみ追加した。

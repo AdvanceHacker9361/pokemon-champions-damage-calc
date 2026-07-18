@@ -39,6 +39,7 @@ interface MoveData {
   }
   special: SpecialMoveTag | null
   multiHit?: MultiHitData | null
+  hasSecondaryEffect?: boolean
 }
 
 // ────────────────────────────────────────────────
@@ -59,6 +60,7 @@ interface ExistingMove {
   }
   special: SpecialMoveTag | null
   multiHit?: MultiHitData | null
+  hasSecondaryEffect?: boolean
 }
 
 function main(): void {
@@ -99,6 +101,7 @@ function main(): void {
       // 既存データがある場合: 手動設定の special/flags/multiHit を優先保持
       // ただし日本語名は ja.json から更新
       finalMove = { ...existing }
+      finalMove.hasSecondaryEffect = move.hasSecondaryEffect
       existingKept++
     } else {
       // 新規追加

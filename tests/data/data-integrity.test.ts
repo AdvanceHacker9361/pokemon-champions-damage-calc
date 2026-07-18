@@ -192,6 +192,11 @@ describe('moves.json integrity', () => {
     expect(errors, `Move errors:\n${errors.slice(0, 10).join('\n')}`).toHaveLength(0)
   })
 
+  it('Sheer Force targets should retain their secondary-effect metadata', () => {
+    expect(moves.find(m => m.nameEn === 'Thunder Punch')?.hasSecondaryEffect).toBe(true)
+    expect(moves.find(m => m.nameEn === 'Earthquake')?.hasSecondaryEffect).toBeUndefined()
+  })
+
   it('all move types should be valid Japanese type names', () => {
     const invalid = moves.filter(m => !VALID_TYPES.has(m.type))
     expect(invalid.map(m => `${m.nameEn}: type=${m.type}`)).toHaveLength(0)

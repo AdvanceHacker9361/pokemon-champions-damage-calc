@@ -536,6 +536,10 @@ function applyOtherModifiers(
   if (attackerAbility === 'かたいツメ' && move.flags.contact) {
     d = pokeRound(d * 1.3)
   }
+  // ちからづく: 追加効果を持つ技の威力1.3倍
+  if (attackerAbility === 'ちからづく' && move.hasSecondaryEffect) {
+    d = pokeRound(d * 1.3)
+  }
   // ほのおのたてがみ: ほのお技の威力1.5倍
   if (attackerAbility === 'ほのおのたてがみ' && moveType === 'ほのお') {
     d = pokeRound(d * 1.5)
