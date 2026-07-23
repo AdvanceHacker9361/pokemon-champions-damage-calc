@@ -5,6 +5,7 @@ import { PokemonSearch } from './PokemonSearch'
 import { AbilitySelect } from './AbilitySelect'
 import { ItemSelect } from './ItemSelect'
 import { MegaToggle } from './MegaToggle'
+import { AttackerTabsBar } from './AttackerTabsBar'
 import { SpDistributionPanel } from './SpDistribution'
 import { StatusToggle } from './StatusToggle'
 import { ProteanTypePicker } from './ProteanTypePicker'
@@ -96,8 +97,11 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
   return (
     <div className="panel space-y-4">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-medium text-fg-muted">{label}</h2>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-xs font-medium text-fg-muted flex-shrink-0">{label}</h2>
+          {label === '攻撃側' && <AttackerTabsBar />}
+        </div>
         {store.pokemonId && (
           <div className="flex items-center gap-1.5">
             {store.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}

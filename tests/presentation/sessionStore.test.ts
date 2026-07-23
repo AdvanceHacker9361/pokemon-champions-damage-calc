@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { useSessionStore } from '@/presentation/store/sessionStore'
 import { useAttackerStore } from '@/presentation/store/pokemonStore'
+import { useAttackerTabsStore } from '@/presentation/store/attackerTabsStore'
 
 describe('sessionStore', () => {
   afterEach(() => {
     // タブ状態と localStorage をテスト間でリセット
     useSessionStore.setState({ tabs: [], activeTabId: null })
+    useAttackerTabsStore.setState({ tabs: [], activeTabId: null })
     window.localStorage.clear()
   })
 

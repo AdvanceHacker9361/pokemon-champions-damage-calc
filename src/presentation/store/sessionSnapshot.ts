@@ -2,6 +2,7 @@ import type { Weather, TerrainField } from '@/domain/models/Pokemon'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from './pokemonStore'
 import { useFieldStore } from './fieldStore'
 import { useProgressionStore, type ProgressionEvent } from './progressionStore'
+import { useAttackerTabsStore } from './attackerTabsStore'
 
 /** ポケモンストアのうちスナップショット対象となるデータフィールドのみ */
 export type PokemonSnapshot = Pick<PokemonStore,
@@ -11,6 +12,23 @@ export type PokemonSnapshot = Pick<PokemonStore,
   | 'moves' | 'movePowers' | 'supremeOverlordBoost' | 'focusEnergyActive' | 'chargeActive' | 'metronomeMultiplier'
   | 'grounded'
   | 'baseStats' | 'types' | 'weight' | 'effectiveAbility'>
+
+/** 攻撃側ポケモンタブ1件（複数の攻撃側構成を保持するための単位） */
+export interface AttackerTab {
+  id: string
+  snapshot: PokemonSnapshot
+}
+
+/** 攻撃側ポケモンタブ全体のスナップショット */
+export interface AttackerTabsSnapshot {
+  tabs: AttackerTab[]
+  activeTabId: string | null
+}
+
+/** タブ ID 生成（sessionStore と同一パターン） */
+export function genId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
 
 export interface FieldSnapshot {
   weather: Weather
@@ -40,9 +58,14 @@ export interface SessionSnapshot {
   defender: PokemonSnapshot
   field: FieldSnapshot
   progression: ProgressionSnapshot
+  /**
+   * 攻撃側ポケモンタブ一覧（V3.15）。
+   * この機能以前に永続化されたセッションとの後方互換のため optional。
+   */
+  attackerTabs?: AttackerTabsSnapshot
 }
 
-function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
+export function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
   return {
     pokemonId: s.pokemonId,
     pokemonName: s.pokemonName,
@@ -110,6 +133,30 @@ function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
   }
 }
 
+function cloneAttackerTabsSnapshot(s: AttackerTabsSnapshot): AttackerTabsSnapshot {
+  return {
+    activeTabId: s.activeTabId,
+    tabs: s.tabs.map(t => ({ id: t.id, snapshot: clonePokemonSnapshot(t.snapshot) })),
+  }
+}
+
+/**
+ * 攻撃側タブストアの現在状態を取得。
+ * アクティブタブの内容は（タブ切替を挟まない直近のライブ編集を反映するため）
+ * 保存済みスナップショットではなくライブ攻撃側ストアから取得する。
+ */
+function captureAttackerTabs(): AttackerTabsSnapshot {
+  const { tabs, activeTabId } = useAttackerTabsStore.getState()
+  return {
+    activeTabId,
+    tabs: tabs.map(t =>
+      t.id === activeTabId
+        ? { id: t.id, snapshot: clonePokemonSnapshot(useAttackerStore.getState()) }
+        : { id: t.id, snapshot: clonePokemonSnapshot(t.snapshot) }
+    ),
+  }
+}
+
 /** SessionSnapshot 全体の深いコピー */
 export function cloneSnapshot(snap: SessionSnapshot): SessionSnapshot {
   return {
@@ -117,6 +164,7 @@ export function cloneSnapshot(snap: SessionSnapshot): SessionSnapshot {
     defender: clonePokemonSnapshot(snap.defender),
     field: { ...snap.field },
     progression: cloneProgressionSnapshot(snap.progression),
+    attackerTabs: snap.attackerTabs ? cloneAttackerTabsSnapshot(snap.attackerTabs) : undefined,
   }
 }
 
@@ -148,6 +196,7 @@ export function snapshotLiveState(): SessionSnapshot {
       attackerStartHp: prog.attackerStartHp,
       defenderStartHp: prog.defenderStartHp,
     }),
+    attackerTabs: captureAttackerTabs(),
   }
 }
 
@@ -160,4 +209,16 @@ export function restoreState(snap: SessionSnapshot): void {
   useDefenderStore.setState(clonePokemonSnapshot(snap.defender))
   useFieldStore.setState({ ...snap.field })
   useProgressionStore.setState(cloneProgressionSnapshot(snap.progression))
+
+  // 攻撃側タブを復元。attackerTabs が無い（この機能以前の永続化）場合は、
+  // ライブ攻撃側（= snap.attacker）から単一タブを新規生成する。
+  if (snap.attackerTabs && snap.attackerTabs.tabs.length >= 1) {
+    useAttackerTabsStore.setState(cloneAttackerTabsSnapshot(snap.attackerTabs))
+  } else {
+    const id = genId()
+    useAttackerTabsStore.setState({
+      tabs: [{ id, snapshot: clonePokemonSnapshot(snap.attacker) }],
+      activeTabId: id,
+    })
+  }
 }

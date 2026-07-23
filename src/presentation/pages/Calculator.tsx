@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useAttackerTabsStore } from '@/presentation/store/attackerTabsStore'
 import { useSessionStore, registerSessionUnloadListener } from '@/presentation/store/sessionStore'
 import { PokemonPanel } from '@/presentation/components/pokemon/PokemonPanel'
 import { SessionTabsBar } from '@/presentation/components/session/SessionTabsBar'
@@ -89,10 +90,15 @@ export function Calculator() {
   // 初回マウント時にデフォルトポケモンを設定し、1つ目のタブを生成
   useEffect(() => {
     if (useSessionStore.getState().tabs.length > 0) {
+      // 永続化セッションから復元済み（onRehydrateStorage が攻撃側タブも復元済み）。
+      // initIfEmpty は冪等で、旧セッション由来で空の場合のみ単一タブを補う。
+      useAttackerTabsStore.getState().initIfEmpty()
       registerSessionUnloadListener()
       return
     }
     initDefaults()
+    // 攻撃側タブをデフォルト攻撃側から初期化してから初回セッションタブを保存する
+    useAttackerTabsStore.getState().initIfEmpty()
     useSessionStore.getState().initFirstTab('タブ 1')
     registerSessionUnloadListener()
   }, [])

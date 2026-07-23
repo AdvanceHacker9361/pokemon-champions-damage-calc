@@ -625,3 +625,32 @@
 
 - `plan.md` / `debug.md` 追記とバージョン 3.15.0 更新を含めてコミット。
 - origin/main ベースのブランチから main へ push し、GitHub Actions で Pages デプロイ。
+
+## 2026-07-23 攻撃側ポケモンタブ切替機能（バトレコ方式）
+
+### User Request
+
+- バトレコのダメ計ツールを参考に、現在の計算状態（防御側・フィールド・ダメージ進行）を保持したまま、攻撃側ポケモンのみを最大8個までタブで切り替えられる機能を追加。
+- 目的: ガブリアスのじしんを加算 → 交代してメタグロスのコメットパンチで落とせるか、といった複数ポケモン横断の加算計算の円滑化。
+- タブは「攻撃側」ラベルの右隣に配置。
+
+### Implemented Scope
+
+- **`src/presentation/store/attackerTabsStore.ts`（新規）**: 攻撃側専用タブストア（persistなし・セッションスナップショット経由で永続化）。
+  - `ATTACKER_TABS_MAX = 8`、`initIfEmpty`（冪等）/ `addTab`（現ライブを複製して新タブ作成）/ `switchTab`（ライブ保存→対象復元）/ `closeTab`（最少1タブガード、アクティブ閉鎖時は左隣へ）/ `saveActiveSnapshot`
+  - sessionStore と同じ「切替時にライブ→スナップショット保存→復元」方式。復元は `useAttackerStore.setState(clonePokemonSnapshot(...))` の一括マージで、useDamageCalc が1回だけ再計算する。
+- **`src/presentation/store/sessionSnapshot.ts`**: `clonePokemonSnapshot` / `genId` を export 化。`SessionSnapshot.attackerTabs?: AttackerTabsSnapshot` を追加（旧永続化データとの後方互換のため optional。無い場合は `snap.attacker` から単一タブを生成）。`snapshotLiveState` はアクティブタブ分をライブ攻撃側から取得。
+- **`src/presentation/components/pokemon/AttackerTabsBar.tsx`（新規）**: 番号チップ（1..N）＋「＋」ボタン。アクティブチップに「×」（2タブ以上時のみ）。ツールチップ=ポケモン名。`role="tablist"` 対応。8タブで「＋」は disabled（title「最大8個まで」）。
+- **`PokemonPanel.tsx`**: ヘッダーの「攻撃側」h2 右隣に `AttackerTabsBar` を描画（攻撃側のみ）。
+- **`Calculator.tsx`**: マウント時に `initIfEmpty()`（新規セッション・旧永続化セッション両対応、StrictMode二重実行安全）。
+- 攻守交代（swapStores）はライブストアのみ入れ替え。攻撃側タブの他タブスナップショットには影響しない仕様。
+
+### Tests / Validation
+
+- `tests/presentation/attackerTabsStore.test.ts`（新規9件）: 初期化冪等・追加/切替/閉鎖・深いコピー分離・8上限・防御側非干渉・セッションラウンドトリップ・レガシースナップショット互換。
+- `npm run typecheck` / `npm run lint` / `npm run test -- --run`（14ファイル 251件全パス）/ `npm run build` すべて成功。
+- ブラウザQA: じしん加算→タブ追加→メタグロス設定→じしん加算→タブ1復帰でガブリアス（SP32振り）完全復元、総合累積 134〜160（2体分合算）維持、リロード後もタブ構成・累積が永続化されることを確認。
+
+### Current Status
+
+- 実装・検証完了。コミット・バージョン更新・デプロイは未実施（ユーザー判断待ち）。
