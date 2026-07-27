@@ -2341,6 +2341,27 @@
     "special": null
   },
   {
+    "name": "がんせきアックス",
+    "nameEn": "Stone Axe",
+    "type": "いわ",
+    "category": "物理",
+    "power": 65,
+    "accuracy": 90,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": true
+    },
+    "special": null,
+    "hasSecondaryEffect": true
+  },
+  {
     "name": "がんせきふうじ",
     "nameEn": "Rock Tomb",
     "type": "いわ",
@@ -6052,7 +6073,7 @@
       "pulse": false,
       "punch": false,
       "bite": false,
-      "slice": false
+      "slice": true
     },
     "special": null
   },

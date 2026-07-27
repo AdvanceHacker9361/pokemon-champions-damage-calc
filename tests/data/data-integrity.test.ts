@@ -246,6 +246,27 @@ describe('moves.json integrity', () => {
     expect(errors, errors.slice(0, 5).join('\n')).toHaveLength(0)
   })
 
+  it('canonical slicing moves should have slice flag (きれあじ対象)', () => {
+    // Gen 9 準拠の切る属性技。きれあじ（Sharpness）×1.5 の対象
+    const canonSlicingMoves = [
+      'つばめがえし', 'きりさく', 'シザークロス', 'エアスラッシュ', 'リーフブレード',
+      'サイコカッター', 'つじぎり', 'クロスポイズン', 'ソーラーブレード', 'ネズミざん',
+      'アクアカッター', 'ひけん・ちえなみ', 'せいなるつるぎ', 'シェルブレード',
+      'ドゲザン', 'はっぱカッター', 'エアカッター', 'れんぞくぎり', 'むねんのつるぎ',
+      'いあいぎり', 'ドラゴンクロー', 'シャドークロー', 'スケイルショット',
+      'みずしゅりけん', 'タキオンカッター', 'がんせきアックス',
+    ]
+    const errors: string[] = []
+    for (const name of canonSlicingMoves) {
+      const m = moves.find(mv => mv.name === name)
+      if (!m) continue  // 未収録技はスキップ（データ網羅性は別テストの責務）
+      if (m.flags.slice !== true) {
+        errors.push(`${name}: flags.slice should be true (きれあじ対象の切る技)`)
+      }
+    }
+    expect(errors, errors.join('\n')).toHaveLength(0)
+  })
+
   it('recoil moves should have both recoil flag and recoil rate', () => {
     const errors: string[] = []
     for (const m of moves) {
