@@ -755,4 +755,43 @@ describe('DamageCalculator', () => {
       expect(skipped.max).toBe(noItem.max)
     })
   })
+
+  describe('タイプ相性: ひこう→くさ', () => {
+    const aerialAce: MoveData = {
+      ...makePhysicalMove('つばめがえし', 'ひこう', 60),
+      flags: { contact: true, sound: false, bullet: false, pulse: false, punch: false, bite: false, slice: true },
+    }
+    const grassDefInput: DamageCalcInput = {
+      ...baseInput,
+      attackerTypes: ['ノーマル'],
+      attackerAbility: 'いかく',
+      defenderTypes: ['くさ'],
+      defenderAbility: 'しんりょく',
+      move: aerialAce,
+    }
+
+    it('ひこう技はくさタイプに効果抜群2倍', () => {
+      const vsGrass = calculateDamage(grassDefInput)
+      const vsNeutral = calculateDamage({ ...grassDefInput, defenderTypes: ['ノーマル'] })
+      // 2倍相性: 乱数の同一ロール比較で厳密に2倍近傍（丸め誤差±1）
+      expect(vsGrass.max).toBeGreaterThanOrEqual(vsNeutral.max * 2 - 1)
+      expect(vsGrass.min).toBeGreaterThanOrEqual(vsNeutral.min * 2 - 1)
+    })
+
+    it('きれあじ: 切る技つばめがえしの威力1.5倍', () => {
+      const noSharp = calculateDamage(grassDefInput)
+      const sharp = calculateDamage({ ...grassDefInput, attackerAbility: 'きれあじ' })
+      const ratio = sharp.max / noSharp.max
+      expect(ratio).toBeGreaterThan(1.4)
+      expect(ratio).toBeLessThan(1.6)
+    })
+
+    it('きれあじ: 切る属性なしの技には乗らない', () => {
+      const nonSlice = makePhysicalMove('のしかかり', 'ノーマル', 85)
+      const input = { ...grassDefInput, defenderTypes: ['ノーマル' as const], move: nonSlice }
+      const noSharp = calculateDamage(input)
+      const sharp = calculateDamage({ ...input, attackerAbility: 'きれあじ' })
+      expect(sharp.max).toBe(noSharp.max)
+    })
+  })
 })
