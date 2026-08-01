@@ -45,6 +45,8 @@ export interface AttackPayload {
   variableHitDist?: { hits: number; prob: number }[]
   /** ばけのかわ等により、このイベントの最初の使用だけ1発目が無効になる */
   firstHitNullified?: boolean
+  /** このイベントの最初の使用だけ加算する固定ダメージ（ばけのかわ解除時など） */
+  firstHitFixedDamage?: number
 }
 
 /** イベント種別ごとの payload */

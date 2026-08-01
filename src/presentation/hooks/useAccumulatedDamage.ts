@@ -60,11 +60,16 @@ export function expandAttack(
     const useRaw = !isVeryFirst && firstHadMultiscale
     const normalRolls = useRaw ? e.rawRolls : e.rolls
     const critRolls   = useRaw ? e.rawCritRolls : e.critRolls
+    const firstHitFixedDamage = u === 0 ? (e.firstHitFixedDamage ?? 0) : 0
 
     if (e.variableHitDist) {
       const nullifyFirstHit = e.firstHitNullified === true && u === 0
-      const hit1Rolls = nullifyFirstHit ? normalRolls.map(() => 0) : normalRolls
-      const hit1CritRolls = nullifyFirstHit ? critRolls.map(() => 0) : critRolls
+      const hit1Rolls = nullifyFirstHit
+        ? normalRolls.map(() => firstHitFixedDamage)
+        : normalRolls.map(r => r + firstHitFixedDamage)
+      const hit1CritRolls = nullifyFirstHit
+        ? critRolls.map(() => firstHitFixedDamage)
+        : critRolls.map(r => r + firstHitFixedDamage)
       const hit2plusRolls = e.rawRolls
       const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
       normal.push({ kind: 'attack', dmg: dist })
@@ -80,7 +85,9 @@ export function expandAttack(
       continue
     }
 
-    normal.push({ kind: 'attack', dmg: normalRolls })
+    const normalRollsWithFixed = normalRolls.map(r => r + firstHitFixedDamage)
+    const critRollsWithFixed = critRolls.map(r => r + firstHitFixedDamage)
+    normal.push({ kind: 'attack', dmg: normalRollsWithFixed })
 
     if (e.pbChildRolls !== undefined) {
       const parentNorm = useRaw ? (e.pbParentRawRolls ?? normalRolls) : (e.pbParentRolls ?? normalRolls)
@@ -97,9 +104,9 @@ export function expandAttack(
         crit.push({ kind: 'attack', dmg: mixToMap(childNorm, childCrit, e.critChance) })
       }
     } else if (e.isForcedCrit) {
-      crit.push({ kind: 'attack', dmg: normalRolls })
+      crit.push({ kind: 'attack', dmg: normalRollsWithFixed })
     } else {
-      crit.push({ kind: 'attack', dmg: mixToMap(normalRolls, critRolls, e.critChance) })
+      crit.push({ kind: 'attack', dmg: mixToMap(normalRollsWithFixed, critRollsWithFixed, e.critChance) })
     }
   }
   return { normal, crit }

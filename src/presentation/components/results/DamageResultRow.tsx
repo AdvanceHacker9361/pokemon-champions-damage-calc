@@ -188,14 +188,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
     : 1.0
   const isAlwaysCrit = moveRecord?.alwaysCrit === true
   const critRate = isAlwaysCrit ? 1.0 : moveCritChance
-  const effectiveHpForKo = Math.max(1, defenderMaxHp - disguiseFlatDmg)
 
   const isVariableMultiHit = multiHit?.type === 'variable'
   const variableFirstRolls = isVariableMultiHit && isDisguiseIntact
-    ? rolls.map(() => 0)
+    ? rolls.map(() => disguiseFlatDmg)
     : rolls
   const variableFirstCritRolls = isVariableMultiHit && isDisguiseIntact
-    ? critRollsBase.map(() => 0)
+    ? critRollsBase.map(() => disguiseFlatDmg)
     : critRollsBase
   const variableRawRolls: number[] | number[][] = weakArmorVariableRawRollsByHit?.length
     ? [rawRolls, ...weakArmorVariableRawRollsByHit]
@@ -205,25 +204,28 @@ export function DamageResultRow(props: DamageResultRowProps) {
     : rawCritRollsBase
   const variableSummary = isVariableMultiHit && isDisguiseIntact
     ? calcVariableMultiHitKo(
-        variableFirstRolls, effectiveHpForKo, variableMultiHitDist, variableRawRolls,
+        variableFirstRolls, defenderMaxHp, variableMultiHitDist, variableRawRolls,
       )
     : null
   const variableCritSummary = isVariableMultiHit && isDisguiseIntact
     ? calcVariableMultiHitKoWithCrit(
         variableFirstRolls, variableFirstCritRolls, isForcedCrit ? 1.0 : moveCritChance,
-        effectiveHpForKo, variableMultiHitDist, variableRawRolls, variableRawCritRolls,
+        defenderMaxHp, variableMultiHitDist, variableRawRolls, variableRawCritRolls,
       )
     : null
 
-  const displayMin = variableSummary?.minDmg ?? effectiveRolls[0]
-  const displayMax = variableSummary?.maxDmg ?? effectiveRolls[effectiveRolls.length - 1]
+  const displayEffectiveRolls = effectiveRolls.map(r => r + disguiseFlatDmg)
+  const displayEffectiveCritRolls = effectiveCritRolls.map(r => r + disguiseFlatDmg)
+  const displayMin = variableSummary?.minDmg ?? displayEffectiveRolls[0]
+  const displayMax = variableSummary?.maxDmg
+    ?? displayEffectiveRolls[displayEffectiveRolls.length - 1]
   const displayPercentMin = displayMin / defenderMaxHp * 100
   const displayPercentMax = displayMax / defenderMaxHp * 100
   const avgNormal = (displayMin + displayMax) / 2
-  const baseRollSum = result.max + result.min
-  const critRollSum = critResult.max + critResult.min
-  const critScaleFactor = baseRollSum > 0 ? critRollSum / baseRollSum : 1.5
-  const avgCrit = avgNormal * critScaleFactor
+  const avgCrit = (
+    displayEffectiveCritRolls[0]
+    + displayEffectiveCritRolls[displayEffectiveCritRolls.length - 1]
+  ) / 2
   const expectedDmg = hitRate * (variableCritSummary?.expectedDmg
     ?? (critRate * avgCrit + (1 - critRate) * avgNormal))
 
@@ -235,15 +237,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
         ? { type: 'chance', hits: 1, probability: variableSummary.totalKoProb }
         : { type: 'no-ko' }
   } else if (isParentalBond || isDisguiseIntact) {
-    if (displayMin === 0 && displayMax === 0) {
-      displayKoResult = disguiseFlatDmg >= defenderMaxHp
-        ? { type: 'guaranteed', hits: 1 }
-        : { type: 'no-ko' }
-    } else {
-      displayKoResult = calcKoProbability(effectiveRolls, effectiveHpForKo)
-    }
+    displayKoResult = calcKoProbability(displayEffectiveRolls, defenderMaxHp)
   } else if (weakArmorPerHitResults && multiHit?.type === 'fixed') {
-    displayKoResult = calcKoProbability(effectiveRolls, effectiveHpForKo)
+    displayKoResult = calcKoProbability(displayEffectiveRolls, defenderMaxHp)
   } else {
     displayKoResult = activeResult.koResult
   }
@@ -374,7 +370,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
         <div className="text-[10px] text-fg-muted mb-1 flex items-center gap-2">
           <span>{disguiseLabel}</span>
           <span className="font-mono">
-            +固定{disguiseFlatDmg}
+            内訳: 固定{disguiseFlatDmg}（計算済み）
             <span className="text-fg-subtle ml-0.5">
               ({(disguiseFlatDmg / defenderMaxHp * 100).toFixed(1)}%)
             </span>
@@ -458,7 +454,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
             rolls={variableFirstRolls}
             rawRolls={rawRolls}
             defenderHp={defenderMaxHp}
-            koHp={effectiveHpForKo}
+            koHp={defenderMaxHp}
             hitRate={hitRate}
             dist={variableMultiHitDist}
             weakArmorRawRollsByHit={weakArmorVariableRawRollsByHit}
@@ -483,10 +479,10 @@ export function DamageResultRow(props: DamageResultRowProps) {
                 : '16乱数'}
             </div>
             <div className="grid grid-cols-4 gap-1">
-              {effectiveRolls.map((r, i) => (
+              {displayEffectiveRolls.map((r, i) => (
                 <span
                   key={i}
-                  className={`text-[12px] font-mono tabular-nums text-center bg-surface-3 rounded px-1 py-0.5 ${rollKoClass(r, effectiveHpForKo)}`}
+                  className={`text-[12px] font-mono tabular-nums text-center bg-surface-3 rounded px-1 py-0.5 ${rollKoClass(r, defenderMaxHp)}`}
                 >
                   {r}
                 </span>

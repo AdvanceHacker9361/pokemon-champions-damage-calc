@@ -35,10 +35,11 @@ describe('buildAttackPayload', () => {
 
     expect(payload.variableHitDist).toEqual(VARIABLE_MULTI_HIT_DIST)
     expect(payload.firstHitNullified).toBe(true)
-    expect(payload.minDmg).toBe(10)
-    expect(payload.maxDmg).toBe(40)
-    expect(payload.critMin).toBe(15)
-    expect(payload.critMax).toBe(60)
+    expect(payload.firstHitFixedDamage).toBe(25)
+    expect(payload.minDmg).toBe(35)
+    expect(payload.maxDmg).toBe(65)
+    expect(payload.critMin).toBe(40)
+    expect(payload.critMax).toBe(85)
     expect(payload.label).toContain('(2〜5発加重)')
     expect(payload.label).toContain('+ばけのかわ')
   })
@@ -68,8 +69,13 @@ describe('buildAttackPayload', () => {
     expect(secondDist).toBeInstanceOf(Map)
     if (!(firstDist instanceof Map) || !(secondDist instanceof Map)) return
 
-    expect(firstDist.get(10)).toBeCloseTo(1 / 3, 6)
-    expect(firstDist.get(40)).toBeCloseTo(1 / 6, 6)
+    expect(firstDist.get(35)).toBeCloseTo(1 / 3, 6)
+    expect(firstDist.get(65)).toBeCloseTo(1 / 6, 6)
+    const firstExpected = [...firstDist].reduce(
+      (sum, [damage, probability]) => sum + damage * probability,
+      0,
+    )
+    expect(firstExpected).toBeCloseTo(140 / 3, 6)
     expect(secondDist.get(20)).toBeCloseTo(1 / 3, 6)
     expect(secondDist.get(50)).toBeCloseTo(1 / 6, 6)
   })
