@@ -307,6 +307,11 @@ function convertPP(pp: number): 8 | 12 | 16 | 20 {
   return 20
 }
 
+/** 従来作品と異なる Pokemon Champions 固有の技威力 */
+const CHAMPIONS_MOVE_POWER_OVERRIDES: Record<string, number> = {
+  bonerush: 30,
+}
+
 // ────────────────────────────────────────────────
 // Showdown フラグ → MoveFlags 変換
 // ────────────────────────────────────────────────
@@ -505,7 +510,8 @@ function main(): void {
       nameEn: move.name,
       type: typeJa,
       category: convertCategory(move.category),
-      power: move.basePower && move.basePower > 0 ? move.basePower : null,
+      power: CHAMPIONS_MOVE_POWER_OVERRIDES[moveId] ??
+        (move.basePower && move.basePower > 0 ? move.basePower : null),
       accuracy: typeof move.accuracy === 'number' ? move.accuracy : null,
       pp: convertPP(move.pp ?? 10),
       priority: move.priority ?? 0,

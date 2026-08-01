@@ -365,6 +365,18 @@ describe('moves.json integrity', () => {
     })
   })
 
+  it('ボーンラッシュ should use the Champions-adjusted power', () => {
+    const move = moves.find(m => m.name === 'ボーンラッシュ')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Bone Rush',
+      type: 'じめん',
+      category: '物理',
+      power: 30,
+      multiHit: { type: 'variable' },
+    })
+  })
+
   it('ゴールドラッシュ should have Champions-adjusted data and SpA drop', () => {
     const move = moves.find(m => m.name === 'ゴールドラッシュ')
     expect(move).toBeDefined()

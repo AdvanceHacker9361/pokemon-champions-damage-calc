@@ -695,3 +695,36 @@ GitHub Actions:
 ### 判断メモ
 
 - `てつのこぶし` の計算ロジック変更は不要で、技属性データと再生成時の同期方法を修正した。
+
+## 2026-08-01: ボーンラッシュのChampions固有威力を修正
+
+### 発覚内容
+
+- `ボーンラッシュ` / `Bone Rush` の1発あたりの威力が、Pokemon Championsでは30であるのに、従来作品由来の25として登録されていた。
+- 公開用 `moves.json` だけでなく、Showdown rawデータから生成した `moves-filtered.json` も25だったため、公開データのみ直すと再生成時に戻る可能性があった。
+
+### 実施した修正
+
+- `scripts/filter-champions-data.ts`
+  - `CHAMPIONS_MOVE_POWER_OVERRIDES` を追加し、`bonerush` の威力を30へ上書き。
+- `src/data/filtered/moves-filtered.json`
+  - ボーンラッシュの威力を25から30へ修正。
+- `src/data/json/moves.json`
+  - 公開用ボーンラッシュの威力を25から30へ修正。
+  - 2〜5回の変動連続技設定は維持。
+- `tests/data/data-integrity.test.ts`
+  - ボーンラッシュが威力30かつ変動連続技であることを固定テスト化。
+
+### 検証
+
+- `npm run typecheck`
+- `npm run test -- --run tests/data/data-integrity.test.ts`
+  - 45 tests passed（V3.16.1統合後）。
+- `npm run test`
+  - 14 files / 256 tests passed（V3.16.1統合後）。
+- `npm run lint`
+- `npm run build`
+
+### 判断メモ
+
+- rawデータは従来作品の参照元として変更せず、Champions固有差分を生成処理の明示的なオーバーライドとして管理する。
