@@ -134,6 +134,19 @@ describe('KoProbabilityCalc', () => {
       const prob = calcCombinedKoProbability([other, variableDist], 75)
       expect(prob).toBeCloseTo(1 / 3, 6)
     })
+
+    it('ばけのかわで1発目が無効でも残り1〜4発を加重分布として計算する', () => {
+      const dist = calcVariableHitsSingleUsageDist([0], VARIABLE_MULTI_HIT_DIST, [10])
+
+      // 本来の2〜5発から初撃を除き、10/20/30/40ダメージになる。
+      expect(dist.size).toBe(4)
+      expect(dist.get(10)).toBeCloseTo(1 / 3, 6)
+      expect(dist.get(20)).toBeCloseTo(1 / 3, 6)
+      expect(dist.get(30)).toBeCloseTo(1 / 6, 6)
+      expect(dist.get(40)).toBeCloseTo(1 / 6, 6)
+      const expected = [...dist].reduce((sum, [dmg, probability]) => sum + dmg * probability, 0)
+      expect(expected).toBeCloseTo(65 / 3, 6)
+    })
   })
 
   describe('痛み分け（applyPainSplitToDmgDist）', () => {

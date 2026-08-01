@@ -39,6 +39,9 @@ export function computeEffectiveRolls(params: {
       const remaining = multiHit.count - 1
       return rolls.map(r => r * remaining)
     }
+    // 変動連続技の正確な加重範囲は呼び出し側で分布計算する。
+    // 16乱数の詳細表示には、最少ヒット時に残る1発分を返す。
+    if (multiHit?.type === 'variable') return rawRolls
     return rolls.map(() => 0)
   }
   if (isParentalBond) return combinedRolls

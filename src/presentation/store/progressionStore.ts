@@ -43,6 +43,8 @@ export interface AttackPayload {
 
   /** 変動連続技のヒット数分布 */
   variableHitDist?: { hits: number; prob: number }[]
+  /** ばけのかわ等により、このイベントの最初の使用だけ1発目が無効になる */
+  firstHitNullified?: boolean
 }
 
 /** イベント種別ごとの payload */

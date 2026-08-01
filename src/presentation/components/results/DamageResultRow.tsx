@@ -4,6 +4,8 @@ import type { KoResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
 import {
   calcKoProbability,
+  calcVariableMultiHitKo,
+  calcVariableMultiHitKoWithCrit,
   getVariableMultiHitDist,
 } from '@/domain/calculators/KoProbabilityCalc'
 import { calcCritChance } from '@/domain/calculators/CritRank'
@@ -154,6 +156,14 @@ export function DamageResultRow(props: DamageResultRowProps) {
       disguiseLabel = `ばけのかわ発動（1発目無効 → 残${perHitResults.length - 1}発）`
     else if (multiHit?.type === 'fixed' && multiHit.count > 1)
       disguiseLabel = `ばけのかわ発動（1発目無効 → 残${multiHit.count - 1}発）`
+    else if (multiHit?.type === 'variable') {
+      const minRemaining = variableMultiHitDist[0].hits - 1
+      const maxRemaining = variableMultiHitDist[variableMultiHitDist.length - 1].hits - 1
+      const remainingLabel = minRemaining === maxRemaining
+        ? `${maxRemaining}発`
+        : `${minRemaining}〜${maxRemaining}発加重`
+      disguiseLabel = `ばけのかわ発動（1発目無効 → 残${remainingLabel}）`
+    }
     else disguiseLabel = 'ばけのかわ発動（全弾無効）'
   }
 
@@ -171,11 +181,6 @@ export function DamageResultRow(props: DamageResultRowProps) {
     perHitResults: critPerHitResults, weakArmorPerHitResults: weakArmorCritPerHitResults,
   })
 
-  const displayMin = effectiveRolls[0]
-  const displayMax = effectiveRolls[effectiveRolls.length - 1]
-  const displayPercentMin = displayMin / defenderMaxHp * 100
-  const displayPercentMax = displayMax / defenderMaxHp * 100
-
   // じゅうりょく: 命中率5/3倍（最大100%）。必中技（accuracy=null）は影響なし
   const accuracyMult = isGravity ? 5 / 3 : 1
   const hitRate = moveRecord?.accuracy != null
@@ -183,16 +188,53 @@ export function DamageResultRow(props: DamageResultRowProps) {
     : 1.0
   const isAlwaysCrit = moveRecord?.alwaysCrit === true
   const critRate = isAlwaysCrit ? 1.0 : moveCritChance
+  const effectiveHpForKo = Math.max(1, defenderMaxHp - disguiseFlatDmg)
+
+  const isVariableMultiHit = multiHit?.type === 'variable'
+  const variableFirstRolls = isVariableMultiHit && isDisguiseIntact
+    ? rolls.map(() => 0)
+    : rolls
+  const variableFirstCritRolls = isVariableMultiHit && isDisguiseIntact
+    ? critRollsBase.map(() => 0)
+    : critRollsBase
+  const variableRawRolls: number[] | number[][] = weakArmorVariableRawRollsByHit?.length
+    ? [rawRolls, ...weakArmorVariableRawRollsByHit]
+    : rawRolls
+  const variableRawCritRolls: number[] | number[][] = weakArmorVariableRawCritRollsByHit?.length
+    ? [rawCritRollsBase, ...weakArmorVariableRawCritRollsByHit]
+    : rawCritRollsBase
+  const variableSummary = isVariableMultiHit && isDisguiseIntact
+    ? calcVariableMultiHitKo(
+        variableFirstRolls, effectiveHpForKo, variableMultiHitDist, variableRawRolls,
+      )
+    : null
+  const variableCritSummary = isVariableMultiHit && isDisguiseIntact
+    ? calcVariableMultiHitKoWithCrit(
+        variableFirstRolls, variableFirstCritRolls, isForcedCrit ? 1.0 : moveCritChance,
+        effectiveHpForKo, variableMultiHitDist, variableRawRolls, variableRawCritRolls,
+      )
+    : null
+
+  const displayMin = variableSummary?.minDmg ?? effectiveRolls[0]
+  const displayMax = variableSummary?.maxDmg ?? effectiveRolls[effectiveRolls.length - 1]
+  const displayPercentMin = displayMin / defenderMaxHp * 100
+  const displayPercentMax = displayMax / defenderMaxHp * 100
   const avgNormal = (displayMin + displayMax) / 2
   const baseRollSum = result.max + result.min
   const critRollSum = critResult.max + critResult.min
   const critScaleFactor = baseRollSum > 0 ? critRollSum / baseRollSum : 1.5
   const avgCrit = avgNormal * critScaleFactor
-  const expectedDmg = hitRate * (critRate * avgCrit + (1 - critRate) * avgNormal)
+  const expectedDmg = hitRate * (variableCritSummary?.expectedDmg
+    ?? (critRate * avgCrit + (1 - critRate) * avgNormal))
 
-  const effectiveHpForKo = Math.max(1, defenderMaxHp - disguiseFlatDmg)
   let displayKoResult: KoResult
-  if (isParentalBond || isDisguiseIntact) {
+  if (variableSummary) {
+    displayKoResult = variableSummary.totalKoProb >= 1
+      ? { type: 'guaranteed', hits: 1 }
+      : variableSummary.totalKoProb > 0
+        ? { type: 'chance', hits: 1, probability: variableSummary.totalKoProb }
+        : { type: 'no-ko' }
+  } else if (isParentalBond || isDisguiseIntact) {
     if (displayMin === 0 && displayMax === 0) {
       displayKoResult = disguiseFlatDmg >= defenderMaxHp
         ? { type: 'guaranteed', hits: 1 }
@@ -413,13 +455,14 @@ export function DamageResultRow(props: DamageResultRowProps) {
       {multiHitExpanded && multiHit?.type === 'variable' && (
         <div className="mt-2 pt-2 border-t border-edge">
           <VariableMultiHitPanel
-            rolls={rolls}
+            rolls={variableFirstRolls}
             rawRolls={rawRolls}
             defenderHp={defenderMaxHp}
+            koHp={effectiveHpForKo}
             hitRate={hitRate}
             dist={variableMultiHitDist}
             weakArmorRawRollsByHit={weakArmorVariableRawRollsByHit}
-            critRolls={critRollsBase}
+            critRolls={variableFirstCritRolls}
             rawCritRolls={rawCritRollsBase}
             weakArmorRawCritRollsByHit={weakArmorVariableRawCritRollsByHit}
             critChance={isForcedCrit ? 1.0 : moveCritChance}
@@ -435,6 +478,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
             <div className="text-xs text-fg-muted mb-1">
               {isParentalBond && !isDisguiseIntact ? '合算乱数（親+子）'
                 : isDisguiseIntact && isParentalBond ? '子ダメ16乱数'
+                : isDisguiseIntact && multiHit?.type === 'variable' ? '最少残弾（1発分）16乱数'
                 : isDisguiseIntact ? '実効ダメ16乱数'
                 : '16乱数'}
             </div>

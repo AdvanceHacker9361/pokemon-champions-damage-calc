@@ -41,7 +41,7 @@ export function buildAttackPayload(params: BuildAttackPayloadParams): AttackPayl
 
   const isFixedMultiHit = multiHit?.type === 'fixed' && multiHit.count > 1 && !isDisguiseIntact
   const fixedHitCount = isFixedMultiHit ? (multiHit as { type: 'fixed'; count: number }).count : 1
-  const isVariableMultiHit = multiHit?.type === 'variable' && !isDisguiseIntact
+  const isVariableMultiHit = multiHit?.type === 'variable'
 
   // 変動連続技は 1発分のロールを保存し、useAccumulatedDamage 側で 1使用分の
   // ダメージ分布（ヒット数加重）を組み立てて DP スロットへ流し込む
@@ -66,10 +66,11 @@ export function buildAttackPayload(params: BuildAttackPayloadParams): AttackPayl
     ? variableMultiHitDist[variableMultiHitDist.length - 1].hits
     : 1
   const accumMin = isVariableMultiHit
-    ? accumRolls[0] + accumRawRolls[0] * (variableMinHits - 1)
+    ? (isDisguiseIntact ? 0 : accumRolls[0]) + accumRawRolls[0] * (variableMinHits - 1)
     : accumRolls[0]
   const accumMax = isVariableMultiHit
-    ? accumRolls[accumRolls.length - 1] + accumRawRolls[accumRawRolls.length - 1] * (variableMaxHits - 1)
+    ? (isDisguiseIntact ? 0 : accumRolls[accumRolls.length - 1])
+      + accumRawRolls[accumRawRolls.length - 1] * (variableMaxHits - 1)
     : accumRolls[accumRolls.length - 1]
   const accumRawMin = isVariableMultiHit
     ? accumRawRolls[0] * variableMinHits
@@ -126,10 +127,11 @@ export function buildAttackPayload(params: BuildAttackPayloadParams): AttackPayl
     critRolls: accumCritRolls,
     rawCritRolls: accumRawCritRolls,
     critMin: isVariableMultiHit
-      ? accumCritRolls[0] + accumRawCritRolls[0] * (variableMinHits - 1)
+      ? (isDisguiseIntact ? 0 : accumCritRolls[0]) + accumRawCritRolls[0] * (variableMinHits - 1)
       : accumCritRolls[0],
     critMax: isVariableMultiHit
-      ? accumCritRolls[accumCritRolls.length - 1] + accumRawCritRolls[accumRawCritRolls.length - 1] * (variableMaxHits - 1)
+      ? (isDisguiseIntact ? 0 : accumCritRolls[accumCritRolls.length - 1])
+        + accumRawCritRolls[accumRawCritRolls.length - 1] * (variableMaxHits - 1)
       : accumCritRolls[accumCritRolls.length - 1],
     rawCritMin: isVariableMultiHit
       ? accumRawCritRolls[0] * variableMinHits
@@ -146,5 +148,6 @@ export function buildAttackPayload(params: BuildAttackPayloadParams): AttackPayl
     pbChildRolls,
     pbChildCritRolls,
     variableHitDist: isVariableMultiHit ? variableMultiHitDist : undefined,
+    firstHitNullified: isVariableMultiHit && isDisguiseIntact,
   }
 }

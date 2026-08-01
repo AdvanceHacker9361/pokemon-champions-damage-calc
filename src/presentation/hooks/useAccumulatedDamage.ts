@@ -48,7 +48,7 @@ function mixToMap(rolls: number[], critRolls: number[] | undefined, critChance: 
  * 攻撃イベントから通常パス・急所込みパスの SeqEvent を構築（usages 展開・マルチスケイル継承）。
  * 旧 useAccumulatedDamage のロジックそのまま。
  */
-function expandAttack(
+export function expandAttack(
   e: Extract<ProgressionEvent, { kind: 'attack' }>,
   isFirstOverall: boolean,
   firstHadMultiscale: boolean,
@@ -62,16 +62,18 @@ function expandAttack(
     const critRolls   = useRaw ? e.rawCritRolls : e.critRolls
 
     if (e.variableHitDist) {
-      const hit1Rolls = normalRolls
+      const nullifyFirstHit = e.firstHitNullified === true && u === 0
+      const hit1Rolls = nullifyFirstHit ? normalRolls.map(() => 0) : normalRolls
+      const hit1CritRolls = nullifyFirstHit ? critRolls.map(() => 0) : critRolls
       const hit2plusRolls = e.rawRolls
       const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
       normal.push({ kind: 'attack', dmg: dist })
       if (e.isForcedCrit) {
-        const critDist = calcVariableHitsSingleUsageDist(critRolls, e.variableHitDist, e.rawCritRolls)
+        const critDist = calcVariableHitsSingleUsageDist(hit1CritRolls, e.variableHitDist, e.rawCritRolls)
         crit.push({ kind: 'attack', dmg: critDist })
       } else {
         const distWithCrit = calcVariableHitsSingleUsageDistWithCrit(
-          hit1Rolls, critRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
+          hit1Rolls, hit1CritRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
         )
         crit.push({ kind: 'attack', dmg: distWithCrit })
       }

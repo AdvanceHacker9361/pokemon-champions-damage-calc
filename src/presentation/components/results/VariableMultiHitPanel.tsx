@@ -13,12 +13,13 @@ function multiHitKoColor(prob: number): string {
 
 /** 変動連続技の確率計算パネル */
 export function VariableMultiHitPanel({
-  rolls, rawRolls, defenderHp, hitRate, dist, weakArmorRawRollsByHit,
+  rolls, rawRolls, defenderHp, koHp = defenderHp, hitRate, dist, weakArmorRawRollsByHit,
   critRolls, rawCritRolls, weakArmorRawCritRollsByHit, critChance,
 }: {
   rolls: number[]
   rawRolls: number[]
   defenderHp: number
+  koHp?: number
   hitRate: number
   dist: { hits: number; prob: number }[]
   weakArmorRawRollsByHit?: number[][]
@@ -33,7 +34,7 @@ export function VariableMultiHitPanel({
   } else if (rawRolls !== rolls) {
     effectiveRawRolls = rawRolls
   }
-  const res = calcVariableMultiHitKo(rolls, defenderHp, dist, effectiveRawRolls)
+  const res = calcVariableMultiHitKo(rolls, koHp, dist, effectiveRawRolls)
   const expectedWithAcc = res.expectedDmg * hitRate
 
   let effectiveRawCritRolls: number[] | number[][] | undefined
@@ -43,7 +44,7 @@ export function VariableMultiHitPanel({
     effectiveRawCritRolls = rawCritRolls
   }
   const resCrit = calcVariableMultiHitKoWithCrit(
-    rolls, critRolls, critChance, defenderHp, dist,
+    rolls, critRolls, critChance, koHp, dist,
     effectiveRawRolls, effectiveRawCritRolls,
   )
   const expectedDmgCrit = resCrit.expectedDmg * hitRate

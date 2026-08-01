@@ -196,7 +196,10 @@ export function useBattleSequence(): BattleSequenceComputed {
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
             const seqLabel = `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageSuffix}`
             if (ev.variableHitDist) {
-              const dist = calcVariableHitsSingleUsageDist(baseRolls, ev.variableHitDist, ev.rawRolls)
+              const hit1Rolls = ev.firstHitNullified === true && u === 0
+                ? baseRolls.map(() => 0)
+                : baseRolls
+              const dist = calcVariableHitsSingleUsageDist(hit1Rolls, ev.variableHitDist, ev.rawRolls)
               pushSeq({ kind: 'attack', dmg: dist, drain: drainRate, recoil: recoilRate }, seqLabel)
             } else {
               pushSeq({ kind: 'attack', dmg: baseRolls, drain: drainRate, recoil: recoilRate }, seqLabel)
