@@ -427,6 +427,84 @@ describe('DamageCalculator', () => {
 
       expect(Array.from(defenderMegaSolarResult.rolls)).toEqual(Array.from(sunnyResult.rolls))
     })
+
+    it('砂嵐のいわタイプ特防補正はサイコショックが参照するBに適用しない', () => {
+      const move: MoveData = {
+        ...makeSpecialMove('サイコショック', 'エスパー', 80),
+        special: 'psyshock',
+      }
+      const defenderStats = makeStats(200, 100, 100, 100, 200, 100)
+      const clear = calculateDamage({
+        ...baseInput,
+        defenderStats,
+        defenderTypes: ['いわ'],
+        move,
+        field: createDefaultBattleField(),
+      })
+      const sand = calculateDamage({
+        ...baseInput,
+        defenderStats,
+        defenderTypes: ['いわ'],
+        move,
+        field: { ...createDefaultBattleField(), weather: 'すなあらし' },
+      })
+
+      expect(Array.from(sand.rolls)).toEqual(Array.from(clear.rolls))
+    })
+
+    it('砂嵐のいわタイプ特防補正は通常の特殊技には適用する', () => {
+      const move = makeSpecialMove('サイコキネシス', 'エスパー', 90)
+      const clear = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['いわ'],
+        move,
+        field: createDefaultBattleField(),
+      })
+      const sand = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['いわ'],
+        move,
+        field: { ...createDefaultBattleField(), weather: 'すなあらし' },
+      })
+
+      expect(sand.max).toBeLessThan(clear.max)
+    })
+
+    it('雪のこおりタイプ防御補正はサイコショックが参照するBに適用する', () => {
+      const move: MoveData = {
+        ...makeSpecialMove('サイコショック', 'エスパー', 80),
+        special: 'psyshock',
+      }
+      const clear = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['こおり'],
+        move,
+        field: createDefaultBattleField(),
+      })
+      const snow = calculateDamage({
+        ...baseInput,
+        defenderTypes: ['こおり'],
+        move,
+        field: { ...createDefaultBattleField(), weather: 'ゆき' },
+      })
+
+      expect(snow.max).toBeLessThan(clear.max)
+    })
+
+    it('とつげきチョッキの特防補正はサイコショックが参照するBに適用しない', () => {
+      const move: MoveData = {
+        ...makeSpecialMove('サイコショック', 'エスパー', 80),
+        special: 'psyshock',
+      }
+      const normal = calculateDamage({ ...baseInput, move })
+      const assaultVest = calculateDamage({
+        ...baseInput,
+        defenderItem: 'とつげきチョッキ',
+        move,
+      })
+
+      expect(Array.from(assaultVest.rolls)).toEqual(Array.from(normal.rolls))
+    })
   })
 
   describe('やけど補正', () => {

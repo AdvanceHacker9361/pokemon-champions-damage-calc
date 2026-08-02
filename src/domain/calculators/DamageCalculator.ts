@@ -201,6 +201,7 @@ function resolveDef(input: DamageCalcInput): number {
   const { move, attackerStats, defenderStats, defenderAbility, defenderItem } = input
 
   let def: number
+  let effectiveDefStat: 'def' | 'spd' = move.category === '物理' ? 'def' : 'spd'
 
   if (move.special) {
     const result = resolveSpecialMove({
@@ -213,6 +214,7 @@ function resolveDef(input: DamageCalcInput): number {
     })
     if (result.effectiveDef !== undefined) {
       def = result.effectiveDef
+      effectiveDefStat = result.effectiveDefStat ?? effectiveDefStat
     } else {
       def = move.category === '物理' ? defenderStats.def : defenderStats.spd
     }
@@ -225,9 +227,9 @@ function resolveDef(input: DamageCalcInput): number {
   if (defenderAbility === 'ふわふわもうふ' || defenderAbility === 'もふもふ') {
     if (move.flags.contact) defMod *= 0.5
   }
-  // ふしぎなうろこ: 状態異常時に特防1.5倍（statusフィールドから自動判定）
+  // ふしぎなうろこ: 状態異常時に防御1.5倍（statusフィールドから自動判定）
   if (defenderAbility === 'ふしぎなうろこ' && input.defenderStatus !== null) {
-    if (move.category === '特殊') defMod *= 1.5
+    if (effectiveDefStat === 'def') defMod *= 1.5
   }
 
   // 砂嵐時の岩タイプ特防1.5倍
@@ -237,19 +239,19 @@ function resolveDef(input: DamageCalcInput): number {
     defenderAbility: input.defenderAbility,
   })
   if (effectiveWeather === 'すなあらし') {
-    if (move.category === '特殊') {
+    if (effectiveDefStat === 'spd') {
       if (input.defenderTypes?.includes('いわ')) defMod *= 1.5
     }
   }
   // 雪時の氷タイプ防御1.5倍
   if (effectiveWeather === 'ゆき') {
-    if (move.category === '物理') {
+    if (effectiveDefStat === 'def') {
       if (input.defenderTypes?.includes('こおり')) defMod *= 1.5
     }
   }
 
   // 持ち物補正（防御側）
-  if (defenderItem === 'とつげきチョッキ' && move.category === '特殊') defMod *= 1.5
+  if (defenderItem === 'とつげきチョッキ' && effectiveDefStat === 'spd') defMod *= 1.5
   if (defenderItem === 'しんかのきせき') defMod *= 1.5
 
   return Math.floor(def * defMod)
