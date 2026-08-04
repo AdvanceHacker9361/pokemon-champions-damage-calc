@@ -10,6 +10,8 @@ import {
 } from '@/domain/calculators/KoProbabilityCalc'
 import { calcCritChance } from '@/domain/calculators/CritRank'
 import { calcChildRolls, computeEffectiveRolls } from '@/domain/calculators/RollAggregation'
+import { recoilRateForMove, calcRecoilRange, recoilRateLabel } from '@/domain/calculators/RecoilCalc'
+import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
@@ -88,6 +90,8 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const focusEnergyActive = useAttackerStore(s => s.focusEnergyActive)
   const attackerRanks = useAttackerStore(s => s.ranks)
   const setAttackerRank = useAttackerStore(s => s.setRank)
+  const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
+  const attackerSpHp = useAttackerStore(s => s.sp.hp)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
   const weather = useFieldStore(s => s.weather)
@@ -221,6 +225,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
     ?? displayEffectiveRolls[displayEffectiveRolls.length - 1]
   const displayPercentMin = displayMin / defenderMaxHp * 100
   const displayPercentMax = displayMax / defenderMaxHp * 100
+
+  // 反動技（すてみタックル等）: 与ダメ乱数幅に沿った自傷反動ダメージを常時併記
+  const recoilRate = recoilRateForMove(moveRecord, attackerAbility)
+  const recoilRange = recoilRate !== undefined
+    ? calcRecoilRange(displayMin, displayMax, recoilRate, defenderMaxHp)
+    : null
+  const attackerMaxHp = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const avgNormal = (displayMin + displayMax) / 2
   const avgCrit = (
     displayEffectiveCritRolls[0]
@@ -446,6 +457,26 @@ export function DamageResultRow(props: DamageResultRowProps) {
           残HP {Math.max(0, defenderMaxHp - displayMax)}〜{Math.max(0, defenderMaxHp - displayMin)}/{defenderMaxHp}
         </span>
       </div>
+
+      {/* 反動ダメージライン（反動技のみ・常時表示） */}
+      {recoilRange && recoilRate !== undefined && (
+        <div className="flex items-center justify-between text-[10px] font-mono mt-0.5">
+          <span className="text-danger-3">
+            反動{recoilRateLabel(recoilRate)}:
+            <span className="ml-0.5 font-semibold">{recoilRange.min}〜{recoilRange.max}</span>
+            {attackerMaxHp > 0 && (
+              <span className="ml-1 text-fg-faint">
+                ({(recoilRange.min / attackerMaxHp * 100).toFixed(1)}%〜{(recoilRange.max / attackerMaxHp * 100).toFixed(1)}%)
+              </span>
+            )}
+          </span>
+          {attackerMaxHp > 0 && (
+            <span className="text-fg-faint">
+              攻残HP {Math.max(0, attackerMaxHp - recoilRange.max)}〜{Math.max(0, attackerMaxHp - recoilRange.min)}/{attackerMaxHp}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 変動連続技 KO確率パネル */}
       {multiHitExpanded && multiHit?.type === 'variable' && (
