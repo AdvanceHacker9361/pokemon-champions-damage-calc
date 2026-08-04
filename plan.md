@@ -654,3 +654,65 @@
 ### Current Status
 
 - 実装・検証完了。コミット・バージョン更新・デプロイは未実施（ユーザー判断待ち）。
+
+## 2026-08-04 きれあじ修正・がんせきアックス・反動/吸収の常時併記（V3.16.1〜V3.16.3）
+
+### User Request
+
+1. ひこう技→くさタイプの2倍相性が乗っていない疑い（調査の結果、見間違いと確認）
+2. つばめがえしに特性きれあじの1.5倍が乗らないバグの修正
+3. がんせきアックスの収録
+4. 反動技（すてみタックル・ウッドハンマー等）の自傷反動ダメを乱数幅に沿って常時併記
+5. 吸収技（ギガドレイン・ドレインキッス等）の回復量も同様に吸収行として常時併記
+
+### V3.16.1（デプロイ済み: PR #70, commit cea80ae）
+
+- **つばめがえし きれあじ補正バグ修正**: `moves.json` の `flags.slice` が `false` だったため
+  きれあじ×1.5が不発（再現テストで倍率1.00を確認）。`true` に修正。
+  切る属性技25件を全数調査し、誤りはつばめがえしのみだった。
+- **がんせきアックス収録**: いわ物理・威力65・命中90・PP16・接触/切る属性
+  （バサギリ専用技。ステルスロック設置はダメージ計算外）。`hasSecondaryEffect: true`。
+- **ひこう→くさ 2倍相性の検証**: `typeChart.ts`（ひこう行 くさ:2）・`calculateDamage` 実測
+  （82 vs 41 = 2.0倍）・くさタイプ105体のタイプデータすべて正常。
+  仕様固定のため回帰テストを追加。
+- **テスト追加**: data-integrity に切る属性技26件（がんせきアックス含む）の `slice` フラグ検証、
+  DamageCalculator に ひこう→くさ2倍 + きれあじ1.5倍/非対象技 の3件。
+
+### V3.16.2 反動ダメージの常時併記
+
+- **`src/domain/calculators/RecoilCalc.ts`（新規）**: 反動計算の共有ドメイン層
+  - `recoilRateForMove(move, ability)`: いしあたま/マジックガードで undefined（反動無効）
+  - `calcRecoilDamage(actual, rate)`: `max(1, round(actual × rate))`（BattleSequenceCalc と同一式）
+  - `calcRecoilRange(min, max, rate, defenderMaxHp)`: 実ダメは防御側最大HPでクランプ
+    （オーバーキル分に反動は乗らない）
+  - `recoilRateLabel(rate)`: 1/3・1/4・1/2 の分数表示
+- **`useBattleSequence.ts`**: ローカル重複していた `recoilRateForMove` / `RECOIL_PREVENT_ABILITIES`
+  を RecoilCalc からの import に置換（表示とシミュレーションの式乖離を構造的に防止）
+- **`DamageResultRow.tsx`**: 期待/残HP行の直下に反動行を常時表示
+  - `反動1/3: X〜Y (攻HP比%〜%)` ＋ 右側に `攻残HP A〜B/攻最大HP`
+  - `displayMin/displayMax` ベースのため急所トグル・ばけのかわ表示に自動追随
+- 対象10技: すてみタックル・ウッドハンマー・ブレイブバード・フレアドライブ・ボルテッカー・
+  ワイルドボルト・とっしん・もろはのずつき・ウェーブタックル・はめつのひかり
+- テスト: `tests/domain/RecoilCalc.test.ts` 9件（率解決・特性無効・四捨五入/最低1・クランプ・分数）
+
+### V3.16.3 吸収回復の常時併記
+
+- **`src/domain/calculators/DrainCalc.ts`（新規）**: RecoilCalc と対になる吸収計算の共有ドメイン層
+  - `calcDrainHeal(actual, rate)`: `max(1, floor(actual × rate))`（エンジンと同一。反動=round/吸収=floor の差異も忠実）
+  - `calcDrainRange(min, max, rate, defenderMaxHp)`: 防御側最大HPクランプ
+  - `drainRateLabel(rate)`: 1/2・3/4 の分数表示（分子付き汎用形）
+- **`DamageResultRow.tsx`**: 反動行の直下に吸収行（text-success 緑）を常時表示
+  - `吸収1/2: +X〜Y (攻HP比%〜%)` ＋ `攻HP回復（最大Nまで）`
+- 対象9技: すいとる・メガドレイン・ギガドレイン・ドレインパンチ・きゅうけつ・ウッドホーン・
+  パラボラチャージ・ドレインキッス(3/4)・むねんのつるぎ
+- テスト: `tests/domain/DrainCalc.test.ts` 6件
+
+### Validation
+
+- `npm run typecheck` / `npm run lint` / `npm run build` すべてパス
+- `npm run test` 17ファイル・279件全パス（264件 → 279件、+15件）
+
+### Current Status
+
+- V3.16.1: main マージ・Pages デプロイ済み
+- V3.16.2 / V3.16.3: ブランチ `claude/debug-pokemon-damage-calc-Rd6jZ` にコミット済み → 本デプロイでまとめて main へ
