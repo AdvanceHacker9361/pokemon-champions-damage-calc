@@ -1091,6 +1091,8 @@ type ProgressionEvent =
 |----------|------|
 | `src/domain/calculators/CritRank.ts` | 急所ランク計算（技・特性・アイテム・きあいだめを統合して急所率を返す） |
 | `src/domain/calculators/DamageCalculator.ts` | コアダメージ計算（タイプ相性・STAB・特性等） |
+| `src/domain/calculators/RecoilCalc.ts` | 反動技の自傷反動ダメ計算（率解決＝いしあたま/マジックガード無効、`max(1, round(実ダメ×率))`、防御側最大HPクランプ）。結果行の反動併記とシミュレーションで共有（V3.16.2） |
+| `src/domain/calculators/DrainCalc.ts` | 吸収技の回復量計算（`max(1, floor(実ダメ×率))`、防御側最大HPクランプ、分数ラベル）。結果行の吸収併記用（V3.16.3） |
 | `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `critChance` / `escalating` フィールドを含む |
 | `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に上記フィールドすべてあり） |
 | `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ・`critChance` 等） |
@@ -1107,7 +1109,7 @@ type ProgressionEvent =
 | `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`、変動連続技分布 |
 | `src/domain/calculators/BattleSequenceCalc.ts` | バトルシーケンス2D同時分布DP（攻守HP・被ダメ・痛み分け・定数・吸収の時系列変換） |
 | `src/presentation/components/results/DamageResultArea.tsx` | 結果行 + FieldStateBar + DamageProgressionSection の配置 |
-| `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン（progressionStore.addAttack 呼び出し）・期待ダメ表示・耐久調整トグル |
+| `src/presentation/components/results/DamageResultRow.tsx` | 急所トグル・自己デバフボタン・加算ボタン（progressionStore.addAttack 呼び出し）・期待ダメ表示・反動/吸収の乱数幅併記行（V3.16.2/V3.16.3） |
 | `src/presentation/components/results/DamageSummaryHeader.tsx` | 最上部サマリーパネル（累積バー＋ヒストグラム。progressionStore.events から defenderMaxHp 取得） |
 | `src/presentation/components/results/DurabilityPanel.tsx` | 耐久調整パネル（個別技・H+B/D最適SP配分テーブル） |
 | `src/presentation/components/results/AccumDurabilityPanel.tsx` | 耐久調整パネル（累積・HP投資のみ最適化、progressionStore から attack イベント抽出） |
