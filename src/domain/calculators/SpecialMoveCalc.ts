@@ -48,6 +48,8 @@ export interface SpecialMoveResult {
   effectiveAtk: number
   /** 実際に使用する防御実数値 */
   effectiveDef: number
+  /** 防御側のB/Dどちらを参照するか */
+  effectiveDefStat: 'def' | 'spd'
   /** 適用する技の威力 */
   effectivePower: number
   /** 物理/特殊の判定（特殊だが防御参照の技等に使用） */
@@ -76,7 +78,7 @@ export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMove
 
     case 'psyshock':
       // サイコショック・サイコブレイク: 特殊技だが相手のぼうぎょで計算
-      return { effectiveDef: defenderStats.def, effectiveCategory: '特殊' }
+      return { effectiveDef: defenderStats.def, effectiveDefStat: 'def', effectiveCategory: '特殊' }
 
     case 'gyro-ball': {
       // ジャイロボール: min(150, floor(25 × 相手S ÷ 自分S))

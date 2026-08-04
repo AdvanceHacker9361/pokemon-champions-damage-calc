@@ -48,7 +48,7 @@ function mixToMap(rolls: number[], critRolls: number[] | undefined, critChance: 
  * 攻撃イベントから通常パス・急所込みパスの SeqEvent を構築（usages 展開・マルチスケイル継承）。
  * 旧 useAccumulatedDamage のロジックそのまま。
  */
-function expandAttack(
+export function expandAttack(
   e: Extract<ProgressionEvent, { kind: 'attack' }>,
   isFirstOverall: boolean,
   firstHadMultiscale: boolean,
@@ -60,25 +60,34 @@ function expandAttack(
     const useRaw = !isVeryFirst && firstHadMultiscale
     const normalRolls = useRaw ? e.rawRolls : e.rolls
     const critRolls   = useRaw ? e.rawCritRolls : e.critRolls
+    const firstHitFixedDamage = u === 0 ? (e.firstHitFixedDamage ?? 0) : 0
 
     if (e.variableHitDist) {
-      const hit1Rolls = normalRolls
+      const nullifyFirstHit = e.firstHitNullified === true && u === 0
+      const hit1Rolls = nullifyFirstHit
+        ? normalRolls.map(() => firstHitFixedDamage)
+        : normalRolls.map(r => r + firstHitFixedDamage)
+      const hit1CritRolls = nullifyFirstHit
+        ? critRolls.map(() => firstHitFixedDamage)
+        : critRolls.map(r => r + firstHitFixedDamage)
       const hit2plusRolls = e.rawRolls
       const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
       normal.push({ kind: 'attack', dmg: dist })
       if (e.isForcedCrit) {
-        const critDist = calcVariableHitsSingleUsageDist(critRolls, e.variableHitDist, e.rawCritRolls)
+        const critDist = calcVariableHitsSingleUsageDist(hit1CritRolls, e.variableHitDist, e.rawCritRolls)
         crit.push({ kind: 'attack', dmg: critDist })
       } else {
         const distWithCrit = calcVariableHitsSingleUsageDistWithCrit(
-          hit1Rolls, critRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
+          hit1Rolls, hit1CritRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
         )
         crit.push({ kind: 'attack', dmg: distWithCrit })
       }
       continue
     }
 
-    normal.push({ kind: 'attack', dmg: normalRolls })
+    const normalRollsWithFixed = normalRolls.map(r => r + firstHitFixedDamage)
+    const critRollsWithFixed = critRolls.map(r => r + firstHitFixedDamage)
+    normal.push({ kind: 'attack', dmg: normalRollsWithFixed })
 
     if (e.pbChildRolls !== undefined) {
       const parentNorm = useRaw ? (e.pbParentRawRolls ?? normalRolls) : (e.pbParentRolls ?? normalRolls)
@@ -95,9 +104,9 @@ function expandAttack(
         crit.push({ kind: 'attack', dmg: mixToMap(childNorm, childCrit, e.critChance) })
       }
     } else if (e.isForcedCrit) {
-      crit.push({ kind: 'attack', dmg: normalRolls })
+      crit.push({ kind: 'attack', dmg: normalRollsWithFixed })
     } else {
-      crit.push({ kind: 'attack', dmg: mixToMap(normalRolls, critRolls, e.critChance) })
+      crit.push({ kind: 'attack', dmg: mixToMap(normalRollsWithFixed, critRollsWithFixed, e.critChance) })
     }
   }
   return { normal, crit }
