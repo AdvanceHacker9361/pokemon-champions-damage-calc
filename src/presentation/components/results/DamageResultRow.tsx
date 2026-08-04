@@ -11,6 +11,7 @@ import {
 import { calcCritChance } from '@/domain/calculators/CritRank'
 import { calcChildRolls, computeEffectiveRolls } from '@/domain/calculators/RollAggregation'
 import { recoilRateForMove, calcRecoilRange, recoilRateLabel } from '@/domain/calculators/RecoilCalc'
+import { calcDrainRange, drainRateLabel } from '@/domain/calculators/DrainCalc'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
@@ -230,6 +231,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const recoilRate = recoilRateForMove(moveRecord, attackerAbility)
   const recoilRange = recoilRate !== undefined
     ? calcRecoilRange(displayMin, displayMax, recoilRate, defenderMaxHp)
+    : null
+  // 吸収技（ギガドレイン等）: 与ダメ乱数幅に沿った回復量を常時併記
+  const drainRate = moveRecord?.drain
+  const drainRange = drainRate !== undefined && drainRate > 0
+    ? calcDrainRange(displayMin, displayMax, drainRate, defenderMaxHp)
     : null
   const attackerMaxHp = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const avgNormal = (displayMin + displayMax) / 2
@@ -473,6 +479,26 @@ export function DamageResultRow(props: DamageResultRowProps) {
           {attackerMaxHp > 0 && (
             <span className="text-fg-faint">
               攻残HP {Math.max(0, attackerMaxHp - recoilRange.max)}〜{Math.max(0, attackerMaxHp - recoilRange.min)}/{attackerMaxHp}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* 吸収回復ライン（吸収技のみ・常時表示） */}
+      {drainRange && drainRate !== undefined && (
+        <div className="flex items-center justify-between text-[10px] font-mono mt-0.5">
+          <span className="text-success">
+            吸収{drainRateLabel(drainRate)}:
+            <span className="ml-0.5 font-semibold">+{drainRange.min}〜{drainRange.max}</span>
+            {attackerMaxHp > 0 && (
+              <span className="ml-1 text-fg-faint">
+                ({(drainRange.min / attackerMaxHp * 100).toFixed(1)}%〜{(drainRange.max / attackerMaxHp * 100).toFixed(1)}%)
+              </span>
+            )}
+          </span>
+          {attackerMaxHp > 0 && (
+            <span className="text-fg-faint">
+              攻HP回復（最大{attackerMaxHp}まで）
             </span>
           )}
         </div>
