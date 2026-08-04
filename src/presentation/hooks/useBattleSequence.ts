@@ -18,7 +18,7 @@ import {
 import {
   calcVariableHitsSingleUsageDist,
 } from '@/domain/calculators/KoProbabilityCalc'
-import type { MoveRecord } from '@/data/schemas/types'
+import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
 import type { BaseStats, TypeName } from '@/domain/models/Pokemon'
 
 export interface ResolvedEvent {
@@ -58,17 +58,10 @@ function toBattleState(s: PokemonStore): PokemonBattleState {
   }
 }
 
-const RECOIL_PREVENT_ABILITIES = new Set(['いしあたま', 'マジックガード'])
 const DEFAULT_ACTIVE_ABILITIES = new Set(['マルチスケイル', 'ファントムガード', 'ばけのかわ'])
 
 function defaultAbilityActivated(ability: string): boolean {
   return DEFAULT_ACTIVE_ABILITIES.has(ability)
-}
-
-function recoilRateForMove(move: MoveRecord | undefined, attackerAbility: string | null): number | undefined {
-  if (!move || !move.recoil || move.recoil <= 0) return undefined
-  if (attackerAbility && RECOIL_PREVENT_ABILITIES.has(attackerAbility)) return undefined
-  return move.recoil
 }
 
 function toBaseBattleState(s: PokemonStore): PokemonBattleState {
