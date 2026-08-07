@@ -4,7 +4,7 @@ import {
   type RegisteredBuild, type ImportResult,
 } from '@/presentation/store/buildLibraryStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
-import { toKatakana } from '../../../utils/japanese'
+import { toKatakana } from '@/utils/japanese'
 
 async function tryCopy(text: string): Promise<boolean> {
   try {

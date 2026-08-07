@@ -6,6 +6,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [3.17.1] - 2026-08-07
+
+### Fixed
+- `@/utils` パスエイリアスが本番ビルド（Rollup）で解決できない問題を修正
+  - 原因: コミットされていた古い tsc 出力 `vite.config.js` を Vite が `vite.config.ts` より優先して読み込んでいた
+  - stale な `vite.config.js` / `vitest.config.js` / `tailwind.config.js` とその `.d.ts` を削除し、`.gitignore` で再発を防止
+  - `vitest.config.ts` に欠けていた `@/utils` エイリアスを追加
+  - リポジトリ層・個体ライブラリの相対パス回避策を `@/utils/japanese` に統一
+
 ## [3.17.0] - 2026-08-07
 
 ### Added
