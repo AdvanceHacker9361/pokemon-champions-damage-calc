@@ -9,9 +9,11 @@ import { AttackerTabsBar } from './AttackerTabsBar'
 import { SpDistributionPanel } from './SpDistribution'
 import { StatusToggle } from './StatusToggle'
 import { ProteanTypePicker } from './ProteanTypePicker'
+import { BuildLibraryModal } from './BuildLibraryModal'
 import { MoveSlots } from '@/presentation/components/moves/MoveSlots'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
+import { useBuildLibraryStore, BUILD_LIBRARY_MAX } from '@/presentation/store/buildLibraryStore'
 import type { PokemonRecord } from '@/data/schemas/types'
 import type { TypeName, StatKey } from '@/domain/models/Pokemon'
 
@@ -74,7 +76,13 @@ const METRONOME_MULTIPLIERS = [1, 1.2, 1.4, 1.6, 1.8, 2] as const
 
 export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelProps) {
   const [showDefenderMoves, setShowDefenderMoves] = useState(false)
+  const [showRegisterForm, setShowRegisterForm] = useState(false)
+  const [nicknameDraft, setNicknameDraft] = useState('')
+  const [registerError, setRegisterError] = useState<string | null>(null)
+  const [registerSuccess, setRegisterSuccess] = useState(false)
+  const [showLibrary, setShowLibrary] = useState(false)
   const computedStats = useStatCalc(store.baseStats, store.sp, store.statNatures, store.ranks)
+  const side: 'attacker' | 'defender' = label === '攻撃側' ? 'attacker' : 'defender'
   const defenderMoveNames = store.moves.filter((move): move is string => move !== null)
   const defenderMoveSummary =
     defenderMoveNames.length > 0
@@ -94,6 +102,31 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
 
   const abilityConditionLabel = ACTIVATABLE_ABILITIES[store.effectiveAbility]
 
+  function openRegisterForm() {
+    setNicknameDraft(store.pokemonName)
+    setRegisterError(null)
+    setRegisterSuccess(false)
+    setShowRegisterForm(true)
+  }
+
+  function handleRegisterConfirm() {
+    const build = useBuildLibraryStore.getState().registerBuild(nicknameDraft, store)
+    if (!build) {
+      setRegisterError(`登録上限（${BUILD_LIBRARY_MAX}件）です`)
+      return
+    }
+    setShowRegisterForm(false)
+    setRegisterError(null)
+    setRegisterSuccess(true)
+    window.setTimeout(() => setRegisterSuccess(false), 2000)
+  }
+
+  function handleRegisterKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.nativeEvent.isComposing) return
+    if (e.key === 'Enter') handleRegisterConfirm()
+    if (e.key === 'Escape') setShowRegisterForm(false)
+  }
+
   return (
     <div className="panel space-y-4">
       {/* ヘッダー */}
@@ -102,20 +135,74 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           <h2 className="text-xs font-medium text-fg-muted flex-shrink-0">{label}</h2>
           {label === '攻撃側' && <AttackerTabsBar />}
         </div>
-        {store.pokemonId && (
-          <div className="flex items-center gap-1.5">
-            {store.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}
-            <MegaToggle
-              isMega={store.isMega}
-              canMega={store.canMega}
-              availableMegas={store.availableMegas}
-              megaKey={store.megaKey}
-              onChange={store.setMega}
-              onFormChange={store.setMegaForm}
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {store.pokemonId && (
+            <>
+              {store.types.map(t => <TypeBadge key={t} type={t as TypeName} />)}
+              <MegaToggle
+                isMega={store.isMega}
+                canMega={store.canMega}
+                availableMegas={store.availableMegas}
+                megaKey={store.megaKey}
+                onChange={store.setMega}
+                onFormChange={store.setMegaForm}
+              />
+              <button
+                type="button"
+                onClick={openRegisterForm}
+                className="text-xs px-2 py-0.5 rounded border transition-colors text-fg-muted border-edge hover:bg-surface-3"
+                title="現在の構成を個体として登録"
+              >
+                登録
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowLibrary(true)}
+            className="text-xs px-2 py-0.5 rounded border transition-colors text-fg-muted border-edge hover:bg-surface-3"
+            title="登録済みの個体を開く"
+          >
+            個体
+          </button>
+        </div>
       </div>
+
+      {/* 個体登録フォーム */}
+      {showRegisterForm && (
+        <div className="flex items-center gap-1.5 rounded border border-edge bg-surface-2 px-2 py-1.5">
+          <input
+            autoFocus
+            type="text"
+            value={nicknameDraft}
+            onChange={e => setNicknameDraft(e.target.value)}
+            onKeyDown={handleRegisterKeyDown}
+            placeholder="ニックネーム"
+            aria-label="登録するニックネーム"
+            className="input-base flex-1 text-xs"
+          />
+          <button
+            type="button"
+            onClick={handleRegisterConfirm}
+            className="text-xs px-2 py-0.5 rounded border transition-colors bg-accent-bg text-accent border-accent-border flex-shrink-0"
+          >
+            保存
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowRegisterForm(false)}
+            className="text-xs px-2 py-0.5 rounded border transition-colors text-fg-muted border-edge hover:bg-surface-3 flex-shrink-0"
+          >
+            キャンセル
+          </button>
+        </div>
+      )}
+      {registerError && <p className="text-[11px] text-danger-2">{registerError}</p>}
+      {registerSuccess && <p className="text-[11px] text-accent">登録しました</p>}
+
+      {showLibrary && (
+        <BuildLibraryModal side={side} onClose={() => setShowLibrary(false)} />
+      )}
 
       {/* ポケモン選択 */}
       <div>
@@ -125,6 +212,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           onSelect={handleSelectPokemon}
           onClear={store.clearPokemonSelection}
           listenFocusShortcut={label === '攻撃側'}
+          side={side}
         />
         {store.pokemonId && (
           <div className="flex gap-3 mt-1 text-xs text-fg-muted">

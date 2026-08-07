@@ -24,7 +24,7 @@ const INITIALLY_ACTIVATED_ABILITIES = new Set([
   'ばけのかわ',       // 戦闘開始時は有効
 ])
 
-function defaultAbilityActivated(ability: string): boolean {
+export function defaultAbilityActivated(ability: string): boolean {
   return INITIALLY_ACTIVATED_ABILITIES.has(ability)
 }
 

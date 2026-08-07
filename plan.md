@@ -716,3 +716,44 @@
 
 - V3.16.1: main マージ・Pages デプロイ済み
 - V3.16.2 / V3.16.3: ブランチ `claude/debug-pokemon-damage-calc-Rd6jZ` にコミット済み → 本デプロイでまとめて main へ
+
+## 2026-08-07 V3.17.0 個体登録機能（A+C案ハイブリッド）
+
+### User Request
+
+- X(旧Twitter)のユーザー要望「個体登録機能を付けて欲しい」への対応。
+- 議論の結果、A案（パネル内完結: 登録ボタン＋検索候補統合）＋ C案（管理モーダル）のハイブリッドを1リリースで実装。
+- 確定仕様: 保存時に一時状態を正規化 / 攻撃側への読込は新規タブ展開 / エクスポートはクリップボード文字列主体 / 完了後 plan.md 追記とバージョン 3.17.0 更新。
+
+### Implemented Scope（Fable 5 司令塔、ストア層=Opus / UI層=Sonnet の2段委任）
+
+- **`src/presentation/store/buildLibraryStore.ts`（新規）**: 個体ライブラリストア。
+  - zustand persist（localStorage キー `pcma-builds-v1`、セッションとは独立）で `RegisteredBuild { id, nickname, snapshot, createdAt, updatedAt }` を最大300件保持（新しい順）。
+  - `registerBuild` / `renameBuild` / `removeBuild` / `overwriteBuild` / `importBuilds` / `exportAllText` / `exportOneText`。
+  - `normalizeBuildSnapshot`: ランク・状態異常・きあいだめ・じゅうでん・メトロノーム段階・軍師ブースト・ブレード/マイティ等の一時状態を初期化し、種族値/タイプ/体重/メガ情報をリポジトリから再解決（保存時・読込時の両方）。メガキーが無効なら基本形態へフォールバック。
+  - インポートは28フィールドのホワイトリスト再構築（`coerceSnapshot`）で未知キー・不正値を遮断。エンベロープ `{"app":"pcma-builds","version":1,"builds":[...]}` 形式、availableMegas は出力から省略（再解決可能なため）。
+  - `loadRegisteredBuild(side, build)`: 防御側=パネル上書き、攻撃側=新規タブ展開（8タブ上限時は `tabLimit` エラー）。
+- **`attackerTabsStore.ts`**: `addTabFromSnapshot(snapshot)` を追加（現ライブ保存→指定スナップショットで新タブ作成・アクティブ化・ライブ復元）。
+- **`pokemonStore.ts`**: `defaultAbilityActivated` を export 化（正規化で再利用）。
+- **`BuildLibraryModal.tsx`（新規）**: 個体ライブラリモーダル。検索（かな変換対応）・読込・インラインリネーム・個別コピー・上書（2段階確認）・削除（2段階確認）・全コピー・インポート貼付欄。クリップボード失敗時は textarea フォールバック。
+- **`PokemonPanel.tsx`**: ヘッダーに「登録」（ニックネームフォーム、トグル式）と「個体」（モーダル起動、ポケモン未選択でも表示）を両パネルに追加。
+- **`PokemonSearch.tsx`**: 空クエリでドロップダウンを開くと「登録個体」セクション（最新8件）を表示。選択で `loadRegisteredBuild` 実行（攻撃側=新規タブ）。`side` prop を追加。
+
+### Tests / Validation
+
+- `tests/presentation/buildLibraryStore.test.ts`（新規12件）: 正規化・種族値再解決（メガ/ブレード込み）・上限/空パネルガード・rename/remove/overwrite・防御側上書き/攻撃側新規タブ・8タブ上限・エクスポート/インポートラウンドトリップ・不正データ拒否・未知キー除去・localStorage 永続化。
+- `npm run typecheck` / `npm run lint` / `npm run test -- --run`（18ファイル 291件全パス）/ `npm run build` すべて成功。
+- ブラウザQA: 登録（正規化・永続化確認）→ モーダル読込で攻撃側タブ新規展開 → 検索欄「登録個体」からの読込でタブ3個目展開 → インポート取込（「1件取り込みました」、省略フィールドの自動解決）をすべて実機確認。
+
+### Notes
+
+- 既知の別件: `@/utils` Vite エイリアスが本番 Rollup ビルドでのみ解決失敗する潜在問題があり、既存の `PokemonRepository.ts` と同様に `BuildLibraryModal.tsx` も相対パスで回避。エイリアス設定自体の修正は別タスクとして起票済み。
+- バージョンを 3.17.0 に更新。デプロイは未実施（ユーザー判断待ち）。
+
+### 仕様変更（2026-08-07 デプロイ前）
+
+- ユーザー判断により「攻撃側への読込＝新規タブ展開」を取りやめ、**防御側と同様に現在のパネル（アクティブな攻撃側タブ）を上書き**する仕様へ変更。バージョンは 3.17.0 のまま。
+- `loadRegisteredBuild` は `void` 化（攻守とも `setState` 上書き、`LoadBuildResult`/`tabLimit` を削除）。
+- `attackerTabsStore.addTabFromSnapshot` を削除（この機能専用だったため）。
+- `BuildLibraryModal` / `PokemonSearch` のタブ上限エラー表示を撤去。
+- テストを上書き仕様に書き換え（タブ数不変・正規化読込・防御側非干渉を検証）。

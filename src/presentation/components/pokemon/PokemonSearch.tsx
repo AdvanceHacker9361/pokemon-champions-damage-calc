@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useId } from 'react'
 import { usePokemonSearch } from '@/presentation/hooks/usePokemonSearch'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
+import { useBuildLibraryStore, loadRegisteredBuild, type RegisteredBuild } from '@/presentation/store/buildLibraryStore'
 import type { PokemonRecord } from '@/data/schemas/types'
 import type { TypeName } from '@/domain/models/Pokemon'
+
+const RECENT_BUILDS_LIMIT = 8
 
 interface PokemonSearchProps {
   value: string
@@ -11,9 +14,11 @@ interface PokemonSearchProps {
   placeholder?: string
   /** true のとき Cmd+K グローバルショートカットでフォーカスされる */
   listenFocusShortcut?: boolean
+  /** 登録個体の読み込み先（登録個体セクションの表示・読込に使用） */
+  side: 'attacker' | 'defender'
 }
 
-export function PokemonSearch({ value, onSelect, onClear, placeholder = 'ポケモン検索...', listenFocusShortcut }: PokemonSearchProps) {
+export function PokemonSearch({ value, onSelect, onClear, placeholder = 'ポケモン検索...', listenFocusShortcut, side }: PokemonSearchProps) {
   const id = useId()
   const { query, setQuery, results, isOpen, setIsOpen, isSearching, searchedQuery, clear } = usePokemonSearch()
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -24,8 +29,15 @@ export function PokemonSearch({ value, onSelect, onClear, placeholder = 'ポケ�
   const activeOptionId = activeIndex >= 0 ? `${id}-pokemon-${activeIndex}` : undefined
   const trimmedQuery = query.trim()
   const hasQuery = trimmedQuery.length > 0
-  const showDropdown = isOpen && (results.length > 0 || hasQuery || isSearching)
+  const recentBuilds = useBuildLibraryStore(s => s.builds).slice(0, RECENT_BUILDS_LIMIT)
+  const showRecentBuilds = isOpen && !hasQuery && recentBuilds.length > 0
+  const showDropdown = isOpen && (results.length > 0 || hasQuery || isSearching || showRecentBuilds)
   const showNoResults = hasQuery && !isSearching && searchedQuery === trimmedQuery && results.length === 0
+
+  function handleLoadBuild(build: RegisteredBuild) {
+    loadRegisteredBuild(side, build)
+    setIsOpen(false)
+  }
 
   // Cmd+K ショートカットでフォーカス
   useEffect(() => {
@@ -153,7 +165,28 @@ export function PokemonSearch({ value, onSelect, onClear, placeholder = 'ポケ�
           role="listbox"
           className="absolute z-50 w-full mt-1 bg-surface-1 border border-edge-strong rounded-lg max-h-64 overflow-y-auto"
         >
-          {results.length === 0 ? (
+          {showRecentBuilds && (
+            <div className="border-b border-edge py-1">
+              <p className="px-3 py-1 text-[11px] font-medium text-fg-subtle">登録個体</p>
+              {recentBuilds.map(b => (
+                <button
+                  key={b.id}
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-surface-2"
+                  onClick={() => handleLoadBuild(b)}
+                >
+                  <span className="text-sm font-medium text-fg truncate">{b.nickname}</span>
+                  <span className="text-xs text-fg-subtle truncate flex-1">{b.snapshot.pokemonName}</span>
+                  {b.snapshot.isMega && (
+                    <span className="text-[10px] px-1 rounded bg-accent-bg text-accent border border-accent-border flex-shrink-0">
+                      メガ
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {hasQuery && (results.length === 0 ? (
             <div
               role="option"
               aria-disabled="true"
@@ -189,7 +222,7 @@ export function PokemonSearch({ value, onSelect, onClear, placeholder = 'ポケ�
                 </div>
               </button>
             ))
-          )}
+          ))}
         </div>
       )}
     </div>
