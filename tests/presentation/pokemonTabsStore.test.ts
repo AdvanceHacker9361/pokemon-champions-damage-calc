@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { useAttackerTabsStore } from '@/presentation/store/attackerTabsStore'
+import { useAttackerTabsStore, useDefenderTabsStore } from '@/presentation/store/pokemonTabsStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useSessionStore } from '@/presentation/store/sessionStore'
 import { snapshotLiveState, restoreState } from '@/presentation/store/sessionSnapshot'
@@ -7,10 +7,12 @@ import { snapshotLiveState, restoreState } from '@/presentation/store/sessionSna
 const GARCHOMP = 445
 const CHARIZARD = 6
 const KANGASKHAN = 115
+const BLASTOISE = 9
 
-describe('attackerTabsStore', () => {
+describe('pokemonTabsStore（攻撃側）', () => {
   afterEach(() => {
     useAttackerTabsStore.setState({ tabs: [], activeTabId: null })
+    useDefenderTabsStore.setState({ tabs: [], activeTabId: null })
     useAttackerStore.getState().reset()
     useDefenderStore.getState().reset()
     useSessionStore.setState({ tabs: [], activeTabId: null })
@@ -150,9 +152,16 @@ describe('attackerTabsStore', () => {
     // tab2 のライブ編集
     useAttackerStore.getState().setPokemon(CHARIZARD)
 
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderTabsStore.getState().initIfEmpty()
+
     const snap = snapshotLiveState()
     expect(snap.attackerTabs).toBeDefined()
     expect(snap.attackerTabs!.tabs.length).toBe(2)
+    // 防御側タブも同時にキャプチャされる
+    expect(snap.defenderTabs).toBeDefined()
+    expect(snap.defenderTabs!.tabs.length).toBe(1)
+    expect(snap.defenderTabs!.tabs[0].snapshot.pokemonId).toBe(KANGASKHAN)
 
     // すべて破壊
     useAttackerStore.getState().setPokemon(KANGASKHAN)
@@ -178,5 +187,140 @@ describe('attackerTabsStore', () => {
     expect(state.tabs.length).toBe(1)
     expect(state.tabs[0].snapshot.pokemonId).toBe(legacy.attacker.pokemonId)
     expect(state.activeTabId).toBe(state.tabs[0].id)
+  })
+
+  it('defenderTabs のみ欠けたスナップショット（V3.16.0 世代）は防御側を snap.defender から単一タブ生成する', () => {
+    useAttackerStore.getState().setPokemon(GARCHOMP)
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useAttackerTabsStore.getState().initIfEmpty()
+    useAttackerTabsStore.getState().addTab()
+    useDefenderTabsStore.getState().initIfEmpty()
+
+    const snap = snapshotLiveState()
+    const legacy = { ...snap, defenderTabs: undefined }
+
+    useAttackerTabsStore.setState({ tabs: [], activeTabId: null })
+    useDefenderTabsStore.setState({ tabs: [], activeTabId: null })
+    restoreState(legacy)
+
+    // 攻撃側タブは保存済みのものがそのまま戻る
+    expect(useAttackerTabsStore.getState().tabs.length).toBe(2)
+    // 防御側は snap.defender から1タブだけ生成される
+    const dState = useDefenderTabsStore.getState()
+    expect(dState.tabs.length).toBe(1)
+    expect(dState.tabs[0].snapshot.pokemonId).toBe(legacy.defender.pokemonId)
+    expect(dState.activeTabId).toBe(dState.tabs[0].id)
+  })
+})
+
+describe('pokemonTabsStore（防御側）', () => {
+  afterEach(() => {
+    useAttackerTabsStore.setState({ tabs: [], activeTabId: null })
+    useDefenderTabsStore.setState({ tabs: [], activeTabId: null })
+    useAttackerStore.getState().reset()
+    useDefenderStore.getState().reset()
+    useSessionStore.setState({ tabs: [], activeTabId: null })
+    window.localStorage.clear()
+  })
+
+  it('initIfEmpty はライブ防御側から1タブを生成し、冪等である', () => {
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderTabsStore.getState().initIfEmpty()
+
+    let state = useDefenderTabsStore.getState()
+    expect(state.tabs.length).toBe(1)
+    expect(state.tabs[0].snapshot.pokemonId).toBe(KANGASKHAN)
+    const firstId = state.activeTabId
+
+    useDefenderTabsStore.getState().initIfEmpty()
+    state = useDefenderTabsStore.getState()
+    expect(state.tabs.length).toBe(1)
+    expect(state.activeTabId).toBe(firstId)
+  })
+
+  it('switchTab は防御側ライブを往復復元し、攻撃側ストア・攻撃側タブに触れない', () => {
+    useAttackerStore.getState().setPokemon(GARCHOMP)
+    useAttackerTabsStore.getState().initIfEmpty()
+    const attackerTabId = useAttackerTabsStore.getState().activeTabId
+
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderStore.getState().setSp('def', 32)
+    useDefenderTabsStore.getState().initIfEmpty()
+    const tab1 = useDefenderTabsStore.getState().activeTabId!
+
+    useDefenderTabsStore.getState().addTab()
+    const tab2 = useDefenderTabsStore.getState().activeTabId!
+    useDefenderStore.getState().setPokemon(BLASTOISE)
+    useDefenderStore.getState().setRank('spd', 2)
+
+    useDefenderTabsStore.getState().switchTab(tab1)
+    expect(useDefenderStore.getState().pokemonId).toBe(KANGASKHAN)
+    expect(useDefenderStore.getState().sp.def).toBe(32)
+
+    useDefenderTabsStore.getState().switchTab(tab2)
+    expect(useDefenderStore.getState().pokemonId).toBe(BLASTOISE)
+    expect(useDefenderStore.getState().ranks.spd).toBe(2)
+
+    // 攻撃側は無傷（2つのタブストアは独立）
+    expect(useAttackerStore.getState().pokemonId).toBe(GARCHOMP)
+    expect(useAttackerTabsStore.getState().tabs.length).toBe(1)
+    expect(useAttackerTabsStore.getState().activeTabId).toBe(attackerTabId)
+  })
+
+  it('攻撃側タブ操作は防御側タブストアに触れない', () => {
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderTabsStore.getState().initIfEmpty()
+    const defenderTabId = useDefenderTabsStore.getState().activeTabId
+
+    useAttackerStore.getState().setPokemon(GARCHOMP)
+    useAttackerTabsStore.getState().initIfEmpty()
+    useAttackerTabsStore.getState().addTab()
+    useAttackerStore.getState().setPokemon(CHARIZARD)
+
+    expect(useDefenderTabsStore.getState().tabs.length).toBe(1)
+    expect(useDefenderTabsStore.getState().activeTabId).toBe(defenderTabId)
+    expect(useDefenderStore.getState().pokemonId).toBe(KANGASKHAN)
+  })
+
+  it('closeTab: 残1件は閉じない / アクティブを閉じると左隣を防御側ライブへ復元', () => {
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderTabsStore.getState().initIfEmpty()
+    const only = useDefenderTabsStore.getState().activeTabId!
+    useDefenderTabsStore.getState().closeTab(only)
+    expect(useDefenderTabsStore.getState().tabs.length).toBe(1)
+
+    const tab1 = useDefenderTabsStore.getState().activeTabId!
+    useDefenderTabsStore.getState().addTab()
+    const tab2 = useDefenderTabsStore.getState().activeTabId!
+    useDefenderStore.getState().setPokemon(BLASTOISE)
+    useDefenderTabsStore.getState().closeTab(tab2)
+
+    expect(useDefenderTabsStore.getState().tabs.length).toBe(1)
+    expect(useDefenderTabsStore.getState().activeTabId).toBe(tab1)
+    expect(useDefenderStore.getState().pokemonId).toBe(KANGASKHAN)
+  })
+
+  it('addTab は8タブで打ち止め', () => {
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderTabsStore.getState().initIfEmpty()
+    for (let i = 0; i < 12; i++) useDefenderTabsStore.getState().addTab()
+    expect(useDefenderTabsStore.getState().tabs.length).toBe(8)
+  })
+
+  it('セッション往復: 防御側タブ集合とライブ防御側が戻る', () => {
+    useDefenderStore.getState().setPokemon(KANGASKHAN)
+    useDefenderTabsStore.getState().initIfEmpty()
+    useDefenderTabsStore.getState().addTab()
+    useDefenderStore.getState().setPokemon(BLASTOISE)
+
+    const snap = snapshotLiveState()
+    expect(snap.defenderTabs!.tabs.length).toBe(2)
+
+    useDefenderStore.getState().setPokemon(GARCHOMP)
+    useDefenderTabsStore.setState({ tabs: [], activeTabId: null })
+
+    restoreState(snap)
+    expect(useDefenderStore.getState().pokemonId).toBe(BLASTOISE)
+    expect(useDefenderTabsStore.getState().tabs.length).toBe(2)
   })
 })

@@ -757,3 +757,24 @@
 - `attackerTabsStore.addTabFromSnapshot` を削除（この機能専用だったため）。
 - `BuildLibraryModal` / `PokemonSearch` のタブ上限エラー表示を撤去。
 - テストを上書き仕様に書き換え（タブ数不変・正規化読込・防御側非干渉を検証）。
+
+## 2026-08-07 V3.17.1 タブバー配置変更＋防御側タブ追加
+
+### User Request
+
+- 攻撃側タブがヘッダー内で他要素と窮屈だったため、「攻撃側」ラベルの下の独立行へ移動。
+- 防御側にも同様のタブ切替機能を追加。
+
+### Implemented Scope
+
+- `attackerTabsStore.ts` → `pokemonTabsStore.ts` にリネームし `createPokemonTabsStore(store)` ファクトリへ汎用化。`useAttackerTabsStore` / `useDefenderTabsStore` の2インスタンスを生成（挙動は従来と同一、攻守独立）。
+- `AttackerTabsBar.tsx` → `PokemonTabsBar.tsx`（`side` prop、ラベル・aria を側別に生成）。両パネルでヘッダー直下の全幅行に配置。チップ余白を px-2.5 に拡大。
+- `sessionSnapshot.ts`: 型を `PokemonTab` / `PokemonTabsSnapshot` に改名し `SessionSnapshot.defenderTabs?` を追加。防御側タブが無い既存保存データは防御側単一タブとして自動移行（`restorePokemonTabs` ヘルパー）。
+- `Calculator.tsx`: マウント時に攻守両タブストアを `initIfEmpty()`。
+- 個体登録の読込（パネル上書き）は変更なしで両側のアクティブタブに反映される。
+
+### Validation
+
+- typecheck / lint / `npx vitest run --dir tests`（18ファイル 297件全パス、+7件: 防御側切替・攻守非干渉・レガシー移行等）/ build 成功。
+  - 注: 並行セッションの worktree（`.claude/worktrees/`）が全体グロブのテスト実行を汚染するため `--dir tests` で実行。CI 環境には worktree が無く影響なし。
+- ブラウザQA: 両パネルのタブバー配置（ラベル直下・全幅）、防御側タブ追加・切替・攻撃側非干渉を実機確認。

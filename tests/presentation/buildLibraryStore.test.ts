@@ -4,7 +4,7 @@ import {
   useBuildLibraryStore, type RegisteredBuild,
 } from '@/presentation/store/buildLibraryStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
-import { useAttackerTabsStore } from '@/presentation/store/attackerTabsStore'
+import { useAttackerTabsStore, useDefenderTabsStore } from '@/presentation/store/pokemonTabsStore'
 import { clonePokemonSnapshot, type PokemonSnapshot } from '@/presentation/store/sessionSnapshot'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
 
@@ -35,6 +35,7 @@ describe('buildLibraryStore', () => {
   afterEach(() => {
     useBuildLibraryStore.setState({ builds: [] })
     useAttackerTabsStore.setState({ tabs: [], activeTabId: null })
+    useDefenderTabsStore.setState({ tabs: [], activeTabId: null })
     useAttackerStore.getState().reset()
     useDefenderStore.getState().reset()
     window.localStorage.clear()

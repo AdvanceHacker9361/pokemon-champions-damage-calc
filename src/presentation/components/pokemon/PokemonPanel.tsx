@@ -5,7 +5,7 @@ import { PokemonSearch } from './PokemonSearch'
 import { AbilitySelect } from './AbilitySelect'
 import { ItemSelect } from './ItemSelect'
 import { MegaToggle } from './MegaToggle'
-import { AttackerTabsBar } from './AttackerTabsBar'
+import { PokemonTabsBar } from './PokemonTabsBar'
 import { SpDistributionPanel } from './SpDistribution'
 import { StatusToggle } from './StatusToggle'
 import { ProteanTypePicker } from './ProteanTypePicker'
@@ -131,10 +131,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
     <div className="panel space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-xs font-medium text-fg-muted flex-shrink-0">{label}</h2>
-          {label === '攻撃側' && <AttackerTabsBar />}
-        </div>
+        <h2 className="text-xs font-medium text-fg-muted flex-shrink-0">{label}</h2>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {store.pokemonId && (
             <>
@@ -167,6 +164,9 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
           </button>
         </div>
       </div>
+
+      {/* ポケモンタブ（パネル幅いっぱいの独立行） */}
+      <PokemonTabsBar side={side} />
 
       {/* 個体登録フォーム */}
       {showRegisterForm && (
