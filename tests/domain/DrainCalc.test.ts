@@ -17,6 +17,17 @@ describe('DrainCalc', () => {
     it('与ダメ0なら回復なし', () => {
       expect(calcDrainHeal(0, 0.5)).toBe(0)
     })
+
+    it('おおきなねっこ所持時は回復量が5324/4096ブーストされる', () => {
+      // actual=100, rate=0.5 → heal=50 → boosted floor((50×5324+2047)/4096)=65
+      expect(calcDrainHeal(100, 0.5, true)).toBe(65)
+      // boosted=falseなら通常通り
+      expect(calcDrainHeal(100, 0.5, false)).toBe(50)
+    })
+
+    it('おおきなねっこブースト時も最低1回復保証', () => {
+      expect(calcDrainHeal(1, 0.5, true)).toBe(1)
+    })
   })
 
   describe('calcDrainRange', () => {
@@ -30,6 +41,13 @@ describe('DrainCalc', () => {
       const r = calcDrainRange(150, 300, 0.5, 175)
       expect(r.min).toBe(75)   // 150 × 0.5
       expect(r.max).toBe(87)   // min(300,175)=175 × 0.5 = 87.5 → floor 87
+    })
+
+    it('おおきなねっこ所持時は乱数幅の両端がブーストされる', () => {
+      const r = calcDrainRange(85, 100, 0.5, 999, true)
+      // 通常: min=42(42.5→42) max=50 → ブースト: floor((42×5324+2047)/4096)=55, floor((50×5324+2047)/4096)=65
+      expect(r.min).toBe(55)
+      expect(r.max).toBe(65)
     })
   })
 

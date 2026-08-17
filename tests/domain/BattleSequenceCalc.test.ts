@@ -413,6 +413,20 @@ describe('BattleSequenceCalc', () => {
       const r2 = runBattleSequence(noDrain, 200, 200)
       expect(r2.attackerSurviveProb).toBeCloseTo(0, 6)
     })
+
+    it('drainBoosted指定でおおきなねっこ相当のブースト回復になる', () => {
+      // 攻撃側被ダメ100 → 残100（最大200）
+      // 防御側200に吸収技で確定100ダメ → 防御側残100
+      //   通常: floor(100*0.5)=50 回復
+      //   ブースト: floor((50*5324+2047)/4096) = floor(268247/4096) = 65 回復 → 100+65=165
+      const events: SeqEvent[] = [
+        { kind: 'incoming', dmg: [100] },
+        { kind: 'attack', dmg: [100], drain: 0.5, drainBoosted: true },
+      ]
+      const r = runBattleSequence(events, 200, 200)
+      const last = r.steps[r.steps.length - 1]
+      expect(last.attackerHpDist.get(165)).toBeCloseTo(1, 6)
+    })
   })
 
   describe('反動技（recoil）', () => {

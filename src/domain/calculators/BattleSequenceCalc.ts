@@ -17,6 +17,8 @@
  *   状態に berryConsumed ビット (0/1) を加えて追跡。
  */
 
+import { calcDrainHeal } from '@/domain/calculators/DrainCalc'
+
 /** ダメージ分布: 一様ロール配列、または事前計算済み (ダメージ→確率) Map */
 export type DmgDist = number[] | Map<number, number>
 
@@ -26,10 +28,11 @@ export type SeqEvent =
    * noTurnBoundary=true のとき、このイベントの後にターン境界処理（はんすう cud カウントダウン・
    * しゅうかく再装填）を実行しない。1ターン内の複数ヒット（おやこあいの親子分割など）で
    * 中間ヒットに付与し、最終ヒットのみがターンを終了させるために使う。
+   * drainBoosted=true のとき、吸収回復量におおきなねっこ相当のブースト（×5324/4096）を適用する。
    */
-  | { kind: 'attack'; dmg: DmgDist; drain?: number; recoil?: number; noTurnBoundary?: boolean }
+  | { kind: 'attack'; dmg: DmgDist; drain?: number; recoil?: number; drainBoosted?: boolean; noTurnBoundary?: boolean }
   /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain/recoil 指定時は実ダメに応じて防御側HPを増減 */
-  | { kind: 'incoming'; dmg: DmgDist; drain?: number; recoil?: number }
+  | { kind: 'incoming'; dmg: DmgDist; drain?: number; recoil?: number; drainBoosted?: boolean }
   /** ダメージを伴わない補助技・積み技ターン。HPは変えず、ターン経過だけを記録する */
   | { kind: 'setupTurn'; side: 'attacker' | 'defender' }
   /** メガシンカのタイミング。HPは変えず、表示ステップだけを記録する */
@@ -206,7 +209,7 @@ export function runBattleSequence(
             const actual = Math.min(r, d)
             if (ev.drain && ev.drain > 0) {
               if (actual > 0) {
-                na = clamp(a + Math.max(1, Math.floor(actual * ev.drain)), 0, attackerMaxHp)
+                na = clamp(a + calcDrainHeal(actual, ev.drain, ev.drainBoosted), 0, attackerMaxHp)
               }
             }
             if (ev.recoil && ev.recoil > 0 && actual > 0) {
@@ -235,7 +238,7 @@ export function runBattleSequence(
             const actual = Math.min(r, a)
             if (ev.drain && ev.drain > 0) {
               if (actual > 0) {
-                nd = clamp(d + Math.max(1, Math.floor(actual * ev.drain)), 0, defenderMaxHp)
+                nd = clamp(d + calcDrainHeal(actual, ev.drain, ev.drainBoosted), 0, defenderMaxHp)
               }
             }
             if (ev.recoil && ev.recoil > 0 && actual > 0) {

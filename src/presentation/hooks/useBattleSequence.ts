@@ -45,6 +45,7 @@ function toBattleState(s: PokemonStore): PokemonBattleState {
     statNatures: s.statNatures,
     abilityName: s.effectiveAbility,
     itemName: s.itemName,
+    speciesName: s.pokemonName,
     ranks: s.ranks,
     status: s.status,
     abilityActivated: s.abilityActivated,
@@ -176,6 +177,7 @@ export function useBattleSequence(): BattleSequenceComputed {
           // 吸収率: 加算時に保存した技名から取得（label はポケモン名込みのため不可）
           const move = ev.moveName ? MoveRepository.findByName(ev.moveName) : undefined
           const drainRate = move?.drain
+          const drainBoosted = seqAttacker.itemName === 'おおきなねっこ'
           const recoilRate = recoilRateForMove(move, seqAttacker.abilityName)
           const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
           const recoilTag = recoilRate ? `（反動${Math.round(recoilRate * 100)}%）` : ''
@@ -194,10 +196,10 @@ export function useBattleSequence(): BattleSequenceComputed {
                 ? baseRolls.map(() => firstHitFixedDamage)
                 : baseRolls.map(r => r + firstHitFixedDamage)
               const dist = calcVariableHitsSingleUsageDist(hit1Rolls, ev.variableHitDist, ev.rawRolls)
-              pushSeq({ kind: 'attack', dmg: dist, drain: drainRate, recoil: recoilRate }, seqLabel)
+              pushSeq({ kind: 'attack', dmg: dist, drain: drainRate, drainBoosted, recoil: recoilRate }, seqLabel)
             } else {
               const rollsWithFixed = baseRolls.map(r => r + firstHitFixedDamage)
-              pushSeq({ kind: 'attack', dmg: rollsWithFixed, drain: drainRate, recoil: recoilRate }, seqLabel)
+              pushSeq({ kind: 'attack', dmg: rollsWithFixed, drain: drainRate, drainBoosted, recoil: recoilRate }, seqLabel)
             }
           }
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
@@ -222,11 +224,12 @@ export function useBattleSequence(): BattleSequenceComputed {
           }
           const move = MoveRepository.findByName(ev.moveName)
           const drain = move?.drain
+          const drainBoosted = seqDefender.itemName === 'おおきなねっこ'
           const recoil = recoilRateForMove(move, seqDefender.abilityName)
           const drainTag = drain ? `（相手吸収${Math.round(drain * 100)}%）` : ''
           const recoilTag = recoil ? `（相手反動${Math.round(recoil * 100)}%）` : ''
           const label = `攻撃側被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}${recoilTag}`
-          pushSeq({ kind: 'incoming', dmg: rolls, drain, recoil }, label)
+          pushSeq({ kind: 'incoming', dmg: rolls, drain, drainBoosted, recoil }, label)
           resolved.push({ event: ev, label })
           break
         }

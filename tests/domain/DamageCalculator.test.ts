@@ -646,6 +646,60 @@ describe('DamageCalculator', () => {
     })
   })
 
+  describe('新規追加持ち物', () => {
+    it('でんきだまはピカチュウの物理・特殊ダメージを2倍にする', () => {
+      // baseInput の防御側（ゴースト/どく）はノーマル技が無効なため、みずタイプに差し替えて検証
+      const physMove = makePhysicalMove('でんこうせっか', 'ノーマル', 40)
+      const specMove = makeSpecialMove('10まんボルト', 'でんき', 90)
+
+      const normalPhys = calculateDamage({ ...baseInput, defenderTypes: ['みず'], move: physMove })
+      const pikaPhys = calculateDamage({
+        ...baseInput, defenderTypes: ['みず'], move: physMove,
+        attackerItem: 'でんきだま', attackerName: 'ピカチュウ',
+      })
+      expect(pikaPhys.max).toBeGreaterThan(normalPhys.max)
+
+      const normalSpec = calculateDamage({ ...baseInput, defenderTypes: ['みず'], move: specMove })
+      const pikaSpec = calculateDamage({
+        ...baseInput, defenderTypes: ['みず'], move: specMove,
+        attackerItem: 'でんきだま', attackerName: 'ピカチュウ',
+      })
+      expect(pikaSpec.max).toBeGreaterThan(normalSpec.max)
+    })
+
+    it('でんきだまはピカチュウ以外には効果がない', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const normalResult = calculateDamage({ ...baseInput, move })
+      const nonPikachuResult = calculateDamage({
+        ...baseInput, move, attackerItem: 'でんきだま', attackerName: 'ガブリアス',
+      })
+      expect(Array.from(nonPikachuResult.rolls)).toEqual(Array.from(normalResult.rolls))
+    })
+
+    it('くろいてっきゅうは防御側を接地扱いにしてじめん技をひこうタイプにも当てる', () => {
+      const move = makePhysicalMove('じしん', 'じめん', 100)
+      const flyingNoItem = calculateDamage({ ...baseInput, defenderTypes: ['ひこう'], move })
+      const flyingWithIronBall = calculateDamage({
+        ...baseInput, defenderTypes: ['ひこう'], move, defenderItem: 'くろいてっきゅう',
+      })
+      expect(flyingNoItem.max).toBe(0)  // 通常は接地していないためじめん技は無効
+      expect(flyingWithIronBall.max).toBeGreaterThan(0)
+    })
+
+    it('ようせいのハネ（新表記）はフェアリー技のダメージを1.2倍にし、旧表記もレガシーエイリアスとして動作する', () => {
+      const move = makePhysicalMove('じゃれつく', 'フェアリー', 90)
+      const normalResult = calculateDamage({ ...baseInput, attackerTypes: ['フェアリー'], move })
+      const newSpellingResult = calculateDamage({
+        ...baseInput, attackerTypes: ['フェアリー'], move, attackerItem: 'ようせいのハネ',
+      })
+      const legacySpellingResult = calculateDamage({
+        ...baseInput, attackerTypes: ['フェアリー'], move, attackerItem: 'ようせいのはね',
+      })
+      expect(newSpellingResult.max).toBeGreaterThan(normalResult.max)
+      expect(Array.from(legacySpellingResult.rolls)).toEqual(Array.from(newSpellingResult.rolls))
+    })
+  })
+
   describe('追加特性補正', () => {
     it('ちからずくで追加効果を持つ技のダメージが1.3倍になる', () => {
       const move = { ...makePhysicalMove('かみなりパンチ', 'でんき', 75), hasSecondaryEffect: true }

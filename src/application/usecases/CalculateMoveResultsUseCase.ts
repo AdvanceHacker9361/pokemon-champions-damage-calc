@@ -98,6 +98,7 @@ export function calculateMoveResults({
             statNatures: attacker.statNatures,
             abilityName: attacker.abilityName,
             itemName: attacker.itemName,
+            speciesName: attacker.speciesName,
             ranks: attacker.ranks,
             status: attacker.status,
             abilityActivated: attacker.abilityActivated,

@@ -3,13 +3,23 @@
  *
  * 回復量は「実際に与えたダメージ × 吸収率」で決まる。
  * 実際に与えたダメージは防御側の残HPでクランプされる。
- * BattleSequenceCalc の攻守シミュレーション（max(1, floor(actual × drain))）と同一式を共有する。
+ * BattleSequenceCalc の攻守シミュレーション（calcDrainHeal 経由）と同一式を共有する。
+ *
+ * おおきなねっこ所持時は回復量をさらに ×5324/4096（≒1.3倍）する（Gen6+仕様）。
+ * 固定小数点の五捨五超入は DamageCalculator.applyField13x と同じ丸め方式に揃えている。
  */
 
+/** おおきなねっこの回復量ブースト（5324/4096 の固定小数点丸め） */
+function applyBigRootBoost(heal: number): number {
+  return Math.floor((heal * 5324 + 2047) / 4096)
+}
+
 /** 実際に与えたダメージから吸収回復量を算出（最低1、与ダメ0なら回復なし） */
-export function calcDrainHeal(actualDamage: number, rate: number): number {
+export function calcDrainHeal(actualDamage: number, rate: number, boosted: boolean = false): number {
   if (actualDamage <= 0 || rate <= 0) return 0
-  return Math.max(1, Math.floor(actualDamage * rate))
+  let heal = Math.floor(actualDamage * rate)
+  if (boosted) heal = applyBigRootBoost(heal)
+  return Math.max(1, heal)
 }
 
 /**
@@ -21,12 +31,13 @@ export function calcDrainRange(
   maxDmg: number,
   rate: number,
   defenderMaxHp: number,
+  boosted: boolean = false,
 ): { min: number; max: number } {
   const actualMin = Math.min(minDmg, defenderMaxHp)
   const actualMax = Math.min(maxDmg, defenderMaxHp)
   return {
-    min: calcDrainHeal(actualMin, rate),
-    max: calcDrainHeal(actualMax, rate),
+    min: calcDrainHeal(actualMin, rate, boosted),
+    max: calcDrainHeal(actualMax, rate, boosted),
   }
 }
 

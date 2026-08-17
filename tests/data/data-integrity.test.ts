@@ -530,4 +530,47 @@ describe('items.json integrity', () => {
       expect(calcTags.has(tag), `Missing essential item: ${tag}`).toBe(true)
     }
   })
+
+  it('should include the 19 newly added held items', () => {
+    const expected: Record<string, string> = {
+      'しろいハーブ': 'white-herb',
+      'せんせいのツメ': 'quick-claw',
+      'メンタルハーブ': 'mental-herb',
+      'おうじゃのしるし': 'kings-rock',
+      'きあいのハチマキ': 'focus-band',
+      'かいがらのすず': 'shell-bell',
+      'こうかくレンズ': 'wide-lens',
+      'ひかりのねんど': 'light-clay',
+      'フォーカスレンズ': 'zoom-lens',
+      'くろいてっきゅう': 'iron-ball',
+      'つめたいいわ': 'icy-rock',
+      'さらさらいわ': 'smooth-rock',
+      'あついいわ': 'heat-rock',
+      'しめったいわ': 'damp-rock',
+      'きれいなぬけがら': 'shed-shell',
+      'おおきなねっこ': 'big-root',
+      'でんきだま': 'light-ball',
+      'ヒメリのみ': 'leppa-berry',
+      'オレンのみ': 'oran-berry',
+    }
+    const byName = new Map(items.map(i => [i.name, i]))
+    const errors: string[] = []
+    for (const [name, calcTag] of Object.entries(expected)) {
+      const record = byName.get(name)
+      if (!record) {
+        errors.push(`missing item: ${name}`)
+      } else if (record.calcTag !== calcTag) {
+        errors.push(`${name}: expected calcTag=${calcTag}, got ${record.calcTag}`)
+      }
+    }
+    expect(errors, errors.join('\n')).toHaveLength(0)
+  })
+
+  it('ようせいのハネ should use the correct katakana spelling (レガシー表記は排除)', () => {
+    expect(items.find(i => i.name === 'ようせいのハネ')).toMatchObject({
+      nameEn: 'Fairy Feather',
+      calcTag: 'fairy-feather',
+    })
+    expect(items.find(i => i.name === 'ようせいのはね')).toBeUndefined()
+  })
 })

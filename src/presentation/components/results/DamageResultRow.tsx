@@ -186,8 +186,8 @@ export function DamageResultRow(props: DamageResultRowProps) {
     perHitResults: critPerHitResults, weakArmorPerHitResults: weakArmorCritPerHitResults,
   })
 
-  // じゅうりょく: 命中率5/3倍（最大100%）。必中技（accuracy=null）は影響なし
-  const accuracyMult = isGravity ? 5 / 3 : 1
+  // じゅうりょく: 命中率5/3倍、こうかくレンズ: 命中率1.1倍（最大100%）。必中技（accuracy=null）は影響なし
+  const accuracyMult = (isGravity ? 5 / 3 : 1) * (attackerItem === 'こうかくレンズ' ? 1.1 : 1)
   const hitRate = moveRecord?.accuracy != null
     ? Math.min(1, moveRecord.accuracy / 100 * accuracyMult)
     : 1.0
@@ -233,9 +233,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
     ? calcRecoilRange(displayMin, displayMax, recoilRate, defenderMaxHp)
     : null
   // 吸収技（ギガドレイン等）: 与ダメ乱数幅に沿った回復量を常時併記
+  // おおきなねっこ所持時は回復量を1.3倍相当にブースト
   const drainRate = moveRecord?.drain
+  const drainBoosted = attackerItem === 'おおきなねっこ'
   const drainRange = drainRate !== undefined && drainRate > 0
-    ? calcDrainRange(displayMin, displayMax, drainRate, defenderMaxHp)
+    ? calcDrainRange(displayMin, displayMax, drainRate, defenderMaxHp, drainBoosted)
     : null
   const attackerMaxHp = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const avgNormal = (displayMin + displayMax) / 2

@@ -15,6 +15,8 @@ export interface PokemonBattleState {
   statNatures?: StatNatures
   abilityName: string
   itemName: string | null
+  /** でんきだま等、種族限定の持ち物効果判定に使う日本語種族名 */
+  speciesName?: string
   ranks: Partial<Record<StatKey, number>>
   status: StatusCondition
   abilityActivated?: boolean
@@ -99,6 +101,7 @@ export function executeDamageCalculation(
     attackerTypes: input.attacker.types,
     attackerAbility: input.attacker.abilityName,
     attackerItem: input.attacker.itemName,
+    attackerName: input.attacker.speciesName,
     attackerStatus: input.attacker.status,
     attackerAbilityActivated: input.attacker.abilityActivated,
     attackerSupremeOverlordBoost: input.attacker.supremeOverlordBoost,

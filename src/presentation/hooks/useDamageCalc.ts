@@ -25,6 +25,7 @@ export function useDamageCalc() {
         statNatures: attacker.statNatures,
         abilityName: attacker.effectiveAbility,
         itemName: attacker.itemName,
+        speciesName: attacker.pokemonName,
         ranks: attacker.ranks,
         status: attacker.status,
         abilityActivated: attacker.abilityActivated,
@@ -62,7 +63,7 @@ export function useDamageCalc() {
       },
     }))
   }, [
-    attacker.pokemonId, attacker.baseStats, attacker.types, attacker.weight,
+    attacker.pokemonId, attacker.pokemonName, attacker.baseStats, attacker.types, attacker.weight,
     attacker.sp, attacker.statNatures,
     attacker.effectiveAbility, attacker.itemName, attacker.moves, attacker.movePowers,
     attacker.ranks, attacker.status, attacker.abilityActivated, attacker.supremeOverlordBoost, attacker.proteanType, attacker.proteanStab,

@@ -13,6 +13,8 @@ export interface DamageCalcInput {
   attackerTypes: TypeName[]
   attackerAbility: string
   attackerItem: string | null
+  /** でんきだま等、種族限定の持ち物効果判定に使う攻撃側の日本語種族名 */
+  attackerName?: string
   attackerStatus: StatusCondition
   attackerAbilityActivated?: boolean
   attackerSupremeOverlordBoost?: number  // 0=なし, 1=×1.1, 2=×1.2
@@ -192,6 +194,8 @@ function resolveAtk(input: DamageCalcInput): number {
   // 持ち物補正（攻撃側）
   if (attackerItem === 'こだわりハチマキ' && move.category === '物理') atkMod *= 1.5
   if (attackerItem === 'こだわりメガネ' && move.category === '特殊') atkMod *= 1.5
+  // でんきだま: ピカチュウ専用、物理・特殊どちらも攻撃実数値2倍（Gen4+）
+  if (attackerItem === 'でんきだま' && input.attackerName === 'ピカチュウ') atkMod *= 2
 
   return Math.floor(atk * atkMod)
 }
@@ -310,8 +314,9 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     : baseDefenderTypes
 
   // 接地: じめん技に対して ひこうタイプ / 浮遊系特性の無効化を解除
-  // うちおとす（個別トグル） または じゅうりょく（場全体）で発生
-  const grounded = input.defenderGrounded === true || field.isGravity === true
+  // うちおとす（個別トグル） または じゅうりょく（場全体） または くろいてっきゅう所持で発生
+  const grounded = input.defenderGrounded === true || field.isGravity === true ||
+    input.defenderItem === 'くろいてっきゅう'
   // 接地中はひこうタイプのじめん無効化を解除（他タイプの相性は維持）
   const groundEffectiveTypes: TypeName[] =
     moveType === 'じめん' && grounded
@@ -608,7 +613,9 @@ function applyOtherModifiers(
     'どくバリ': 'どく', 'やわらかいすな': 'じめん', 'するどいくちばし': 'ひこう',
     'まがったスプーン': 'エスパー', 'ぎんのこな': 'むし', 'かたいいし': 'いわ',
     'のろいのおふだ': 'ゴースト', 'りゅうのキバ': 'ドラゴン', 'くろいメガネ': 'あく', 'くろいめがね': 'あく',
-    'メタルコート': 'はがね', 'ようせいのはね': 'フェアリー',
+    'メタルコート': 'はがね', 'ようせいのハネ': 'フェアリー',
+    // 旧表記（誤記）。既存の保存済みセッション/登録ビルド互換のためレガシーエイリアスとして維持
+    'ようせいのはね': 'フェアリー',
     'さざなみのおこう': 'みず', 'うしおのおこう': 'みず',
     'おはなのおこう': 'くさ', 'がんせきおこう': 'いわ', 'あやしいおこう': 'エスパー',
     'ひのたまプレート': 'ほのお', 'しずくプレート': 'みず', 'いかずちプレート': 'でんき',

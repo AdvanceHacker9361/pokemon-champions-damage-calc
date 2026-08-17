@@ -834,3 +834,43 @@ GitHub Actions:
   - 15 files / 264 tests passed。
 - `npm run lint`
 - `npm run build`
+
+## 2026-08-07: 持ち物データの欠落調査と19件追加（しろいハーブ等）
+
+### 発覚内容
+
+- X のユーザーから「持ち物リストにしろいハーブがない」との報告。
+- 攻略サイト3件（GameWith / Game8 / アルテマ）の Pokemon Champions 持ち物一覧が完全一致していたため、これを基準に `items.json`（131件）を照合したところ、Champions に存在する持ち物のうち19件が未収録だった。
+- 併せて `ようせいのはね` が誤記で、正式表記は `ようせいのハネ`（カタカナ）だった。
+
+### 実施した修正
+
+- `src/data/json/items.json`
+  - 19件追加: しろいハーブ / せんせいのツメ / メンタルハーブ / おうじゃのしるし / きあいのハチマキ / かいがらのすず / こうかくレンズ / フォーカスレンズ / ひかりのねんど / くろいてっきゅう / きれいなぬけがら / おおきなねっこ / でんきだま / あついいわ / つめたいいわ / さらさらいわ / しめったいわ / ヒメリのみ / オレンのみ
+  - `ようせいのはね` → `ようせいのハネ` に修正。
+- `src/domain/calculators/DamageCalculator.ts`
+  - `typeBoostItems` を `ようせいのハネ` に更新。既存の保存済みセッション/登録個体との互換のため旧表記 `ようせいのはね` もレガシーエイリアスとして残す。
+  - でんきだま: 攻撃側がピカチュウかつ所持時に攻撃・特攻の実数値2倍。`DamageCalcInput.attackerName` を追加し、`CalculateDamageUseCase` → `CalculateMoveResultsUseCase` → `useDamageCalc` / `useBattleSequence` へ伝搬。
+  - くろいてっきゅう: 防御側所持時に接地扱い（うちおとす/じゅうりょくと同じ `grounded` 判定に追加）。
+- `src/presentation/components/results/DamageResultRow.tsx`
+  - こうかくレンズ: 命中率 ×1.1（じゅうりょく 5/3 と乗算、上限100%）。期待ダメ・KO率・変動連続技パネルに反映。
+- `src/domain/calculators/DrainCalc.ts` / `BattleSequenceCalc.ts` / `useBattleSequence.ts`
+  - おおきなねっこ: 吸収回復量に `floor((heal×5324+2047)/4096)` の固定小数点ブースト（Showdown `modify(heal, 1.3)` と同一丸め）。`calcDrainHeal` / `calcDrainRange` に `boosted` 引数を追加し、結果行の吸収表示とシーケンスエンジン（`SeqEvent.drainBoosted`）で共有。被ダメ側が所持する場合は防御側の持ち物で判定。
+- テスト
+  - `data-integrity.test.ts`: 19件の存在と `ようせいのハネ` の表記を固定テスト化。
+  - `DamageCalculator.test.ts`: でんきだま（ピカチュウ限定・物理/特殊）、くろいてっきゅう（ひこうにじしんが当たる）、ようせいのハネ＋旧表記の双方が有効。
+  - `DrainCalc.test.ts` / `BattleSequenceCalc.test.ts`: おおきなねっこブースト（100×0.5→50→65）と最低1保証。
+
+### 検証
+
+- `npm run typecheck` / `npm run lint`
+- `npx vitest run --dir tests`: 18ファイル 307件全パス（+10件）
+  - 注: 並行セッションの `tests/prefill/`（skip 1件）と `.claude/worktrees/` が全体実行に混入するため `--dir tests` で実行。
+- `npm run build`
+- ブラウザで持ち物欄に「しろい」入力 → 「しろいハーブ」が候補表示されることを確認。
+
+### 判断メモ
+
+- 逆に Champions に存在しない持ち物（こだわりハチマキ / こだわりメガネ / とつげきチョッキ / ゴツゴツメット / じゃくてんほけん / プレート / ジュエル 等 約50件、2026-06-16 の本編準拠拡張で追加）は今回削除しない。将来レギュレーションでの解禁可能性を考慮し、絞り込みはユーザー判断待ち。
+- かいがらのすず（与ダメ1/8回復）は「全技の結果行に回復表示を追加する」規模の拡張になるため見送り。必要になれば吸収表示の経路を流用して対応する。
+- 今回はデータ追加とそれに伴う計算反映のためバージョンは 3.17.1 据え置き。
