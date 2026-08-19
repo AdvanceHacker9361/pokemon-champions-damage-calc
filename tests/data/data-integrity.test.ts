@@ -338,6 +338,23 @@ describe('moves.json integrity', () => {
     expect(move?.powerOptions).toEqual([75, 150])
   })
 
+  it('フェイタルクロー should be available as a contact Poison move (not slicing)', () => {
+    const move = moves.find(m => m.name === 'フェイタルクロー')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Dire Claw',
+      type: 'どく',
+      category: '物理',
+      power: 80,
+      accuracy: 100,
+      pp: 16,
+      hasSecondaryEffect: true,
+    })
+    expect(move!.flags.contact).toBe(true)
+    // Showdown / Bulbapedia とも切る技ではない（きれあじ対象外）
+    expect(move!.flags.slice).toBe(false)
+  })
+
   it('やまあらし should be available as an always-critical Fighting move', () => {
     const move = moves.find(m => m.name === 'やまあらし')
     expect(move).toBeDefined()

@@ -9143,6 +9143,27 @@
     "multiHit": null
   },
   {
+    "name": "フェイタルクロー",
+    "nameEn": "Dire Claw",
+    "type": "どく",
+    "category": "物理",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "hasSecondaryEffect": true
+  },
+  {
     "name": "フェイント",
     "nameEn": "Feint",
     "type": "ノーマル",
