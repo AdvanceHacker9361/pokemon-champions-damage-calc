@@ -150,21 +150,10 @@ export function EventRow({
           <span className="font-semibold text-accent">↺ 痛み分け</span>
           <span
             className="text-fg-muted"
-            title="累積モードでの攻撃側HP（被ダメ等を含むシーケンス時は追跡中のHPが使われ、この値は無視されます）"
+            title="その時点で追跡している攻撃側HP・防御側HPから自動計算します（手入力は不要）"
           >
-            累積時HP
+            両者のHPを平均化（追跡中のHPで自動計算）
           </span>
-          <input
-            type="number"
-            min={0}
-            value={ev.attackerHp}
-            onChange={e => onUpdate({ attackerHp: Math.max(0, Number(e.target.value)) } as Partial<ProgressionEvent>)}
-            className="input-base w-14 text-center text-xs px-1"
-            title="累積（被ダメなし）モードでのみ使用。シーケンス出力は両者の追跡HPで均します。"
-          />
-          {attackerMaxHp > 0 && (
-            <span className="text-[10px] text-fg-faint">/ 最大{attackerMaxHp}</span>
-          )}
         </div>
       </TimelineRow>
     )

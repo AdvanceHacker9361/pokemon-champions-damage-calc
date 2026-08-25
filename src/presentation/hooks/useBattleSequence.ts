@@ -15,9 +15,7 @@ import {
   type SeqEvent,
   type BattleSequenceResult,
 } from '@/domain/calculators/BattleSequenceCalc'
-import {
-  calcVariableHitsSingleUsageDist,
-} from '@/domain/calculators/KoProbabilityCalc'
+import { expandAttackEvent, needsCritPass } from '@/presentation/hooks/expandAttackEvent'
 import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
 import type { BaseStats, TypeName } from '@/domain/models/Pokemon'
 
@@ -35,6 +33,12 @@ export interface BattleSequenceComputed {
   defenderMaxHp: number
   resolved: ResolvedEvent[]
   result: BattleSequenceResult | null
+  /**
+   * 各与ダメを急所率で混合したうえで同じ時系列を再実行した結果。
+   * 通常パスと分布が変わりえない構成（急所混合が不要）のときは `result` と同一参照。
+   * `result` が null のときは null。
+   */
+  critResult: BattleSequenceResult | null
 }
 
 function toBattleState(s: PokemonStore): PokemonBattleState {
@@ -113,7 +117,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     const showSequence = hasSequenceImpact({ events, attackerStartHp })
 
     if (!showSequence || !attacker.pokemonId || !defender.pokemonId) {
-      return { showSequence: false, attackerMaxHp, defenderMaxHp, resolved: [], result: null }
+      return { showSequence: false, attackerMaxHp, defenderMaxHp, resolved: [], result: null, critResult: null }
     }
 
     const battleField = {
@@ -158,11 +162,14 @@ export function useBattleSequence(): BattleSequenceComputed {
     }
 
     const seqEvents: SeqEvent[] = []
+    const critSeqEvents: SeqEvent[] = []
     const labels: string[] = []
     const resolved: ResolvedEvent[] = []
 
+    /** 与ダメ以外のイベントは通常パス・急所込みパスで完全に同一 */
     function pushSeq(ev: SeqEvent, label: string) {
       seqEvents.push(ev)
+      critSeqEvents.push(ev)
       labels.push(label)
     }
 
@@ -182,26 +189,23 @@ export function useBattleSequence(): BattleSequenceComputed {
           const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
           const recoilTag = recoilRate ? `（反動${Math.round(recoilRate * 100)}%）` : ''
           const critTag = ev.isForcedCrit ? '（急所）' : ''
-          // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）
-          for (let u = 0; u < ev.usages; u++) {
-            const isVeryFirst = (attackSeen === 1) && u === 0
-            const useRaw = !isVeryFirst && firstHadMultiscale
-            const baseRolls = useRaw ? ev.rawRolls : ev.rolls
-
+          // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）。
+          // 攻撃側HPを実HPで追跡するモードなので吸収・反動も SeqEvent に載せる。
+          const expanded = expandAttackEvent(ev, {
+            mode: 'sequenceTrackedAttacker',
+            isFirstOverall: attackSeen === 1,
+            firstHadMultiscale,
+            drain: drainRate,
+            drainBoosted,
+            recoil: recoilRate,
+          })
+          // expanded.normal は必ず usages 個（ラベルと1:1）
+          expanded.normal.forEach((seqEv, u) => {
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
-            const seqLabel = `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageSuffix}`
-            const firstHitFixedDamage = u === 0 ? (ev.firstHitFixedDamage ?? 0) : 0
-            if (ev.variableHitDist) {
-              const hit1Rolls = ev.firstHitNullified === true && u === 0
-                ? baseRolls.map(() => firstHitFixedDamage)
-                : baseRolls.map(r => r + firstHitFixedDamage)
-              const dist = calcVariableHitsSingleUsageDist(hit1Rolls, ev.variableHitDist, ev.rawRolls)
-              pushSeq({ kind: 'attack', dmg: dist, drain: drainRate, drainBoosted, recoil: recoilRate }, seqLabel)
-            } else {
-              const rollsWithFixed = baseRolls.map(r => r + firstHitFixedDamage)
-              pushSeq({ kind: 'attack', dmg: rollsWithFixed, drain: drainRate, drainBoosted, recoil: recoilRate }, seqLabel)
-            }
-          }
+            seqEvents.push(seqEv)
+            labels.push(`与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageSuffix}`)
+          })
+          critSeqEvents.push(...expanded.crit)
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageTag}` })
           break
@@ -297,7 +301,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     }
 
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
-      return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null }
+      return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null, critResult: null }
     }
 
     // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう・しゅうかく対応）
@@ -310,14 +314,18 @@ export function useBattleSequence(): BattleSequenceComputed {
         }
       : undefined
 
-    const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, {
+    const runOpts = {
       attackerStartHp: attackerStartHp ?? undefined,
       defenderStartHp: defenderStartHp ?? undefined,
-      labels,
       defenderBerry,
-    })
+    }
+    const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, { ...runOpts, labels })
+    // 急所混合で分布が変わりうるときだけ2回目を実行（変わらないなら同一参照でよい）
+    const critResult = needsCritPass(events)
+      ? runBattleSequence(critSeqEvents, attackerMaxHp, defenderMaxHp, runOpts)
+      : result
 
-    return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result }
+    return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result, critResult }
   }, [
     events, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
     attackerStartHp, defenderStartHp,

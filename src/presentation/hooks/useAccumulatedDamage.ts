@@ -1,17 +1,15 @@
 import { useMemo } from 'react'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
-import type { ProgressionEvent } from '@/presentation/store/progressionStore'
 import { useAttackerStore } from '@/presentation/store/pokemonStore'
-import {
-  calcVariableHitsSingleUsageDist,
-  calcVariableHitsSingleUsageDistWithCrit,
-} from '@/domain/calculators/KoProbabilityCalc'
 import {
   runBattleSequence,
   extractDefenderDamageDistribution,
+  type BattleSequenceResult,
   type SeqEvent,
 } from '@/domain/calculators/BattleSequenceCalc'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
+import { expandAttackEvent, type AttackEvent } from '@/presentation/hooks/expandAttackEvent'
+import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -30,86 +28,16 @@ export interface AccumulatedDamage {
   accumKoResult: KoResult
 }
 
-/** 通常ロール + 急所ロールを critChance で混合した1発分の分布Map */
-function mixToMap(rolls: number[], critRolls: number[] | undefined, critChance: number): Map<number, number> {
-  const m = new Map<number, number>()
-  const useCrit = critRolls != null && critChance > 0
-  const pN = useCrit ? 1 - critChance : 1
-  const nN = rolls.length
-  for (const r of rolls) m.set(r, (m.get(r) ?? 0) + pN / nN)
-  if (useCrit && critRolls) {
-    const nC = critRolls.length
-    for (const r of critRolls) m.set(r, (m.get(r) ?? 0) + critChance / nC)
-  }
-  return m
-}
-
 /**
- * 攻撃イベントから通常パス・急所込みパスの SeqEvent を構築（usages 展開・マルチスケイル継承）。
- * 旧 useAccumulatedDamage のロジックそのまま。
+ * 攻撃イベントから通常パス・急所込みパスの SeqEvent を構築（累積モード＝攻撃側HP固定）。
+ * 実体は `expandAttackEvent` の accumFixedAttacker モード。
  */
 export function expandAttack(
-  e: Extract<ProgressionEvent, { kind: 'attack' }>,
+  e: AttackEvent,
   isFirstOverall: boolean,
   firstHadMultiscale: boolean,
 ): { normal: SeqEvent[]; crit: SeqEvent[] } {
-  const normal: SeqEvent[] = []
-  const crit: SeqEvent[] = []
-  for (let u = 0; u < e.usages; u++) {
-    const isVeryFirst = isFirstOverall && u === 0
-    const useRaw = !isVeryFirst && firstHadMultiscale
-    const normalRolls = useRaw ? e.rawRolls : e.rolls
-    const critRolls   = useRaw ? e.rawCritRolls : e.critRolls
-    const firstHitFixedDamage = u === 0 ? (e.firstHitFixedDamage ?? 0) : 0
-
-    if (e.variableHitDist) {
-      const nullifyFirstHit = e.firstHitNullified === true && u === 0
-      const hit1Rolls = nullifyFirstHit
-        ? normalRolls.map(() => firstHitFixedDamage)
-        : normalRolls.map(r => r + firstHitFixedDamage)
-      const hit1CritRolls = nullifyFirstHit
-        ? critRolls.map(() => firstHitFixedDamage)
-        : critRolls.map(r => r + firstHitFixedDamage)
-      const hit2plusRolls = e.rawRolls
-      const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
-      normal.push({ kind: 'attack', dmg: dist })
-      if (e.isForcedCrit) {
-        const critDist = calcVariableHitsSingleUsageDist(hit1CritRolls, e.variableHitDist, e.rawCritRolls)
-        crit.push({ kind: 'attack', dmg: critDist })
-      } else {
-        const distWithCrit = calcVariableHitsSingleUsageDistWithCrit(
-          hit1Rolls, hit1CritRolls, e.critChance, e.variableHitDist, hit2plusRolls, e.rawCritRolls,
-        )
-        crit.push({ kind: 'attack', dmg: distWithCrit })
-      }
-      continue
-    }
-
-    const normalRollsWithFixed = normalRolls.map(r => r + firstHitFixedDamage)
-    const critRollsWithFixed = critRolls.map(r => r + firstHitFixedDamage)
-    normal.push({ kind: 'attack', dmg: normalRollsWithFixed })
-
-    if (e.pbChildRolls !== undefined) {
-      const parentNorm = useRaw ? (e.pbParentRawRolls ?? normalRolls) : (e.pbParentRolls ?? normalRolls)
-      const parentCrit = useRaw ? (e.pbParentRawCritRolls ?? critRolls) : (e.pbParentCritRolls ?? critRolls)
-      const childNorm = e.pbChildRolls
-      const childCrit = e.pbChildCritRolls ?? childNorm
-      // おやこあいは親+子で1ターン。親（中間ヒット）はターン境界を発生させず、
-      // 子（最終ヒット）のみがターンを終了させる（通常パスの単一マージイベントと整合）。
-      if (e.isForcedCrit) {
-        crit.push({ kind: 'attack', dmg: parentNorm, noTurnBoundary: true })
-        crit.push({ kind: 'attack', dmg: childNorm })
-      } else {
-        crit.push({ kind: 'attack', dmg: mixToMap(parentNorm, parentCrit, e.critChance), noTurnBoundary: true })
-        crit.push({ kind: 'attack', dmg: mixToMap(childNorm, childCrit, e.critChance) })
-      }
-    } else if (e.isForcedCrit) {
-      crit.push({ kind: 'attack', dmg: normalRollsWithFixed })
-    } else {
-      crit.push({ kind: 'attack', dmg: mixToMap(normalRollsWithFixed, critRollsWithFixed, e.critChance) })
-    }
-  }
-  return { normal, crit }
+  return expandAttackEvent(e, { mode: 'accumFixedAttacker', isFirstOverall, firstHadMultiscale })
 }
 
 export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
@@ -122,6 +50,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   // 宿り木: 防御側→攻撃側 ティックで「攻撃側最大HPの1/8」を防御側回復として使用
   const attackerBaseHp    = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp      = useAttackerStore(s => s.sp.hp)
+  // 攻撃側HPに影響するイベントがある構成では、攻撃側HPを追跡する2Dシーケンスの
+  // 結果をそのまま累積の出力として使う（累積とシミュレーションの食い違いを防ぐ）
+  const seq = useBattleSequence()
 
   return useMemo(() => {
     const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
@@ -136,6 +67,52 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     const hasEntries = attackEvents.length > 0
     const hasAnything = events.length > 0 || totalConst !== 0 || constRecBerry > 0
 
+    /** 防御側ダメージ分布と撃破率から公開値を組み立てる（2パス共通の後段） */
+    function finalize(
+      distribution: Map<number, number>,
+      combinedProb: number,
+      combinedProbWithCrit: number,
+    ): AccumulatedDamage {
+      let totalMin = totalConst
+      let totalMax = totalConst
+      let mn = Infinity, mx = -Infinity
+      for (const dmg of distribution.keys()) {
+        if (dmg < mn) mn = dmg
+        if (dmg > mx) mx = dmg
+      }
+      if (mn !== Infinity) { totalMin = mn; totalMax = mx }
+      const totalMinPct = defenderMaxHp > 0 ? totalMin / defenderMaxHp * 100 : 0
+      const totalMaxPct = defenderMaxHp > 0 ? totalMax / defenderMaxHp * 100 : 0
+
+      const accumKoResult: KoResult =
+        combinedProb >= 1.0 ? { type: 'guaranteed', hits: 1 }
+        : combinedProb > 0 ? { type: 'chance', hits: 1, probability: combinedProb }
+        : { type: 'no-ko' }
+
+      return {
+        hasEntries, hasAnything,
+        totalMin, totalMax, totalMinPct, totalMaxPct,
+        totalConst, poisonTotal, poisonPerTurn,
+        combinedProb, combinedProbWithCrit,
+        distribution, accumKoResult,
+      }
+    }
+
+    // --- 統合パス ---
+    // 攻撃側HPに影響するイベント（被ダメ・痛み分け・攻撃側定数 等）がある構成では、
+    // 攻撃側HPを追跡する2Dシーケンスの結果をそのまま累積の出力にする。
+    // 攻撃側HP固定の近似（痛み分けの静的 attackerHp 等）はここでは使わない。
+    const seqResult = seq.result
+    if (seq.showSequence && seqResult !== null && seq.defenderMaxHp === defenderMaxHp) {
+      const critRun: BattleSequenceResult = seq.critResult ?? seqResult
+      return finalize(
+        extractDefenderDamageDistribution(seqResult, defenderMaxHp),
+        seqResult.defenderKoProb,
+        critRun.defenderKoProb,
+      )
+    }
+
+    // --- 攻撃側HP固定パス（純粋な累積: 与ダメと防御側効果のみ）---
     // 最初の attack イベントがマルチスケイル発動中なら、2発目以降は素ダメ
     const firstAttack = attackEvents[0]
     const firstHadMultiscale = firstAttack?.hadMultiscale ?? false
@@ -161,7 +138,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           break
         }
         case 'painSplit': {
-          // 累積モード: 攻撃側HPは入力値で固定
+          // フォールバック専用（通常は痛み分けがあれば統合パスへ入る）。
+          // 攻撃側HPを追跡できないため、保存済みの attackerHp（挿入時の攻撃側最大HP）で近似する。
           pushBoth({ kind: 'painSplit', attackerHp: ev.attackerHp })
           break
         }
@@ -218,49 +196,18 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       : undefined
 
     const ATT_DUMMY = 1
-    let distribution: Map<number, number>
-    let combinedProb: number
-    let combinedProbWithCrit: number
-
     if (normalEvents.length === 0) {
-      distribution = new Map([[0, 1.0]])
-      combinedProb = 0
-      combinedProbWithCrit = 0
-    } else {
-      const normalResult = runBattleSequence(normalEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
-      const critResult   = runBattleSequence(critEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
-      distribution = extractDefenderDamageDistribution(normalResult, defenderMaxHp)
-      combinedProb = normalResult.defenderKoProb
-      combinedProbWithCrit = critResult.defenderKoProb
+      return finalize(new Map([[0, 1.0]]), 0, 0)
     }
-
-    let totalMin = totalConst
-    let totalMax = totalConst
-    {
-      let mn = Infinity, mx = -Infinity
-      for (const dmg of distribution.keys()) {
-        if (dmg < mn) mn = dmg
-        if (dmg > mx) mx = dmg
-      }
-      if (mn !== Infinity) { totalMin = mn; totalMax = mx }
-    }
-    const totalMinPct = defenderMaxHp > 0 ? totalMin / defenderMaxHp * 100 : 0
-    const totalMaxPct = defenderMaxHp > 0 ? totalMax / defenderMaxHp * 100 : 0
-
-    const accumKoResult: KoResult =
-      combinedProb >= 1.0 ? { type: 'guaranteed', hits: 1 }
-      : combinedProb > 0 ? { type: 'chance', hits: 1, probability: combinedProb }
-      : { type: 'no-ko' }
-
-    return {
-      hasEntries, hasAnything,
-      totalMin, totalMax, totalMinPct, totalMaxPct,
-      totalConst, poisonTotal, poisonPerTurn,
-      combinedProb, combinedProbWithCrit,
-      distribution, accumKoResult,
-    }
+    const normalResult = runBattleSequence(normalEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
+    const critResult   = runBattleSequence(critEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
+    return finalize(
+      extractDefenderDamageDistribution(normalResult, defenderMaxHp),
+      normalResult.defenderKoProb,
+      critResult.defenderKoProb,
+    )
   }, [
     events, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
-    defenderMaxHp, attackerBaseHp, attackerSpHp,
+    defenderMaxHp, attackerBaseHp, attackerSpHp, seq,
   ])
 }

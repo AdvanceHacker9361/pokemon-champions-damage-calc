@@ -52,7 +52,11 @@ export interface AttackPayload {
 /** イベント種別ごとの payload */
 export type ProgressionEvent =
   | ({ kind: 'attack'; id: string } & AttackPayload)
-  /** 痛み分け（防御側のみ平均化、攻撃側HPは入力値） */
+  /**
+   * 痛み分け。両者のHPを平均化する。
+   * `attackerHp` は旧「累積時HP」手入力の名残で、計算には使わない（保存済みセッションの
+   * 復元互換のためフィールドだけ残している）。累積・シーケンスとも追跡中のHPで平均化する。
+   */
   | { kind: 'painSplit'; id: string; attackerHp: number }
   /** 被ダメ（防御側の技を攻守入替で自動計算） */
   | { kind: 'incoming'; id: string; moveName: string | null; crit: boolean }
