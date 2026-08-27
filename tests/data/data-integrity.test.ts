@@ -338,6 +338,35 @@ describe('moves.json integrity', () => {
     expect(move?.powerOptions).toEqual([75, 150])
   })
 
+  it('ヒスイジュナイパー should be available with Grass/Fighting typing', () => {
+    const p = pokemon.find(x => x.name === 'ヒスイジュナイパー')
+    expect(p).toBeDefined()
+    expect(p).toMatchObject({
+      id: 10501,
+      nameEn: 'Decidueye-Hisui',
+      types: ['くさ', 'かくとう'],
+      baseStats: { hp: 88, atk: 112, def: 80, spa: 95, spd: 95, spe: 60 },
+      abilities: ['しんりょく', 'きもったま'],
+      weight: 37.0,
+    })
+  })
+
+  it('3ぼんのや should be available as a high-crit contact Fighting move', () => {
+    const move = moves.find(m => m.name === '3ぼんのや')
+    expect(move).toBeDefined()
+    expect(move).toMatchObject({
+      nameEn: 'Triple Arrows',
+      type: 'かくとう',
+      category: '物理',
+      power: 90,
+      accuracy: 100,
+      pp: 12,
+      critChance: 1,
+      hasSecondaryEffect: true,
+    })
+    expect(move!.flags.contact).toBe(true)
+  })
+
   it('フェイタルクロー should be available as a contact Poison move (not slicing)', () => {
     const move = moves.find(m => m.name === 'フェイタルクロー')
     expect(move).toBeDefined()

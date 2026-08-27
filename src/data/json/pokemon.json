@@ -17847,6 +17847,28 @@
     "weight": 334.1
   },
   {
+    "id": 10501,
+    "name": "ヒスイジュナイパー",
+    "nameEn": "Decidueye-Hisui",
+    "types": [
+      "くさ",
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 88,
+      "atk": 112,
+      "def": 80,
+      "spa": 95,
+      "spd": 95,
+      "spe": 60
+    },
+    "abilities": [
+      "しんりょく",
+      "きもったま"
+    ],
+    "weight": 37.0
+  },
+  {
     "id": 10502,
     "name": "ヒスイバクフーン",
     "nameEn": "Typhlosion-Hisui",
