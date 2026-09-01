@@ -953,3 +953,29 @@ GitHub Actions:
 ### 判断メモ
 
 - 接触あり（Showdown / Bulbapedia 準拠。かたいツメ・ゴツゴツメット等の接触判定に影響）。切る属性なし。バージョン更新なしの修正デプロイ。
+
+## 2026-09-01: 最大ダメージサマリーと個別技行のばけのかわ乖離を修正
+
+### 発覚内容
+
+- マニューラ（いのちのたま・トリプルアクセル）vs ミミッキュ（ばけのかわ有効）で、上部の最大ダメージサマリーが 133〜161（乱数1発81.3%）、個別技行が 127〜150（乱数1発50.0%）と食い違っていた（Xユーザー報告）。
+- 原因: `DamageSummaryHeader` は `MoveResult` の生の `result.min/max/koResult` を最大技の選定・表示に使用しており、個別技行（`DamageResultRow`）だけが適用している表示補正 — ばけのかわ1発目無効＋解除時 `floor(HP/8)` 固定ダメの分布統合・おやこあい子ロール・固定連続技の合算・くだけるよろい/じきゅうりょくの per-hit ロール・変動連続技の加重サマリー・KO再計算 — を通していなかった。2026-08-01 の「ばけのかわ対変動連続技」修正が個別行側にのみ適用され、サマリー側が取り残されていた。
+
+### 実施した修正
+
+- **`src/presentation/hooks/computeMoveDisplaySummary.ts`（新規）**: 個別技行の通常（非急所）表示計算を React 非依存の純関数として抽出。入力は `MoveResult` 一式＋文脈（`multiHit` / `isParentalBond` / `isDisguiseIntact` / 変動連続分布）、出力は `min/max/percent/koResult/各種ロール/固定ダメ/変動サマリー`。
+- **`DamageResultRow.tsx`**: 約60行のインライン計算を `displaySummary`（急所トグル追随）と `critDisplaySummary` の2呼び出しに置換。既存ローカル名を維持したため JSX・`buildAttackPayload`・`VariableMultiHitPanel` の呼び出しは無変更。式は逐語移設で出力は不変（`buildAttackPayload.test.ts` が無修正でパス）。
+- **`DamageSummaryHeader.tsx`**: 攻守ストアから文脈（特性・持ち物・ばけのかわ有効）を購読し、全技を同ヘルパーで評価。最大技の選定を「生の max」→「補正後の max」に変更し、範囲・KO ラベル・バー・残HP をすべて補正後の値で表示。
+
+### 検証
+
+- `npm run typecheck` / `npm run lint`
+- `npx vitest run --dir tests`: 20ファイル 323件全パス（+10件: 段階連続×ばけのかわで「チップ+2発目以降」になる・非ばけのかわは生値一致・固定/変動連続・おやこあい・マルチスケイル素ダメ・「補正後 max ≠ 生 max」の選定回帰）
+- `npm run build`
+- ブラウザQA（報告と同構成）: ヘッダーと個別行が 97〜112（/130・確定2発・残HP18〜33）で完全一致。単発技は「全弾無効 固定16」でヘッダー選定からも正しく劣後。
+
+### 判断メモ
+
+- ヘルパーは表示都合の集計のため `presentation/hooks/` に配置（`expandAttackEvent.ts` の先例に合わせた純関数）。
+- サマリーは通常（非急所）値を表示する既存仕様を維持。急所側の集計は個別行の急所トグル用に同ヘルパーの別呼び出しで共有。
+- バージョンは 3.17.2 据え置きの修正デプロイ。

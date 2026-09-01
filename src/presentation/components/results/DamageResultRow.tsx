@@ -3,13 +3,11 @@ import type { DamageResult } from '@/domain/models/DamageResult'
 import type { KoResult } from '@/domain/models/DamageResult'
 import { DamageBar } from './DamageBar'
 import {
-  calcKoProbability,
-  calcVariableMultiHitKo,
   calcVariableMultiHitKoWithCrit,
   getVariableMultiHitDist,
 } from '@/domain/calculators/KoProbabilityCalc'
 import { calcCritChance } from '@/domain/calculators/CritRank'
-import { calcChildRolls, computeEffectiveRolls } from '@/domain/calculators/RollAggregation'
+import { computeMoveDisplaySummary } from '@/presentation/hooks/computeMoveDisplaySummary'
 import { recoilRateForMove, calcRecoilRange, recoilRateLabel } from '@/domain/calculators/RecoilCalc'
 import { calcDrainRange, drainRateLabel } from '@/domain/calculators/DrainCalc'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
@@ -125,21 +123,11 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
   const weakArmorPerHitResults = isCritical ? weakArmorCritPerHitResults : weakArmorPerHitResultsNormal
   const weakArmorVariableRawActive = isCritical ? weakArmorVariableRawCritResults : weakArmorVariableRawResults
-  const weakArmorVariableRawRollsByHit: number[][] | undefined = weakArmorVariableRawActive
-    ? weakArmorVariableRawActive.map(r => Array.from(r.rolls))
-    : undefined
-  const weakArmorVariableRawCritRollsByHit: number[][] | undefined = weakArmorVariableRawCritResults
-    ? weakArmorVariableRawCritResults.map(r => Array.from(r.rolls))
-    : undefined
 
   const activeResult = isCritical ? critResult : result
-  const rolls = Array.from(activeResult.rolls)
 
   const HP_FULL_ABILITIES = new Set(['マルチスケイル', 'ファントムガード'])
   const activeRawResult = isCritical ? props.rawCritResult : props.rawResult
-  const rawRolls = activeRawResult
-    ? Array.from(activeRawResult.rolls)
-    : rolls
   const hadHpFullAbility = HP_FULL_ABILITIES.has(defenderAbility) && defenderAbilityActivated
   const hadMultiscale = hadHpFullAbility || !!props.rawResult
 
@@ -151,9 +139,48 @@ export function DamageResultRow(props: DamageResultRowProps) {
     focusEnergyActive,
   })
 
-  const childRollsArr = calcChildRolls(rawRolls)
+  // 表示用の実効ダメージ（ばけのかわ・おやこあい・多段合計・段階低下・変動連続技加重）は
+  // DamageSummaryHeader と共有する computeMoveDisplaySummary に一本化している
+  const displaySummary = computeMoveDisplaySummary({
+    result: activeResult,
+    rawResult: activeRawResult,
+    perHitResults,
+    weakArmorPerHitResults,
+    weakArmorVariableRawResults: weakArmorVariableRawActive,
+    multiHit, isParentalBond, isDisguiseIntact, variableMultiHitDist,
+  })
+  const critDisplaySummary = computeMoveDisplaySummary({
+    result: critResult,
+    rawResult: props.rawCritResult,
+    perHitResults: props.critPerHitResults,
+    weakArmorPerHitResults: weakArmorCritPerHitResults,
+    weakArmorVariableRawResults: weakArmorVariableRawCritResults,
+    multiHit, isParentalBond, isDisguiseIntact, variableMultiHitDist,
+  })
 
-  const disguiseFlatDmg = isDisguiseIntact ? Math.floor(defenderMaxHp / 8) : 0
+  const rolls = displaySummary.rolls
+  const rawRolls = displaySummary.rawRolls
+  const childRollsArr = displaySummary.childRolls
+  const effectiveRolls = displaySummary.effectiveRolls
+  const disguiseFlatDmg = displaySummary.disguiseFlatDmg
+  const weakArmorVariableRawRollsByHit = displaySummary.weakArmorVariableRawRollsByHit
+  const variableFirstRolls = displaySummary.variableFirstRolls
+  const variableRawRolls = displaySummary.variableRawRolls
+  const displayEffectiveRolls = displaySummary.displayRolls
+  const displayMin = displaySummary.min
+  const displayMax = displaySummary.max
+  const displayPercentMin = displaySummary.percentMin
+  const displayPercentMax = displaySummary.percentMax
+  const displayKoResult = displaySummary.koResult
+
+  const critRollsBase = critDisplaySummary.rolls
+  const rawCritRollsBase = critDisplaySummary.rawRolls
+  const effectiveCritRolls = critDisplaySummary.effectiveRolls
+  const displayEffectiveCritRolls = critDisplaySummary.displayRolls
+  const variableFirstCritRolls = critDisplaySummary.variableFirstRolls
+  const variableRawCritRolls = critDisplaySummary.variableRawRolls
+  const weakArmorVariableRawCritRollsByHit = critDisplaySummary.weakArmorVariableRawRollsByHit
+
   let disguiseLabel = ''
   if (isDisguiseIntact) {
     if (isParentalBond) disguiseLabel = 'ばけのかわ発動（親を無効 → 子ダメのみ）'
@@ -172,20 +199,6 @@ export function DamageResultRow(props: DamageResultRowProps) {
     else disguiseLabel = 'ばけのかわ発動（全弾無効）'
   }
 
-  const effectiveRolls = computeEffectiveRolls({
-    rolls, rawRolls, multiHit, isParentalBond, isDisguiseIntact, perHitResults, weakArmorPerHitResults,
-  })
-
-  const critRollsBase = Array.from(critResult.rolls)
-  const rawCritRollsBase = props.rawCritResult
-    ? Array.from(props.rawCritResult.rolls)
-    : critRollsBase
-  const critPerHitResults = props.critPerHitResults
-  const effectiveCritRolls = computeEffectiveRolls({
-    rolls: critRollsBase, rawRolls: rawCritRollsBase, multiHit, isParentalBond, isDisguiseIntact,
-    perHitResults: critPerHitResults, weakArmorPerHitResults: weakArmorCritPerHitResults,
-  })
-
   // じゅうりょく: 命中率5/3倍、こうかくレンズ: 命中率1.1倍（最大100%）。必中技（accuracy=null）は影響なし
   const accuracyMult = (isGravity ? 5 / 3 : 1) * (attackerItem === 'こうかくレンズ' ? 1.1 : 1)
   const hitRate = moveRecord?.accuracy != null
@@ -195,37 +208,12 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const critRate = isAlwaysCrit ? 1.0 : moveCritChance
 
   const isVariableMultiHit = multiHit?.type === 'variable'
-  const variableFirstRolls = isVariableMultiHit && isDisguiseIntact
-    ? rolls.map(() => disguiseFlatDmg)
-    : rolls
-  const variableFirstCritRolls = isVariableMultiHit && isDisguiseIntact
-    ? critRollsBase.map(() => disguiseFlatDmg)
-    : critRollsBase
-  const variableRawRolls: number[] | number[][] = weakArmorVariableRawRollsByHit?.length
-    ? [rawRolls, ...weakArmorVariableRawRollsByHit]
-    : rawRolls
-  const variableRawCritRolls: number[] | number[][] = weakArmorVariableRawCritRollsByHit?.length
-    ? [rawCritRollsBase, ...weakArmorVariableRawCritRollsByHit]
-    : rawCritRollsBase
-  const variableSummary = isVariableMultiHit && isDisguiseIntact
-    ? calcVariableMultiHitKo(
-        variableFirstRolls, defenderMaxHp, variableMultiHitDist, variableRawRolls,
-      )
-    : null
   const variableCritSummary = isVariableMultiHit && isDisguiseIntact
     ? calcVariableMultiHitKoWithCrit(
         variableFirstRolls, variableFirstCritRolls, isForcedCrit ? 1.0 : moveCritChance,
         defenderMaxHp, variableMultiHitDist, variableRawRolls, variableRawCritRolls,
       )
     : null
-
-  const displayEffectiveRolls = effectiveRolls.map(r => r + disguiseFlatDmg)
-  const displayEffectiveCritRolls = effectiveCritRolls.map(r => r + disguiseFlatDmg)
-  const displayMin = variableSummary?.minDmg ?? displayEffectiveRolls[0]
-  const displayMax = variableSummary?.maxDmg
-    ?? displayEffectiveRolls[displayEffectiveRolls.length - 1]
-  const displayPercentMin = displayMin / defenderMaxHp * 100
-  const displayPercentMax = displayMax / defenderMaxHp * 100
 
   // 反動技（すてみタックル等）: 与ダメ乱数幅に沿った自傷反動ダメージを常時併記
   const recoilRate = recoilRateForMove(moveRecord, attackerAbility)
@@ -247,21 +235,6 @@ export function DamageResultRow(props: DamageResultRowProps) {
   ) / 2
   const expectedDmg = hitRate * (variableCritSummary?.expectedDmg
     ?? (critRate * avgCrit + (1 - critRate) * avgNormal))
-
-  let displayKoResult: KoResult
-  if (variableSummary) {
-    displayKoResult = variableSummary.totalKoProb >= 1
-      ? { type: 'guaranteed', hits: 1 }
-      : variableSummary.totalKoProb > 0
-        ? { type: 'chance', hits: 1, probability: variableSummary.totalKoProb }
-        : { type: 'no-ko' }
-  } else if (isParentalBond || isDisguiseIntact) {
-    displayKoResult = calcKoProbability(displayEffectiveRolls, defenderMaxHp)
-  } else if (weakArmorPerHitResults && multiHit?.type === 'fixed') {
-    displayKoResult = calcKoProbability(displayEffectiveRolls, defenderMaxHp)
-  } else {
-    displayKoResult = activeResult.koResult
-  }
 
   if (min === 0 && max === 0) {
     return (
