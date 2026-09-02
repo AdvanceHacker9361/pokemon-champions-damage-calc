@@ -96,6 +96,8 @@ export interface PassivePreset {
   subTab: PassiveSubTab
   /** 行の主ラベル（例: "1/16 切り捨て"） */
   label: string
+  /** ゴースト行・エクスポート用の短い名前（例: "すなあらし"） */
+  short: string
   /** 発生源の説明（例: "やけど / しおづけ / すなあらし"） */
   sources: string
   kind: PassiveKind
@@ -114,6 +116,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   // ---------- 定数ダメ / 割合 ----------
   {
     key: 'stealthRock',
+    short: 'ステロ',
     tab: 'damage',
     subTab: 'ratio',
     label: 'ステルスロック (1/8×相性)',
@@ -126,6 +129,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'spikes1',
+    short: 'まきびし×1',
     tab: 'damage',
     subTab: 'ratio',
     label: 'まきびし×1 (1/8)',
@@ -138,6 +142,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'spikes2',
+    short: 'まきびし×2',
     tab: 'damage',
     subTab: 'ratio',
     label: 'まきびし×2 (1/6)',
@@ -150,6 +155,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'spikes3',
+    short: 'まきびし×3',
     tab: 'damage',
     subTab: 'ratio',
     label: 'まきびし×3 (1/4)',
@@ -162,6 +168,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'sandstorm',
+    short: 'すなあらし',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/16 切り捨て（天候）',
@@ -174,6 +181,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'burn',
+    short: 'やけど',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/16 切り捨て（やけど）',
@@ -186,6 +194,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'saltCure',
+    short: 'しおづけ',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/8 切り捨て（しおづけ）',
@@ -198,6 +207,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'saltCureWeak',
+    short: 'しおづけ(水/鋼)',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/4 切り捨て（しおづけ 水/鋼）',
@@ -210,6 +220,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'lifeOrb',
+    short: 'いのちのたま',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/10 切り捨て（攻撃ごと）',
@@ -222,6 +233,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'poison',
+    short: 'どく',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/8 切り捨て（どく）',
@@ -234,6 +246,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'leechSeed',
+    short: 'やどりぎ',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/8 切り捨て（やどりぎ）',
@@ -246,6 +259,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'bind',
+    short: 'バインド',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/8 切り捨て（バインド）',
@@ -258,6 +272,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'bindBand',
+    short: 'バインド(強)',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/6 切り捨て（バインド強化）',
@@ -270,6 +285,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'curse',
+    short: 'のろい',
     tab: 'damage',
     subTab: 'ratio',
     label: '1/4 切り捨て（のろい）',
@@ -283,6 +299,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   // ---------- 定数ダメ / もうどく ----------
   {
     key: 'toxic',
+    short: 'もうどく',
     tab: 'damage',
     subTab: 'toxic',
     label: 'もうどく (k/16 累進)',
@@ -296,6 +313,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   // ---------- 回復 / 割合 ----------
   {
     key: 'leftovers',
+    short: 'たべのこし',
     tab: 'recover',
     subTab: 'ratio',
     label: '1/16 切り捨て',
@@ -308,6 +326,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'grassyTerrain',
+    short: 'グラスF',
     tab: 'recover',
     subTab: 'ratio',
     label: '1/16 切り捨て（フィールド）',
@@ -320,6 +339,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'poisonHeal',
+    short: 'ポイズンヒール',
     tab: 'recover',
     subTab: 'ratio',
     label: '1/8 切り捨て',
@@ -332,6 +352,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'aquaRing',
+    short: 'アクアリング',
     tab: 'recover',
     subTab: 'ratio',
     label: '1/16 切り捨て（アクアリング）',
@@ -345,6 +366,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   // ---------- 回復 / 単発（時系列へ追加） ----------
   {
     key: 'recover50',
+    short: '回復技1/2',
     tab: 'recover',
     subTab: 'oneShot',
     label: '1/2 切り捨て',
@@ -357,6 +379,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'synthesisNormal',
+    short: 'こうごうせい系(通常)',
     tab: 'recover',
     subTab: 'oneShot',
     label: '1/2 五捨五超入',
@@ -369,6 +392,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'synthesisSun',
+    short: 'こうごうせい系(はれ)',
     tab: 'recover',
     subTab: 'oneShot',
     label: '2/3 五捨五超入',
@@ -381,6 +405,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'synthesisWeather',
+    short: 'こうごうせい系(雨砂雪)',
     tab: 'recover',
     subTab: 'oneShot',
     label: '1/4 五捨五超入',
@@ -393,6 +418,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
   },
   {
     key: 'regenerator',
+    short: 'さいせいりょく',
     tab: 'recover',
     subTab: 'oneShot',
     label: '1/3 切り捨て',

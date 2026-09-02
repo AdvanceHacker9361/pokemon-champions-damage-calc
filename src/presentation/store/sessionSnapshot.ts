@@ -48,13 +48,19 @@ export interface ProgressionSnapshot {
    * 未定義のスナップショットは `migrateProgressionSnapshot` が旧フィールドから生成する。
    */
   passiveEffects?: PassiveEffect[]
-  constDmg: number
-  constRec: number
+  /**
+   * @deprecated 旧背景効果（V3.18.0 で常時効果へ移行）。
+   * 復元時の移行入力としてのみ読む。新規スナップショットには書き出さない。
+   */
+  constDmg?: number
+  /** @deprecated 旧背景効果。復元時の移行入力としてのみ読む */
+  constRec?: number
   constRecBerry: number
   constRecBerryThresholdPct: number
   berryCudChew: boolean
   berryHarvestChance: number
-  poisonTurns: number
+  /** @deprecated 旧背景効果。復元時の移行入力としてのみ読む */
+  poisonTurns?: number
   attackerStartHp: number | null
   defenderStartHp: number | null
 }
@@ -137,13 +143,14 @@ function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
   return {
     events: p.events.map(cloneProgressionEvent),
     passiveEffects: p.passiveEffects ? p.passiveEffects.map(clonePassiveEffect) : undefined,
-    constDmg: p.constDmg,
-    constRec: p.constRec,
+    // 旧フィールドは移行入力としてのみ引き継ぐ（存在するときだけ複製する）
+    ...(p.constDmg !== undefined ? { constDmg: p.constDmg } : {}),
+    ...(p.constRec !== undefined ? { constRec: p.constRec } : {}),
+    ...(p.poisonTurns !== undefined ? { poisonTurns: p.poisonTurns } : {}),
     constRecBerry: p.constRecBerry ?? 0,
     constRecBerryThresholdPct: p.constRecBerryThresholdPct ?? 50,
     berryCudChew: p.berryCudChew ?? false,
     berryHarvestChance: p.berryHarvestChance ?? 0,
-    poisonTurns: p.poisonTurns,
     attackerStartHp: p.attackerStartHp,
     defenderStartHp: p.defenderStartHp,
   }
@@ -224,13 +231,10 @@ export function snapshotLiveState(): SessionSnapshot {
     progression: cloneProgressionSnapshot({
       events: prog.events,
       passiveEffects: prog.passiveEffects,
-      constDmg: prog.constDmg,
-      constRec: prog.constRec,
       constRecBerry: prog.constRecBerry,
       constRecBerryThresholdPct: prog.constRecBerryThresholdPct,
       berryCudChew: prog.berryCudChew,
       berryHarvestChance: prog.berryHarvestChance,
-      poisonTurns: prog.poisonTurns,
       attackerStartHp: prog.attackerStartHp,
       defenderStartHp: prog.defenderStartHp,
     }),
@@ -250,27 +254,27 @@ export function migrateProgressionSnapshot(p: ProgressionSnapshot): ProgressionS
   if (p.passiveEffects !== undefined) return p
 
   const passiveEffects: PassiveEffect[] = []
-  if (p.constDmg > 0) {
+  if ((p.constDmg ?? 0) > 0) {
     passiveEffects.push({
       id: genId(), side: 'defender', kind: 'damage',
-      amount: { type: 'fixed', value: p.constDmg },
+      amount: { type: 'fixed', value: p.constDmg as number },
       timing: 'start', count: 1, startTurn: 1,
       order: TURN_END_ORDER.custom, label: '定数ダメ（移行）',
     })
   }
-  if (p.constRec > 0) {
+  if ((p.constRec ?? 0) > 0) {
     passiveEffects.push({
       id: genId(), side: 'defender', kind: 'recover',
-      amount: { type: 'fixed', value: p.constRec },
+      amount: { type: 'fixed', value: p.constRec as number },
       timing: 'turnEnd', count: 'all', startTurn: 1,
       order: TURN_END_ORDER.itemHeal, label: '定数回復（移行）',
     })
   }
-  if (p.poisonTurns > 0) {
+  if ((p.poisonTurns ?? 0) > 0) {
     passiveEffects.push({
       id: genId(), side: 'defender', kind: 'damage',
       amount: { type: 'toxic' },
-      timing: 'turnEnd', count: p.poisonTurns, startTurn: 1,
+      timing: 'turnEnd', count: p.poisonTurns as number, startTurn: 1,
       order: TURN_END_ORDER.poison, presetKey: 'toxic', label: 'もうどく（移行）',
     })
   }
@@ -304,9 +308,16 @@ export function restoreState(snap: SessionSnapshot): void {
   useDefenderStore.setState(clonePokemonSnapshot(snap.defender))
   useFieldStore.setState({ ...snap.field })
   const progression = migrateProgressionSnapshot(cloneProgressionSnapshot(snap.progression))
+  // 旧フィールド（constDmg / constRec / poisonTurns）はライブストアに存在しないため明示的に取捨する
   useProgressionStore.setState({
-    ...progression,
+    events: progression.events,
     passiveEffects: progression.passiveEffects ?? [],
+    constRecBerry: progression.constRecBerry,
+    constRecBerryThresholdPct: progression.constRecBerryThresholdPct,
+    berryCudChew: progression.berryCudChew,
+    berryHarvestChance: progression.berryHarvestChance,
+    attackerStartHp: progression.attackerStartHp,
+    defenderStartHp: progression.defenderStartHp,
   })
 
   // 各側のタブを復元。該当フィールドが無い（その機能以前の永続化）場合は、

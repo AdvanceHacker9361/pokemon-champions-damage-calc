@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { EventInsertGrid, type InsertEventCtx } from './EventInsertMenu'
+import { EventInsertGrid } from './EventInsertMenu'
+import type { InsertEventCtx } from './eventInsertActions'
 import { PassiveDamageTab } from './PassiveDamageTab'
 import { PassiveRecoverTab } from './PassiveRecoverTab'
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { ProgressionTabs } from '@/presentation/components/results/ProgressionTabs'
-import type { InsertEventCtx } from '@/presentation/components/results/EventInsertMenu'
+import type { InsertEventCtx } from '@/presentation/components/results/eventInsertActions'
 
 afterEach(() => cleanup())
 
@@ -28,19 +28,22 @@ describe('ProgressionTabs', () => {
     expect(screen.getByRole('button', { name: '＋攻撃側被ダメ' })).toBeInTheDocument()
   })
 
-  it('定数ダメタブをクリックするとスタブ文言に切り替わる', () => {
+  it('定数ダメタブをクリックすると常時効果カタログ（割合 / もうどく / 固定）に切り替わる', () => {
     renderTabs()
     fireEvent.click(screen.getByRole('tab', { name: '定数ダメ' }))
     expect(screen.getByRole('tab', { name: '定数ダメ' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getAllByText('フェーズ C で実装')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'もうどく' })).toBeInTheDocument()
+    expect(screen.getByTestId('passive-row-sandstorm')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '＋攻撃側被ダメ' })).not.toBeInTheDocument()
   })
 
-  it('回復タブをクリックするとスタブ文言に切り替わる', () => {
+  it('回復タブをクリックすると常時効果カタログ（割合 / きのみ / 固定 / 単発）に切り替わる', () => {
     renderTabs()
     fireEvent.click(screen.getByRole('tab', { name: '回復' }))
     expect(screen.getByRole('tab', { name: '回復' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getAllByText('フェーズ C で実装')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'きのみ' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '単発' })).toBeInTheDocument()
+    expect(screen.getByTestId('passive-row-leftovers')).toBeInTheDocument()
   })
 
   it('矢印キーでタブ間をナビゲートできる（ArrowRight → ArrowLeft）', () => {

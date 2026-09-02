@@ -5,7 +5,7 @@ import {
   INSERT_EVENT_GROUP_LABELS,
   findInsertEventAction,
   type InsertEventCtx,
-} from '@/presentation/components/results/EventInsertMenu'
+} from '@/presentation/components/results/eventInsertActions'
 
 const BOTH_MEGA: InsertEventCtx = { attackerCanMega: true, defenderCanMega: true }
 const NO_MEGA: InsertEventCtx = { attackerCanMega: false, defenderCanMega: false }

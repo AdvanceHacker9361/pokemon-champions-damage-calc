@@ -93,14 +93,6 @@ interface ProgressionStore {
    * 配列順は同一 order 内の適用順を兼ねる。
    */
   passiveEffects: PassiveEffect[]
-  /**
-   * @deprecated V3.18.0 で常時効果（passiveEffects）へ移行。復元時に移行され、フェーズ C で撤去予定。
-   */
-  constDmg: number
-  /**
-   * @deprecated V3.18.0 で常時効果（passiveEffects）へ移行。復元時に移行され、フェーズ C で撤去予定。
-   */
-  constRec: number
   /** オボン/混乱実回復: 防御側HPがしきい値以下になった時点で1回限り適用 */
   constRecBerry: number
   /** オボン/混乱実の発動しきい値（HP%。オボン=50, 混乱実=25） */
@@ -109,10 +101,6 @@ interface ProgressionStore {
   berryCudChew: boolean
   /** しゅうかく/ものひろい: 各ターン終了時にこの確率で再装填（0=なし, 0.5, 1=晴れ/ものひろい） */
   berryHarvestChance: number
-  /**
-   * @deprecated V3.18.0 で常時効果（passiveEffects）へ移行。復元時に移行され、フェーズ C で撤去予定。
-   */
-  poisonTurns: number
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
   defenderStartHp: number | null
@@ -137,19 +125,15 @@ interface ProgressionStore {
   /** タブ指定なしで全消去。'damage' は damage/leechSeed、'recover' は recover を消去 */
   clearPassiveEffects: (tab?: PassiveTab) => void
 
-  // 背景効果
-  /** @deprecated 常時効果へ移行済み（フェーズ C で撤去） */
-  setConstDmg: (v: number) => void
-  setConstRec: (v: number) => void
+  // きのみ（オボン/混乱実）設定
   setConstRecBerry: (v: number) => void
   setConstRecBerryThresholdPct: (v: number) => void
   setBerryCudChew: (v: boolean) => void
   setBerryHarvestChance: (v: number) => void
-  setPoisonTurns: (n: number) => void
   setAttackerStartHp: (v: number | null) => void
   setDefenderStartHp: (v: number | null) => void
 
-  /** 全消去（背景効果・開始HPも含む） */
+  /** 全消去（常時効果・きのみ設定・開始HPも含む） */
   clear: () => void
 }
 
@@ -160,13 +144,10 @@ function genId(): string {
 export const useProgressionStore = create<ProgressionStore>(set => ({
   events: [],
   passiveEffects: [],
-  constDmg: 0,
-  constRec: 0,
   constRecBerry: 0,
   constRecBerryThresholdPct: 50,
   berryCudChew: false,
   berryHarvestChance: 0,
-  poisonTurns: 0,
   attackerStartHp: null,
   defenderStartHp: null,
 
@@ -246,35 +227,31 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
           : p.kind === 'recover')),
   })),
 
-  setConstDmg: (v) => set({ constDmg: Math.max(0, Math.floor(v)) }),
-  setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
   setConstRecBerry: (v) => set({ constRecBerry: Math.max(0, Math.floor(v)) }),
   setConstRecBerryThresholdPct: (v) => set({ constRecBerryThresholdPct: Math.max(1, Math.min(100, Math.floor(v))) }),
   setBerryCudChew: (v) => set({ berryCudChew: v }),
   setBerryHarvestChance: (v) => set({ berryHarvestChance: Math.max(0, Math.min(1, v)) }),
-  setPoisonTurns: (n) => set({ poisonTurns: Math.max(0, Math.min(10, Math.floor(n))) }),
   setAttackerStartHp: (v) => set({ attackerStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
   setDefenderStartHp: (v) => set({ defenderStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
 
   clear: () => set({
     events: [],
     passiveEffects: [],
-    constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50,
-    berryCudChew: false, berryHarvestChance: 0, poisonTurns: 0,
+    constRecBerry: 0, constRecBerryThresholdPct: 50,
+    berryCudChew: false, berryHarvestChance: 0,
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))
 
 /**
  * 攻撃側に影響するイベント・常時効果があるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用）。
- * `passiveEffects` は V3.18.0 追加のため optional（未指定の呼び出しは従来どおりイベントのみで判定）。
  */
 export function hasSequenceImpact(
-  s: Pick<ProgressionStore, 'events' | 'attackerStartHp'> & { passiveEffects?: PassiveEffect[] }
+  s: Pick<ProgressionStore, 'events' | 'attackerStartHp' | 'passiveEffects'>
 ): boolean {
   if (s.attackerStartHp !== null) return true
   // 攻撃側の常時効果・やどりぎ（相手側HPも動く）はシーケンス出力の対象
-  if (s.passiveEffects?.some(p => p.side === 'attacker' || p.kind === 'leechSeed')) return true
+  if (s.passiveEffects.some(p => p.side === 'attacker' || p.kind === 'leechSeed')) return true
   return s.events.some(e =>
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
     e.kind === 'attackerRecover' || e.kind === 'defenderConst' ||

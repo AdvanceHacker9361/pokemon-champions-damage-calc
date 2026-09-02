@@ -2,7 +2,8 @@ import { useRef, useState, type ReactNode } from 'react'
 import type { ProgressionEvent } from '@/presentation/store/progressionStore'
 import type { MegaPokemonRecord } from '@/data/schemas/types'
 import type { TurnRange } from '@/domain/models/PassiveEffect'
-import { EventInsertPopover, type InsertEventCtx } from './EventInsertMenu'
+import { EventInsertPopover } from './EventInsertMenu'
+import type { InsertEventCtx } from './eventInsertActions'
 
 const RECOVER_FRACTIONS = [
   { label: '1/3', num: 1, den: 3 },

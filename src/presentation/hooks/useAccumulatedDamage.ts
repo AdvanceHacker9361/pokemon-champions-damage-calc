@@ -1,13 +1,11 @@
 import { useMemo } from 'react'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
-import { useAttackerStore } from '@/presentation/store/pokemonStore'
 import {
   runBattleSequence,
   extractDefenderDamageDistribution,
   type BattleSequenceResult,
   type SeqEvent,
 } from '@/domain/calculators/BattleSequenceCalc'
-import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { expandAttackEvent, type AttackEvent } from '@/presentation/hooks/expandAttackEvent'
 import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import type { KoResult } from '@/domain/models/DamageResult'
@@ -19,10 +17,6 @@ export interface AccumulatedDamage {
   totalMax: number
   totalMinPct: number
   totalMaxPct: number
-  /** @deprecated 旧 poisonTurns 由来。常時効果（passiveEffects）へ移行済み */
-  poisonTotal: number
-  /** @deprecated 旧 poisonTurns 由来。常時効果（passiveEffects）へ移行済み */
-  poisonPerTurn: number[]
   combinedProb: number
   combinedProbWithCrit: number
   distribution: Map<number, number>
@@ -47,21 +41,12 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const berryCudChew      = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
-  const poisonTurns       = useProgressionStore(s => s.poisonTurns)
   const passiveEffects    = useProgressionStore(s => s.passiveEffects)
-  // 宿り木: 防御側→攻撃側 ティックで「攻撃側最大HPの1/8」を防御側回復として使用
-  const attackerBaseHp    = useAttackerStore(s => s.baseStats.hp)
-  const attackerSpHp      = useAttackerStore(s => s.sp.hp)
   // 攻撃側HPに影響するイベントがある構成では、攻撃側HPを追跡する2Dシーケンスの
   // 結果をそのまま累積の出力として使う（累積とシミュレーションの食い違いを防ぐ）
   const seq = useBattleSequence()
 
   return useMemo(() => {
-    const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
-      Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
-    )
-    const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
-
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
     const hasAnything = events.length > 0 || passiveEffects.length > 0 || constRecBerry > 0
@@ -91,7 +76,6 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       return {
         hasEntries, hasAnything,
         totalMin, totalMax, totalMinPct, totalMaxPct,
-        poisonTotal, poisonPerTurn,
         combinedProb, combinedProbWithCrit,
         distribution, accumKoResult,
       }
@@ -163,22 +147,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         case 'megaEvolve': {
           break
         }
-        case 'leechSeed': {
-          // 累積モード（防御側のみ追跡）: 攻撃側のHP変化は無視し、防御側へのダメ/回復のみ
-          if (ev.direction === 'fromAttacker') {
-            const dmg = Math.max(1, Math.floor(defenderMaxHp / 8))
-            pushBoth({ kind: 'defenderConst', amount: dmg })
-          } else {
-            // 防→攻: 攻撃側の実最大HPの1/8を防御側回復として適用
-            const aMax = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
-            if (aMax > 0) {
-              const heal = Math.max(1, Math.floor(aMax / 8))
-              pushBoth({ kind: 'defenderRecover', amount: heal })
-            }
-          }
-          break
-        }
         // incoming / attackerConst / attackerRecover は累積ビュー（防御側のみ）では効果なし
+        // leechSeed（レガシーイベント）は復元時に常時効果へ移行済みのため扱わない
         case 'incoming':
         case 'attackerConst':
         case 'attackerRecover':
@@ -209,7 +179,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     )
   }, [
     events, passiveEffects,
-    constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
-    defenderMaxHp, attackerBaseHp, attackerSpHp, seq,
+    constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
+    defenderMaxHp, seq,
   ])
 }

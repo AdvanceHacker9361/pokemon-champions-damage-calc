@@ -22,14 +22,16 @@ describe('progressionStore', () => {
   })
 
   it('HP補正イベントが攻守シミュレーション表示条件になる', () => {
-    expect(hasSequenceImpact({ events: [], attackerStartHp: null })).toBe(false)
+    expect(hasSequenceImpact({ events: [], attackerStartHp: null, passiveEffects: [] })).toBe(false)
     expect(hasSequenceImpact({
       events: [{ kind: 'attackerConst', id: 'damage-1', amount: 10 }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
     expect(hasSequenceImpact({
       events: [{ kind: 'attackerRecover', id: 'recover-1', amount: 10 }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
   })
 
@@ -37,10 +39,12 @@ describe('progressionStore', () => {
     expect(hasSequenceImpact({
       events: [{ kind: 'defenderRecover', id: 'recover-1', amount: 95 }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
     expect(hasSequenceImpact({
       events: [{ kind: 'defenderConst', id: 'damage-1', amount: 20 }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
   })
 
@@ -48,10 +52,12 @@ describe('progressionStore', () => {
     expect(hasSequenceImpact({
       events: [{ kind: 'setupTurn', id: 'setup-1', side: 'attacker' }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
     expect(hasSequenceImpact({
       events: [{ kind: 'setupTurn', id: 'setup-2', side: 'defender' }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
   })
 
@@ -59,10 +65,12 @@ describe('progressionStore', () => {
     expect(hasSequenceImpact({
       events: [{ kind: 'megaEvolve', id: 'mega-1', side: 'attacker', megaKey: 'mega-example' }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
     expect(hasSequenceImpact({
       events: [{ kind: 'megaEvolve', id: 'mega-2', side: 'defender', megaKey: 'mega-example' }],
       attackerStartHp: null,
+      passiveEffects: [],
     })).toBe(true)
   })
 

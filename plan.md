@@ -825,3 +825,22 @@
 - フェーズ B（Sonnet、ワークツリー並列）: EventInsertMenu、EventRow の「＋」集約と T 番号、ProgressionTabs（イベントタブ実装、定数ダメ/回復はスタブ）、開始 HP の見出し移設、AddEventToolbar 撤去
 - フェーズ C（Sonnet）: 定数ダメ/回復タブ本体、きのみサブタブ移設、ゴースト行、BackgroundEffectsSection と旧フィールド撤去
 - 検証（Haiku/Sonnet）: typecheck / lint / test / build、Playwright で 390 / 768 / 1280px の実機確認
+
+### Implemented Scope（2026-09-02、Fable 5.1 司令塔 / データ層＝Opus / UI 骨格＝Sonnet / タブ本体＝Opus）
+
+- **契約**（Fable）: `src/domain/models/PassiveEffect.ts` — 型・`PASSIVE_PRESETS`（short 名付き）・丸め・`resolvePassiveAmount`・`computeTurnRanges` / `countTurns`
+- **フェーズ A**: `src/domain/calculators/PassiveEffectExpansion.ts`（`buildPassiveSchedule` / `autoItemToSeqEvent` / `autoItemLabel`、trailing 上限 20 ターン）、`progressionStore.passiveEffects` と CRUD、`sessionSnapshot` の旧フィールド移行（`migrateProgressionSnapshot`）、`useBattleSequence` の差し込み（start → 攻撃側 perAttack → 防御側 perAttack → ターン末 → trailing、`resolved` に `auto/turn`）、`useAccumulatedDamage` の統合パス拡張、`AccumExportButton` の「常時効果:」出力
+- **フェーズ B**: `eventInsertActions.ts` + `EventInsertMenu.tsx`（`EventInsertGrid` / `EventInsertPopover`）、`EventRow` の「＋」集約と T 番号チップ、`ProgressionTabs.tsx`、開始 HP の見出し移設、`AddEventToolbar.tsx` 削除
+- **フェーズ C**: `PassiveCatalog.tsx` / `PassiveEffectRow.tsx` / `passiveCatalogUtils.ts` / `BerrySection.tsx` / `PassiveGhostRow.tsx`、`BackgroundEffectsSection.tsx` 削除、`constDmg / constRec / poisonTurns` のライブ状態撤去（スナップショットの optional 入力としてのみ残置）、`hasSequenceImpact` の `passiveEffects` 必須化、見出し「ダメージ進行」の折返し修正、react-refresh 警告 0 化
+- **ドキュメント**: CHANGELOG 3.18.0、CLAUDE.md（V3.18.0 節・ファイル表）、`package.json` 3.18.0
+
+### Validation
+
+- `npm run typecheck` / `npm run lint`（警告 0）/ `npx vitest run --dir tests`（25 ファイル 387 件、323 → 387）/ `npm run build` すべてパス
+- Playwright（390 / 768 / 1280px）: 横スクロールなし。ガブリアス→カバルドン じしん×2 に すなあらし「全」＋ステルスロック＋たべのこし「全」を積むと総合累積 122〜146（急所込み 0.2%）→ 133〜157（急所込み 6.9%）に変化し、ゴースト行に「開始時: ステロ 防−11」「T1末: すなあらし 防−11 · たべのこし 防+11」「T2末: …」が表示されることを確認
+
+### Current Status
+
+- ブランチ `claude/damage-calc-ui-ux-rgnbqs` にコミット・プッシュ済み。main へのマージとデプロイはユーザー判断待ち
+- 次フェーズ候補: 攻撃側のきのみ（エンジンの `defenderBerry` 攻撃側対応）、ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
+- 注: ポケソル本体・説明書・解説記事のドメインはこのセッションの egress ポリシーで遮断されていたため、UI 分析はユーザー提供のスクリーンショットに基づく
