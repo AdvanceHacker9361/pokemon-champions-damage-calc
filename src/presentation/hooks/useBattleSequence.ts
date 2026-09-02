@@ -17,6 +17,14 @@ import {
 } from '@/domain/calculators/BattleSequenceCalc'
 import { expandAttackEvent, needsCritPass } from '@/presentation/hooks/expandAttackEvent'
 import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
+import {
+  buildPassiveSchedule,
+  autoItemToSeqEvent,
+  autoItemLabel,
+  type AutoEventItem,
+  type PassiveSchedule,
+} from '@/domain/calculators/PassiveEffectExpansion'
+import { computeTurnRanges } from '@/domain/models/PassiveEffect'
 import type { BaseStats, TypeName } from '@/domain/models/Pokemon'
 
 export interface ResolvedEvent {
@@ -24,6 +32,10 @@ export interface ResolvedEvent {
   label: string
   /** このイベントが解決できなかった理由 */
   error?: string
+  /** 常時効果から自動展開された行（ユーザーが並べ替え・削除できない） */
+  auto?: true
+  /** 自動行の適用ターン（0 = 開始時） */
+  turn?: number
 }
 
 export interface BattleSequenceComputed {
@@ -39,6 +51,17 @@ export interface BattleSequenceComputed {
    * `result` が null のときは null。
    */
   critResult: BattleSequenceResult | null
+  /**
+   * 常時効果の展開スケジュール（V3.18.0）。UI は start / afterEvent / trailing を
+   * ゴースト行の描画に使う（`PassiveEffectExpansion.ts` 参照）。
+   */
+  passiveSchedule: PassiveSchedule
+}
+
+const EMPTY_SCHEDULE: PassiveSchedule = {
+  start: [], afterEvent: {}, trailing: [],
+  turnEnd: {}, turnEndOwner: {}, perAttackByTurn: {}, perAttackByEventId: {},
+  totalTurns: 0,
 }
 
 function toBattleState(s: PokemonStore): PokemonBattleState {
@@ -107,6 +130,7 @@ export function useBattleSequence(): BattleSequenceComputed {
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp = useProgressionStore(s => s.defenderStartHp)
+  const passiveEffects = useProgressionStore(s => s.passiveEffects)
 
   return useMemo(() => {
     const attackerMaxHp = attacker.baseStats.hp > 0
@@ -114,11 +138,25 @@ export function useBattleSequence(): BattleSequenceComputed {
     const defenderMaxHp = defender.baseStats.hp > 0
       ? calculateHP(defender.baseStats.hp, defender.sp.hp) : 0
 
-    const showSequence = hasSequenceImpact({ events, attackerStartHp })
+    const showSequence = hasSequenceImpact({ events, attackerStartHp, passiveEffects })
+    // 防御側だけの常時効果は攻守シミュレーションを表示しないが、総合累積には反映するため
+    // 計算自体は実行する（useAccumulatedDamage が result を再利用する）
+    const shouldCompute = showSequence || passiveEffects.length > 0
 
-    if (!showSequence || !attacker.pokemonId || !defender.pokemonId) {
-      return { showSequence: false, attackerMaxHp, defenderMaxHp, resolved: [], result: null, critResult: null }
+    if (!shouldCompute || !attacker.pokemonId || !defender.pokemonId) {
+      return {
+        showSequence: false, attackerMaxHp, defenderMaxHp,
+        resolved: [], result: null, critResult: null, passiveSchedule: EMPTY_SCHEDULE,
+      }
     }
+
+    // 常時効果の展開スケジュール（ターン境界は events の attack usages / setupTurn で決まる）
+    const passiveSchedule = buildPassiveSchedule(events, passiveEffects, {
+      attackerMaxHp,
+      defenderMaxHp,
+      attackerTypes: attacker.types,
+      defenderTypes: defender.types,
+    })
 
     const battleField = {
       weather: field.weather,
@@ -161,6 +199,11 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
+    // イベント id → ターン範囲（attack は usages 分のターンを占有）
+    const turnRanges = new Map(computeTurnRanges(events).map(r => [r.eventId, r]))
+    const turnStartOf = (id: string) => turnRanges.get(id)?.startTurn ?? 0
+    const turnEndOf = (id: string) => turnRanges.get(id)?.endTurn ?? 0
+
     const seqEvents: SeqEvent[] = []
     const critSeqEvents: SeqEvent[] = []
     const labels: string[] = []
@@ -172,6 +215,34 @@ export function useBattleSequence(): BattleSequenceComputed {
       critSeqEvents.push(ev)
       labels.push(label)
     }
+
+    let autoSeq = 1
+
+    /** 自動展開項目を SeqEvent + resolved 行として流し込む */
+    function pushAuto(items: AutoEventItem[] | undefined, seq: number) {
+      if (!items || items.length === 0) return
+      items.forEach((item, i) => {
+        const label = autoItemLabel(item)
+        const seqEv = autoItemToSeqEvent(item)
+        pushSeq(seqEv, label)
+        // resolved 行は既存の描画（SequenceResultPanel / ステップ表）と同じ形を保つため
+        // 合成 ProgressionEvent（id は auto: プレフィックス）を持たせる
+        const synthetic = { ...seqEv, id: `auto:${item.effectId}:${item.turn}:${seq}-${i}` } as ProgressionEvent
+        resolved.push({ event: synthetic, label, auto: true, turn: item.turn })
+      })
+    }
+
+    /** ターン開始イベント以外の直後に走る自動項目（防御側 perAttack → そのターン末） */
+    function pushAutoAfterEvent(ev: ProgressionEvent) {
+      pushAuto(passiveSchedule.perAttackByEventId[ev.id], autoSeq++)
+      const turn = turnEndOf(ev.id)
+      if (turn >= 1 && passiveSchedule.turnEndOwner[turn] === ev.id) {
+        pushAuto(passiveSchedule.turnEnd[turn], autoSeq++)
+      }
+    }
+
+    // start タイミングは時系列の先頭
+    pushAuto(passiveSchedule.start, 0)
 
     let firstHadMultiscale = false
     let attackSeen = 0
@@ -200,14 +271,24 @@ export function useBattleSequence(): BattleSequenceComputed {
             recoil: recoilRate,
           })
           // expanded.normal は必ず usages 個（ラベルと1:1）
+          // 通常パスは usages と 1:1、急所込みパスはおやこあいで親子2件になりうるため
+          // usage 単位で切り出して自動項目を同じ位置に挟む
+          const critPerUsage = Math.max(1, Math.round(expanded.crit.length / ev.usages))
+          const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
+          resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageTag}` })
+          const attackTurnStart = turnStartOf(ev.id)
           expanded.normal.forEach((seqEv, u) => {
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
             seqEvents.push(seqEv)
+            critSeqEvents.push(...expanded.crit.slice(u * critPerUsage, (u + 1) * critPerUsage))
             labels.push(`与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageSuffix}`)
+            const turn = attackTurnStart + u
+            // 攻撃側 perAttack（いのちのたま等）→ そのターンのターン末 の順で適用
+            pushAuto(passiveSchedule.perAttackByTurn[turn], autoSeq++)
+            if (passiveSchedule.turnEndOwner[turn] === ev.id) {
+              pushAuto(passiveSchedule.turnEnd[turn], autoSeq++)
+            }
           })
-          critSeqEvents.push(...expanded.crit)
-          const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
-          resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageTag}` })
           break
         }
         case 'painSplit': {
@@ -219,12 +300,12 @@ export function useBattleSequence(): BattleSequenceComputed {
         case 'incoming': {
           if (!ev.moveName) {
             resolved.push({ event: ev, label: '攻撃側被ダメ（技未選択）', error: '防御側の技を選択してください' })
-            continue
+            break
           }
           const rolls = incomingRolls(ev.moveName, ev.crit)
           if (!rolls) {
             resolved.push({ event: ev, label: `攻撃側被ダメ ${ev.moveName}`, error: '計算できませんでした' })
-            continue
+            break
           }
           const move = MoveRepository.findByName(ev.moveName)
           const drain = move?.drain
@@ -298,10 +379,18 @@ export function useBattleSequence(): BattleSequenceComputed {
           break
         }
       }
+      // attack は usage 単位で内部処理済み。それ以外はイベント直後に自動項目を挟む
+      if (ev.kind !== 'attack') pushAutoAfterEvent(ev)
     }
 
+    // count が既存ターン数を超えた分は末尾に追加ターンとして続ける
+    pushAuto(passiveSchedule.trailing, autoSeq++)
+
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
-      return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result: null, critResult: null }
+      return {
+        showSequence, attackerMaxHp, defenderMaxHp, resolved,
+        result: null, critResult: null, passiveSchedule,
+      }
     }
 
     // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう・しゅうかく対応）
@@ -325,9 +414,10 @@ export function useBattleSequence(): BattleSequenceComputed {
       ? runBattleSequence(critSeqEvents, attackerMaxHp, defenderMaxHp, runOpts)
       : result
 
-    return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result, critResult }
+    return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result, critResult, passiveSchedule }
   }, [
-    events, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
+    events, passiveEffects,
+    constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
     attackerStartHp, defenderStartHp,
     attacker, defender, field,
   ])

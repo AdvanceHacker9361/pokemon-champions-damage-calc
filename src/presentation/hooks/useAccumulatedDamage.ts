@@ -19,8 +19,9 @@ export interface AccumulatedDamage {
   totalMax: number
   totalMinPct: number
   totalMaxPct: number
-  totalConst: number
+  /** @deprecated 旧 poisonTurns 由来。常時効果（passiveEffects）へ移行済み */
   poisonTotal: number
+  /** @deprecated 旧 poisonTurns 由来。常時効果（passiveEffects）へ移行済み */
   poisonPerTurn: number[]
   combinedProb: number
   combinedProbWithCrit: number
@@ -47,6 +48,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const berryCudChew      = useProgressionStore(s => s.berryCudChew)
   const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
   const poisonTurns       = useProgressionStore(s => s.poisonTurns)
+  const passiveEffects    = useProgressionStore(s => s.passiveEffects)
   // 宿り木: 防御側→攻撃側 ティックで「攻撃側最大HPの1/8」を防御側回復として使用
   const attackerBaseHp    = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp      = useAttackerStore(s => s.sp.hp)
@@ -59,13 +61,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
     )
     const poisonTotal = poisonPerTurn.reduce((s, v) => s + v, 0)
-    // 定数ダメ・毎ターン回復・もうどくは背景プリセットから時系列イベントへ移して扱う。
-    // オボン回復は HP≤50% で1回限り自動発動（runBattleSequence の defenderBerry オプションで）。
-    const totalConst = 0
 
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
-    const hasAnything = events.length > 0 || totalConst !== 0 || constRecBerry > 0
+    const hasAnything = events.length > 0 || passiveEffects.length > 0 || constRecBerry > 0
 
     /** 防御側ダメージ分布と撃破率から公開値を組み立てる（2パス共通の後段） */
     function finalize(
@@ -73,8 +72,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       combinedProb: number,
       combinedProbWithCrit: number,
     ): AccumulatedDamage {
-      let totalMin = totalConst
-      let totalMax = totalConst
+      let totalMin = 0
+      let totalMax = 0
       let mn = Infinity, mx = -Infinity
       for (const dmg of distribution.keys()) {
         if (dmg < mn) mn = dmg
@@ -92,7 +91,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       return {
         hasEntries, hasAnything,
         totalMin, totalMax, totalMinPct, totalMaxPct,
-        totalConst, poisonTotal, poisonPerTurn,
+        poisonTotal, poisonPerTurn,
         combinedProb, combinedProbWithCrit,
         distribution, accumKoResult,
       }
@@ -102,8 +101,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     // 攻撃側HPに影響するイベント（被ダメ・痛み分け・攻撃側定数 等）がある構成では、
     // 攻撃側HPを追跡する2Dシーケンスの結果をそのまま累積の出力にする。
     // 攻撃側HP固定の近似（痛み分けの静的 attackerHp 等）はここでは使わない。
+    // 常時効果（passiveEffects）は攻撃側HPも動かしうるため、1件でもあれば統合パスを使う
     const seqResult = seq.result
-    if (seq.showSequence && seqResult !== null && seq.defenderMaxHp === defenderMaxHp) {
+    if ((seq.showSequence || passiveEffects.length > 0)
+        && seqResult !== null && seq.defenderMaxHp === defenderMaxHp) {
       const critRun: BattleSequenceResult = seq.critResult ?? seqResult
       return finalize(
         extractDefenderDamageDistribution(seqResult, defenderMaxHp),
@@ -207,7 +208,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       critResult.defenderKoProb,
     )
   }, [
-    events, constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
+    events, passiveEffects,
+    constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance, poisonTurns,
     defenderMaxHp, attackerBaseHp, attackerSpHp, seq,
   ])
 }

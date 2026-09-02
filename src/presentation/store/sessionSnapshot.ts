@@ -2,6 +2,7 @@ import type { Weather, TerrainField } from '@/domain/models/Pokemon'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from './pokemonStore'
 import { useFieldStore } from './fieldStore'
 import { useProgressionStore, type ProgressionEvent } from './progressionStore'
+import { TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
 import { useAttackerTabsStore, useDefenderTabsStore } from './pokemonTabsStore'
 
 /** ポケモンストアのうちスナップショット対象となるデータフィールドのみ */
@@ -42,6 +43,11 @@ export interface FieldSnapshot {
 
 export interface ProgressionSnapshot {
   events: ProgressionEvent[]
+  /**
+   * 常時効果（V3.18.0）。この機能以前に永続化されたセッションとの後方互換のため optional。
+   * 未定義のスナップショットは `migrateProgressionSnapshot` が旧フィールドから生成する。
+   */
+  passiveEffects?: PassiveEffect[]
   constDmg: number
   constRec: number
   constRecBerry: number
@@ -123,9 +129,14 @@ function cloneProgressionEvent(ev: ProgressionEvent): ProgressionEvent {
   return { ...ev }
 }
 
+function clonePassiveEffect(e: PassiveEffect): PassiveEffect {
+  return { ...e, amount: { ...e.amount } }
+}
+
 function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
   return {
     events: p.events.map(cloneProgressionEvent),
+    passiveEffects: p.passiveEffects ? p.passiveEffects.map(clonePassiveEffect) : undefined,
     constDmg: p.constDmg,
     constRec: p.constRec,
     constRecBerry: p.constRecBerry ?? 0,
@@ -212,6 +223,7 @@ export function snapshotLiveState(): SessionSnapshot {
     },
     progression: cloneProgressionSnapshot({
       events: prog.events,
+      passiveEffects: prog.passiveEffects,
       constDmg: prog.constDmg,
       constRec: prog.constRec,
       constRecBerry: prog.constRecBerry,
@@ -228,6 +240,62 @@ export function snapshotLiveState(): SessionSnapshot {
 }
 
 /**
+ * 旧フィールド（constDmg / constRec / poisonTurns / leechSeed イベント）から
+ * 常時効果（passiveEffects）を生成する移行処理（V3.18.0）。
+ *
+ * `passiveEffects` が既に定義されているスナップショットは何もしない（冪等）。
+ * 移行後は旧数値フィールドを 0 にし、旧 `leechSeed` イベントは時系列から取り除く。
+ */
+export function migrateProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
+  if (p.passiveEffects !== undefined) return p
+
+  const passiveEffects: PassiveEffect[] = []
+  if (p.constDmg > 0) {
+    passiveEffects.push({
+      id: genId(), side: 'defender', kind: 'damage',
+      amount: { type: 'fixed', value: p.constDmg },
+      timing: 'start', count: 1, startTurn: 1,
+      order: TURN_END_ORDER.custom, label: '定数ダメ（移行）',
+    })
+  }
+  if (p.constRec > 0) {
+    passiveEffects.push({
+      id: genId(), side: 'defender', kind: 'recover',
+      amount: { type: 'fixed', value: p.constRec },
+      timing: 'turnEnd', count: 'all', startTurn: 1,
+      order: TURN_END_ORDER.itemHeal, label: '定数回復（移行）',
+    })
+  }
+  if (p.poisonTurns > 0) {
+    passiveEffects.push({
+      id: genId(), side: 'defender', kind: 'damage',
+      amount: { type: 'toxic' },
+      timing: 'turnEnd', count: p.poisonTurns, startTurn: 1,
+      order: TURN_END_ORDER.poison, presetKey: 'toxic', label: 'もうどく（移行）',
+    })
+  }
+
+  const events: ProgressionEvent[] = []
+  for (const ev of p.events) {
+    if (ev.kind !== 'leechSeed') {
+      events.push(ev)
+      continue
+    }
+    passiveEffects.push({
+      id: genId(),
+      // direction は植え主の側。常時効果の side は被ダメ側
+      side: ev.direction === 'fromAttacker' ? 'defender' : 'attacker',
+      kind: 'leechSeed',
+      amount: { type: 'ratio', num: 1, den: 8, rounding: 'floor' },
+      timing: 'turnEnd', count: 1, startTurn: 1,
+      order: TURN_END_ORDER.leechSeed, presetKey: 'leechSeed', label: 'やどりぎ（移行）',
+    })
+  }
+
+  return { ...p, events, passiveEffects, constDmg: 0, constRec: 0, poisonTurns: 0 }
+}
+
+/**
  * スナップショットをライブストアへ復元。
  * setState はマージなのでアクション関数は保持される。
  */
@@ -235,7 +303,11 @@ export function restoreState(snap: SessionSnapshot): void {
   useAttackerStore.setState(clonePokemonSnapshot(snap.attacker))
   useDefenderStore.setState(clonePokemonSnapshot(snap.defender))
   useFieldStore.setState({ ...snap.field })
-  useProgressionStore.setState(cloneProgressionSnapshot(snap.progression))
+  const progression = migrateProgressionSnapshot(cloneProgressionSnapshot(snap.progression))
+  useProgressionStore.setState({
+    ...progression,
+    passiveEffects: progression.passiveEffects ?? [],
+  })
 
   // 各側のタブを復元。該当フィールドが無い（その機能以前の永続化）場合は、
   // ライブ内容（= snap.attacker / snap.defender）から単一タブを新規生成する。

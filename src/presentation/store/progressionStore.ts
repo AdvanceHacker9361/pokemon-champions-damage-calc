@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { PassiveEffect, PassiveTab } from '@/domain/models/PassiveEffect'
 
 /**
  * 攻撃イベント（旧 AccumEntry）。事前計算済みロールを保持。
@@ -87,9 +88,18 @@ export type ProgressionEventInput = DistributiveOmit<ProgressionEvent, 'id'>
 interface ProgressionStore {
   /** イベント時系列。順序がそのままシミュレーション順 */
   events: ProgressionEvent[]
-  /** 背景効果プリセット値。順序付き計算ではイベントへ移して使う */
+  /**
+   * 常時効果（V3.18.0）。カタログ行から積み上げ、フック層がターン境界へ自動展開する。
+   * 配列順は同一 order 内の適用順を兼ねる。
+   */
+  passiveEffects: PassiveEffect[]
+  /**
+   * @deprecated V3.18.0 で常時効果（passiveEffects）へ移行。復元時に移行され、フェーズ C で撤去予定。
+   */
   constDmg: number
-  /** 定数回復プリセット（たべのこし/黒ヘド等） */
+  /**
+   * @deprecated V3.18.0 で常時効果（passiveEffects）へ移行。復元時に移行され、フェーズ C で撤去予定。
+   */
   constRec: number
   /** オボン/混乱実回復: 防御側HPがしきい値以下になった時点で1回限り適用 */
   constRecBerry: number
@@ -99,6 +109,9 @@ interface ProgressionStore {
   berryCudChew: boolean
   /** しゅうかく/ものひろい: 各ターン終了時にこの確率で再装填（0=なし, 0.5, 1=晴れ/ものひろい） */
   berryHarvestChance: number
+  /**
+   * @deprecated V3.18.0 で常時効果（passiveEffects）へ移行。復元時に移行され、フェーズ C で撤去予定。
+   */
   poisonTurns: number
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
@@ -116,7 +129,16 @@ interface ProgressionStore {
   /** 既存イベントを更新（painSplit の attackerHp、incoming の moveName/crit、const の amount 等） */
   updateEvent: (id: string, patch: Partial<ProgressionEvent>) => void
 
+  // 常時効果
+  /** 常時効果を追加し、生成した id を返す */
+  addPassiveEffect: (e: Omit<PassiveEffect, 'id'>) => string
+  updatePassiveEffect: (id: string, patch: Partial<Omit<PassiveEffect, 'id'>>) => void
+  removePassiveEffect: (id: string) => void
+  /** タブ指定なしで全消去。'damage' は damage/leechSeed、'recover' は recover を消去 */
+  clearPassiveEffects: (tab?: PassiveTab) => void
+
   // 背景効果
+  /** @deprecated 常時効果へ移行済み（フェーズ C で撤去） */
   setConstDmg: (v: number) => void
   setConstRec: (v: number) => void
   setConstRecBerry: (v: number) => void
@@ -137,6 +159,7 @@ function genId(): string {
 
 export const useProgressionStore = create<ProgressionStore>(set => ({
   events: [],
+  passiveEffects: [],
   constDmg: 0,
   constRec: 0,
   constRecBerry: 0,
@@ -201,6 +224,28 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
     }),
   })),
 
+  addPassiveEffect: (e) => {
+    const id = genId()
+    set(s => ({ passiveEffects: [...s.passiveEffects, { ...e, id }] }))
+    return id
+  },
+
+  updatePassiveEffect: (id, patch) => set(s => ({
+    passiveEffects: s.passiveEffects.map(p => (p.id === id ? { ...p, ...patch, id: p.id } : p)),
+  })),
+
+  removePassiveEffect: (id) => set(s => ({
+    passiveEffects: s.passiveEffects.filter(p => p.id !== id),
+  })),
+
+  clearPassiveEffects: (tab) => set(s => ({
+    passiveEffects: tab === undefined
+      ? []
+      : s.passiveEffects.filter(p => !(tab === 'damage'
+          ? (p.kind === 'damage' || p.kind === 'leechSeed')
+          : p.kind === 'recover')),
+  })),
+
   setConstDmg: (v) => set({ constDmg: Math.max(0, Math.floor(v)) }),
   setConstRec: (v) => set({ constRec: Math.max(0, Math.floor(v)) }),
   setConstRecBerry: (v) => set({ constRecBerry: Math.max(0, Math.floor(v)) }),
@@ -213,15 +258,23 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
 
   clear: () => set({
     events: [],
+    passiveEffects: [],
     constDmg: 0, constRec: 0, constRecBerry: 0, constRecBerryThresholdPct: 50,
     berryCudChew: false, berryHarvestChance: 0, poisonTurns: 0,
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))
 
-/** 攻撃側に影響するイベントがあるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用） */
-export function hasSequenceImpact(s: Pick<ProgressionStore, 'events' | 'attackerStartHp'>): boolean {
+/**
+ * 攻撃側に影響するイベント・常時効果があるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用）。
+ * `passiveEffects` は V3.18.0 追加のため optional（未指定の呼び出しは従来どおりイベントのみで判定）。
+ */
+export function hasSequenceImpact(
+  s: Pick<ProgressionStore, 'events' | 'attackerStartHp'> & { passiveEffects?: PassiveEffect[] }
+): boolean {
   if (s.attackerStartHp !== null) return true
+  // 攻撃側の常時効果・やどりぎ（相手側HPも動く）はシーケンス出力の対象
+  if (s.passiveEffects?.some(p => p.side === 'attacker' || p.kind === 'leechSeed')) return true
   return s.events.some(e =>
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
     e.kind === 'attackerRecover' || e.kind === 'defenderConst' ||

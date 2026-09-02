@@ -5,6 +5,7 @@ import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import { useProgressionStore, type AttackPayload } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
+import { TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
 
 /** 攻撃側 HP=100 / 防御側 HP=200 になる種族値（SP=0, Lv50, IV31 固定式） */
 const ATTACKER_BASE_HP = 25
@@ -129,5 +130,64 @@ describe('useAccumulatedDamage（攻守シミュレーションとの統合）',
     // 分布は通常パス由来（残20 = 180ダメ）。急所込みは撃破率だけを別パスで求める
     expect(accum.totalMin).toBe(180)
     expect(accum.totalMax).toBe(180)
+  })
+
+  it('防御側の常時効果（1/16 ターン末・全ターン）は累積の撃破率を変える', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    // 95 ダメ ×2 = 190 で HP200 は落ちない
+    store.addAttack(attackPayload({ rolls: Array(16).fill(95), usages: 2 }))
+
+    const before = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(before.combinedProb).toBeCloseTo(0, 10)
+    cleanup()
+
+    // すなあらし相当: 毎ターン末に 200/16 = 12
+    const sandstorm: Omit<PassiveEffect, 'id'> = {
+      side: 'defender', kind: 'damage',
+      amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
+      timing: 'turnEnd', count: 'all', startTurn: 1,
+      order: TURN_END_ORDER.weather, label: 'すなあらし',
+    }
+    store.addPassiveEffect(sandstorm)
+
+    const accum = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    const seq = renderHook(() => useBattleSequence()).result.current
+
+    // 防御側だけの常時効果なので攻守シミュレーションは出さないが、計算結果は使う
+    expect(seq.showSequence).toBe(false)
+    expect(seq.result).not.toBeNull()
+    // ターン末項目は usage の間に挟まる（与ダメ → T1末 → 与ダメ → T2末）
+    expect(seq.result!.steps.map(st => st.label)).toEqual([
+      '与ダメ テスト与ダメ 1/2',
+      'T1末 すなあらし 防−12',
+      '与ダメ テスト与ダメ 2/2',
+      'T2末 すなあらし 防−12',
+    ])
+    // 95 → 12 → 95 で 202 ≥ 200 の確定撃破
+    expect(accum.combinedProb).toBeCloseTo(1.0, 10)
+    expect(accum.hasAnything).toBe(true)
+  })
+
+  it('攻撃側の常時効果は攻守シミュレーション表示条件になり、攻撃側HPを削る', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    store.addAttack(attackPayload({ rolls: Array(16).fill(50) }))
+    // いのちのたま相当: 攻撃ごとに攻撃側HPの1/10（100 → 10）
+    store.addPassiveEffect({
+      side: 'attacker', kind: 'damage',
+      amount: { type: 'ratio', num: 1, den: 10, rounding: 'floor' },
+      timing: 'perAttack', count: 'all', startTurn: 1,
+      order: TURN_END_ORDER.custom, label: 'いのちのたま',
+    })
+
+    const seq = renderHook(() => useBattleSequence()).result.current
+    expect(seq.showSequence).toBe(true)
+    expect(seq.result).not.toBeNull()
+    // 攻撃 → いのちのたま の2ステップ。最終ステップの攻撃側HPは 100 - 10 = 90
+    const steps = seq.result!.steps
+    expect(steps).toHaveLength(2)
+    expect([...steps[steps.length - 1].attackerHpDist.keys()]).toEqual([ATTACKER_MAX_HP - 10])
+    expect(seq.passiveSchedule.perAttackByTurn[1]).toHaveLength(1)
   })
 })

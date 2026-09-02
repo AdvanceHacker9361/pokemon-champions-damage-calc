@@ -6,9 +6,10 @@ import { SequenceResultPanel } from './SequenceResultPanel'
 export function DamageSequenceSummary() {
   const events = useProgressionStore(s => s.events)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
+  const passiveEffects = useProgressionStore(s => s.passiveEffects)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const defenderName = useDefenderStore(s => s.pokemonName)
-  const showSequence = hasSequenceImpact({ events, attackerStartHp })
+  const showSequence = hasSequenceImpact({ events, attackerStartHp, passiveEffects })
   const { result } = useBattleSequence()
 
   if (!showSequence || !result) return null
