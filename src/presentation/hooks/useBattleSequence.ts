@@ -370,11 +370,11 @@ export function useBattleSequence(): BattleSequenceComputed {
           break
         }
         case 'leechSeed': {
-          // 1ティック分を SeqEvent に変換。amount = 被ダメ側の実最大HP/8
+          // 1ティック分を SeqEvent に変換。amount 未指定なら被ダメ側の実最大HP/8
           const targetHp = ev.direction === 'fromAttacker' ? defenderMaxHp : attackerMaxHp
-          const amount = Math.max(1, Math.floor(targetHp / 8))
+          const amount = ev.amount ?? Math.max(1, Math.floor(targetHp / 8))
           const arrow = ev.direction === 'fromAttacker' ? '攻→防' : '防→攻'
-          const label = `宿り木 ${arrow} (${amount})`
+          const label = ev.label ? `${ev.label}（${arrow} ${amount}）` : `宿り木 ${arrow} (${amount})`
           pushSeq({ kind: 'leechSeed', direction: ev.direction, amount }, label)
           resolved.push({ event: ev, label })
           break

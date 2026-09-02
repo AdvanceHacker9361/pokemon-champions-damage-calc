@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type { PassiveEffect, PassiveTab } from '@/domain/models/PassiveEffect'
+import { pinPassiveEffects as pinPassiveEffectsPure } from '@/domain/calculators/PassiveEffectPinning'
+import type { PassiveExpansionContext } from '@/domain/calculators/PassiveEffectExpansion'
 
 /**
  * 攻撃イベント（旧 AccumEntry）。事前計算済みロールを保持。
@@ -66,10 +68,10 @@ export type ProgressionEvent =
   /** メガシンカのタイミング。以降の動的な被ダメ計算でメガ後ステータスを使う */
   | { kind: 'megaEvolve'; id: string; side: 'attacker' | 'defender'; megaKey: string }
   /** 定数イベント。label/source は背景プリセット由来の表示用メタ情報 */
-  | { kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
-  | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
-  | { kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
-  | { kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
+  | { kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
+  | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
+  | { kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
+  | { kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
   /** きのみ再装填（リサイクル等）。直後のHP減少で再びその側のきのみが発動できる */
   | { kind: 'rearmBerry'; id: string; side: 'attacker' | 'defender' }
   /**
@@ -77,7 +79,15 @@ export type ProgressionEvent =
    * direction='fromAttacker': 攻撃側が植え主 → 防御側-1/8(防御側最大HP)、攻撃側+同量
    * direction='fromDefender': 防御側が植え主 → 攻撃側-1/8(攻撃側最大HP)、防御側+同量
    */
-  | { kind: 'leechSeed'; id: string; direction: 'fromAttacker' | 'fromDefender' }
+  | {
+      kind: 'leechSeed'
+      id: string
+      direction: 'fromAttacker' | 'fromDefender'
+      /** 1ティックの実量。未指定なら被ダメ側の最大HP/8（固定化で実量が入る） */
+      amount?: number
+      label?: string
+      source?: 'manual' | 'pinned'
+    }
 
 /** きのみ設定の対象側 */
 export type BerrySide = 'attacker' | 'defender'
@@ -151,6 +161,14 @@ interface ProgressionStore {
   removePassiveEffect: (id: string) => void
   /** タブ指定なしで全消去。'damage' は damage/leechSeed、'recover' は recover を消去 */
   clearPassiveEffects: (tab?: PassiveTab) => void
+  /**
+   * 指定した常時効果を「固定化」する。自動展開されている位置そのままの手動イベントへ
+   * 変換し、その常時効果をカタログから取り除く（数値は変わらない）。
+   * 追加されたイベントの id を返す。
+   */
+  pinPassiveEffects: (effectIds: string[], ctx: PassiveExpansionContext) => string[]
+  /** すべての常時効果を固定化する */
+  pinAllPassiveEffects: (ctx: PassiveExpansionContext) => string[]
 
   // きのみ（オボン/混乱実）設定
   /** 片側のきのみ設定を部分更新する */
@@ -166,7 +184,7 @@ function genId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
-export const useProgressionStore = create<ProgressionStore>(set => ({
+export const useProgressionStore = create<ProgressionStore>((set, get) => ({
   events: [],
   passiveEffects: [],
   defenderBerry: defaultBerryConfig(),
@@ -250,6 +268,25 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
           : p.kind === 'recover')),
   })),
 
+  pinPassiveEffects: (effectIds, ctx) => {
+    const inserted: string[] = []
+    set(s => {
+      const before = new Set(s.events.map(e => e.id))
+      const res = pinPassiveEffectsPure(s.events, s.passiveEffects, effectIds, ctx, genId)
+      if (res.removedEffectIds.length === 0) return s
+      const removed = new Set(res.removedEffectIds)
+      const events = res.events as ProgressionEvent[]
+      for (const e of events) if (!before.has(e.id)) inserted.push(e.id)
+      return {
+        events,
+        passiveEffects: s.passiveEffects.filter(p => !removed.has(p.id)),
+      }
+    })
+    return inserted
+  },
+
+  pinAllPassiveEffects: (ctx) => get().pinPassiveEffects(get().passiveEffects.map(p => p.id), ctx),
+
   setBerry: (side, patch) => set(s => side === 'attacker'
     ? { attackerBerry: normalizeBerryConfig({ ...s.attackerBerry, ...patch }) }
     : { defenderBerry: normalizeBerryConfig({ ...s.defenderBerry, ...patch }) }
@@ -282,6 +319,8 @@ export function hasSequenceImpact(
     e.kind === 'incoming' || e.kind === 'attackerConst' ||
     e.kind === 'attackerRecover' || e.kind === 'defenderConst' ||
     e.kind === 'defenderRecover' || e.kind === 'painSplit' ||
-    e.kind === 'setupTurn' || e.kind === 'megaEvolve'
+    e.kind === 'setupTurn' || e.kind === 'megaEvolve' ||
+    // 宿り木は両者のHPを動かすため、攻守シミュレーションの対象
+    e.kind === 'leechSeed'
   )
 }

@@ -147,8 +147,17 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
         case 'megaEvolve': {
           break
         }
+        case 'leechSeed': {
+          // 攻撃側HP固定パスでは植え主側の回復は追跡できないため、被ダメ側だけを反映する
+          // （通常は hasSequenceImpact が true になり統合パスへ入るのでここは保険）
+          if (ev.direction === 'fromAttacker') {
+            pushBoth({ kind: 'defenderConst', amount: ev.amount ?? 0 })
+          } else {
+            pushBoth({ kind: 'defenderRecover', amount: ev.amount ?? 0 })
+          }
+          break
+        }
         // incoming / attackerConst / attackerRecover は累積ビュー（防御側のみ）では効果なし
-        // leechSeed（レガシーイベント）は復元時に常時効果へ移行済みのため扱わない
         case 'incoming':
         case 'attackerConst':
         case 'attackerRecover':

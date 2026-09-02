@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { useProgressionStore, hasSequenceImpact } from '@/presentation/store/progressionStore'
 import { TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
+import type { PassiveExpansionContext } from '@/domain/calculators/PassiveEffectExpansion'
+
+const PIN_CTX: PassiveExpansionContext = {
+  attackerMaxHp: 160,
+  defenderMaxHp: 200,
+  attackerTypes: ['ドラゴン'],
+  defenderTypes: ['はがね'],
+}
 
 function passive(partial: Partial<Omit<PassiveEffect, 'id'>> = {}): Omit<PassiveEffect, 'id'> {
   return {
@@ -121,6 +129,40 @@ describe('progressionStore', () => {
 
     s.removePassiveEffect(id)
     expect(useProgressionStore.getState().passiveEffects).toHaveLength(0)
+  })
+
+  it('pinPassiveEffects は対象の常時効果をイベント化して取り除く', () => {
+    const s = useProgressionStore.getState()
+    const sandId = s.addPassiveEffect(passive({ label: 'すなあらし' }))
+    const burnId = s.addPassiveEffect(passive({ label: 'やけど', order: TURN_END_ORDER.burn }))
+    s.addEventAfter(null, { kind: 'setupTurn', side: 'attacker' })
+
+    const inserted = useProgressionStore.getState().pinPassiveEffects([sandId], PIN_CTX)
+
+    expect(inserted).toHaveLength(1)
+    expect(useProgressionStore.getState().passiveEffects.map(p => p.id)).toEqual([burnId])
+    expect(useProgressionStore.getState().events.map(e => e.kind)).toEqual(['setupTurn', 'defenderConst'])
+    expect(useProgressionStore.getState().events[1]).toMatchObject({
+      kind: 'defenderConst', amount: 12, label: 'T1末 すなあらし', source: 'pinned',
+    })
+    expect(useProgressionStore.getState().events[1].id).toBe(inserted[0])
+  })
+
+  it('pinAllPassiveEffects は常時効果を全消しして、対象が無ければ何もしない', () => {
+    const s = useProgressionStore.getState()
+    s.addPassiveEffect(passive({ label: 'すなあらし' }))
+    s.addPassiveEffect(passive({ kind: 'recover', label: 'たべのこし', order: TURN_END_ORDER.itemHeal }))
+    s.addEventAfter(null, { kind: 'setupTurn', side: 'attacker' })
+
+    useProgressionStore.getState().pinAllPassiveEffects(PIN_CTX)
+    expect(useProgressionStore.getState().passiveEffects).toHaveLength(0)
+    expect(useProgressionStore.getState().events.map(e => e.kind))
+      .toEqual(['setupTurn', 'defenderConst', 'defenderRecover'])
+
+    // 2 回目は対象が無いのでイベントも増えない
+    const before = useProgressionStore.getState().events
+    expect(useProgressionStore.getState().pinAllPassiveEffects(PIN_CTX)).toEqual([])
+    expect(useProgressionStore.getState().events).toBe(before)
   })
 
   it('clearPassiveEffects(tab) はタブに対応する種別だけ消す', () => {

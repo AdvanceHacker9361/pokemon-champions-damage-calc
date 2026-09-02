@@ -18,11 +18,21 @@ function itemText(item: AutoEventItem): string {
   return `${item.label} ${who}${sign}${item.amount}`
 }
 
+export interface PassiveGhostRowProps {
+  items: AutoEventItem[]
+  /**
+   * 「固定化」ボタンのハンドラ。この行に現れる常時効果を全ターン分の手動イベントへ
+   * 展開する。未指定ならボタンを描画しない。
+   */
+  onPin?: () => void
+}
+
 /**
  * 常時効果の自動展開を示す読み取り専用のゴースト行（V3.18.0 フェーズC）。
  * 同じタイミング（ターン）の項目を1行にまとめ、`・` 区切りで並べる。
+ * 右端の「固定化」で編集可能な手動イベントへ変換できる（V3.18.2）。
  */
-export function PassiveGhostRow({ items }: { items: AutoEventItem[] }) {
+export function PassiveGhostRow({ items, onPin }: PassiveGhostRowProps) {
   if (items.length === 0) return null
 
   const groups: { key: string; when: string; items: AutoEventItem[] }[] = []
@@ -36,19 +46,31 @@ export function PassiveGhostRow({ items }: { items: AutoEventItem[] }) {
   return (
     <div
       aria-label="自動適用"
-      className="ml-7 space-y-0.5 border-l-2 border-dashed border-edge py-0.5 pl-2"
+      className="ml-7 flex items-start gap-2 border-l-2 border-dashed border-edge py-0.5 pl-2"
     >
-      {groups.map(group => (
-        <div key={group.key} className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-fg-faint">
-          <span className="rounded border border-edge px-1 text-[10px] text-fg-faint" title="常時効果から自動で適用される項目（並べ替え・削除は各タブから）">
-            自動
-          </span>
-          <span className="font-mono whitespace-nowrap">{group.when}:</span>
-          <span className="min-w-0 break-words">
-            {group.items.map(itemText).join(' · ')}
-          </span>
-        </div>
-      ))}
+      <div className="min-w-0 flex-1 space-y-0.5">
+        {groups.map(group => (
+          <div key={group.key} className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-fg-faint">
+            <span className="rounded border border-edge px-1 text-[10px] text-fg-faint" title="常時効果から自動で適用される項目（並べ替え・削除は各タブから）">
+              自動
+            </span>
+            <span className="font-mono whitespace-nowrap">{group.when}:</span>
+            <span className="min-w-0 break-words">
+              {group.items.map(itemText).join(' · ')}
+            </span>
+          </div>
+        ))}
+      </div>
+      {onPin && (
+        <button
+          type="button"
+          onClick={onPin}
+          title="この行に現れる常時効果を、全ターン分の手動イベントへ展開して編集可能にする"
+          className="flex-shrink-0 rounded border border-edge px-1.5 py-0.5 text-[10px] text-fg-faint transition-colors hover:border-accent-border hover:text-accent focus-visible:ring-1 focus-visible:ring-accent-border"
+        >
+          固定化
+        </button>
+      )}
     </div>
   )
 }

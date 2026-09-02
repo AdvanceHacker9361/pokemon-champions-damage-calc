@@ -255,7 +255,11 @@ export function EventRow({
     return (
       <TimelineRow {...rowProps} tone="success">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-semibold text-success">宿り木 ({arrow})</span>
+          <span className="font-semibold text-success">{ev.label ?? `宿り木 (${arrow})`}</span>
+          <SourceBadge source={ev.source} />
+          {ev.amount !== undefined && (
+            <span className="font-mono text-fg-muted">{ev.amount}</span>
+          )}
           <span className="text-[10px] text-fg-faint">
             {ev.direction === 'fromAttacker'
               ? '防御側 -1/8 → 攻撃側 +同量'
@@ -281,11 +285,7 @@ export function EventRow({
     <TimelineRow {...rowProps} tone={isRecover ? 'success' : 'warning'}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={`font-semibold ${meta.color}`}>{ev.label ?? meta.text}</span>
-        {ev.source === 'background' && (
-          <span className="rounded border border-accent-border bg-accent-bg px-1 py-0.5 text-[10px] text-accent">
-            背景
-          </span>
-        )}
+        <SourceBadge source={ev.source} />
         <input
           type="number"
           min={0}
@@ -310,6 +310,31 @@ export function EventRow({
       </div>
     </TimelineRow>
   )
+}
+
+/**
+ * イベントの出自バッジ。
+ * `pinned` = 常時効果を固定化して生成された行、`background` = 旧・背景効果由来（レガシー）。
+ */
+function SourceBadge({ source }: { source?: 'manual' | 'background' | 'pinned' }) {
+  if (source === 'pinned') {
+    return (
+      <span
+        className="rounded border border-accent-border bg-accent-bg px-1 py-0.5 text-[10px] text-accent"
+        title="常時効果を固定化して生成された行（自動適用されていた位置と同じ）"
+      >
+        固定
+      </span>
+    )
+  }
+  if (source === 'background') {
+    return (
+      <span className="rounded border border-accent-border bg-accent-bg px-1 py-0.5 text-[10px] text-accent">
+        背景
+      </span>
+    )
+  }
+  return null
 }
 
 function RowControls({

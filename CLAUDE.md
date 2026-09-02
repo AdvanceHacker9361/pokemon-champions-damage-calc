@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.18.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.18.1**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -850,8 +850,14 @@ src/
 - ターン境界の はんすう cud カウントダウン／しゅうかく再装填は両側独立（確率は積）。`rearmBerry{side}` はその側だけ再装填
 - `src/presentation/hooks/berryOption.ts`: `BerryConfig` → `BerryOption`（threshold = floor(maxHp × pct / 100)）変換を両フックで共有
 
-#### 次フェーズ（未実装）
-- ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
+#### ゴースト行の固定化（V3.18.1、`src/domain/calculators/PassiveEffectPinning.ts`）
+- `pinPassiveEffects(events, effects, effectIdsToPin, ctx, genId)` → `PinResult { events, removedEffectIds }`。`buildPassiveSchedule` を全効果で構築し、対象 id の項目だけをフックと同一順序で `source: 'pinned'` の手動イベント（const / recover / `leechSeed{direction, amount}`）へ実体化し、対象の常時効果を取り除く
+- 配置: start → 先頭 / 攻撃側 perAttack → 各 usage 直後 / ターン末 → `turnEndOwner` のイベント直後 / 防御側 perAttack → `incoming` 直後 / trailing → 末尾
+- **usages 分割**: `attack` の最後の usage より前に固定化対象がある場合だけ usages=1 の N 行へ分割。コピー 1 は元 id・全フィールド維持、コピー 2 以降は新 id ＋ `firstHitNullified: false`・`firstHitFixedDamage` 削除（`expandAttackEvent` の 1 発目限定挙動と一致）
+- ストア: `pinPassiveEffects(effectIds, ctx)` / `pinAllPassiveEffects(ctx)`（挿入イベント id 配列を返す）。UI: `PassiveGhostRow` の「固定化」（その行に現れる効果を全ターン分固定化）と見出しの「すべて固定化」。固定化行は `EventRow` に「固定」バッジ
+- 等価性: `tests/presentation/passivePinningEquivalence.test.ts` で固定化前後の `combinedProb` / 急所込み / 分布 / `attackerFaintProb` の完全一致を検証
+- 付随修正: `hasSequenceImpact` に `leechSeed` イベントを追加。`leechSeed` イベントに `amount? / label? / source?` を追加しフックが `amount` を優先
+- 既知の制限: 部分固定化では残った常時効果のターン末項目が固定化済み行の後ろに回る（同一ターン末の order 前後が入れ替わりうる。数値はきのみしきい値に絡まない限り不変）
 
 ---
 
@@ -1157,6 +1163,7 @@ type ProgressionEvent =
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
 | `src/domain/models/PassiveEffect.ts` | 常時効果の型・カタログ `PASSIVE_PRESETS`・丸め・`resolvePassiveAmount`・ターン境界 `computeTurnRanges`（V3.18.0） |
 | `src/domain/calculators/PassiveEffectExpansion.ts` | 常時効果をターン境界へ展開する純関数 `buildPassiveSchedule` / `autoItemToSeqEvent`（V3.18.0） |
+| `src/domain/calculators/PassiveEffectPinning.ts` | 常時効果の固定化（自動展開分を位置そのままの手動イベントへ変換、usages 分割）（V3.18.1） |
 | `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 常時効果 `passiveEffects` ＋ きのみ設定 `defenderBerry / attackerBerry` ＋ 開始HP |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | progression events を SeqEvent 列（攻撃側HP固定モード）に変換し2Dエンジン経由で累積分布/KO確率を導出 |
 | `src/presentation/hooks/useBattleSequence.ts` | 同じ progression events を読み攻撃イベントの usages 展開・被ダメ攻守入替を継承。`hasSequenceImpact()` で出力可否を自動判定 |

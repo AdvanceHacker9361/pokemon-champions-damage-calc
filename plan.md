@@ -843,5 +843,6 @@
 
 - **攻撃側きのみ対応（追加実装、Opus）**: `BattleSequenceCalc` に `attackerBerry` と両側独立の状態 packing を追加、`progressionStore` のきのみ設定を `BerryConfig`（`defenderBerry` / `attackerBerry`、`setBerry(side, patch)`）へ統合、`rearmBerry` に `side` を追加（「＋リサイクル（攻）/（防）」）、`BerrySection` を側対応に変更、スナップショット移行・エクスポート追従。テスト 387 → 412 件。ブラウザ確認: ガブリアス vs カバルドン じしん被ダメ×3 で攻撃側オボンなし生存 0.0% → あり 98.8%
 - ユーザー指示により main へマージ・Pages デプロイを実施（V3.18.0）
-- 次フェーズ候補: ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
+- **V3.18.1 ゴースト行の固定化（Opus）**: `PassiveEffectPinning.ts`（純関数）、ストア `pinPassiveEffects / pinAllPassiveEffects`、ゴースト行の「固定化」と見出しの「すべて固定化」、`EventRow` の「固定」バッジ、usages 分割、`hasSequenceImpact` の宿り木対応。等価性テスト 5 件（固定化前後で撃破率・分布・攻撃側瀕死率が完全一致）を含めテスト 412 → 432 件。ブラウザ確認: じしん×2＋すなあらし全＋ステロで「総合累積 155〜179 (84.7〜97.8%) 急所込み 8.2%」が固定化前後で同一文字列
+- V3.18.1 も main へマージ・Pages デプロイ済み
 - 注: ポケソル本体・説明書・解説記事のドメインはこのセッションの egress ポリシーで遮断されていたため、UI 分析はユーザー提供のスクリーンショットに基づく

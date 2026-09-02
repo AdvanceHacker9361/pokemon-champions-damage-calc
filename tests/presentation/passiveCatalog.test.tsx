@@ -244,4 +244,66 @@ describe('DamageProgressionPanel のゴースト行', () => {
     render(<DamageProgressionPanel defenderMaxHp={DEFENDER_MAX_HP} />)
     expect(screen.queryAllByLabelText('自動適用')).toHaveLength(0)
   })
+
+  it('ゴースト行の「固定化」でゴーストが消え、source=pinned の手動イベントに変わる', () => {
+    const store = useProgressionStore.getState()
+    store.addAttack(attackPayload(2))
+    store.addPassiveEffect({
+      side: 'defender', kind: 'damage',
+      amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
+      timing: 'turnEnd', count: 'all', startTurn: 1,
+      order: TURN_END_ORDER.weather, presetKey: 'sandstorm', label: 'すなあらし',
+    })
+
+    render(<DamageProgressionPanel defenderMaxHp={DEFENDER_MAX_HP} />)
+    expect(screen.getAllByLabelText('自動適用').length).toBeGreaterThan(0)
+
+    const pinButtons = screen.getAllByRole('button', { name: '固定化' })
+    expect(pinButtons.length).toBeGreaterThan(0)
+    act(() => { fireEvent.click(pinButtons[0]) })
+
+    // 常時効果は取り除かれ、ゴースト行も消える
+    expect(useProgressionStore.getState().passiveEffects).toHaveLength(0)
+    expect(screen.queryAllByLabelText('自動適用')).toHaveLength(0)
+
+    // 全ターン分（T1末 / T2末）が pinned イベントとして入る
+    const events = useProgressionStore.getState().events
+    expect(events.map(e => e.kind)).toEqual(['attack', 'defenderConst', 'attack', 'defenderConst'])
+    expect(events.filter(e => e.kind === 'defenderConst').map(e => e.label))
+      .toEqual(['T1末 すなあらし', 'T2末 すなあらし'])
+    expect(events.filter(e => e.kind === 'defenderConst').every(e => e.source === 'pinned')).toBe(true)
+    // 「固定」バッジが行に出る
+    expect(screen.getAllByTitle(/常時効果を固定化して生成された行/).length).toBe(2)
+  })
+
+  it('ヘッダーの「すべて固定化」は常時効果があるときだけ出て、全件を固定化する', () => {
+    const store = useProgressionStore.getState()
+    store.addAttack(attackPayload(1))
+
+    const { rerender } = render(<DamageProgressionPanel defenderMaxHp={DEFENDER_MAX_HP} />)
+    expect(screen.queryByRole('button', { name: /すべて固定化/ })).toBeNull()
+
+    act(() => {
+      store.addPassiveEffect({
+        side: 'defender', kind: 'damage',
+        amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
+        timing: 'turnEnd', count: 'all', startTurn: 1,
+        order: TURN_END_ORDER.weather, presetKey: 'sandstorm', label: 'すなあらし',
+      })
+      store.addPassiveEffect({
+        side: 'defender', kind: 'recover',
+        amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
+        timing: 'turnEnd', count: 'all', startTurn: 1,
+        order: TURN_END_ORDER.itemHeal, presetKey: 'leftovers', label: 'たべのこし',
+      })
+    })
+    rerender(<DamageProgressionPanel defenderMaxHp={DEFENDER_MAX_HP} />)
+
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /すべて固定化/ })) })
+
+    expect(useProgressionStore.getState().passiveEffects).toHaveLength(0)
+    expect(useProgressionStore.getState().events.map(e => e.kind))
+      .toEqual(['attack', 'defenderConst', 'defenderRecover'])
+    expect(screen.queryByRole('button', { name: /すべて固定化/ })).toBeNull()
+  })
 })
