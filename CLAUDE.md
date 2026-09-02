@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.16.3**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.18.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -801,6 +801,53 @@ src/
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
 
+### V3.18.0: 「ダメージ進行」ツールバー再設計（常時効果カタログ＋タブ化）
+
+#### 概要
+- ポケソル（pokesol.app/calc）の Champions 版を参考に、「ダメージ進行」パネル下部の
+  AddEventToolbar（13 ボタン）＋ 背景効果セクション（防御側専用・折りたたみ）を
+  **3 タブ（イベント / 定数ダメ / 回復）** に再編
+- ポケソルから取り入れた長所: 発生源名付きカタログ行・丸め方式の明示・回数ステッパーによる複合積み上げ・サブタブ（割合/猛毒/固定）
+- 当ツールの強み（順序を持つ時系列・攻守 2D 同時分布）は維持し、カタログ行を**ターン境界へ自動展開する「常時効果方式」**で両立
+
+#### 常時効果モデル（`src/domain/models/PassiveEffect.ts`）
+- `PassiveEffect { id, side, kind: damage|recover|leechSeed, amount, timing, count: number|'all', startTurn, order, presetKey?, label }`
+  - `amount`: `ratio{num,den,rounding}` / `fixed{value}` / `stealthRock`（対象側のいわ相性）/ `toxic`（k/16 累進、上限 15）
+  - `rounding`: floor / round / roundHalfDown（五捨五超入）/ ceil。割合は最低 1
+- **ターン定義**: `attack`（usages 分）と `setupTurn` がターンを開始。他イベントは進行中ターンに属す。先頭のターン開始前は「ターン 0（開始時）」
+- **タイミング**: `start`（先頭で count 回）/ `turnEnd`（startTurn 以降の各ターン末に 1 回。count がターン数を超える分は末尾に追加ターン、上限 20。'all' は全ターン）/ `perAttack`（その側の攻撃直後: 攻撃側= attack 各 usage、防御側= incoming）
+- **同一ターン末の適用順** `TURN_END_ORDER`: 天候 → グラス回復 → 持ち物回復 → アクアリング → やどりぎ → どく → やけど → のろい → バインド → しおづけ → カスタム
+- `PASSIVE_PRESETS`: カタログ（定数ダメ: ステルスロック・まきびし×1〜3・すなあらし・やけど・しおづけ・いのちのたま(攻撃毎)・どく・やどりぎ・バインド・のろい・もうどく / 回復: たべのこし・グラスフィールド・ポイズンヒール・アクアリング / 単発: じこさいせい系・こうごうせい系・さいせいりょく）
+- `computeTurnRanges(events)` / `countTurns(events)`: UI の T 番号チップと展開ロジックが共有するターン境界の純関数
+
+#### 展開ロジック（`src/domain/calculators/PassiveEffectExpansion.ts`、エンジン変更なし）
+- `buildPassiveSchedule(events, effects, ctx)` → `PassiveSchedule { start, afterEvent[eventId], trailing, turnEnd, perAttackByTurn, perAttackByEventId, totalTurns }`
+- `autoItemToSeqEvent(item)`: damage→attackerConst/defenderConst、recover→attackerRecover/defenderRecover、leechSeed→`leechSeed{direction,amount}`
+- `useBattleSequence` が start → 各 usage 直後の攻撃側 perAttack → incoming 直後の防御側 perAttack → 各ターン末 → trailing の順に SeqEvent へ差し込む。`resolved` には `auto: true, turn` 付きで自動行を含める
+- 防御側のみの常時効果でも `result` を計算（`showSequence` は false のまま）。`useAccumulatedDamage` は常時効果があれば統合パスを使う
+- UI のゴースト行は `buildPassiveSchedule` を直接呼ぶ（2D DP を再実行しない）
+
+#### ストア / スナップショット
+- `progressionStore.passiveEffects` ＋ `addPassiveEffect / updatePassiveEffect / removePassiveEffect / clearPassiveEffects(tab?)`
+- `hasSequenceImpact(s)`: 攻撃側 side の常時効果、または `leechSeed` 常時効果があれば true
+- 旧 `constDmg / constRec / poisonTurns` はライブ状態から撤去。`ProgressionSnapshot` の optional フィールドとしてのみ残し、復元時に移行
+  （constDmg → 固定 damage start count1 / constRec → 固定 recover turnEnd 'all' / poisonTurns → toxic count=N / 旧 `leechSeed` イベント → やどりぎ常時効果 count1）
+- `leechSeed` イベント種別は復元互換のため型に残す（追加 UI は撤去）。きのみ系フィールド（`constRecBerry` 等）は据え置き
+
+#### UI
+- `ProgressionTabs.tsx`: 時系列直下の 3 タブ（`role="tablist"`、矢印/Home/End）
+- `EventInsertMenu.tsx` ＋ `eventInsertActions.ts`: 挿入可能イベントの単一定義（ターン進行 7 種 ＋ 手動 HP 補正 4 種）。`EventInsertGrid`（タブ内）と `EventInsertPopover`（行内「＋」）の 2 描画。タブ＝末尾追加、ポップオーバー＝直後挿入
+- `EventRow.tsx`: 行内の挿入ボタン群を「＋」1 つに集約。attack / setupTurn 行に `T{n}` / `T{a}–{b}` チップ
+- `PassiveDamageTab.tsx` / `PassiveRecoverTab.tsx`（共通内部 `PassiveCatalog`）: サブタブ・対象トグル [防御側|攻撃側]・クリア・カタログ行（ラベル / 発生源 / タイミングバッジ / 1 回あたり実量プレビュー / `[−] N [+]` / 「全」チップ / 開始ターン）・カスタム割合/固定の追加フォーム・単発サブタブ（時系列末尾へ回復イベント追加）・きのみサブタブ（旧背景効果から移設、防御側専用）
+- `DamageProgressionPanel.tsx`: 開始 HP を見出し右に常時表示。常時効果の自動展開分を読み取り専用ゴースト行（「開始時: …」「T1末: すなあらし 防−11 · たべのこし 防+11」「自動」バッジ）で表示
+- 撤去: `AddEventToolbar.tsx`、`BackgroundEffectsSection.tsx`、「イベントへ移動」、「＋宿り木」ボタン
+
+#### 次フェーズ（未実装）
+- 攻撃側のきのみ（エンジン `defenderBerry` の攻撃側対応）
+- ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
+
+---
+
 ### V3.11.6: 与ダメ吸収技の回復が攻守シミュレーションに反映されないバグを修正
 
 #### 不具合
@@ -1101,10 +1148,15 @@ type ProgressionEvent =
 | `src/presentation/store/sessionSnapshot.ts` | ライブストアのスナップショット取得・復元ヘルパー（深いコピーで参照共有を防止） |
 | `src/presentation/components/session/SessionTabsBar.tsx` | タブバー UI（クリック切替・ダブルクリックでリネーム・×でクローズ・＋で新規） |
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
-| `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 背景効果 `constDmg/constRec/poisonTurns` ＋ 開始HP |
+| `src/domain/models/PassiveEffect.ts` | 常時効果の型・カタログ `PASSIVE_PRESETS`・丸め・`resolvePassiveAmount`・ターン境界 `computeTurnRanges`（V3.18.0） |
+| `src/domain/calculators/PassiveEffectExpansion.ts` | 常時効果をターン境界へ展開する純関数 `buildPassiveSchedule` / `autoItemToSeqEvent`（V3.18.0） |
+| `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 常時効果 `passiveEffects` ＋ きのみ設定 ＋ 開始HP |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | progression events を SeqEvent 列（攻撃側HP固定モード）に変換し2Dエンジン経由で累積分布/KO確率を導出 |
 | `src/presentation/hooks/useBattleSequence.ts` | 同じ progression events を読み攻撃イベントの usages 展開・被ダメ攻守入替を継承。`hasSequenceImpact()` で出力可否を自動判定 |
-| `src/presentation/components/results/DamageProgressionPanel.tsx` | **統合パネル**。イベント時系列リスト＋背景効果＋シーケンス出力（生存率・各ステップHP）を一画面に |
+| `src/presentation/components/results/DamageProgressionPanel.tsx` | **統合パネル**。開始HP・イベント時系列（T番号チップ・常時効果ゴースト行）・`ProgressionTabs` |
+| `src/presentation/components/results/ProgressionTabs.tsx` | 「イベント / 定数ダメ / 回復」タブ列（V3.18.0） |
+| `src/presentation/components/results/EventInsertMenu.tsx` / `eventInsertActions.ts` | 挿入可能イベントの単一定義とグリッド/ポップオーバー描画（V3.18.0） |
+| `src/presentation/components/results/PassiveDamageTab.tsx` / `PassiveRecoverTab.tsx` | 常時効果カタログ UI（サブタブ・対象トグル・回数ステッパー・きのみ・単発）（V3.18.0） |
 | `src/presentation/components/results/DamageProgressionSection.tsx` | 「ダメージ進行」見出し付きで統合パネルを内包 |
 | `src/domain/calculators/KoProbabilityCalc.ts` | 累積KO確率DP、`applyPainSplitToDmgDist`、変動連続技分布 |
 | `src/domain/calculators/BattleSequenceCalc.ts` | バトルシーケンス2D同時分布DP（攻守HP・被ダメ・痛み分け・定数・吸収の時系列変換） |
