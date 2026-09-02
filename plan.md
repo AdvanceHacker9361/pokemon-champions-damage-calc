@@ -778,3 +778,50 @@
 - typecheck / lint / `npx vitest run --dir tests`（18ファイル 297件全パス、+7件: 防御側切替・攻守非干渉・レガシー移行等）/ build 成功。
   - 注: 並行セッションの worktree（`.claude/worktrees/`）が全体グロブのテスト実行を汚染するため `--dir tests` で実行。CI 環境には worktree が無く影響なし。
 - ブラウザQA: 両パネルのタブバー配置（ラベル直下・全幅）、防御側タブ追加・切替・攻撃側非干渉を実機確認。
+
+## 2026-09-02 V3.18.0 「ダメージ進行」ツールバー再設計（常時効果カタログ＋タブ化）
+
+### User Request
+
+- ポケソル（pokesol.app/calc）の Champions 版ダメージ計算機を参考に、「ダメージ進行」パネルのツールバーを再設計する。
+- 取り入れる長所: 発生源名付きのカタログ行（例: 「1/16 切り捨て — やけど / しおづけ / すなあらし」）、丸め方式の明示、回数ステッパーによる複合効果の積み上げ、「割合 / 猛毒 / 固定」サブタブ。
+- 当ツールの強み（順序を持つ時系列・攻守 2D 同時分布）は維持し、カタログ方式を時系列へ自動展開する「常時効果方式」で両立させる。
+- 決定事項: 常時効果方式 / タブ軸は効果種別 / やどりぎは `leechSeed` イベントを廃止しカタログ行へ統合 / きのみ等の攻撃側対応は次フェーズ / バージョン 3.18.0。
+
+### Design（契約: `src/domain/models/PassiveEffect.ts`）
+
+- **PassiveEffect** `{ id, side, kind: damage|recover|leechSeed, amount, timing: start|turnEnd|perAttack, count: number|'all', startTurn, order, presetKey?, label }`
+  - `amount`: `ratio{num,den,rounding}` / `fixed{value}` / `stealthRock`（対象タイプのいわ相性）/ `toxic`（k/16 累進、上限 15）
+  - `rounding`: floor（切り捨て）/ round（四捨五入）/ roundHalfDown（五捨五超入）/ ceil（切り上げ）。割合は最低 1
+- **ターン定義**: `attack`（usages 分）と `setupTurn` がターンを開始。他イベントは進行中ターンに属す。先頭のターン開始前は「ターン 0（開始時）」
+- **展開規則（フック層、エンジン変更なし）**
+  - `start`: 時系列先頭で count 回
+  - `turnEnd`: startTurn 以降の各ターン末（次のターン開始イベント直前と末尾）に 1 回。count がターン数を超える分は末尾に追加ターンとして続ける。'all' は全ターン
+  - `perAttack`: その側の攻撃直後（攻撃側= attack 各 usage、防御側= incoming）に 1 回。startTurn 以降 count 回
+  - 同一ターン末の適用順は `order`（TURN_END_ORDER: 天候 → グラス回復 → 持ち物回復 → アクアリング → やどりぎ → どく → やけど → のろい → バインド → しおづけ → カスタム）で昇順
+  - `leechSeed`: side が被ダメ側。SeqEvent `leechSeed{direction: side==='defender' ? 'fromAttacker' : 'fromDefender', amount}` に変換
+  - `toxic`: 適用回数 k を効果ごとに数える
+- **ストア（progressionStore）**
+  - `passiveEffects: PassiveEffect[]` を新設
+  - `addPassiveEffect(e: Omit<PassiveEffect,'id'>): string` / `updatePassiveEffect(id, patch)` / `removePassiveEffect(id)` / `clearPassiveEffects(tab?: 'damage'|'recover')`
+  - `hasSequenceImpact` は「攻撃側 side の常時効果あり」も true とする。防御側のみの常時効果は攻守シミュレーション出力を出さないが総合累積には反映する
+  - 旧 `constDmg / constRec / poisonTurns` はフェーズ A では据え置き（非推奨）、フェーズ C で撤去。`leechSeed` イベント種別は復元互換のため型に残し、追加 UI は撤去
+  - 復元時の移行: constDmg>0 → 固定 damage start count1（防御側）/ constRec>0 → 固定 recover turnEnd 'all' / poisonTurns>0 → toxic turnEnd count=poisonTurns / 旧 leechSeed イベント → leechSeed 常時効果（count 1、side = 被ダメ側）
+- **フック出力（useBattleSequence）**
+  - `passiveSchedule: { start: AutoEventItem[]; afterEvent: Record<eventId, AutoEventItem[]>; trailing: AutoEventItem[] }`、`AutoEventItem = { turn, side, kind, label, amount, effectId }`
+  - `resolved` にも自動展開分を `auto: true` 付きで含める（ステップ別 HP 表に出す）
+- **UI**
+  - 時系列直下に 3 タブ（イベント / 定数ダメ / 回復）。開始 HP はパネル見出し右に常時表示
+  - イベントタブ: ターン進行（被ダメ・痛み分け・補助攻/防・メガ攻/防・リサイクル）と手動 HP 補正（防/攻 × ダメ/回復）を末尾追加
+  - 定数ダメタブ: サブタブ 割合 / もうどく / 固定。回復タブ: 割合 / きのみ / 固定 / 単発。右上に対象トグル [防御側 | 攻撃側]（きのみは防御側専用）
+  - カタログ行: ラベル・発生源・タイミングバッジ・`[−] N [+]`・「全」チップ（turnEnd/perAttack のみ）・詳細（開始ターン）。単発行（oneShot）は時系列末尾へ回復イベントを追加
+  - 時系列: 自動展開分を「T1 末: すなあらし −9 · たべのこし +9」形式の淡色ゴースト行で表示。attack/setupTurn 行に T 番号チップ
+  - 行内の挿入ボタン群は「＋」1 つのポップオーバー（イベントタブと同じ分類）に集約。タブ＝末尾追加、ポップオーバー＝直後挿入
+  - AddEventToolbar / BackgroundEffectsSection / 「イベントへ移動」は撤去
+
+### 実施計画（Fable 司令塔）
+
+- フェーズ A（Opus）: 展開ロジック `src/domain/calculators/PassiveEffectExpansion.ts`、ストア・スナップショット移行、フック統合、エクスポート/耐久調整の追従、テスト
+- フェーズ B（Sonnet、ワークツリー並列）: EventInsertMenu、EventRow の「＋」集約と T 番号、ProgressionTabs（イベントタブ実装、定数ダメ/回復はスタブ）、開始 HP の見出し移設、AddEventToolbar 撤去
+- フェーズ C（Sonnet）: 定数ダメ/回復タブ本体、きのみサブタブ移設、ゴースト行、BackgroundEffectsSection と旧フィールド撤去
+- 検証（Haiku/Sonnet）: typecheck / lint / test / build、Playwright で 390 / 768 / 1280px の実機確認
