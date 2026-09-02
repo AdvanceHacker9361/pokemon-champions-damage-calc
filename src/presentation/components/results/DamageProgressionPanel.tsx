@@ -17,7 +17,8 @@ interface DamageProgressionPanelProps {
 export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanelProps) {
   const events           = useProgressionStore(s => s.events)
   const passiveEffects   = useProgressionStore(s => s.passiveEffects)
-  const constRecBerry    = useProgressionStore(s => s.constRecBerry)
+  const defenderBerry    = useProgressionStore(s => s.defenderBerry)
+  const attackerBerry    = useProgressionStore(s => s.attackerBerry)
   const attackerStartHp  = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp  = useProgressionStore(s => s.defenderStartHp)
 
@@ -48,7 +49,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const insertCtx: InsertEventCtx = { attackerCanMega, defenderCanMega }
 
   const hasEvents = events.length > 0
-  const hasAnything = hasEvents || passiveEffects.length > 0 || constRecBerry > 0
+  const hasAnything = hasEvents || passiveEffects.length > 0
+    || defenderBerry.amount > 0 || attackerBerry.amount > 0
   const turnRanges = useMemo(() => computeTurnRanges(events), [events])
   const turnRangeById = useMemo(() => {
     const map = new Map(turnRanges.map(r => [r.eventId, r] as const))
@@ -94,8 +96,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       addEventAfter(targetId, { kind: 'painSplit', attackerHp: attackerMaxHp })
     } else if (kind === 'incoming') {
       addEventAfter(targetId, { kind: 'incoming', moveName: null, crit: false })
-    } else if (kind === 'rearmBerry') {
-      addEventAfter(targetId, { kind: 'rearmBerry' })
     } else if (kind === 'defenderConst' || kind === 'attackerConst' || kind === 'defenderRecover' || kind === 'attackerRecover') {
       addEventAfter(targetId, { kind, amount: 0, source: 'manual' })
     }
@@ -103,6 +103,10 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
 
   function addSetupTurn(side: 'attacker' | 'defender', targetId: string | null) {
     addEventAfter(targetId, { kind: 'setupTurn', side })
+  }
+
+  function addRearmBerry(side: 'attacker' | 'defender', targetId: string | null) {
+    addEventAfter(targetId, { kind: 'rearmBerry', side })
   }
 
   function addMegaEvolve(side: 'attacker' | 'defender', targetId: string | null) {
@@ -128,6 +132,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       addSetupTurn(dispatch.side, targetId)
     } else if (dispatch.type === 'megaEvolve') {
       addMegaEvolve(dispatch.side, targetId)
+    } else if (dispatch.type === 'rearmBerry') {
+      addRearmBerry(dispatch.side, targetId)
     }
   }
 

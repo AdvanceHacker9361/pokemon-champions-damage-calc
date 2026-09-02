@@ -147,6 +147,52 @@ describe('progressionStore', () => {
     expect(useProgressionStore.getState().passiveEffects).toHaveLength(0)
   })
 
+  it('setBerry は指定した側だけを部分更新し、値を許容範囲へ丸める', () => {
+    const s = useProgressionStore.getState()
+    expect(s.defenderBerry).toEqual({ amount: 0, thresholdPct: 50, cudChew: false, harvestChance: 0 })
+    expect(s.attackerBerry).toEqual({ amount: 0, thresholdPct: 50, cudChew: false, harvestChance: 0 })
+
+    s.setBerry('defender', { amount: 45, thresholdPct: 25 })
+    expect(useProgressionStore.getState().defenderBerry)
+      .toEqual({ amount: 45, thresholdPct: 25, cudChew: false, harvestChance: 0 })
+    // 反対側は変わらない
+    expect(useProgressionStore.getState().attackerBerry.amount).toBe(0)
+
+    s.setBerry('attacker', { amount: 30, cudChew: true, harvestChance: 1 })
+    expect(useProgressionStore.getState().attackerBerry)
+      .toEqual({ amount: 30, thresholdPct: 50, cudChew: true, harvestChance: 1 })
+
+    // 丸め: amount<0 → 0, thresholdPct 0→1 / 200→100, harvestChance 5→1
+    s.setBerry('attacker', { amount: -5, thresholdPct: 0, harvestChance: 5 })
+    expect(useProgressionStore.getState().attackerBerry)
+      .toMatchObject({ amount: 0, thresholdPct: 1, harvestChance: 1 })
+    s.setBerry('attacker', { thresholdPct: 200 })
+    expect(useProgressionStore.getState().attackerBerry.thresholdPct).toBe(100)
+  })
+
+  it('clear() は両側のきのみ設定も初期化する', () => {
+    const s = useProgressionStore.getState()
+    s.setBerry('defender', { amount: 45 })
+    s.setBerry('attacker', { amount: 30, cudChew: true })
+    s.clear()
+    const after = useProgressionStore.getState()
+    expect(after.defenderBerry).toEqual({ amount: 0, thresholdPct: 50, cudChew: false, harvestChance: 0 })
+    expect(after.attackerBerry).toEqual({ amount: 0, thresholdPct: 50, cudChew: false, harvestChance: 0 })
+  })
+
+  it('攻撃側きのみは攻守シミュレーション表示条件になる', () => {
+    const noBerry = { amount: 0, thresholdPct: 50, cudChew: false, harvestChance: 0 }
+    expect(hasSequenceImpact({
+      events: [], attackerStartHp: null, passiveEffects: [], attackerBerry: noBerry,
+    })).toBe(false)
+    expect(hasSequenceImpact({
+      events: [], attackerStartHp: null, passiveEffects: [],
+      attackerBerry: { ...noBerry, amount: 30 },
+    })).toBe(true)
+    // attackerBerry 未指定でも従来どおり動く
+    expect(hasSequenceImpact({ events: [], attackerStartHp: null, passiveEffects: [] })).toBe(false)
+  })
+
   it('攻撃側の常時効果・やどりぎは攻守シミュレーション表示条件になる', () => {
     const defenderOnly = { ...passive(), id: 'p1' }
     expect(hasSequenceImpact({ events: [], attackerStartHp: null, passiveEffects: [defenderOnly] })).toBe(false)

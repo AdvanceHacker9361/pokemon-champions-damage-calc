@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
+import { toBerryOption } from '@/presentation/hooks/berryOption'
 import {
   runBattleSequence,
   extractDefenderDamageDistribution,
@@ -37,10 +38,8 @@ export function expandAttack(
 
 export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const events            = useProgressionStore(s => s.events)
-  const constRecBerry     = useProgressionStore(s => s.constRecBerry)
-  const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
-  const berryCudChew      = useProgressionStore(s => s.berryCudChew)
-  const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
+  const defenderBerryCfg  = useProgressionStore(s => s.defenderBerry)
+  const attackerBerryCfg  = useProgressionStore(s => s.attackerBerry)
   const passiveEffects    = useProgressionStore(s => s.passiveEffects)
   // 攻撃側HPに影響するイベントがある構成では、攻撃側HPを追跡する2Dシーケンスの
   // 結果をそのまま累積の出力として使う（累積とシミュレーションの食い違いを防ぐ）
@@ -49,7 +48,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   return useMemo(() => {
     const attackEvents = events.filter(e => e.kind === 'attack')
     const hasEntries = attackEvents.length > 0
-    const hasAnything = events.length > 0 || passiveEffects.length > 0 || constRecBerry > 0
+    const hasAnything = events.length > 0 || passiveEffects.length > 0
+      || defenderBerryCfg.amount > 0 || attackerBerryCfg.amount > 0
 
     /** 防御側ダメージ分布と撃破率から公開値を組み立てる（2パス共通の後段） */
     function finalize(
@@ -137,7 +137,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           break
         }
         case 'rearmBerry': {
-          pushBoth({ kind: 'rearmBerry' })
+          pushBoth({ kind: 'rearmBerry', side: ev.side })
           break
         }
         case 'setupTurn': {
@@ -157,14 +157,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     }
 
     // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう=2回・しゅうかく=再装填対応）
-    const defenderBerry = constRecBerry > 0
-      ? {
-          threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100),
-          amount: constRecBerry,
-          cudChew: berryCudChew,
-          harvestChance: berryHarvestChance,
-        }
-      : undefined
+    // 攻撃側HP固定パスでは攻撃側HPを追跡しないため、攻撃側きのみはここでは効かない
+    // （攻撃側に影響するイベント・きのみがある構成は上の統合パスへ入る）
+    const defenderBerry = toBerryOption(defenderBerryCfg, defenderMaxHp)
 
     const ATT_DUMMY = 1
     if (normalEvents.length === 0) {
@@ -179,7 +174,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     )
   }, [
     events, passiveEffects,
-    constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
+    defenderBerryCfg, attackerBerryCfg,
     defenderMaxHp, seq,
   ])
 }

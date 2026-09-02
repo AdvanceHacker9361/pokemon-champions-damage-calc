@@ -205,15 +205,9 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
         </div>
       </div>
 
-      {/* きのみ（回復タブのみ） */}
+      {/* きのみ（回復タブのみ。対象トグルで攻撃側・防御側を切り替える） */}
       {activeSubTab === 'berry' && (
-        side === 'attacker' ? (
-          <div className="rounded border border-edge bg-surface-2 px-2 py-2 text-[11px] text-fg-faint">
-            きのみは防御側のみ対応（攻撃側は次フェーズ）
-          </div>
-        ) : (
-          <BerrySection defenderMaxHp={defenderMaxHp} />
-        )
+        <BerrySection side={side} maxHp={side === 'attacker' ? attackerMaxHp : defenderMaxHp} />
       )}
 
       {/* 単発（時系列末尾へ追加） */}

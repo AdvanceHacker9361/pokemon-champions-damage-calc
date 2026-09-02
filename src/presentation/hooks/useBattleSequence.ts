@@ -17,6 +17,7 @@ import {
 } from '@/domain/calculators/BattleSequenceCalc'
 import { expandAttackEvent, needsCritPass } from '@/presentation/hooks/expandAttackEvent'
 import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
+import { toBerryOption } from '@/presentation/hooks/berryOption'
 import {
   buildPassiveSchedule,
   autoItemToSeqEvent,
@@ -124,10 +125,8 @@ export function useBattleSequence(): BattleSequenceComputed {
   const defender = useDefenderStore()
   const field = useFieldStore()
   const events = useProgressionStore(s => s.events)
-  const constRecBerry = useProgressionStore(s => s.constRecBerry)
-  const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
-  const berryCudChew = useProgressionStore(s => s.berryCudChew)
-  const berryHarvestChance = useProgressionStore(s => s.berryHarvestChance)
+  const defenderBerryCfg = useProgressionStore(s => s.defenderBerry)
+  const attackerBerryCfg = useProgressionStore(s => s.attackerBerry)
   const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
   const defenderStartHp = useProgressionStore(s => s.defenderStartHp)
   const passiveEffects = useProgressionStore(s => s.passiveEffects)
@@ -138,7 +137,9 @@ export function useBattleSequence(): BattleSequenceComputed {
     const defenderMaxHp = defender.baseStats.hp > 0
       ? calculateHP(defender.baseStats.hp, defender.sp.hp) : 0
 
-    const showSequence = hasSequenceImpact({ events, attackerStartHp, passiveEffects })
+    const showSequence = hasSequenceImpact({
+      events, attackerStartHp, passiveEffects, attackerBerry: attackerBerryCfg,
+    })
     // 防御側だけの常時効果は攻守シミュレーションを表示しないが、総合累積には反映するため
     // 計算自体は実行する（useAccumulatedDamage が result を再利用する）
     const shouldCompute = showSequence || passiveEffects.length > 0
@@ -363,8 +364,8 @@ export function useBattleSequence(): BattleSequenceComputed {
           break
         }
         case 'rearmBerry': {
-          const label = 'リサイクル（きのみ再装填）'
-          pushSeq({ kind: 'rearmBerry' }, label)
+          const label = `リサイクル（${ev.side === 'attacker' ? '攻撃側' : '防御側'}きのみ再装填）`
+          pushSeq({ kind: 'rearmBerry', side: ev.side }, label)
           resolved.push({ event: ev, label })
           break
         }
@@ -393,20 +394,12 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
-    // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう・しゅうかく対応）
-    const defenderBerry = constRecBerry > 0
-      ? {
-          threshold: Math.floor(defenderMaxHp * berryThresholdPct / 100),
-          amount: constRecBerry,
-          cudChew: berryCudChew,
-          harvestChance: berryHarvestChance,
-        }
-      : undefined
-
+    // オボン/混乱実: HP≤しきい値 で1回限り自動発動（はんすう・しゅうかく対応）。両側独立。
     const runOpts = {
       attackerStartHp: attackerStartHp ?? undefined,
       defenderStartHp: defenderStartHp ?? undefined,
-      defenderBerry,
+      defenderBerry: toBerryOption(defenderBerryCfg, defenderMaxHp),
+      attackerBerry: toBerryOption(attackerBerryCfg, attackerMaxHp),
     }
     const result = runBattleSequence(seqEvents, attackerMaxHp, defenderMaxHp, { ...runOpts, labels })
     // 急所混合で分布が変わりうるときだけ2回目を実行（変わらないなら同一参照でよい）
@@ -417,7 +410,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result, critResult, passiveSchedule }
   }, [
     events, passiveEffects,
-    constRecBerry, berryThresholdPct, berryCudChew, berryHarvestChance,
+    defenderBerryCfg, attackerBerryCfg,
     attackerStartHp, defenderStartHp,
     attacker, defender, field,
   ])

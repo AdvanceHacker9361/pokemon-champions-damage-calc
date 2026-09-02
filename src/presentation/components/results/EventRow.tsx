@@ -241,9 +241,10 @@ export function EventRow({
   }
 
   if (ev.kind === 'rearmBerry') {
+    const sideLabel = ev.side === 'attacker' ? '攻撃側' : '防御側'
     return (
       <TimelineRow {...rowProps} tone="success">
-        <span className="font-semibold text-success">リサイクル（きのみ再装填）</span>
+        <span className="font-semibold text-success">リサイクル（{sideLabel}きのみ再装填）</span>
       </TimelineRow>
     )
   }

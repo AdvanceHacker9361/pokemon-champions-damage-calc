@@ -35,13 +35,13 @@ function passiveLine(eff: PassiveEffect, attackerMaxHp: number, defenderMaxHp: n
 export function AccumExportButton() {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const events = useProgressionStore(s => s.events)
-  const constRecBerry = useProgressionStore(s => s.constRecBerry)
+  const defenderBerry = useProgressionStore(s => s.defenderBerry)
+  const attackerBerry = useProgressionStore(s => s.attackerBerry)
   const passiveEffects = useProgressionStore(s => s.passiveEffects)
   const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp = useAttackerStore(s => s.sp.hp)
   const attackerTypes = useAttackerStore(s => s.types)
   const defenderTypes = useDefenderStore(s => s.types)
-  const berryThresholdPct = useProgressionStore(s => s.constRecBerryThresholdPct)
   const results = useResultStore(s => s.results)
   const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
   const defenderSpHp = useDefenderStore(s => s.sp.hp)
@@ -79,12 +79,17 @@ export function AccumExportButton() {
         case 'attackerConst': lines.push(`${ev.label ?? '攻撃側ダメ'}: ${ev.amount}`); break
         case 'defenderRecover': lines.push(`${ev.label ?? '防御側回復'}: -${ev.amount}`); break
         case 'attackerRecover': lines.push(`${ev.label ?? '攻撃側回復'}: -${ev.amount}`); break
-        case 'rearmBerry': lines.push('リサイクル（きのみ再装填）'); break
+        case 'rearmBerry': lines.push(`リサイクル（${ev.side === 'attacker' ? '攻撃側' : '防御側'}きのみ再装填）`); break
         case 'leechSeed': lines.push(`宿り木（${ev.direction === 'fromAttacker' ? '攻→防' : '防→攻'}）`); break
       }
     }
 
-    if (constRecBerry > 0) lines.push(`オボン/混乱実(HP≤${berryThresholdPct}%で1回): -${constRecBerry}`)
+    if (defenderBerry.amount > 0) {
+      lines.push(`防御側 オボン/混乱実(HP≤${defenderBerry.thresholdPct}%で1回): -${defenderBerry.amount}`)
+    }
+    if (attackerBerry.amount > 0) {
+      lines.push(`攻撃側 オボン/混乱実(HP≤${attackerBerry.thresholdPct}%で1回): +${attackerBerry.amount}`)
+    }
 
     if (passiveEffects.length > 0) {
       lines.push('常時効果:')

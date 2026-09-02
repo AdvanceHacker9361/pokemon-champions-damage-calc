@@ -27,6 +27,7 @@ export type InsertEventDispatch =
   | { type: 'event'; kind: EventKind }
   | { type: 'setupTurn'; side: 'attacker' | 'defender' }
   | { type: 'megaEvolve'; side: 'attacker' | 'defender' }
+  | { type: 'rearmBerry'; side: 'attacker' | 'defender' }
 
 export interface InsertEventActionDef {
   key: string
@@ -95,12 +96,21 @@ export const INSERT_EVENT_ACTIONS: InsertEventActionDef[] = [
     disabled: ctx => !ctx.defenderCanMega,
   },
   {
-    key: 'rearmBerry',
-    label: '＋リサイクル',
+    key: 'rearmBerry-attacker',
+    label: '＋リサイクル（攻）',
     group: 'turn',
     tone: 'success',
-    dispatch: { type: 'event', kind: 'rearmBerry' },
-    title: '消費済みのきのみを再装填し、直後の与ダメで再びきのみが発動できるようにする',
+    dispatch: { type: 'rearmBerry', side: 'attacker' },
+    title: '攻撃側の消費済みきのみを再装填し、直後のHP減少で再び発動できるようにする',
+    disabled: NEVER_DISABLED,
+  },
+  {
+    key: 'rearmBerry-defender',
+    label: '＋リサイクル（防）',
+    group: 'turn',
+    tone: 'success',
+    dispatch: { type: 'rearmBerry', side: 'defender' },
+    title: '防御側の消費済みきのみを再装填し、直後の与ダメで再びきのみが発動できるようにする',
     disabled: NEVER_DISABLED,
   },
   // ---------- 手動HP補正 ----------

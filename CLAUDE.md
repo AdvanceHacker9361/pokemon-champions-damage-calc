@@ -832,7 +832,8 @@ src/
 - `hasSequenceImpact(s)`: 攻撃側 side の常時効果、または `leechSeed` 常時効果があれば true
 - 旧 `constDmg / constRec / poisonTurns` はライブ状態から撤去。`ProgressionSnapshot` の optional フィールドとしてのみ残し、復元時に移行
   （constDmg → 固定 damage start count1 / constRec → 固定 recover turnEnd 'all' / poisonTurns → toxic count=N / 旧 `leechSeed` イベント → やどりぎ常時効果 count1）
-- `leechSeed` イベント種別は復元互換のため型に残す（追加 UI は撤去）。きのみ系フィールド（`constRecBerry` 等）は据え置き
+- `leechSeed` イベント種別は復元互換のため型に残す（追加 UI は撤去）
+- **きのみ設定の攻守対応**: 旧 `constRecBerry / constRecBerryThresholdPct / berryCudChew / berryHarvestChance` を `BerryConfig { amount, thresholdPct, cudChew, harvestChance }` に統合し、`defenderBerry` / `attackerBerry` の 2 フィールド＋`setBerry(side, patch)` に置換（旧フィールドはスナップショットの optional 入力としてのみ残し、復元時に `defenderBerry` へ移行）。`rearmBerry` イベントは `side` を持つ（旧データは defender 扱い）。`hasSequenceImpact` は `attackerBerry.amount > 0` でも true
 
 #### UI
 - `ProgressionTabs.tsx`: 時系列直下の 3 タブ（`role="tablist"`、矢印/Home/End）
@@ -842,8 +843,14 @@ src/
 - `DamageProgressionPanel.tsx`: 開始 HP を見出し右に常時表示。常時効果の自動展開分を読み取り専用ゴースト行（「開始時: …」「T1末: すなあらし 防−11 · たべのこし 防+11」「自動」バッジ）で表示
 - 撤去: `AddEventToolbar.tsx`、`BackgroundEffectsSection.tsx`、「イベントへ移動」、「＋宿り木」ボタン
 
+#### エンジン: 攻撃側きのみ（`BattleSequenceCalc.ts`）
+- `RunSequenceOptions.attackerBerry?: BerryOption`（`defenderBerry` と同形）
+- 状態 packing を `key = ((aHP × stride + dHP) × dUnit + dState) × aUnit + aState` に拡張（各 unit は きのみなし 1 / はんすうなし 2 / はんすうあり 6）。両 unit=1 で従来キーに退化するため、防御側のみ／きのみなしの数値は完全に不変
+- 攻撃側の発動契機は「攻撃側 HP が減少したイベント」（被ダメ・反動・attackerConst・宿り木(防→攻)・痛み分け・開始時）のみ。瀕死は判定より前に faintProb へ吸収
+- ターン境界の はんすう cud カウントダウン／しゅうかく再装填は両側独立（確率は積）。`rearmBerry{side}` はその側だけ再装填
+- `src/presentation/hooks/berryOption.ts`: `BerryConfig` → `BerryOption`（threshold = floor(maxHp × pct / 100)）変換を両フックで共有
+
 #### 次フェーズ（未実装）
-- 攻撃側のきのみ（エンジン `defenderBerry` の攻撃側対応）
 - ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
 
 ---
@@ -1150,7 +1157,7 @@ type ProgressionEvent =
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
 | `src/domain/models/PassiveEffect.ts` | 常時効果の型・カタログ `PASSIVE_PRESETS`・丸め・`resolvePassiveAmount`・ターン境界 `computeTurnRanges`（V3.18.0） |
 | `src/domain/calculators/PassiveEffectExpansion.ts` | 常時効果をターン境界へ展開する純関数 `buildPassiveSchedule` / `autoItemToSeqEvent`（V3.18.0） |
-| `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 常時効果 `passiveEffects` ＋ きのみ設定 ＋ 開始HP |
+| `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 常時効果 `passiveEffects` ＋ きのみ設定 `defenderBerry / attackerBerry` ＋ 開始HP |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | progression events を SeqEvent 列（攻撃側HP固定モード）に変換し2Dエンジン経由で累積分布/KO確率を導出 |
 | `src/presentation/hooks/useBattleSequence.ts` | 同じ progression events を読み攻撃イベントの usages 展開・被ダメ攻守入替を継承。`hasSequenceImpact()` で出力可否を自動判定 |
 | `src/presentation/components/results/DamageProgressionPanel.tsx` | **統合パネル**。開始HP・イベント時系列（T番号チップ・常時効果ゴースト行）・`ProgressionTabs` |

@@ -841,6 +841,7 @@
 
 ### Current Status
 
-- ブランチ `claude/damage-calc-ui-ux-rgnbqs` にコミット・プッシュ済み。main へのマージとデプロイはユーザー判断待ち
-- 次フェーズ候補: 攻撃側のきのみ（エンジンの `defenderBerry` 攻撃側対応）、ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
+- **攻撃側きのみ対応（追加実装、Opus）**: `BattleSequenceCalc` に `attackerBerry` と両側独立の状態 packing を追加、`progressionStore` のきのみ設定を `BerryConfig`（`defenderBerry` / `attackerBerry`、`setBerry(side, patch)`）へ統合、`rearmBerry` に `side` を追加（「＋リサイクル（攻）/（防）」）、`BerrySection` を側対応に変更、スナップショット移行・エクスポート追従。テスト 387 → 412 件。ブラウザ確認: ガブリアス vs カバルドン じしん被ダメ×3 で攻撃側オボンなし生存 0.0% → あり 98.8%
+- ユーザー指示により main へマージ・Pages デプロイを実施（V3.18.0）
+- 次フェーズ候補: ゴースト行の「固定化」（自動展開分を編集可能な手動イベントへ変換）
 - 注: ポケソル本体・説明書・解説記事のドメインはこのセッションの egress ポリシーで遮断されていたため、UI 分析はユーザー提供のスクリーンショットに基づく

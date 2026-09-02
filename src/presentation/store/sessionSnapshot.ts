@@ -1,7 +1,10 @@
 import type { Weather, TerrainField } from '@/domain/models/Pokemon'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from './pokemonStore'
 import { useFieldStore } from './fieldStore'
-import { useProgressionStore, type ProgressionEvent } from './progressionStore'
+import {
+  useProgressionStore, defaultBerryConfig, normalizeBerryConfig,
+  type BerryConfig, type ProgressionEvent,
+} from './progressionStore'
 import { TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
 import { useAttackerTabsStore, useDefenderTabsStore } from './pokemonTabsStore'
 
@@ -55,10 +58,20 @@ export interface ProgressionSnapshot {
   constDmg?: number
   /** @deprecated 旧背景効果。復元時の移行入力としてのみ読む */
   constRec?: number
-  constRecBerry: number
-  constRecBerryThresholdPct: number
-  berryCudChew: boolean
-  berryHarvestChance: number
+  /** @deprecated 旧・防御側専用きのみ（V3.18.1 で両側 BerryConfig へ移行）。移行入力としてのみ読む */
+  constRecBerry?: number
+  /** @deprecated 旧・防御側専用きのみ。移行入力としてのみ読む */
+  constRecBerryThresholdPct?: number
+  /** @deprecated 旧・防御側専用きのみ。移行入力としてのみ読む */
+  berryCudChew?: boolean
+  /** @deprecated 旧・防御側専用きのみ。移行入力としてのみ読む */
+  berryHarvestChance?: number
+  /**
+   * きのみ設定（V3.18.1）。この機能以前に永続化されたセッションとの後方互換のため optional。
+   * 未定義のスナップショットは `migrateProgressionSnapshot` が旧フィールドから生成する。
+   */
+  defenderBerry?: BerryConfig
+  attackerBerry?: BerryConfig
   /** @deprecated 旧背景効果。復元時の移行入力としてのみ読む */
   poisonTurns?: number
   attackerStartHp: number | null
@@ -116,6 +129,11 @@ export function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
 }
 
 function cloneProgressionEvent(ev: ProgressionEvent): ProgressionEvent {
+  if (ev.kind === 'rearmBerry') {
+    // 旧データ（side フィールドを持たない永続化）は防御側として復元する
+    const legacySide = (ev as { side?: 'attacker' | 'defender' }).side
+    return { ...ev, side: legacySide ?? 'defender' }
+  }
   if (ev.kind === 'attack') {
     return {
       ...ev,
@@ -147,10 +165,13 @@ function cloneProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
     ...(p.constDmg !== undefined ? { constDmg: p.constDmg } : {}),
     ...(p.constRec !== undefined ? { constRec: p.constRec } : {}),
     ...(p.poisonTurns !== undefined ? { poisonTurns: p.poisonTurns } : {}),
-    constRecBerry: p.constRecBerry ?? 0,
-    constRecBerryThresholdPct: p.constRecBerryThresholdPct ?? 50,
-    berryCudChew: p.berryCudChew ?? false,
-    berryHarvestChance: p.berryHarvestChance ?? 0,
+    // 旧きのみフィールドも移行入力としてのみ引き継ぐ
+    ...(p.constRecBerry !== undefined ? { constRecBerry: p.constRecBerry } : {}),
+    ...(p.constRecBerryThresholdPct !== undefined ? { constRecBerryThresholdPct: p.constRecBerryThresholdPct } : {}),
+    ...(p.berryCudChew !== undefined ? { berryCudChew: p.berryCudChew } : {}),
+    ...(p.berryHarvestChance !== undefined ? { berryHarvestChance: p.berryHarvestChance } : {}),
+    defenderBerry: p.defenderBerry ? { ...p.defenderBerry } : undefined,
+    attackerBerry: p.attackerBerry ? { ...p.attackerBerry } : undefined,
     attackerStartHp: p.attackerStartHp,
     defenderStartHp: p.defenderStartHp,
   }
@@ -231,10 +252,8 @@ export function snapshotLiveState(): SessionSnapshot {
     progression: cloneProgressionSnapshot({
       events: prog.events,
       passiveEffects: prog.passiveEffects,
-      constRecBerry: prog.constRecBerry,
-      constRecBerryThresholdPct: prog.constRecBerryThresholdPct,
-      berryCudChew: prog.berryCudChew,
-      berryHarvestChance: prog.berryHarvestChance,
+      defenderBerry: prog.defenderBerry,
+      attackerBerry: prog.attackerBerry,
       attackerStartHp: prog.attackerStartHp,
       defenderStartHp: prog.defenderStartHp,
     }),
@@ -251,7 +270,37 @@ export function snapshotLiveState(): SessionSnapshot {
  * 移行後は旧数値フィールドを 0 にし、旧 `leechSeed` イベントは時系列から取り除く。
  */
 export function migrateProgressionSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
-  if (p.passiveEffects !== undefined) return p
+  // きのみの移行は常時効果の移行と独立（V3.18.0 期のスナップショットは
+  // passiveEffects を持ちつつ旧きのみフィールドだけを持つため）
+  const berryMigrated = migrateBerrySnapshot(p)
+  if (berryMigrated.passiveEffects !== undefined) return berryMigrated
+  return migratePassiveSnapshot(berryMigrated)
+}
+
+/**
+ * 旧・防御側専用きのみフィールド（constRecBerry ほか）から
+ * 両側の `BerryConfig` を生成する移行処理（V3.18.1）。冪等。
+ */
+function migrateBerrySnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
+  if (p.defenderBerry !== undefined && p.attackerBerry !== undefined) return p
+  const defenderBerry = p.defenderBerry ?? normalizeBerryConfig({
+    amount: p.constRecBerry ?? 0,
+    thresholdPct: p.constRecBerryThresholdPct ?? 50,
+    cudChew: p.berryCudChew ?? false,
+    harvestChance: p.berryHarvestChance ?? 0,
+  })
+  return {
+    ...p,
+    defenderBerry,
+    attackerBerry: p.attackerBerry ?? defaultBerryConfig(),
+    constRecBerry: 0,
+    constRecBerryThresholdPct: 50,
+    berryCudChew: false,
+    berryHarvestChance: 0,
+  }
+}
+
+function migratePassiveSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
 
   const passiveEffects: PassiveEffect[] = []
   if ((p.constDmg ?? 0) > 0) {
@@ -312,10 +361,8 @@ export function restoreState(snap: SessionSnapshot): void {
   useProgressionStore.setState({
     events: progression.events,
     passiveEffects: progression.passiveEffects ?? [],
-    constRecBerry: progression.constRecBerry,
-    constRecBerryThresholdPct: progression.constRecBerryThresholdPct,
-    berryCudChew: progression.berryCudChew,
-    berryHarvestChance: progression.berryHarvestChance,
+    defenderBerry: progression.defenderBerry ?? defaultBerryConfig(),
+    attackerBerry: progression.attackerBerry ?? defaultBerryConfig(),
     attackerStartHp: progression.attackerStartHp,
     defenderStartHp: progression.defenderStartHp,
   })

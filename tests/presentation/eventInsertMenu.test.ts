@@ -17,7 +17,7 @@ describe('EventInsertMenu catalog', () => {
     expect(INSERT_EVENT_GROUP_LABELS.manual).toBe('手動HP補正')
   })
 
-  it('ターン進行グループに規定の7アクションが揃っている', () => {
+  it('ターン進行グループに規定の8アクションが揃っている', () => {
     const turnKeys = INSERT_EVENT_ACTIONS.filter(a => a.group === 'turn').map(a => a.key)
     expect(turnKeys).toEqual([
       'incoming',
@@ -26,7 +26,8 @@ describe('EventInsertMenu catalog', () => {
       'setupTurn-defender',
       'megaEvolve-attacker',
       'megaEvolve-defender',
-      'rearmBerry',
+      'rearmBerry-attacker',
+      'rearmBerry-defender',
     ])
   })
 
@@ -104,8 +105,15 @@ describe('dispatch 種別の整合性', () => {
     expect(defender.dispatch).toEqual({ type: 'megaEvolve', side: 'defender' })
   })
 
+  it('rearmBerry-* は rearmBerry ディスパッチかつ side が key と一致', () => {
+    const attacker = findInsertEventAction('rearmBerry-attacker')!
+    const defender = findInsertEventAction('rearmBerry-defender')!
+    expect(attacker.dispatch).toEqual({ type: 'rearmBerry', side: 'attacker' })
+    expect(defender.dispatch).toEqual({ type: 'rearmBerry', side: 'defender' })
+  })
+
   it('残りは event ディスパッチで kind が key と一致', () => {
-    for (const key of ['incoming', 'painSplit', 'rearmBerry', 'defenderConst', 'defenderRecover', 'attackerConst', 'attackerRecover']) {
+    for (const key of ['incoming', 'painSplit', 'defenderConst', 'defenderRecover', 'attackerConst', 'attackerRecover']) {
       const action = findInsertEventAction(key)!
       expect(action.dispatch).toEqual({ type: 'event', kind: key })
     }

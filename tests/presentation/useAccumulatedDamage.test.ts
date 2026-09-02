@@ -169,6 +169,57 @@ describe('useAccumulatedDamage（攻守シミュレーションとの統合）',
     expect(accum.hasAnything).toBe(true)
   })
 
+  it('攻撃側のきのみは被ダメ後の攻撃側HPを回復し、生存率を上げる', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    // 攻撃側 HP=100。攻撃側定数ダメ 60 → 40 ≤50、さらに 45 → きのみ無しなら瀕死
+    store.addEventAfter(null, { kind: 'attackerConst', amount: 60 })
+    store.addEventAfter(null, { kind: 'attackerConst', amount: 45 })
+
+    const before = renderHook(() => useBattleSequence()).result.current
+    expect(before.result!.attackerSurviveProb).toBeCloseTo(0, 10)
+    cleanup()
+
+    // 攻撃側オボン: HP≤50% で +25 → 40+25=65、-45 → 20 で生存
+    store.setBerry('attacker', { amount: 25, thresholdPct: 50 })
+
+    const after = renderHook(() => useBattleSequence()).result.current
+    expect(after.showSequence).toBe(true)
+    expect(after.result!.attackerSurviveProb).toBeCloseTo(1, 10)
+    const last = after.result!.steps[after.result!.steps.length - 1]
+    expect([...last.attackerHpDist.keys()]).toEqual([20])
+  })
+
+  it('攻撃側きのみだけを設定しても攻守シミュレーションが表示され、累積に反映される', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    store.addAttack(attackPayload({ rolls: Array(16).fill(150) }))
+    store.setBerry('attacker', { amount: 25, thresholdPct: 50 })
+
+    const seq = renderHook(() => useBattleSequence()).result.current
+    const accum = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(seq.showSequence).toBe(true)
+    expect(accum.hasAnything).toBe(true)
+    // 与ダメ側の結果は攻撃側きのみに影響されない
+    expect(accum.totalMin).toBe(150)
+    expect(accum.totalMax).toBe(150)
+  })
+
+  it('リサイクル（攻撃側）は攻撃側のきのみだけを再装填する', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    // 攻100: -60 → 40≤50 → +25=65、リサイクル(攻)、-30 → 35≤50 → +25=60
+    store.addEventAfter(null, { kind: 'attackerConst', amount: 60 })
+    store.addEventAfter(null, { kind: 'rearmBerry', side: 'attacker' })
+    store.addEventAfter(null, { kind: 'attackerConst', amount: 30 })
+    store.setBerry('attacker', { amount: 25, thresholdPct: 50 })
+
+    const seq = renderHook(() => useBattleSequence()).result.current
+    const steps = seq.result!.steps
+    expect(steps[1].label).toBe('リサイクル（攻撃側きのみ再装填）')
+    expect([...steps[steps.length - 1].attackerHpDist.keys()]).toEqual([60])
+  })
+
   it('攻撃側の常時効果は攻守シミュレーション表示条件になり、攻撃側HPを削る', () => {
     setupPokemon()
     const store = useProgressionStore.getState()

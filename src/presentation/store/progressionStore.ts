@@ -70,14 +70,45 @@ export type ProgressionEvent =
   | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
   | { kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
   | { kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' }
-  /** きのみ再装填（リサイクル等）。直後の与ダメで再びきのみが発動できる */
-  | { kind: 'rearmBerry'; id: string }
+  /** きのみ再装填（リサイクル等）。直後のHP減少で再びその側のきのみが発動できる */
+  | { kind: 'rearmBerry'; id: string; side: 'attacker' | 'defender' }
   /**
    * 宿り木のタネ1ティック。
    * direction='fromAttacker': 攻撃側が植え主 → 防御側-1/8(防御側最大HP)、攻撃側+同量
    * direction='fromDefender': 防御側が植え主 → 攻撃側-1/8(攻撃側最大HP)、防御側+同量
    */
   | { kind: 'leechSeed'; id: string; direction: 'fromAttacker' | 'fromDefender' }
+
+/** きのみ設定の対象側 */
+export type BerrySide = 'attacker' | 'defender'
+
+/**
+ * 片側のきのみ（オボン/混乱実）設定。
+ * - amount: 回復量（0 = きのみなし）
+ * - thresholdPct: 発動しきい値（その側の最大HP%。オボン=50, 混乱実=25）
+ * - cudChew: はんすう（発動後、次のターン終了時にもう一度発動）
+ * - harvestChance: しゅうかく/ものひろい（各ターン終了時にこの確率で再装填。0 / 0.5 / 1）
+ */
+export interface BerryConfig {
+  amount: number
+  thresholdPct: number
+  cudChew: boolean
+  harvestChance: number
+}
+
+export function defaultBerryConfig(): BerryConfig {
+  return { amount: 0, thresholdPct: 50, cudChew: false, harvestChance: 0 }
+}
+
+/** 入力値を許容範囲へ丸める（amount≥0 / thresholdPct 1〜100 / harvestChance 0〜1） */
+export function normalizeBerryConfig(c: BerryConfig): BerryConfig {
+  return {
+    amount: Math.max(0, Math.floor(c.amount)),
+    thresholdPct: Math.max(1, Math.min(100, Math.floor(c.thresholdPct))),
+    cudChew: c.cudChew,
+    harvestChance: Math.max(0, Math.min(1, c.harvestChance)),
+  }
+}
 
 export type EventKind = ProgressionEvent['kind']
 
@@ -93,14 +124,10 @@ interface ProgressionStore {
    * 配列順は同一 order 内の適用順を兼ねる。
    */
   passiveEffects: PassiveEffect[]
-  /** オボン/混乱実回復: 防御側HPがしきい値以下になった時点で1回限り適用 */
-  constRecBerry: number
-  /** オボン/混乱実の発動しきい値（HP%。オボン=50, 混乱実=25） */
-  constRecBerryThresholdPct: number
-  /** はんすう: きのみ発動後、次のターン終了時にもう一度発動 */
-  berryCudChew: boolean
-  /** しゅうかく/ものひろい: 各ターン終了時にこの確率で再装填（0=なし, 0.5, 1=晴れ/ものひろい） */
-  berryHarvestChance: number
+  /** 防御側のきのみ設定（オボン/混乱実） */
+  defenderBerry: BerryConfig
+  /** 攻撃側のきのみ設定（V3.18.1） */
+  attackerBerry: BerryConfig
   /** 開始HP（null = 最大HP）。シーケンス出力時に使用 */
   attackerStartHp: number | null
   defenderStartHp: number | null
@@ -126,10 +153,8 @@ interface ProgressionStore {
   clearPassiveEffects: (tab?: PassiveTab) => void
 
   // きのみ（オボン/混乱実）設定
-  setConstRecBerry: (v: number) => void
-  setConstRecBerryThresholdPct: (v: number) => void
-  setBerryCudChew: (v: boolean) => void
-  setBerryHarvestChance: (v: number) => void
+  /** 片側のきのみ設定を部分更新する */
+  setBerry: (side: BerrySide, patch: Partial<BerryConfig>) => void
   setAttackerStartHp: (v: number | null) => void
   setDefenderStartHp: (v: number | null) => void
 
@@ -144,10 +169,8 @@ function genId(): string {
 export const useProgressionStore = create<ProgressionStore>(set => ({
   events: [],
   passiveEffects: [],
-  constRecBerry: 0,
-  constRecBerryThresholdPct: 50,
-  berryCudChew: false,
-  berryHarvestChance: 0,
+  defenderBerry: defaultBerryConfig(),
+  attackerBerry: defaultBerryConfig(),
   attackerStartHp: null,
   defenderStartHp: null,
 
@@ -227,18 +250,18 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
           : p.kind === 'recover')),
   })),
 
-  setConstRecBerry: (v) => set({ constRecBerry: Math.max(0, Math.floor(v)) }),
-  setConstRecBerryThresholdPct: (v) => set({ constRecBerryThresholdPct: Math.max(1, Math.min(100, Math.floor(v))) }),
-  setBerryCudChew: (v) => set({ berryCudChew: v }),
-  setBerryHarvestChance: (v) => set({ berryHarvestChance: Math.max(0, Math.min(1, v)) }),
+  setBerry: (side, patch) => set(s => side === 'attacker'
+    ? { attackerBerry: normalizeBerryConfig({ ...s.attackerBerry, ...patch }) }
+    : { defenderBerry: normalizeBerryConfig({ ...s.defenderBerry, ...patch }) }
+  ),
   setAttackerStartHp: (v) => set({ attackerStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
   setDefenderStartHp: (v) => set({ defenderStartHp: v === null ? null : Math.max(0, Math.floor(v)) }),
 
   clear: () => set({
     events: [],
     passiveEffects: [],
-    constRecBerry: 0, constRecBerryThresholdPct: 50,
-    berryCudChew: false, berryHarvestChance: 0,
+    defenderBerry: defaultBerryConfig(),
+    attackerBerry: defaultBerryConfig(),
     attackerStartHp: null, defenderStartHp: null,
   }),
 }))
@@ -247,9 +270,12 @@ export const useProgressionStore = create<ProgressionStore>(set => ({
  * 攻撃側に影響するイベント・常時効果があるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用）。
  */
 export function hasSequenceImpact(
-  s: Pick<ProgressionStore, 'events' | 'attackerStartHp' | 'passiveEffects'>
+  s: Pick<ProgressionStore, 'events' | 'attackerStartHp' | 'passiveEffects'> &
+     Partial<Pick<ProgressionStore, 'attackerBerry'>>
 ): boolean {
   if (s.attackerStartHp !== null) return true
+  // 攻撃側のきのみは攻撃側HPを動かすためシーケンス出力の対象
+  if ((s.attackerBerry?.amount ?? 0) > 0) return true
   // 攻撃側の常時効果・やどりぎ（相手側HPも動く）はシーケンス出力の対象
   if (s.passiveEffects.some(p => p.side === 'attacker' || p.kind === 'leechSeed')) return true
   return s.events.some(e =>

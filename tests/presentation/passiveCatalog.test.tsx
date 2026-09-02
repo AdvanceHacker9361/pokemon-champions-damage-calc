@@ -118,14 +118,54 @@ describe('PassiveCatalog（定数ダメ / 回復タブ）', () => {
     expect(effects().map(e => e.kind)).toEqual(['recover'])
   })
 
-  it('回復タブ: きのみサブタブは攻撃側選択時に注記を表示する', () => {
+  it('回復タブ: きのみサブタブは防御側の BerryConfig を編集する', () => {
     renderRecoverTab()
     fireEvent.click(screen.getByRole('button', { name: 'きのみ' }))
+    fireEvent.change(screen.getByLabelText('きのみ回復量'), { target: { value: '40' } })
+    fireEvent.change(screen.getByLabelText('きのみ発動しきい値（%）'), { target: { value: '25' } })
+
+    const store = useProgressionStore.getState()
+    expect(store.defenderBerry).toMatchObject({ amount: 40, thresholdPct: 25 })
+    expect(store.attackerBerry.amount).toBe(0)
+  })
+
+  it('回復タブ: 攻撃側を選ぶと きのみ編集対象が attackerBerry になる', () => {
+    renderRecoverTab()
+    fireEvent.click(screen.getByRole('button', { name: 'きのみ' }))
+    fireEvent.click(screen.getByRole('button', { name: '攻撃側' }))
+    // 攻撃側でも同じ編集UIが表示される（旧「次フェーズ」注記は撤去）
     expect(screen.getByLabelText('きのみ回復量')).toBeInTheDocument()
 
+    fireEvent.change(screen.getByLabelText('きのみ回復量'), { target: { value: '33' } })
+    expect(useProgressionStore.getState().attackerBerry).toMatchObject({ amount: 33, thresholdPct: 50 })
+    expect(useProgressionStore.getState().defenderBerry.amount).toBe(0)
+  })
+
+  it('回復タブ: きのみプリセットは選択中の側の最大HPから量を決める', () => {
+    renderRecoverTab()
+    fireEvent.click(screen.getByRole('button', { name: 'きのみ' }))
+    // 防御側 HP183 の 1/4 = 45
+    fireEvent.click(screen.getByRole('button', { name: /オボン/ }))
+    expect(useProgressionStore.getState().defenderBerry).toMatchObject({ amount: 45, thresholdPct: 50 })
+
+    // 攻撃側 HP175 の 1/3 = 58（混乱実）
     fireEvent.click(screen.getByRole('button', { name: '攻撃側' }))
-    expect(screen.getByText('きのみは防御側のみ対応（攻撃側は次フェーズ）')).toBeInTheDocument()
-    expect(screen.queryByLabelText('きのみ回復量')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /混乱実/ }))
+    expect(useProgressionStore.getState().attackerBerry).toMatchObject({ amount: 58, thresholdPct: 25 })
+  })
+
+  it('回復タブ: はんすう・しゅうかくも側ごとに独立して切り替わる', () => {
+    renderRecoverTab()
+    fireEvent.click(screen.getByRole('button', { name: 'きのみ' }))
+    fireEvent.click(screen.getByRole('button', { name: '攻撃側' }))
+    fireEvent.change(screen.getByLabelText('きのみ回復量'), { target: { value: '30' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /はんすう/ }))
+    fireEvent.click(screen.getByRole('button', { name: '晴/物拾' }))
+
+    expect(useProgressionStore.getState().attackerBerry)
+      .toMatchObject({ cudChew: true, harvestChance: 1 })
+    expect(useProgressionStore.getState().defenderBerry)
+      .toMatchObject({ cudChew: false, harvestChance: 0 })
   })
 
   it('回復タブ: 単発の「＋末尾に追加」で解決済みの回復イベントを末尾へ追加する', () => {

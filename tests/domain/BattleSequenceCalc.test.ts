@@ -633,6 +633,184 @@ describe('BattleSequenceCalc', () => {
     })
   })
 
+  describe('攻撃側のきのみ（attackerBerry）', () => {
+    /** 最終ステップの攻撃側HP周辺分布から値→確率を引く */
+    function attackerHp(r: ReturnType<typeof runBattleSequence>, hp: number): number {
+      const last = r.steps[r.steps.length - 1]
+      return last.attackerHpDist.get(hp) ?? 0
+    }
+
+    it('被ダメでしきい値以下になると1回だけ発動する', () => {
+      // 攻撃側HP=100、被ダメ60確定 → 残40 ≤50 → +30 → 70、さらに被ダメ40 → 残30（消費済み）
+      const events: SeqEvent[] = [
+        { kind: 'incoming', dmg: [60] },
+        { kind: 'incoming', dmg: [40] },
+      ]
+      const r = runBattleSequence(events, 100, 500, {
+        attackerBerry: { threshold: 50, amount: 30 },
+      })
+      expect(attackerHp(r, 30)).toBeCloseTo(1, 6)
+
+      // きのみなしなら 100-60-40 = 0 で瀕死
+      const noBerry = runBattleSequence(events, 100, 500)
+      expect(noBerry.attackerFaintProb).toBeCloseTo(1, 6)
+    })
+
+    it('HPが増えるイベント（攻撃側回復・宿り木 攻→防）では発動しない', () => {
+      // 開始HP=40（すでにしきい値以下）→ 開始時トリガーで1回消費されるのを避けるため
+      // しきい値未満から回復イベントのみを流す
+      const events: SeqEvent[] = [
+        { kind: 'attackerRecover', amount: 10 },
+        { kind: 'leechSeed', direction: 'fromAttacker', amount: 10 },
+      ]
+      const r = runBattleSequence(events, 100, 200, {
+        attackerStartHp: 60,
+        attackerBerry: { threshold: 50, amount: 30 },
+      })
+      // 60 → +10 → 70 → 宿り木で +10 → 80（きのみは未発動）
+      expect(attackerHp(r, 80)).toBeCloseTo(1, 6)
+    })
+
+    it('攻撃側定数ダメ・反動・宿り木(防→攻) でも発動する', () => {
+      const berry = { threshold: 50, amount: 30 }
+      // 攻撃側定数ダメ
+      const constDmg = runBattleSequence([{ kind: 'attackerConst', amount: 60 }], 100, 500, {
+        attackerBerry: berry,
+      })
+      expect(attackerHp(constDmg, 70)).toBeCloseTo(1, 6)
+
+      // 反動（与ダメ100の50% = 50 の自傷）
+      const recoil = runBattleSequence(
+        [{ kind: 'attack', dmg: [100], recoil: 0.5 }], 100, 500, { attackerBerry: berry },
+      )
+      expect(attackerHp(recoil, 80)).toBeCloseTo(1, 6) // 100-50=50 ≤50 → +30
+
+      // 宿り木（防→攻）: 攻撃側 -60
+      const seed = runBattleSequence(
+        [{ kind: 'leechSeed', direction: 'fromDefender', amount: 60 }], 100, 500,
+        { attackerBerry: berry },
+      )
+      expect(attackerHp(seed, 70)).toBeCloseTo(1, 6)
+    })
+
+    it('攻撃側が瀕死になるダメージはきのみで救えない', () => {
+      const r = runBattleSequence([{ kind: 'incoming', dmg: [100] }], 100, 500, {
+        attackerBerry: { threshold: 50, amount: 30 },
+      })
+      expect(r.attackerFaintProb).toBeCloseTo(1, 6)
+    })
+
+    it('はんすう: 次のターン終了時にもう一度発動する', () => {
+      // 攻撃側HP=200、各ターン「与ダメ（ターン境界）＋被ダメ50」を4回
+      const events: SeqEvent[] = []
+      for (let i = 0; i < 4; i++) {
+        events.push({ kind: 'incoming', dmg: [50] })
+        events.push({ kind: 'attack', dmg: [0] })
+      }
+      const once = runBattleSequence(events, 200, 5000, {
+        attackerBerry: { threshold: 100, amount: 50 },
+      })
+      // T2 で 100 ≤100 → +50 → 150、T3:100、T4:50 → 残50
+      expect(attackerHp(once, 50)).toBeCloseTo(1, 6)
+
+      const cud = runBattleSequence(events, 200, 5000, {
+        attackerBerry: { threshold: 100, amount: 50, cudChew: true },
+      })
+      // はんすうで T3 終了時にもう一度 +50 → 残100
+      expect(attackerHp(cud, 100)).toBeCloseTo(1, 6)
+    })
+
+    it('しゅうかく100%: 毎ターン再装填され繰り返し発動する', () => {
+      const events: SeqEvent[] = []
+      for (let i = 0; i < 3; i++) {
+        events.push({ kind: 'incoming', dmg: [40] })
+        events.push({ kind: 'attack', dmg: [0] })
+      }
+      const r = runBattleSequence(events, 100, 5000, {
+        attackerBerry: { threshold: 50, amount: 30, harvestChance: 1.0 },
+      })
+      // T1:60 / T2:20→+30=50（消費）→ターン末に再装填 / T3:10→+30=40
+      expect(attackerHp(r, 40)).toBeCloseTo(1, 6)
+    })
+
+    it('しゅうかく50%: 再装填が確率分岐になる', () => {
+      const events: SeqEvent[] = [
+        { kind: 'incoming', dmg: [40] }, { kind: 'attack', dmg: [0] },
+        { kind: 'incoming', dmg: [40] }, { kind: 'attack', dmg: [0] },
+      ]
+      const r = runBattleSequence(events, 70, 5000, {
+        attackerBerry: { threshold: 35, amount: 30, harvestChance: 0.5 },
+      })
+      const last = r.steps[r.steps.length - 1]
+      expect(last.attackerHpDist.size).toBeGreaterThanOrEqual(2)
+      let total = 0
+      for (const p of last.attackerHpDist.values()) total += p
+      expect(total + r.attackerFaintProb).toBeCloseTo(1, 6)
+    })
+
+    it("rearmBerry{side:'attacker'} は攻撃側のきのみだけを再装填する", () => {
+      const berry = { threshold: 50, amount: 30 }
+      const events: SeqEvent[] = [
+        { kind: 'incoming', dmg: [60] },              // 攻100→40→+30=70 (攻消費)
+        { kind: 'attack', dmg: [60] },                // 防100→40→+30=70 (防消費)
+        { kind: 'rearmBerry', side: 'attacker' },     // 攻のみ再装填
+        { kind: 'incoming', dmg: [40] },              // 攻70→30→+30=60（再発動）
+        { kind: 'attack', dmg: [40] },                // 防70→30（防は消費済みのまま）
+      ]
+      const r = runBattleSequence(events, 100, 100, {
+        attackerBerry: berry, defenderBerry: berry,
+      })
+      const last = r.steps[r.steps.length - 1]
+      expect(last.attackerHpDist.get(60)).toBeCloseTo(1, 6)
+      expect(last.defenderHpDist.get(30)).toBeCloseTo(1, 6)
+    })
+
+    it('両側のきのみは独立に発動し、確率の総和は1のまま', () => {
+      const rolls = Array.from({ length: 16 }, (_, i) => 40 + i * 4)
+      const inc = Array.from({ length: 16 }, (_, i) => 30 + i * 5)
+      const events: SeqEvent[] = [
+        { kind: 'attack', dmg: rolls },
+        { kind: 'incoming', dmg: inc },
+        { kind: 'attack', dmg: rolls },
+        { kind: 'incoming', dmg: inc },
+      ]
+      const r = runBattleSequence(events, 120, 130, {
+        attackerBerry: { threshold: 60, amount: 25, cudChew: true },
+        defenderBerry: { threshold: 65, amount: 30, harvestChance: 0.5 },
+      })
+      expect(r.defenderKoProb + r.attackerFaintProb + r.bothAliveProb).toBeCloseTo(1, 6)
+      // 攻撃側きのみが無い対照と比べて攻撃側の生存率が上がる
+      const noAttackerBerry = runBattleSequence(events, 120, 130, {
+        defenderBerry: { threshold: 65, amount: 30, harvestChance: 0.5 },
+      })
+      expect(r.attackerSurviveProb).toBeGreaterThan(noAttackerBerry.attackerSurviveProb)
+    })
+
+    it('防御側のみのシナリオは攻撃側きのみ導入前と同じ数値になる（リグレッション）', () => {
+      // 「オボン相当: ブリジュラス流星群×2」と同一条件・同一期待値
+      const HP = 183
+      const draco1 = [122,124,126,128,130,132,134,136,138,140,141,142,143,144,144,144]
+      const draco2 = [61,62,63,64,65,66,67,68,69,70,71,71,72,72,72,72]
+      const r = runBattleSequence(
+        [{ kind: 'attack', dmg: draco1 }, { kind: 'attack', dmg: draco2 }], 1, HP,
+        { defenderBerry: { threshold: Math.floor(HP / 2), amount: 45 } },
+      )
+      expect(r.defenderKoProb).toBeCloseTo(0, 6)
+      const dist = extractDefenderDamageDistribution(r, HP)
+      let mn = Infinity, mx = -Infinity
+      for (const d of dist.keys()) { if (d < mn) mn = d; if (d > mx) mx = d }
+      expect(mn).toBe(138)
+      expect(mx).toBe(171)
+
+      // attackerBerry を明示的に undefined で渡しても結果は変わらない
+      const explicit = runBattleSequence(
+        [{ kind: 'attack', dmg: draco1 }, { kind: 'attack', dmg: draco2 }], 1, HP,
+        { defenderBerry: { threshold: Math.floor(HP / 2), amount: 45 }, attackerBerry: undefined },
+      )
+      expect(extractDefenderDamageDistribution(explicit, HP)).toEqual(dist)
+    })
+  })
+
   describe('確率分割の整合性', () => {
     it('koProb + faintProb + bothAlive = 1', () => {
       const rolls = Array.from({ length: 16 }, (_, i) => 50 + i * 4) // 50..110
