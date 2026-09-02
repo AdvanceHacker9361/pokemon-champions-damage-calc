@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react'
-import type { ProgressionEvent, EventKind } from '@/presentation/store/progressionStore'
+import { useRef, useState, type ReactNode } from 'react'
+import type { ProgressionEvent } from '@/presentation/store/progressionStore'
 import type { MegaPokemonRecord } from '@/data/schemas/types'
+import type { TurnRange } from '@/domain/models/PassiveEffect'
+import { EventInsertPopover, type InsertEventCtx } from './EventInsertMenu'
 
 const RECOVER_FRACTIONS = [
   { label: '1/3', num: 1, den: 3 },
@@ -18,6 +20,8 @@ export interface EventRowProps {
   idx: number
   total: number
   isHighlighted: boolean
+  turnRange?: TurnRange
+  insertCtx: InsertEventCtx
   attackerMaxHp: number
   defenderMaxHp: number
   defenderMoveOptions: string[]
@@ -27,10 +31,8 @@ export interface EventRowProps {
   onRemove: () => void
   onMoveUp: () => void
   onMoveDown: () => void
-  onAddPainSplit: () => void
-  onAddAfter: (kind: EventKind) => void
-  onAddSetupTurn: (side: 'attacker' | 'defender') => void
-  onAddMegaEvolve: (side: 'attacker' | 'defender') => void
+  /** このイベントの直後へ挿入する。key は INSERT_EVENT_ACTIONS のキー */
+  onInsertAfter: (key: string) => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
 }
 
@@ -53,8 +55,25 @@ function timelineRowClass(tone: TimelineRowTone) {
   }
 }
 
+/** attack/setupTurn 行の「T{n}」チップ。usages>1 の attack は「T{a}–{b}」 */
+function TurnChip({ turnRange }: { turnRange?: TurnRange }) {
+  if (!turnRange || turnRange.startTurn <= 0) return null
+  const text = turnRange.endTurn > turnRange.startTurn
+    ? `T${turnRange.startTurn}–${turnRange.endTurn}`
+    : `T${turnRange.startTurn}`
+  return (
+    <span
+      className="rounded border border-edge bg-surface-3 px-1 py-0.5 text-[10px] font-mono text-fg-faint flex-shrink-0"
+      title={`ターン ${text.slice(1)}`}
+    >
+      {text}
+    </span>
+  )
+}
+
 function TimelineRow({
   idx, total, tone, isHighlighted, children,
+  insertCtx, onInsertAfter,
   onMoveUp, onMoveDown, onRemove,
 }: {
   idx: number
@@ -62,6 +81,8 @@ function TimelineRow({
   tone: TimelineRowTone
   isHighlighted: boolean
   children: ReactNode
+  insertCtx: InsertEventCtx
+  onInsertAfter: (key: string) => void
   onMoveUp: () => void
   onMoveDown: () => void
   onRemove: () => void
@@ -70,24 +91,35 @@ function TimelineRow({
     <div className={`${timelineRowClass(tone)} transition-colors ${isHighlighted ? 'ring-1 ring-accent-border bg-accent-bg/40' : ''}`}>
       <span className="text-fg-faint text-right font-mono pt-0.5">{idx + 1}</span>
       <div className="min-w-0">{children}</div>
-      <RowControls idx={idx} total={total} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove} />
+      <RowControls
+        idx={idx}
+        total={total}
+        insertCtx={insertCtx}
+        onInsertAfter={onInsertAfter}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onRemove={onRemove}
+      />
     </div>
   )
 }
 
 export function EventRow({
   ev, idx, total,
-  isHighlighted,
+  isHighlighted, turnRange, insertCtx,
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
   attackerMegaOptions, defenderMegaOptions,
-  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onAddPainSplit, onAddAfter, onAddSetupTurn, onAddMegaEvolve, onUpdate,
+  onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onInsertAfter, onUpdate,
 }: EventRowProps) {
+  const rowProps = { idx, total, isHighlighted, insertCtx, onInsertAfter, onMoveUp, onMoveDown, onRemove }
+
   if (ev.kind === 'attack') {
     const subMin = ev.minDmg * ev.usages
     const subMax = ev.maxDmg * ev.usages
     return (
-      <TimelineRow idx={idx} total={total} tone="attack" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="attack">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <TurnChip turnRange={turnRange} />
           <span className="min-w-[8rem] flex-1 truncate font-medium text-fg">{ev.label}</span>
           <div className="flex items-center gap-0.5 flex-shrink-0">
             <button
@@ -107,37 +139,6 @@ export function EventRow({
             >+</button>
           </div>
           <span className="font-mono text-fg-muted">{subMin}〜{subMax}</span>
-          <button
-            type="button"
-            onClick={onAddPainSplit}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
-            title="このエントリの直後に痛み分けを挿入"
-          >+痛み分け</button>
-          <button
-            type="button"
-            onClick={() => onAddAfter('defenderConst')}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-warning hover:text-warning transition-colors"
-            title="このエントリの直後に防御側への定数ダメージを挿入"
-          >+防ダメ</button>
-          <button
-            type="button"
-            onClick={() => onAddAfter('defenderRecover')}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors"
-            title="このエントリの直後に防御側の定数回復を挿入"
-          >+防回復</button>
-          <button
-            type="button"
-            onClick={() => onAddSetupTurn('defender')}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
-            title="このエントリの直後に防御側の補助技ターンを挿入"
-          >+防補助</button>
-          <button
-            type="button"
-            onClick={() => onAddMegaEvolve('defender')}
-            disabled={defenderMegaOptions.length === 0}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-30"
-            title="このエントリの直後に防御側のメガシンカを挿入"
-          >+防メガ</button>
         </div>
       </TimelineRow>
     )
@@ -145,7 +146,7 @@ export function EventRow({
 
   if (ev.kind === 'painSplit') {
     return (
-      <TimelineRow idx={idx} total={total} tone="accent" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="accent">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-accent">↺ 痛み分け</span>
           <span
@@ -162,7 +163,7 @@ export function EventRow({
   if (ev.kind === 'incoming') {
     const hasMoveOptions = defenderMoveOptions.length > 0
     return (
-      <TimelineRow idx={idx} total={total} tone="warning" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="warning">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-warning">攻撃側被ダメ</span>
           <select
@@ -188,31 +189,6 @@ export function EventRow({
             />
             <span className="text-[10px] text-fg-muted">急所</span>
           </label>
-          <button
-            type="button"
-            onClick={() => onAddAfter('attackerConst')}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-warning hover:text-warning transition-colors"
-            title="このエントリの直後に攻撃側への定数ダメージを挿入"
-          >+攻ダメ</button>
-          <button
-            type="button"
-            onClick={() => onAddAfter('attackerRecover')}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-success hover:text-success transition-colors"
-            title="このエントリの直後に攻撃側の定数回復を挿入"
-          >+攻回復</button>
-          <button
-            type="button"
-            onClick={() => onAddSetupTurn('attacker')}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors"
-            title="このエントリの直後に攻撃側の補助技ターンを挿入"
-          >+攻補助</button>
-          <button
-            type="button"
-            onClick={() => onAddMegaEvolve('attacker')}
-            disabled={attackerMegaOptions.length === 0}
-            className="text-[10px] px-1.5 py-0.5 rounded border border-edge text-fg-faint hover:border-accent hover:text-accent transition-colors disabled:opacity-30"
-            title="このエントリの直後に攻撃側のメガシンカを挿入"
-          >+攻メガ</button>
         </div>
       </TimelineRow>
     )
@@ -221,8 +197,9 @@ export function EventRow({
   if (ev.kind === 'setupTurn') {
     const sideLabel = ev.side === 'attacker' ? '攻撃側' : '防御側'
     return (
-      <TimelineRow idx={idx} total={total} tone="default" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="default">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <TurnChip turnRange={turnRange} />
           <span className="font-semibold text-fg-muted">{sideLabel}補助技</span>
           <input
             type="text"
@@ -242,7 +219,7 @@ export function EventRow({
     const options = ev.side === 'attacker' ? attackerMegaOptions : defenderMegaOptions
     const selectedMega = options.find(m => m.key === ev.megaKey)
     return (
-      <TimelineRow idx={idx} total={total} tone="accent" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="accent">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-accent">{sideLabel}メガシンカ</span>
           {options.length > 1 ? (
@@ -264,16 +241,17 @@ export function EventRow({
 
   if (ev.kind === 'rearmBerry') {
     return (
-      <TimelineRow idx={idx} total={total} tone="success" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="success">
         <span className="font-semibold text-success">リサイクル（きのみ再装填）</span>
       </TimelineRow>
     )
   }
 
   if (ev.kind === 'leechSeed') {
+    // レガシー表示専用（V3.18.0 でカタログ方式へ統合済み。挿入UIは撤去、既存イベントの表示のみ維持）
     const arrow = ev.direction === 'fromAttacker' ? '攻→防' : '防→攻'
     return (
-      <TimelineRow idx={idx} total={total} tone="success" isHighlighted={isHighlighted} onMoveUp={onMoveUp} onMoveDown={onMoveDown} onRemove={onRemove}>
+      <TimelineRow {...rowProps} tone="success">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-success">宿り木 ({arrow})</span>
           <span className="text-[10px] text-fg-faint">
@@ -298,15 +276,7 @@ export function EventRow({
   const isRecover = ev.kind === 'defenderRecover' || ev.kind === 'attackerRecover'
   const recoverBaseHp = ev.kind === 'attackerRecover' ? attackerMaxHp : defenderMaxHp
   return (
-    <TimelineRow
-      idx={idx}
-      total={total}
-      tone={isRecover ? 'success' : 'warning'}
-      isHighlighted={isHighlighted}
-      onMoveUp={onMoveUp}
-      onMoveDown={onMoveDown}
-      onRemove={onRemove}
-    >
+    <TimelineRow {...rowProps} tone={isRecover ? 'success' : 'warning'}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={`font-semibold ${meta.color}`}>{ev.label ?? meta.text}</span>
         {ev.source === 'background' && (
@@ -340,11 +310,45 @@ export function EventRow({
   )
 }
 
-function RowControls({ idx, total, onMoveUp, onMoveDown, onRemove }: {
-  idx: number; total: number; onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void
+function RowControls({
+  idx, total, insertCtx, onInsertAfter, onMoveUp, onMoveDown, onRemove,
+}: {
+  idx: number
+  total: number
+  insertCtx: InsertEventCtx
+  onInsertAfter: (key: string) => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onRemove: () => void
 }) {
+  const [insertOpen, setInsertOpen] = useState(false)
+  const insertButtonRef = useRef<HTMLButtonElement>(null)
+
+  function handleSelect(key: string) {
+    setInsertOpen(false)
+    onInsertAfter(key)
+  }
+
   return (
     <div className="flex items-center gap-0.5 flex-shrink-0">
+      <button
+        ref={insertButtonRef}
+        type="button"
+        onClick={() => setInsertOpen(v => !v)}
+        aria-haspopup="menu"
+        aria-expanded={insertOpen}
+        className="w-5 h-5 text-xs bg-surface-3 hover:bg-surface-2 rounded text-fg-muted hover:text-accent transition-colors"
+        aria-label="このイベントの直後に挿入"
+        title="直後に挿入"
+      >＋</button>
+      {insertOpen && (
+        <EventInsertPopover
+          ctx={insertCtx}
+          anchor={insertButtonRef}
+          onSelect={handleSelect}
+          onClose={() => setInsertOpen(false)}
+        />
+      )}
       <button
         type="button"
         onClick={onMoveUp}

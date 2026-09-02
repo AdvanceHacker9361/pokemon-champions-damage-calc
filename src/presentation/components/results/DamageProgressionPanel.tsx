@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { useProgressionStore, hasSequenceImpact } from '@/presentation/store/progressionStore'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useProgressionStore } from '@/presentation/store/progressionStore'
 import type { EventKind, ProgressionEventInput } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
+import { computeTurnRanges } from '@/domain/models/PassiveEffect'
 import { EventRow } from './EventRow'
 import { BackgroundEffectsSection } from './BackgroundEffectsSection'
-import { AddEventToolbar, type AddEventAction } from './AddEventToolbar'
+import { ProgressionTabs } from './ProgressionTabs'
+import { findInsertEventAction, type InsertEventCtx } from './EventInsertMenu'
 
 interface DamageProgressionPanelProps {
   defenderMaxHp: number
@@ -52,6 +54,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const defenderMoves  = useDefenderStore(s => s.moves)
   const defenderMoveOptions = defenderMoves.filter((m): m is string => !!m)
 
+  const insertCtx: InsertEventCtx = { attackerCanMega, defenderCanMega }
+
   const poisonPerTurn = Array.from({ length: poisonTurns }, (_, i) =>
     Math.max(1, Math.floor(defenderMaxHp * (i + 1) / 16))
   )
@@ -61,7 +65,12 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const hasAnything =
     hasEvents ||
     constDmg > 0 || constRec > 0 || constRecBerry > 0 || poisonTurns > 0
-  const showSequenceOutputs = hasSequenceImpact({ events, attackerStartHp })
+  const turnRanges = useMemo(() => computeTurnRanges(events), [events])
+  const turnRangeById = useMemo(() => {
+    const map = new Map(turnRanges.map(r => [r.eventId, r] as const))
+    return map
+  }, [turnRanges])
+
   const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
   const previousEventIdsRef = useRef(events.map(ev => ev.id))
 
@@ -108,6 +117,24 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     addEventAfter(targetId, { kind: 'megaEvolve', side, megaKey })
   }
 
+  /**
+   * EventInsertMenu の単一情報源（INSERT_EVENT_ACTIONS）をディスパッチする。
+   * タブ（末尾追加 = targetId null）と行内ポップオーバー（直後挿入 = targetId = 行の id）の
+   * どちらもこの1関数を通す。
+   */
+  function handleInsertByKey(key: string, targetId: string | null) {
+    const action = findInsertEventAction(key)
+    if (!action) return
+    const { dispatch } = action
+    if (dispatch.type === 'event') {
+      addAfter(dispatch.kind, targetId)
+    } else if (dispatch.type === 'setupTurn') {
+      addSetupTurn(dispatch.side, targetId)
+    } else if (dispatch.type === 'megaEvolve') {
+      addMegaEvolve(dispatch.side, targetId)
+    }
+  }
+
   function moveBackgroundEventToTimeline(ev: ProgressionEventInput) {
     addEventAfter(null, ev)
   }
@@ -147,22 +174,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     setPoisonTurns(0)
   }
 
-  function addLeechSeed(direction: 'fromAttacker' | 'fromDefender') {
-    addEventAfter(null, { kind: 'leechSeed', direction })
-  }
-
-  function addAction(action: AddEventAction) {
-    if (action.type === 'event') {
-      addAfter(action.kind, null)
-    } else if (action.type === 'setupTurn') {
-      addSetupTurn(action.side, null)
-    } else if (action.type === 'megaEvolve') {
-      addMegaEvolve(action.side, null)
-    } else {
-      addLeechSeed(action.direction)
-    }
-  }
-
   return (
     <div className="panel space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -179,21 +190,50 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
             {events.length}件
           </span>
         </div>
-        {hasAnything && (
-          <button
-            type="button"
-            onClick={clear}
-            className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-danger-2 text-danger-2 hover:bg-surface-3 transition-colors"
-            title="イベント・背景効果・開始HPをすべてクリア"
-          >
-            <span>✕</span>
-            <span>全クリア</span>
-          </button>
-        )}
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* 開始HP（常時表示・コンパクト） */}
+          <div className="flex items-center gap-1 text-[11px]">
+            <span className="text-fg-muted">攻</span>
+            <input
+              type="number"
+              min={0}
+              max={attackerMaxHp || undefined}
+              placeholder={`${attackerMaxHp}`}
+              value={attackerStartHp ?? ''}
+              onChange={e => setAttackerStartHp(e.target.value === '' ? null : Number(e.target.value))}
+              aria-label="攻撃側開始HP"
+              className="input-base w-12 text-center text-[11px] px-1 py-0.5"
+            />
+            <span className="text-fg-muted">防</span>
+            <input
+              type="number"
+              min={0}
+              max={defenderMaxHp || undefined}
+              placeholder={`${defenderMaxHp}`}
+              value={defenderStartHp ?? ''}
+              onChange={e => setDefenderStartHp(e.target.value === '' ? null : Number(e.target.value))}
+              aria-label="防御側開始HP"
+              className="input-base w-12 text-center text-[11px] px-1 py-0.5"
+            />
+          </div>
+
+          {hasAnything && (
+            <button
+              type="button"
+              onClick={clear}
+              className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-danger-2 text-danger-2 hover:bg-surface-3 transition-colors"
+              title="イベント・背景効果・開始HPをすべてクリア"
+            >
+              <span>✕</span>
+              <span>全クリア</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="text-[10px] text-fg-faint">
-        与ダメは各技の「+ 加算」から追加。その他のイベントは用途別に末尾へ追加できます。
+        与ダメは各技の「+ 加算」から追加。その他のイベントは行の「＋」またはタブから挿入できます。
       </div>
 
       {/* イベント一覧 */}
@@ -206,6 +246,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               idx={idx}
               total={events.length}
               isHighlighted={ev.id === highlightedEventId}
+              turnRange={turnRangeById.get(ev.id)}
+              insertCtx={insertCtx}
               attackerMaxHp={attackerMaxHp}
               defenderMaxHp={defenderMaxHp}
               defenderMoveOptions={defenderMoveOptions}
@@ -215,10 +257,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               onRemove={() => removeEvent(ev.id)}
               onMoveUp={() => moveEvent(ev.id, -1)}
               onMoveDown={() => moveEvent(ev.id, 1)}
-              onAddPainSplit={() => addAfter('painSplit', ev.id)}
-              onAddAfter={kind => addAfter(kind, ev.id)}
-              onAddSetupTurn={side => addSetupTurn(side, ev.id)}
-              onAddMegaEvolve={side => addMegaEvolve(side, ev.id)}
+              onInsertAfter={key => handleInsertByKey(key, ev.id)}
               onUpdate={patch => updateEvent(ev.id, patch)}
             />
           ))}
@@ -229,11 +268,12 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         </div>
       )}
 
-      {/* イベント追加ボタン群（末尾追加） */}
-      <AddEventToolbar
-        attackerCanMega={attackerCanMega}
-        defenderCanMega={defenderCanMega}
-        onAddAction={addAction}
+      {/* イベント / 定数ダメ / 回復 タブ */}
+      <ProgressionTabs
+        ctx={insertCtx}
+        onSelectEvent={key => handleInsertByKey(key, null)}
+        defenderMaxHp={defenderMaxHp}
+        attackerMaxHp={attackerMaxHp}
       />
 
       <div className="border-t border-edge" />
@@ -261,48 +301,6 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
         moveConstRecToTimeline={moveConstRecToTimeline}
         movePoisonToTimeline={movePoisonToTimeline}
       />
-
-      {/* シーケンス出力（被ダメ・痛み分け・開始HP指定がある場合のみ） */}
-      {showSequenceOutputs && (
-        <>
-          <div className="border-t border-edge" />
-          <div className="flex items-center gap-2">
-            <h3 className="text-xs font-semibold text-fg-muted">シミュレーション開始HP</h3>
-            <span className="text-[10px] text-fg-faint">結果は総合累積の下に表示</span>
-          </div>
-
-          {/* 開始HP */}
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="text-fg-muted">攻撃側開始HP</span>
-              <input
-                type="number"
-                min={0}
-                max={attackerMaxHp || undefined}
-                placeholder={`${attackerMaxHp}`}
-                value={attackerStartHp ?? ''}
-                onChange={e => setAttackerStartHp(e.target.value === '' ? null : Number(e.target.value))}
-                className="input-base w-16 text-center text-xs px-1"
-              />
-              <span className="text-[10px] text-fg-faint">/ {attackerMaxHp}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-fg-muted">防御側開始HP</span>
-              <input
-                type="number"
-                min={0}
-                max={defenderMaxHp || undefined}
-                placeholder={`${defenderMaxHp}`}
-                value={defenderStartHp ?? ''}
-                onChange={e => setDefenderStartHp(e.target.value === '' ? null : Number(e.target.value))}
-                className="input-base w-16 text-center text-xs px-1"
-              />
-              <span className="text-[10px] text-fg-faint">/ {defenderMaxHp}</span>
-            </div>
-          </div>
-
-        </>
-      )}
     </div>
   )
 }
