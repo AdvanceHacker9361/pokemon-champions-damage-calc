@@ -979,3 +979,35 @@ GitHub Actions:
 - ヘルパーは表示都合の集計のため `presentation/hooks/` に配置（`expandAttackEvent.ts` の先例に合わせた純関数）。
 - サマリーは通常（非急所）値を表示する既存仕様を維持。急所側の集計は個別行の急所トグル用に同ヘルパーの別呼び出しで共有。
 - バージョンは 3.17.2 据え置きの修正デプロイ。
+
+## 2026-09-05: V3.18.2 可変威力技（けたぐり・ヘビーボンバー等）の威力表示を動的化
+
+### 発覚内容
+
+- けたぐり・くさむすび・ジャイロボール・ヘビーボンバーの威力表示が技スロット・結果行・検索候補のすべてで「威力1」に固定されていた（ユーザー報告）。
+- 原因: これらは `moves.json` の威力がプレースホルダー `1` で、実威力はダメージ計算エンジン内部（`SpecialMoveCalc.resolveSpecialMove`: 相手体重テーブル・体重比・素早さ比）で解決される。表示側はエンジンを通さず `move.power` をそのまま出していた。
+- 併発: つけあがる／アシストパワーは基礎値20固定表示、powerOptions 技（ハードプレス・はたきおとす等）の結果行は選択値ではなく基礎値を表示、防御側「被ダメ用の技」のチップは攻撃側の特性で天候タイプを誤解決していた。
+
+### 実施した修正
+
+- **`src/domain/calculators/MovePowerResolution.ts`（新規）**: `resolveBasePower(ctx)` — `resolveSpecialMove` →ウェザーボール100→`move.power ?? 0` の順で基礎威力を解決する純関数。じゅうでん／メトロノーム／Gのちからの倍率は含めない（「威力」表示は基礎威力の慣例を維持）。
+- **`DamageCalculator.ts`**: 私有 `resolveBasePower` を廃止し共有関数へ委譲（`resolveInputBasePower`）。`calculateDamage` が `basePower` を一度だけ解決して `DamageResult.basePower`（新規必須フィールド）に格納。エンジンの数値は不変。
+- **`CalculateMoveResultsUseCase.ts`**: 段階連続技の合算結果にも `basePower`（1発目代表値）を伝搬。
+- **`DamageResultRow.tsx`**: 威力バッジを「特殊処理あり or powerOptions あり or 解決値≠基礎値」で表示し `result.basePower` を出す（従来はウェザーボール限定）。段階連続技は既存の `20→40→60` バッジのみ。
+- **`MoveSlots.tsx`**: `side: 'attacker' | 'defender'` prop を追加。攻守ストアから個別セレクタで種族値/SP/性格/ランク/体重/状態異常/特性を取得し、ユースケースと同じ `calculateStats` でランク込み実数値を `useMemo` 構築。防御側パネルでは防御側ストアを攻撃側扱い（`useBattleSequence` の `incoming` と同方向）。表示優先度: powerOptions 選択値 → きしかいせいHP入力値 → `resolveBasePower`。チップの `title` に根拠（「相手体重 100.0kg → 威力100」「体重比 0.9倍 (自分95.0kg / 相手100.0kg) → 威力40」「S比 相手120 / 自分122 → 威力24」「ランク上昇 合計+2 → 威力60」）。
+- **`movePowerLabel.ts`（新規）/ `MoveMetaChips.tsx`**: `getPowerLabel` を分離。文脈なし（検索候補）では `low-kick / grass-knot / gyro-ball / heavy-slam` を「威力可変」表示。`powerTitle` prop を追加。
+- **`PokemonPanel.tsx`**: 2箇所の `MoveSlots` に `side` を指定。
+- データ（`moves.json` のプレースホルダー威力）は変更なし。
+
+### 検証
+
+- `npm run typecheck` / `npm run lint`（警告0）
+- `npx vitest run --dir tests`: 29ファイル 462件全パス（+30件: `MovePowerResolution.test.ts` 21件＝体重テーブル境界・体重比境界・ジャイロボール上限150/下限1・つけあがるランク合計・からげんき・ウェザーボール・エンジン整合 `calculateDamage().basePower === resolveBasePower()`・じゅうでん×2 非混入／`moveMetaChips.test.tsx` 9件）
+- `npm run build`
+- ブラウザQA（ガブリアス95kg vs メガガルーラ100kg）: スロットチップ・結果行バッジともに けたぐり100／ヘビーボンバー40／ジャイロボール24／きしかいせい20（満タン）。検索候補は「威力可変」。防御側パネルのけたぐりは攻撃側体重95kgから威力80。
+
+### 判断メモ
+
+- 表示は基礎威力（倍率前）に統一。じゅうでん等の倍率はダメージ値にのみ反映される既存慣例を維持。
+- 副次的にイカサマ・ボディプレス・サイコショック等の特殊処理技にも結果行の威力バッジが付くようになった（情報として正しいため許容。要望があれば可変技のみに絞る）。
+- バージョンを 3.18.2 に更新。

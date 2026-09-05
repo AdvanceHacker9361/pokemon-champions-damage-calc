@@ -5,6 +5,7 @@ import type { DamageResult } from '@/domain/models/DamageResult'
 import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { resolveSpecialMove } from '@/domain/calculators/SpecialMoveCalc'
+import { resolveBasePower } from '@/domain/calculators/MovePowerResolution'
 import { resolveEffectiveWeather, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { calcRollPercent } from '@/domain/models/DamageResult'
 
@@ -80,9 +81,28 @@ function pokeRound(n: number): number {
   return Math.floor(n) + (n - Math.floor(n) > 0.5 ? 1 : 0)
 }
 
-/** 技の基本威力を解決（特殊技を含む） */
-function resolvePower(input: DamageCalcInput): number {
-  let power = resolveBasePower(input)
+/**
+ * 技の基本威力を解決（特殊技を含む）。
+ * 共有実装 `MovePowerResolution.resolveBasePower` に委譲し、UI 表示と同じ値を返す。
+ */
+export function resolveInputBasePower(input: DamageCalcInput): number {
+  return resolveBasePower({
+    move: input.move,
+    attackerStats: input.attackerStats,
+    defenderStats: input.defenderStats,
+    attackerWeight: input.attackerWeight,
+    defenderWeight: input.defenderWeight,
+    attackerStatus: input.attackerStatus,
+    attackerRankModifiers: input.attackerRankModifiers,
+    weather: input.field.weather,
+    attackerAbility: input.attackerAbility,
+    defenderAbility: input.defenderAbility,
+  })
+}
+
+/** 基本威力に じゅうでん / メトロノーム / Gのちから の倍率を掛けた最終威力 */
+function resolvePower(input: DamageCalcInput, basePower: number): number {
+  let power = basePower
 
   // じゅうでん: 次の電気技の威力2倍（エレキスキン変換後の判定も含む）
   if (input.attackerChargeActive && resolveMoveType(input) === 'でんき') {
@@ -101,35 +121,6 @@ function resolvePower(input: DamageCalcInput): number {
   }
 
   return power
-}
-
-function resolveBasePower(input: DamageCalcInput): number {
-  const { move, attackerStats, defenderStats, defenderWeight, attackerWeight, attackerStatus } = input
-
-  if (move.special) {
-    const result = resolveSpecialMove({
-      tag: move.special,
-      attackerStats,
-      defenderStats,
-      attackerWeight,
-      defenderWeight,
-      attackerStatus,
-      originalPower: move.power ?? 0,
-      attackerRankModifiers: input.attackerRankModifiers,
-    })
-    if (result.effectivePower !== undefined) return result.effectivePower
-  }
-
-  // ウェザーボール: 天候時に威力2倍
-  if (move.special === 'weather-ball' && resolveEffectiveWeather({
-    weather: input.field.weather,
-    attackerAbility: input.attackerAbility,
-    defenderAbility: input.defenderAbility,
-  }) !== null) {
-    return 100
-  }
-
-  return move.power ?? 0
 }
 
 /** 攻撃実数値を解決 */
@@ -283,7 +274,8 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   const effectiveCritical =
     isCritical && defenderAbility !== 'シェルアーマー' && defenderAbility !== 'カブトアーマー'
 
-  const power = resolvePower(input)
+  const basePower = resolveInputBasePower(input)
+  const power = resolvePower(input, basePower)
   if (power === 0) {
     const zeroRolls = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls']
     return {
@@ -291,6 +283,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
       defenderMaxHp: defenderStats.hp,
       percentMin: 0, percentMax: 0,
       koResult: { type: 'no-ko' },
+      basePower,
     }
   }
 
@@ -437,6 +430,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     percentMin: calcRollPercent(min, defHp),
     percentMax: calcRollPercent(max, defHp),
     koResult: calcKoProbability(Array.from(effectiveRolls), defHp),
+    basePower,
   }
 }
 

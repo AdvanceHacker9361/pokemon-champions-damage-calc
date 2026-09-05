@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { MoveSelect } from './MoveSelect'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
-import type { TypeName } from '@/domain/models/Pokemon'
+import type { ComputedStats, StatKey, StatusCondition, TypeName } from '@/domain/models/Pokemon'
+import type { MoveRecord } from '@/data/schemas/types'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
+import { calculateStats } from '@/application/usecases/CalculateStatsUseCase'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
-import { resolveWeatherAwareMovePower, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
+import { resolveBasePower } from '@/domain/calculators/MovePowerResolution'
+import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { typeColor } from '@/presentation/components/shared/typeColors'
 import { MoveMetaChips } from './MoveMetaChips'
 
@@ -14,14 +17,88 @@ interface MoveSlotsProps {
   setMove: PokemonStore['setMove']
   movePowers: PokemonStore['movePowers']
   setMovePower: PokemonStore['setMovePower']
+  /**
+   * この技リストを「撃つ側」がどちらのストアか。
+   * - 'attacker': 攻撃側パネルの技（攻撃側 → 防御側）
+   * - 'defender': 防御側パネルの「攻撃側被ダメ用の技」（防御側 → 攻撃側）
+   */
+  side: 'attacker' | 'defender'
   /** 攻撃側の実数値HP（きしかいせい / じたばた の最大HPとして使用） */
   maxHP?: number
 }
 
-export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: MoveSlotsProps) {
+/** 威力解決に必要な片側ぶんの文脈 */
+interface SideContext {
+  stats: ComputedStats
+  weight: number
+  status: StatusCondition
+  ranks: Record<StatKey, number>
+  ability: string
+}
+
+/** 可変威力技の威力の根拠を1行で説明する（ツールチップ用） */
+function describeBasePower(
+  move: MoveRecord,
+  power: number,
+  acting: SideContext,
+  target: SideContext,
+): string | undefined {
+  switch (move.special) {
+    case 'low-kick':
+    case 'grass-knot':
+      return `相手体重 ${target.weight.toFixed(1)}kg → 威力${power}`
+    case 'heavy-slam': {
+      const ratio = target.weight > 0 ? acting.weight / target.weight : 0
+      return `体重比 ${ratio.toFixed(1)}倍 (自分${acting.weight.toFixed(1)}kg / 相手${target.weight.toFixed(1)}kg) → 威力${power}`
+    }
+    case 'gyro-ball':
+      return `S比 相手${target.stats.spe} / 自分${acting.stats.spe} → 威力${power}`
+    case 'stored-power': {
+      const sum = Object.values(acting.ranks).reduce((s, v) => s + Math.max(0, v), 0)
+      return `ランク上昇 合計+${sum} → 威力${power}`
+    }
+    default:
+      return undefined
+  }
+}
+
+export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxHP }: MoveSlotsProps) {
   const weather = useFieldStore(s => s.weather)
+
+  const atkBaseStats = useAttackerStore(s => s.baseStats)
+  const atkSp = useAttackerStore(s => s.sp)
+  const atkNatures = useAttackerStore(s => s.statNatures)
+  const atkRanks = useAttackerStore(s => s.ranks)
+  const atkWeight = useAttackerStore(s => s.weight)
+  const atkStatus = useAttackerStore(s => s.status)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
+
+  const defBaseStats = useDefenderStore(s => s.baseStats)
+  const defSp = useDefenderStore(s => s.sp)
+  const defNatures = useDefenderStore(s => s.statNatures)
+  const defRanks = useDefenderStore(s => s.ranks)
+  const defWeight = useDefenderStore(s => s.weight)
+  const defStatus = useDefenderStore(s => s.status)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
+
+  const attackerCtx = useMemo<SideContext>(() => ({
+    stats: calculateStats({
+      baseStats: atkBaseStats, sp: atkSp, statNatures: atkNatures, ranks: atkRanks,
+    }),
+    weight: atkWeight, status: atkStatus, ranks: atkRanks, ability: attackerAbility,
+  }), [atkBaseStats, atkSp, atkNatures, atkRanks, atkWeight, atkStatus, attackerAbility])
+
+  const defenderCtx = useMemo<SideContext>(() => ({
+    stats: calculateStats({
+      baseStats: defBaseStats, sp: defSp, statNatures: defNatures, ranks: defRanks,
+    }),
+    weight: defWeight, status: defStatus, ranks: defRanks, ability: defenderAbility,
+  }), [defBaseStats, defSp, defNatures, defRanks, defWeight, defStatus, defenderAbility])
+
+  // 防御側パネルの「攻撃側被ダメ用の技」では防御側が撃つ側になる（useBattleSequence の incoming と同じ向き）
+  const acting = side === 'attacker' ? attackerCtx : defenderCtx
+  const target = side === 'attacker' ? defenderCtx : attackerCtx
+
   // きしかいせい / じたばた 用の HP テキスト入力（スロットごと）
   const [hpInputs, setHpInputs] = useState<[string, string, string, string]>(['', '', '', ''])
 
@@ -75,19 +152,36 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
                 moveType: moveRecord.type as TypeName,
                 moveSpecial: moveRecord.special,
                 weather,
-                attackerAbility,
-                defenderAbility,
+                attackerAbility: acting.ability,
+                defenderAbility: target.ability,
               })
             : null
-          const displayPower = moveRecord
-            ? resolveWeatherAwareMovePower({
-                movePower: movePowers[slot] ?? reversalPower,
-                moveSpecial: moveRecord.special,
+
+          // 表示威力は計算エンジンと同じ resolveBasePower を通す（可変威力の選択と HP 入力を優先）
+          const selectedPower = movePowers[slot]
+          let displayPower: number | null = null
+          let powerTitle: string | undefined
+          if (moveRecord) {
+            if (hasPowerOpts && selectedPower != null && moveRecord.powerOptions!.includes(selectedPower)) {
+              displayPower = selectedPower
+            } else if (isReversal) {
+              displayPower = reversalPower
+            } else {
+              displayPower = resolveBasePower({
+                move: moveRecord,
+                attackerStats: acting.stats,
+                defenderStats: target.stats,
+                attackerWeight: acting.weight,
+                defenderWeight: target.weight,
+                attackerStatus: acting.status,
+                attackerRankModifiers: acting.ranks,
                 weather,
-                attackerAbility,
-                defenderAbility,
+                attackerAbility: acting.ability,
+                defenderAbility: target.ability,
               })
-            : null
+              powerTitle = describeBasePower(moveRecord, displayPower, acting, target)
+            }
+          }
           const typeBarColor = displayType ? typeColor(displayType) : 'transparent'
 
           return (
@@ -105,7 +199,12 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, maxHP }: M
               </div>
               {moveRecord && (
                 <div className="pl-1">
-                  <MoveMetaChips move={moveRecord} power={displayPower} displayType={displayType ?? undefined} />
+                  <MoveMetaChips
+                    move={moveRecord}
+                    power={displayPower}
+                    displayType={displayType ?? undefined}
+                    powerTitle={powerTitle}
+                  />
                 </div>
               )}
 

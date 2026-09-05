@@ -17,6 +17,13 @@ export interface DamageResult {
   percentMin: number
   percentMax: number
   koResult: KoResult
+  /**
+   * 実際に計算へ使用した「基本威力」。
+   * けたぐり・ヘビーボンバー・ジャイロボール・アシストパワー・からげんき・ウェザーボール等、
+   * 計算時に決まる威力を UI へ伝えるためのフィールド。
+   * じゅうでん / メトロノーム / Gのちから の倍率は含まない。
+   */
+  basePower: number
 }
 
 export function calcRollPercent(roll: number, defenderMaxHp: number): number {

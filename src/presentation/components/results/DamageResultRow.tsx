@@ -15,7 +15,7 @@ import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
-import { resolveWeatherAwareMovePower, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
+import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import type { MultiHitData } from '@/domain/models/Move'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { TypeName } from '@/domain/models/Pokemon'
@@ -109,16 +109,17 @@ export function DamageResultRow(props: DamageResultRowProps) {
         defenderAbility,
       })
     : null
-  const displayMovePower = moveRecord
-    ? resolveWeatherAwareMovePower({
-        movePower: moveRecord.power,
-        moveSpecial: moveRecord.special,
-        weather,
-        attackerAbility,
-        defenderAbility,
-      })
-    : null
   const multiHit: MultiHitData | null | undefined = moveRecord?.multiHit
+  // 計算に実際に使われた基本威力（けたぐり・ジャイロボール・可変威力技等）。急所でも同値。
+  const resolvedBasePower = result.basePower
+  // 段階威力型は multiHit バッジ側で 20→40→60 と表示するため重複表示しない
+  const showPowerBadge =
+    moveRecord != null &&
+    multiHit?.type !== 'escalating' &&
+    resolvedBasePower > 0 &&
+    (moveRecord.special != null ||
+      (moveRecord.powerOptions?.length ?? 0) > 0 ||
+      resolvedBasePower !== moveRecord.power)
   const variableMultiHitDist = getVariableMultiHitDist(attackerAbility, attackerItem)
   const perHitResults = isCritical ? props.critPerHitResults : props.perHitResults
   const weakArmorPerHitResults = isCritical ? weakArmorCritPerHitResults : weakArmorPerHitResultsNormal
@@ -264,9 +265,9 @@ export function DamageResultRow(props: DamageResultRowProps) {
         <div className="min-w-0 flex flex-1 flex-wrap items-center gap-1.5">
           <span className="block min-w-0 max-w-full text-sm font-medium text-fg truncate">{moveName}</span>
           {displayMoveType && <TypeBadge type={displayMoveType} size="sm" />}
-          {moveRecord?.special === 'weather-ball' && displayMovePower != null && (
+          {showPowerBadge && (
             <span className="text-[10px] px-1 py-0 rounded bg-surface-3 text-fg-muted font-mono">
-              威力{displayMovePower}
+              威力{resolvedBasePower}
             </span>
           )}
           {multiHit && (

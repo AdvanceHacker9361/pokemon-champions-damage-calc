@@ -1,21 +1,14 @@
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { MoveRecord } from '@/data/schemas/types'
 import type { TypeName } from '@/domain/models/Pokemon'
+import { getPowerLabel } from './movePowerLabel'
 
 interface MoveMetaChipsProps {
   move: MoveRecord
   power?: number | null
   displayType?: TypeName
-}
-
-function getPowerLabel(move: MoveRecord, selectedPower?: number | null): string | null {
-  if (selectedPower != null) return `威力${selectedPower}`
-  if (move.powerOptions && move.powerOptions.length > 0) return `威力${move.powerOptions.join('/')}`
-  if (move.multiHit?.type === 'escalating') return `威力${move.multiHit.powers.join('→')}`
-  if (move.power != null) return `威力${move.power}`
-  if (move.category === '変化') return null
-  if (move.special) return '威力可変'
-  return null
+  /** 可変威力技で威力の根拠を説明するツールチップ（技スロットのみ） */
+  powerTitle?: string
 }
 
 function getHitLabel(move: MoveRecord): string | null {
@@ -25,7 +18,7 @@ function getHitLabel(move: MoveRecord): string | null {
   return `${move.multiHit.powers.length}段`
 }
 
-export function MoveMetaChips({ move, power, displayType }: MoveMetaChipsProps) {
+export function MoveMetaChips({ move, power, displayType, powerTitle }: MoveMetaChipsProps) {
   const powerLabel = getPowerLabel(move, power)
   const hitLabel = getHitLabel(move)
 
@@ -36,7 +29,10 @@ export function MoveMetaChips({ move, power, displayType }: MoveMetaChipsProps) 
         {move.category}
       </span>
       {powerLabel && (
-        <span className="rounded bg-surface-3 px-1.5 py-0.5 text-[10px] font-mono text-fg-subtle">
+        <span
+          className="rounded bg-surface-3 px-1.5 py-0.5 text-[10px] font-mono text-fg-subtle"
+          title={powerTitle}
+        >
           {powerLabel}
         </span>
       )}

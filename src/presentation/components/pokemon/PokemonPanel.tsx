@@ -451,6 +451,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
               setMove={store.setMove}
               movePowers={store.movePowers}
               setMovePower={store.setMovePower}
+              side="attacker"
               maxHP={computedStats.hp}
             />
           )}
@@ -479,6 +480,7 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                     setMove={store.setMove}
                     movePowers={store.movePowers}
                     setMovePower={store.setMovePower}
+                    side="defender"
                     maxHP={computedStats.hp}
                   />
                 </div>

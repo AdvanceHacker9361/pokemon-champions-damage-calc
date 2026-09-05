@@ -15,6 +15,7 @@ function makeResult(rolls: number[], defenderMaxHp: number): DamageResult {
     percentMin: calcRollPercent(rolls[0], defenderMaxHp),
     percentMax: calcRollPercent(rolls[15], defenderMaxHp),
     koResult: calcKoProbability(rolls, defenderMaxHp),
+    basePower: 0,
   }
 }
 

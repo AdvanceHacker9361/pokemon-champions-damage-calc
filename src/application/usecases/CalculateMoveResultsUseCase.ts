@@ -63,6 +63,8 @@ function createTotalResult(hitResults: DamageResult[]): DamageResult {
     percentMin: calcRollPercent(rolls[0], defenderMaxHp),
     percentMax: calcRollPercent(rolls[15], defenderMaxHp),
     koResult: calcKoProbability(Array.from(rolls), defenderMaxHp),
+    // 段階威力型（トリプルアクセル等）は発ごとに威力が異なるため 1 発目の基本威力を代表値とする
+    basePower: hitResults[0].basePower,
   }
 }
 
