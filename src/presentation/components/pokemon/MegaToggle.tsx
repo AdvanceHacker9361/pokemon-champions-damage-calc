@@ -1,4 +1,20 @@
 import type { MegaPokemonRecord } from '@/data/schemas/types'
+import { PokemonRepository } from '@/data/repositories/PokemonRepository'
+
+/**
+ * 複数メガ形態のボタン名。
+ * 日本語のメガ名から先頭の「メガ」と元の種族名を取り除いた残り（X / Y / Z 等）を形態名とし、
+ * 残りが空（例: メガアブソル）なら「メガ」とだけ表示する。
+ * 旧実装は key の末尾（mega-lucario → LUCARIO）を使っていたため、Z 形態を持つ種で
+ * 「メガLUCARIO」「メガZ」のような表記になっていた。
+ */
+export function megaFormLabel(mega: MegaPokemonRecord, baseName?: string): string {
+  const base = baseName ?? PokemonRepository.findById(mega.basePokemonId)?.name ?? ''
+  let rest = mega.name.startsWith('メガ') ? mega.name.slice(2) : mega.name
+  if (base && rest.startsWith(base)) rest = rest.slice(base.length)
+  rest = rest.trim()
+  return rest ? `メガ${rest}` : 'メガ'
+}
 
 interface MegaToggleProps {
   isMega: boolean
@@ -42,7 +58,6 @@ export function MegaToggle({ isMega, canMega, availableMegas, megaKey, onChange,
         通常
       </button>
       {availableMegas.map(mega => {
-        const suffix = mega.key.split('-').pop()?.toUpperCase() ?? mega.name
         const isActive = isMega && megaKey === mega.key
         return (
           <button
@@ -55,7 +70,7 @@ export function MegaToggle({ isMega, canMega, availableMegas, megaKey, onChange,
             className={`${SEG} border-l border-edge ${isActive ? SEG_ON : SEG_OFF}`}
             title={mega.name}
           >
-            メガ{suffix}
+            {megaFormLabel(mega)}
           </button>
         )
       })}
