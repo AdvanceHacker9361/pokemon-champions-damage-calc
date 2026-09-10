@@ -18,6 +18,9 @@ import { useBuildLibraryStore, BUILD_LIBRARY_MAX } from '@/presentation/store/bu
 import type { PokemonRecord } from '@/data/schemas/types'
 import type { TypeName, StatKey } from '@/domain/models/Pokemon'
 
+/** セグレイブ（きょけんとつげき使用者）の図鑑番号 */
+const BAXCALIBUR_ID = 998
+
 interface PokemonPanelProps {
   store: PokemonStore
   label: '攻撃側' | '防御側'
@@ -335,6 +338,28 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                 </button>
                 <p className="text-[11px] text-fg-subtle mt-0.5">電気技の威力×2</p>
               </div>
+            </div>
+          )}
+
+          {/* きょけんとつげき後（セグレイブ専用・攻守どちらでも表示） */}
+          {store.pokemonId === BAXCALIBUR_ID && (
+            <div>
+              <label className="label block mb-1">きょけんとつげき</label>
+              <button
+                type="button"
+                onClick={() => store.setGlaiveRushVulnerable(!store.glaiveRushVulnerable)}
+                title="使用後、次に自分が動くまで受けるダメージが2倍・相手の攻撃は必中"
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  store.glaiveRushVulnerable
+                    ? 'bg-accent-bg text-accent border-accent-border'
+                    : 'text-fg-muted border-edge hover:bg-surface-3'
+                }`}
+              >
+                {store.glaiveRushVulnerable
+                  ? '✓ きょけんとつげき後（被ダメ2倍）'
+                  : 'きょけんとつげき後（被ダメ2倍）'}
+              </button>
+              <p className="text-[11px] text-fg-subtle mt-0.5">受けるダメージ2倍・相手の攻撃は必中</p>
             </div>
           )}
 

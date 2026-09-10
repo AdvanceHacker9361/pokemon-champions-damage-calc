@@ -821,6 +821,19 @@ src/
 - `PASSIVE_PRESETS` に `rockyHelmet`（damage/ratio 1/6 floor, perAttack）を追加。対象トグルを攻撃側にすると攻撃側最大 HP 基準で課金される
 - テスト: `tests/domain/RegMCAbilities.test.ts`（45 件）、`tests/domain/CritRank.test.ts`（7 件）、`data-integrity.test.ts` に `Reg.M-C data` describe（ピン留め）
 
+#### きょけんとつげき使用後の状態（リリース前調整）
+- 仕様（Gen 9 / Showdown `glaiverush`）: 使用者が次に技を使うまで、受ける攻撃の**最終ダメージ ×2**（乱数・急所等すべての補正の後）＋ 使用者への攻撃は必中
+- エンジン: `DamageCalcInput.defenderGlaiveRushVulnerable` → `applyOtherModifiers` の最後で `pokeRound(d * 2)`。`CalculateDamageUseCase` の `PokemonBattleState.glaiveRushVulnerable` 経由で伝搬（`chargeActive` と同じ経路）
+- ストア: `pokemonStore.glaiveRushVulnerable` / `setGlaiveRushVulnerable`（`COMMON_RESET_FIELDS` でリセット）。スナップショット・`swapStores`・`buildLibraryStore`（戦闘中フラグとして正規化時にリセット）に追加
+- UI: `PokemonPanel` で `pokemonId === 998`（セグレイブ、メガ含む）のとき攻守両パネルにトグル。防御側 ON → 結果行 ×2 かつ `hitRate = 1`（「XX%命中」表示が消える）。攻撃側 ON → ダメージ進行の被ダメイベントの初期状態
+- 自動化: `src/domain/calculators/GlaiveRushState.ts` の純関数 `resolveGlaiveRushDoubling(events, initialAttackerVulnerable)` がイベント id → 2 倍要否の Map を返し、`useBattleSequence` / `useAccumulatedDamage` / `DamageProgressionPanel`（バッジ）が共有
+  - `attack`: 適用時に `defenderVulnerable` なら与ダメ ×2（usages 全回）。適用後 `attackerVulnerable = (moveName === 'きょけんとつげき')`
+  - `incoming`: 適用時に `attackerVulnerable` なら被ダメ ×2（攻守入替計算に `glaiveRushVulnerable: true` を渡す）。適用後 `defenderVulnerable = (moveName === 'きょけんとつげき')`
+  - `setupTurn`: その側の状態を終了。定数ダメ・回復・痛み分け・メガシンカ・きのみ・宿り木は状態を継続（痛み分けは使用側が不明のため継続扱い＝既知の制限）
+  - `AttackPayload.defenderGlaiveRush`: 加算時に防御側トグルが ON だったエントリは ×2 済みのため自動 2 倍をスキップ
+  - `expandAttackEvent(doubleDamage)` がロール系配列（rolls / rawRolls / critRolls / rawCritRolls / おやこあい親子 / 変動連続技）を一律 2 倍。ばけのかわの固定 1/8 は技ダメージではないため対象外
+- テスト: `tests/domain/GlaiveRush.test.ts`（12 件）、`tests/presentation/glaiveRush.test.tsx`（8 件、両フックの `combinedProb` 一致を含む）
+
 #### データ修正（Showdown 全件クロスチェックで発見）
 - メガグソクムシャ: ききかいひ → かたいツメ、108 → 148kg。メガガブリアス 130 → 95kg。Z-A 由来メガ 18 件の体重を公式値へ
 - オノノクス／クリムガン: ドラゴン/フェアリー → ドラゴン単（ヌメルゴンと同型の誤り）

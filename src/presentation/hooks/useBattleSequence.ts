@@ -17,6 +17,7 @@ import {
 } from '@/domain/calculators/BattleSequenceCalc'
 import { expandAttackEvent, needsCritPass } from '@/presentation/hooks/expandAttackEvent'
 import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
+import { resolveGlaiveRushDoubling } from '@/domain/calculators/GlaiveRushState'
 import { toBerryOption } from '@/presentation/hooks/berryOption'
 import {
   buildPassiveSchedule,
@@ -37,6 +38,8 @@ export interface ResolvedEvent {
   auto?: true
   /** 自動行の適用ターン（0 = 開始時） */
   turn?: number
+  /** きょけんとつげき後の状態により、このイベントのダメージが自動で2倍になったか */
+  glaiveRushDoubled?: boolean
 }
 
 export interface BattleSequenceComputed {
@@ -84,6 +87,8 @@ function toBattleState(s: PokemonStore): PokemonBattleState {
     chargeActive: s.chargeActive,
     metronomeMultiplier: s.metronomeMultiplier,
     grounded: s.grounded,
+    // glaiveRushVulnerable は載せない: 手動トグルは時系列の位置で有効期間が決まるため
+    // `resolveGlaiveRushDoubling` の初期値として扱い、被ダメ計算時に明示的に渡す
   }
 }
 
@@ -175,7 +180,8 @@ export function useBattleSequence(): BattleSequenceComputed {
     let seqDefender = defenderHasMegaEvent ? toBaseBattleState(defender) : toBattleState(defender)
 
     // 防御側の技（攻守入替）で攻撃側への被ダメロールを算出
-    function incomingRolls(moveName: string, crit: boolean): number[] | null {
+    // glaiveRushVulnerable: 攻撃側が きょけんとつげき 使用後（攻守入替後は「防御側」が攻撃側）
+    function incomingRolls(moveName: string, crit: boolean, glaiveRushVulnerable: boolean): number[] | null {
       const move = MoveRepository.findByName(moveName)
       if (!move || move.category === '変化') return null
 
@@ -189,7 +195,9 @@ export function useBattleSequence(): BattleSequenceComputed {
       try {
         const res = executeDamageCalculation({
           attacker: seqDefender,
-          defender: seqAttacker,
+          defender: glaiveRushVulnerable
+            ? { ...seqAttacker, glaiveRushVulnerable: true }
+            : seqAttacker,
           move: m,
           field: battleField,
           isCritical: crit || m.alwaysCrit === true,
@@ -199,6 +207,9 @@ export function useBattleSequence(): BattleSequenceComputed {
         return null
       }
     }
+
+    // きょけんとつげき後の被ダメ2倍。攻撃側パネルの手動トグルは最初の attack まで有効
+    const glaiveDoubling = resolveGlaiveRushDoubling(events, attacker.glaiveRushVulnerable)
 
     // イベント id → ターン範囲（attack は usages 分のターンを占有）
     const turnRanges = new Map(computeTurnRanges(events).map(r => [r.eventId, r]))
@@ -261,6 +272,8 @@ export function useBattleSequence(): BattleSequenceComputed {
           const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
           const recoilTag = recoilRate ? `（反動${Math.round(recoilRate * 100)}%）` : ''
           const critTag = ev.isForcedCrit ? '（急所）' : ''
+          const glaiveDoubled = glaiveDoubling.get(ev.id) === true
+          const glaiveTag = glaiveDoubled ? '（被ダメ2倍）' : ''
           // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）。
           // 攻撃側HPを実HPで追跡するモードなので吸収・反動も SeqEvent に載せる。
           const expanded = expandAttackEvent(ev, {
@@ -270,19 +283,24 @@ export function useBattleSequence(): BattleSequenceComputed {
             drain: drainRate,
             drainBoosted,
             recoil: recoilRate,
+            doubleDamage: glaiveDoubled,
           })
           // expanded.normal は必ず usages 個（ラベルと1:1）
           // 通常パスは usages と 1:1、急所込みパスはおやこあいで親子2件になりうるため
           // usage 単位で切り出して自動項目を同じ位置に挟む
           const critPerUsage = Math.max(1, Math.round(expanded.crit.length / ev.usages))
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
-          resolved.push({ event: ev, label: `与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageTag}` })
+          resolved.push({
+            event: ev,
+            label: `与ダメ ${ev.label}${critTag}${glaiveTag}${drainTag}${recoilTag}${usageTag}`,
+            glaiveRushDoubled: glaiveDoubled,
+          })
           const attackTurnStart = turnStartOf(ev.id)
           expanded.normal.forEach((seqEv, u) => {
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
             seqEvents.push(seqEv)
             critSeqEvents.push(...expanded.crit.slice(u * critPerUsage, (u + 1) * critPerUsage))
-            labels.push(`与ダメ ${ev.label}${critTag}${drainTag}${recoilTag}${usageSuffix}`)
+            labels.push(`与ダメ ${ev.label}${critTag}${glaiveTag}${drainTag}${recoilTag}${usageSuffix}`)
             const turn = attackTurnStart + u
             // 攻撃側 perAttack（いのちのたま等）→ そのターンのターン末 の順で適用
             pushAuto(passiveSchedule.perAttackByTurn[turn], autoSeq++)
@@ -303,7 +321,8 @@ export function useBattleSequence(): BattleSequenceComputed {
             resolved.push({ event: ev, label: '攻撃側被ダメ（技未選択）', error: '防御側の技を選択してください' })
             break
           }
-          const rolls = incomingRolls(ev.moveName, ev.crit)
+          const incomingDoubled = glaiveDoubling.get(ev.id) === true
+          const rolls = incomingRolls(ev.moveName, ev.crit, incomingDoubled)
           if (!rolls) {
             resolved.push({ event: ev, label: `攻撃側被ダメ ${ev.moveName}`, error: '計算できませんでした' })
             break
@@ -314,9 +333,10 @@ export function useBattleSequence(): BattleSequenceComputed {
           const recoil = recoilRateForMove(move, seqDefender.abilityName)
           const drainTag = drain ? `（相手吸収${Math.round(drain * 100)}%）` : ''
           const recoilTag = recoil ? `（相手反動${Math.round(recoil * 100)}%）` : ''
-          const label = `攻撃側被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${drainTag}${recoilTag}`
+          const glaiveTag = incomingDoubled ? '（被ダメ2倍）' : ''
+          const label = `攻撃側被ダメ ${ev.moveName}${ev.crit ? '（急所）' : ''}${glaiveTag}${drainTag}${recoilTag}`
           pushSeq({ kind: 'incoming', dmg: rolls, drain, drainBoosted, recoil }, label)
-          resolved.push({ event: ev, label })
+          resolved.push({ event: ev, label, glaiveRushDoubled: incomingDoubled })
           break
         }
         case 'setupTurn': {

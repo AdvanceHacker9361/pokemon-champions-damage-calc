@@ -35,6 +35,8 @@ export interface EventRowProps {
   /** このイベントの直後へ挿入する。key は INSERT_EVENT_ACTIONS のキー */
   onInsertAfter: (key: string) => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
+  /** きょけんとつげき後の状態により、この行のダメージが自動で2倍になっているか */
+  glaiveRushDoubled?: boolean
 }
 
 type TimelineRowTone = 'attack' | 'accent' | 'warning' | 'success' | 'default'
@@ -111,17 +113,21 @@ export function EventRow({
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
   attackerMegaOptions, defenderMegaOptions,
   onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onInsertAfter, onUpdate,
+  glaiveRushDoubled,
 }: EventRowProps) {
   const rowProps = { idx, total, isHighlighted, insertCtx, onInsertAfter, onMoveUp, onMoveDown, onRemove }
 
   if (ev.kind === 'attack') {
-    const subMin = ev.minDmg * ev.usages
-    const subMax = ev.maxDmg * ev.usages
+    // きょけんとつげき後の自動2倍はロールにのみ適用されるため、表示レンジも合わせる
+    const dmgMult = glaiveRushDoubled ? 2 : 1
+    const subMin = ev.minDmg * ev.usages * dmgMult
+    const subMax = ev.maxDmg * ev.usages * dmgMult
     return (
       <TimelineRow {...rowProps} tone="attack">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <TurnChip turnRange={turnRange} />
           <span className="min-w-[8rem] flex-1 truncate font-medium text-fg">{ev.label}</span>
+          <GlaiveRushBadge active={glaiveRushDoubled} />
           <div className="flex items-center gap-0.5 flex-shrink-0">
             <button
               type="button"
@@ -167,6 +173,7 @@ export function EventRow({
       <TimelineRow {...rowProps} tone="warning">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-warning">攻撃側被ダメ</span>
+          <GlaiveRushBadge active={glaiveRushDoubled} />
           <select
             value={ev.moveName ?? ''}
             onChange={e => onUpdate({ moveName: e.target.value || null } as Partial<ProgressionEvent>)}
@@ -316,6 +323,19 @@ export function EventRow({
  * イベントの出自バッジ。
  * `pinned` = 常時効果を固定化して生成された行、`background` = 旧・背景効果由来（レガシー）。
  */
+/** きょけんとつげき後の被ダメ2倍が自動適用された行に付けるバッジ */
+function GlaiveRushBadge({ active }: { active?: boolean }) {
+  if (!active) return null
+  return (
+    <span
+      className="rounded border border-warning bg-surface-3 px-1 py-0.5 text-[10px] text-warning flex-shrink-0"
+      title="きょけんとつげき使用後のため、このダメージは2倍・必中として計算されています"
+    >
+      被ダメ2倍（きょけんとつげき）
+    </span>
+  )
+}
+
 function SourceBadge({ source }: { source?: 'manual' | 'background' | 'pinned' }) {
   if (source === 'pinned') {
     return (

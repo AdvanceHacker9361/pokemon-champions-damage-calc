@@ -51,6 +51,7 @@ export function useDamageCalc() {
         proteanType: defender.proteanType,
         weight: defender.weight,
         grounded: defender.grounded,
+        glaiveRushVulnerable: defender.glaiveRushVulnerable,
       },
       field: {
         weather: field.weather,
@@ -72,7 +73,7 @@ export function useDamageCalc() {
     defender.sp, defender.statNatures,
     defender.effectiveAbility, defender.itemName,
     defender.ranks, defender.status, defender.abilityActivated, defender.proteanType,
-    defender.grounded,
+    defender.grounded, defender.glaiveRushVulnerable,
     field.weather, field.terrain,
     field.isReflect, field.isLightScreen, field.isAuroraVeil, field.isTrickRoom, field.isGravity,
     setResults,

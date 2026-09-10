@@ -6,6 +6,7 @@ import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { computeTurnRanges } from '@/domain/models/PassiveEffect'
 import { buildPassiveSchedule, type AutoEventItem } from '@/domain/calculators/PassiveEffectExpansion'
 import { collectEffectIds } from '@/domain/calculators/PassiveEffectPinning'
+import { resolveGlaiveRushDoubling } from '@/domain/calculators/GlaiveRushState'
 import { EventRow } from './EventRow'
 import { PassiveGhostRow } from './PassiveGhostRow'
 import { ProgressionTabs } from './ProgressionTabs'
@@ -41,6 +42,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const attackerSpHp   = useAttackerStore(s => s.sp.hp)
   const attackerMaxHp  = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const attackerTypes  = useAttackerStore(s => s.types)
+  const attackerGlaiveRush = useAttackerStore(s => s.glaiveRushVulnerable)
   const defenderTypes  = useDefenderStore(s => s.types)
   const attackerCanMega = useAttackerStore(s => s.canMega)
   const attackerAvailableMegas = useAttackerStore(s => s.availableMegas)
@@ -61,6 +63,12 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     const map = new Map(turnRanges.map(r => [r.eventId, r] as const))
     return map
   }, [turnRanges])
+
+  // きょけんとつげき後の自動2倍バッジ（フックと同じ純粋関数。2D DP は再実行しない）
+  const glaiveDoubling = useMemo(
+    () => resolveGlaiveRushDoubling(events, attackerGlaiveRush),
+    [events, attackerGlaiveRush],
+  )
 
   // 常時効果のゴースト行用スケジュール（純粋計算・シミュレーションは実行しない）
   const expansionCtx = useMemo(
@@ -246,6 +254,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
                 onMoveDown={() => moveEvent(ev.id, 1)}
                 onInsertAfter={key => handleInsertByKey(key, ev.id)}
                 onUpdate={patch => updateEvent(ev.id, patch)}
+                glaiveRushDoubled={glaiveDoubling.get(ev.id) === true}
               />
               <PassiveGhostRow
                 items={passiveSchedule.afterEvent[ev.id] ?? []}

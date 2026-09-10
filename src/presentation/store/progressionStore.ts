@@ -50,6 +50,12 @@ export interface AttackPayload {
   firstHitNullified?: boolean
   /** このイベントの最初の使用だけ加算する固定ダメージ（ばけのかわ解除時など） */
   firstHitFixedDamage?: number
+  /**
+   * 加算時に防御側の「きょけんとつげき後（被ダメ2倍）」トグルが ON だったか。
+   * true のとき保存済みロールには既に2倍が織り込まれているため、
+   * 時系列側の自動2倍（`GlaiveRushState`）を重ねて適用しない。
+   */
+  defenderGlaiveRush?: boolean
 }
 
 /** イベント種別ごとの payload */

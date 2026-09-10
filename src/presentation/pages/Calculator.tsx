@@ -44,6 +44,7 @@ function swapStores() {
     chargeActive: s.chargeActive,
     metronomeMultiplier: s.metronomeMultiplier,
     grounded: s.grounded,
+    glaiveRushVulnerable: s.glaiveRushVulnerable,
     baseStats: s.baseStats,
     types: s.types,
     weight: s.weight,

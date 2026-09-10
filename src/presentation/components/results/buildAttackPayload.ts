@@ -23,6 +23,8 @@ export interface BuildAttackPayloadParams {
   activeRawResult: DamageResult | undefined
   rawCritResult: DamageResult | undefined
   defenderMaxHp: number
+  /** 防御側の「きょけんとつげき後（被ダメ2倍）」トグルが ON の状態で計算されたロールか */
+  defenderGlaiveRush?: boolean
 }
 
 /**
@@ -34,7 +36,7 @@ export function buildAttackPayload(params: BuildAttackPayloadParams): AttackPayl
     attackerName, moveName, isCritical, isParentalBond, isDisguiseIntact, isForcedCrit,
     hadMultiscale, multiHit, moveCritChance, variableMultiHitDist,
     rolls, rawRolls, effectiveRolls, critRollsBase, rawCritRollsBase, effectiveCritRolls,
-    activeRawResult, rawCritResult, defenderMaxHp,
+    activeRawResult, rawCritResult, defenderMaxHp, defenderGlaiveRush,
   } = params
 
   const critLabel = isCritical ? '(急所)' : ''
@@ -153,5 +155,6 @@ export function buildAttackPayload(params: BuildAttackPayloadParams): AttackPayl
     variableHitDist: isVariableMultiHit ? variableMultiHitDist : undefined,
     firstHitNullified: isVariableMultiHit && isDisguiseIntact,
     firstHitFixedDamage: disguiseFlatDmg > 0 ? disguiseFlatDmg : undefined,
+    defenderGlaiveRush: defenderGlaiveRush === true ? true : undefined,
   }
 }

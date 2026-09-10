@@ -37,6 +37,12 @@ export interface DamageCalcInput {
   defenderWeight?: number
   /** うちおとす等による接地状態: true のとき じめん技が ひこうタイプ/ふゆう にも当たる */
   defenderGrounded?: boolean
+  /**
+   * きょけんとつげき使用後の防御側: 次に防御側が動くまで、受けるダメージが2倍。
+   * Showdown の `onSourceModifyDamage: chainModify(2)` と同じく、
+   * 他のすべての補正のあとに最終ダメージへ適用する。
+   */
+  defenderGlaiveRushVulnerable?: boolean
   move: MoveData
   field: BattleField
   isCritical?: boolean
@@ -447,6 +453,11 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
 
     // 7. その他補正
     d = applyOtherModifiers(d, input, moveType, typeEff)
+
+    // 8. きょけんとつげき後の被ダメ2倍（すべての補正の最後に適用）
+    if (input.defenderGlaiveRushVulnerable) {
+      d = pokeRound(d * 2)
+    }
 
     return Math.max(1, d)  // 最低1ダメージ（無効タイプは0）
   })

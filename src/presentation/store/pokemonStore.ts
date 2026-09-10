@@ -66,6 +66,11 @@ export interface PokemonStore {
   metronomeMultiplier: number
   /** 接地状態（うちおとす等）: じめん技が ひこう/ふゆう にも当たる */
   grounded: boolean
+  /**
+   * きょけんとつげき使用後の状態（セグレイブ）。
+   * 次に自分が動くまで、受けるダメージが2倍になり相手の攻撃は必中になる。
+   */
+  glaiveRushVulnerable: boolean
   // Derived (cached)
   baseStats: BaseStats
   types: TypeName[]
@@ -96,6 +101,7 @@ export interface PokemonStore {
   setChargeActive: (v: boolean) => void
   setMetronomeMultiplier: (v: number) => void
   setGrounded: (v: boolean) => void
+  setGlaiveRushVulnerable: (v: boolean) => void
   reset: () => void
 }
 
@@ -114,6 +120,7 @@ const COMMON_RESET_FIELDS = {
   grounded: false,
   focusEnergyActive: false,
   chargeActive: false,
+  glaiveRushVulnerable: false,
 }
 
 function createPokemonStore() {
@@ -142,6 +149,7 @@ function createPokemonStore() {
     chargeActive: false,
     metronomeMultiplier: 1,
     grounded: false,
+    glaiveRushVulnerable: false,
     baseStats: { ...DEFAULT_BASE_STATS },
     types: [],
     weight: 0,
@@ -365,6 +373,8 @@ function createPokemonStore() {
     setMetronomeMultiplier: (v) => set({ metronomeMultiplier: Math.min(2, Math.max(1, v)) }),
 
     setGrounded: (v) => set({ grounded: v }),
+
+    setGlaiveRushVulnerable: (v) => set({ glaiveRushVulnerable: v }),
 
     reset: () => set({
       pokemonId: null, pokemonName: '',

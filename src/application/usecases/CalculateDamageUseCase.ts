@@ -30,6 +30,8 @@ export interface PokemonBattleState {
   metronomeMultiplier?: number
   /** うちおとす等による接地状態: じめん技が ひこう/ふゆう にも当たる */
   grounded?: boolean
+  /** きょけんとつげき使用後: 次に自分が動くまで、受けるダメージ2倍・相手の攻撃は必中 */
+  glaiveRushVulnerable?: boolean
 }
 
 export interface CalculateDamageInput {
@@ -119,6 +121,7 @@ export function executeDamageCalculation(
     defenderProteanType: input.defender.proteanType,
     defenderWeight: input.defender.weight,
     defenderGrounded: input.defender.grounded,
+    defenderGlaiveRushVulnerable: input.defender.glaiveRushVulnerable,
     move: input.move,
     field: input.field,
     isCritical: input.isCritical,

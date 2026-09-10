@@ -14,7 +14,7 @@ export type PokemonSnapshot = Pick<PokemonStore,
   | 'isMega' | 'canMega' | 'availableMegas' | 'megaKey' | 'isBlade' | 'isMighty'
   | 'ranks' | 'status' | 'abilityActivated' | 'proteanType' | 'proteanStab'
   | 'moves' | 'movePowers' | 'supremeOverlordBoost' | 'focusEnergyActive' | 'chargeActive' | 'metronomeMultiplier'
-  | 'grounded'
+  | 'grounded' | 'glaiveRushVulnerable'
   | 'baseStats' | 'types' | 'weight' | 'effectiveAbility'>
 
 /** ポケモンタブ1件（片側の複数構成を保持するための単位） */
@@ -121,6 +121,7 @@ export function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
     chargeActive: s.chargeActive,
     metronomeMultiplier: s.metronomeMultiplier,
     grounded: s.grounded,
+    glaiveRushVulnerable: s.glaiveRushVulnerable,
     baseStats: { ...s.baseStats },
     types: [...s.types],
     weight: s.weight,

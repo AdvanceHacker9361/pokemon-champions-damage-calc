@@ -124,6 +124,7 @@ export function calculateMoveResults({
             proteanType: defender.proteanType,
             weight: defender.weight,
             grounded: defender.grounded,
+            glaiveRushVulnerable: defender.glaiveRushVulnerable,
           },
           move,
           field,

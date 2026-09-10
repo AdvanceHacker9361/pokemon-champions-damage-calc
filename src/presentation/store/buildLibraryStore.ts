@@ -106,6 +106,7 @@ export function normalizeBuildSnapshot(source: PokemonSnapshot): PokemonSnapshot
     metronomeMultiplier: 1,
     supremeOverlordBoost: 0,
     grounded: false,
+    glaiveRushVulnerable: false,
     isBlade: false,
     isMighty: false,
   }
@@ -236,6 +237,7 @@ function coerceSnapshot(raw: unknown): PokemonSnapshot {
     chargeActive: asBool(r.chargeActive, false),
     metronomeMultiplier: asNum(r.metronomeMultiplier, 1, 1, 2),
     grounded: asBool(r.grounded, false),
+    glaiveRushVulnerable: asBool(r.glaiveRushVulnerable, false),
     baseStats: coerceStats(r.baseStats),
     types: rawTypes.filter((t): t is TypeName => ALL_TYPE_NAMES.some(v => v === t)),
     weight: asNum(r.weight, 0, 0, 100000),

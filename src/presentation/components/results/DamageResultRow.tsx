@@ -91,6 +91,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const setAttackerRank = useAttackerStore(s => s.setRank)
   const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp = useAttackerStore(s => s.sp.hp)
+  const defenderGlaiveRush = useDefenderStore(s => s.glaiveRushVulnerable)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
   const weather = useFieldStore(s => s.weather)
@@ -202,10 +203,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
   }
 
   // じゅうりょく: 命中率5/3倍、こうかくレンズ: 命中率1.1倍（最大100%）。必中技（accuracy=null）は影響なし
+  // きょけんとつげき後の防御側へは必中になるため命中率は常に100%
   const accuracyMult = (isGravity ? 5 / 3 : 1) * (attackerItem === 'こうかくレンズ' ? 1.1 : 1)
-  const hitRate = moveRecord?.accuracy != null
-    ? Math.min(1, moveRecord.accuracy / 100 * accuracyMult)
-    : 1.0
+  const hitRate = defenderGlaiveRush
+    ? 1.0
+    : moveRecord?.accuracy != null
+      ? Math.min(1, moveRecord.accuracy / 100 * accuracyMult)
+      : 1.0
   const isAlwaysCrit = moveRecord?.alwaysCrit === true
   const critRate = isAlwaysCrit ? 1.0 : moveCritChance
 
@@ -253,6 +257,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
       hadMultiscale, multiHit, moveCritChance, variableMultiHitDist,
       rolls, rawRolls, effectiveRolls, critRollsBase, rawCritRollsBase, effectiveCritRolls,
       activeRawResult, rawCritResult: props.rawCritResult, defenderMaxHp,
+      defenderGlaiveRush,
     })
     addEntry(payload)
     setAdded(true)
