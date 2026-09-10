@@ -82,6 +82,14 @@ const HALF_BERRIES: Record<string, TypeName> = {
 /** かたやぶり系: 相手の特性（ふゆう等）を無効化する特性 */
 const MOLD_BREAKER_ABILITIES = new Set(['かたやぶり', 'ターボブレイズ', 'テラボルテージ'])
 
+/**
+ * かたやぶり系（相手の特性を無視する特性）かを判定する。
+ * 文字列比較の重複を避けるため、計算内の全判定とユースケース層からこの関数を使う。
+ */
+export function isMoldBreaker(ability: string | null | undefined): boolean {
+  return ability != null && MOLD_BREAKER_ABILITIES.has(ability)
+}
+
 /** へんげんじざい系（技タイプ＝自分のタイプに変換される特性） */
 const PROTEAN_LIKE_ABILITIES = new Set(['へんげんじざい', 'リベロ'])
 
@@ -262,7 +270,7 @@ function resolveDef(input: DamageCalcInput): number {
     if (effectiveDefStat === 'def') defMod *= 1.5
   }
   // かたやぶり系は防御側の防御補正特性（ファーコート・くさのけがわ）も貫通する
-  const defenseAbilitySuppressed = MOLD_BREAKER_ABILITIES.has(input.attackerAbility)
+  const defenseAbilitySuppressed = isMoldBreaker(input.attackerAbility)
   // ファーコート: 防御実数値2倍
   if (defenderAbility === 'ファーコート' && !defenseAbilitySuppressed) {
     if (effectiveDefStat === 'def') defMod *= 2
@@ -366,12 +374,12 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     defenderAbility === 'ふゆう' || defenderAbility === 'うなぎのぼり'
   const levitateImmuneToGround =
     hasLevitateLikeGroundImmunity && moveType === 'じめん' &&
-    !grounded && !MOLD_BREAKER_ABILITIES.has(attackerAbility)
+    !grounded && !isMoldBreaker(attackerAbility)
   const airBalloonImmuneToGround =
     input.defenderItem === 'ふうせん' && moveType === 'じめん' && !grounded
   // タイプ／フラグ単位の無効化特性（ちょすい・ぼうおん等）。かたやぶり系で貫通される
   const abilityTypeImmune =
-    !MOLD_BREAKER_ABILITIES.has(attackerAbility) &&
+    !isMoldBreaker(attackerAbility) &&
     (TYPE_IMMUNITY_ABILITIES[defenderAbility] === moveType ||
      isFlagImmuneAbility(defenderAbility, move))
 
@@ -562,7 +570,7 @@ function applyOtherModifiers(
     if (typeEff > 1) d = pokeRound(d * 0.75)
   }
   // かたやぶり系は防御側の被ダメ軽減特性（はどうのぼうご・パンクロック）を貫通する
-  const defenderAbilitySuppressed = MOLD_BREAKER_ABILITIES.has(attackerAbility)
+  const defenderAbilitySuppressed = isMoldBreaker(attackerAbility)
   // はどうのぼうご: 接触技のダメージ0.5倍
   if (defenderAbility === 'はどうのぼうご' && !defenderAbilitySuppressed && move.flags.contact) {
     d = pokeRound(d * 0.5)
@@ -630,6 +638,10 @@ function applyOtherModifiers(
   }
   // きれあじ: 切る属性技の威力1.5倍
   if (attackerAbility === 'きれあじ' && move.flags.slice) {
+    d = pokeRound(d * 1.5)
+  }
+  // がんじょうあご: かみつく属性技の威力1.5倍
+  if (attackerAbility === 'がんじょうあご' && move.flags.bite) {
     d = pokeRound(d * 1.5)
   }
   // パンクロック（攻撃側）: 音技の威力1.3倍

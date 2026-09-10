@@ -265,3 +265,57 @@ describe('resolvePassiveAmount の丸め', () => {
     expect(at(20)).toBe(150)
   })
 })
+describe('接触限定の perAttack（ゴツゴツメット）', () => {
+  const rockyHelmet = () => eff({
+    side: 'attacker', timing: 'perAttack', count: 'all', label: 'ゴツゴツメット',
+    presetKey: 'rockyHelmet',
+    amount: { type: 'ratio', num: 1, den: 6, rounding: 'floor' },
+  })
+
+  const withContact = (contact: Record<string, boolean>): PassiveExpansionContext => ({
+    ...CTX,
+    isContactAttack: (eventId: string) => contact[eventId] ?? true,
+  })
+
+  it('接触技の attack では発動する', () => {
+    const s = buildPassiveSchedule([attack('a1', 2)], [rockyHelmet()], withContact({ a1: true }))
+    expect(Object.keys(s.perAttackByTurn).map(Number)).toEqual([1, 2])
+    // 攻撃側 HP 160 の 1/6
+    expect(s.perAttackByTurn[1][0].amount).toBe(26)
+  })
+
+  it('非接触技の attack では発動しない', () => {
+    const s = buildPassiveSchedule([attack('a1', 2)], [rockyHelmet()], withContact({ a1: false }))
+    expect(s.perAttackByTurn).toEqual({})
+    expect(s.afterEvent['a1'] ?? []).toHaveLength(0)
+  })
+
+  it('防御側 perAttack（incoming）でも非接触なら発動しない', () => {
+    const helmet = eff({
+      side: 'defender', timing: 'perAttack', count: 'all', label: 'ゴツゴツメット',
+      presetKey: 'rockyHelmet',
+      amount: { type: 'ratio', num: 1, den: 6, rounding: 'floor' },
+    })
+    const events: TurnEventLike[] = [attack('a1'), { id: 'in1', kind: 'incoming' }]
+    const contact = buildPassiveSchedule(events, [helmet], withContact({ in1: true }))
+    expect(contact.perAttackByEventId['in1']).toHaveLength(1)
+
+    const nonContact = buildPassiveSchedule(events, [helmet], withContact({ in1: false }))
+    expect(nonContact.perAttackByEventId).toEqual({})
+  })
+
+  it('いのちのたま（接触条件なし）は非接触技でも発動する', () => {
+    const lifeOrb = eff({
+      side: 'attacker', timing: 'perAttack', count: 'all', label: 'いのちのたま',
+      presetKey: 'lifeOrb',
+      amount: { type: 'ratio', num: 1, den: 10, rounding: 'floor' },
+    })
+    const s = buildPassiveSchedule([attack('a1', 2)], [lifeOrb], withContact({ a1: false }))
+    expect(Object.keys(s.perAttackByTurn).map(Number)).toEqual([1, 2])
+  })
+
+  it('コールバック未指定なら従来どおり適用する（後方互換）', () => {
+    const s = buildPassiveSchedule([attack('a1', 2)], [rockyHelmet()], CTX)
+    expect(Object.keys(s.perAttackByTurn).map(Number)).toEqual([1, 2])
+  })
+})

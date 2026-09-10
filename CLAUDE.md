@@ -813,12 +813,14 @@ src/
 
 #### 計算エンジン（`DamageCalculator.ts`）
 - `isProteanLike(ability)`（へんげんじざい／リベロ）を export し、ユースケース・UI の文字列比較を置換
+- `isMoldBreaker(ability)` を export し、かたやぶり系の判定 4 か所（ふゆう・タイプ/フラグ無効化・防御補正特性・被ダメ軽減特性）と `CalculateDamageUseCase` の重複定義を統一
 - `TYPE_IMMUNITY_ABILITIES`（特性→無効タイプ）と `isFlagImmuneAbility`（ぼうおん=音技／ぼうだん=弾技）で無効化を一括処理。ふゆう/ふうせんと同じ `typeEffCheck = 0` 経路（かたやぶり系で貫通）
 - 防御実数値補正: ファーコート ×2、くさのけがわ（グラス中）×1.5 — `resolveDef` 内、`effectiveDefStat === 'def'` で判定（サイコショック等も正しく対象）。かたやぶり系で貫通
 - 攻撃実数値補正: はりこみ ×2（`attackerAbilityActivated` 時。`ACTIVATABLE_ABILITIES` に「交代直後の相手」）
+- がんじょうあご: `flags.bite` 技 ×1.5（きれあじ・メガランチャーと同じ最終補正枠）
 - 最終ダメージ補正: はどうのぼうご（接触 ×0.5）、パンクロック防御側（音技 ×0.5）、かんそうはだ（ほのお ×1.25）、パンクロック攻撃側（音技 ×1.3）、はがねのせいしん（はがね ×1.5）— かたいツメ等と同じ `pokeRound` 逐次適用
 - `CritRank.calcCritChance` に `attackerPokemonName` を追加。ながねぎ × カモネギ/ネギガナイト で急所ランク +2
-- `PASSIVE_PRESETS` に `rockyHelmet`（damage/ratio 1/6 floor, perAttack）を追加。対象トグルを攻撃側にすると攻撃側最大 HP 基準で課金される
+- `PASSIVE_PRESETS` に `rockyHelmet`（damage/ratio 1/6 floor, perAttack, `requiresContact: true`）を追加。対象トグルを攻撃側にすると攻撃側最大 HP 基準で課金される。`PassiveExpansionContext.isContactAttack?(eventId)`（`src/presentation/hooks/isContactAttack.ts` の `makeIsContactAttack(events)` で生成）が attack / incoming の技の `flags.contact` を見て非接触技では課金しない。コールバック未指定・技不明なら従来どおり適用
 - テスト: `tests/domain/RegMCAbilities.test.ts`（45 件）、`tests/domain/CritRank.test.ts`（7 件）、`data-integrity.test.ts` に `Reg.M-C data` describe（ピン留め）
 
 #### きょけんとつげき使用後の状態（リリース前調整）
@@ -830,7 +832,8 @@ src/
   - `attack`: 適用時に `defenderVulnerable` なら与ダメ ×2（usages 全回）。適用後 `attackerVulnerable = (moveName === 'きょけんとつげき')`
   - `incoming`: 適用時に `attackerVulnerable` なら被ダメ ×2（攻守入替計算に `glaiveRushVulnerable: true` を渡す）。適用後 `defenderVulnerable = (moveName === 'きょけんとつげき')`
   - `setupTurn`: その側の状態を終了。定数ダメ・回復・痛み分け・メガシンカ・きのみ・宿り木は状態を継続（痛み分けは使用側が不明のため継続扱い＝既知の制限）
-  - `AttackPayload.defenderGlaiveRush`: 加算時に防御側トグルが ON だったエントリは ×2 済みのため自動 2 倍をスキップ
+  - 初期状態: 攻撃側トグル → `attackerVulnerable`、防御側トグル → `defenderVulnerable`（その側が最初に動くまで）
+  - 戻り値は `GlaiveRushScale { factor: 2|1|0.5, doubled }`。`AttackPayload.defenderGlaiveRush`（加算時に防御側トグル ON ＝ ロールに ×2 織り込み済み）は「状態有効なら factor 1・doubled true」「状態終了後なら factor 0.5（保存値は必ず偶数なので厳密に等倍へ戻る）・doubled false」。表示レンジと `AccumExportButton` は factor、バッジ・ラベルは doubled を使う
   - `expandAttackEvent(doubleDamage)` がロール系配列（rolls / rawRolls / critRolls / rawCritRolls / おやこあい親子 / 変動連続技）を一律 2 倍。ばけのかわの固定 1/8 は技ダメージではないため対象外
 - テスト: `tests/domain/GlaiveRush.test.ts`（12 件）、`tests/presentation/glaiveRush.test.tsx`（8 件、両フックの `combinedProb` 一致を含む）
 
@@ -839,7 +842,7 @@ src/
 - オノノクス／クリムガン: ドラゴン/フェアリー → ドラゴン単（ヌメルゴンと同型の誤り）
 - 重複ゴミエントリ削除: id 946（イッカネズミ/Tandemaus 混在）、965（キョジオーン/Clodsire 混在）、993（テツノブジン重複）
 - 体重: コジョンド 35.5 / レシラム 330 / ゼクロム 345 / ホルード 42.4 / ラランテス 18.5
-- 未対応（意図的）: ザシアン/ザマゼンタは剣・盾の王フォルム値のまま。ねつこうかん／こぼれダネ／ばんけん／ヘドロえき／グラスメイカーは計算式に直接効果がないため名前のみ。がんじょうあご・こおりのりんぷん・トランジスタ・りゅうのあぎと・いわはこび・こだいかっせい／クォークチャージ・わざわい系は和名化のみで計算未実装（別タスク）
+- 未対応（意図的）: ザシアン/ザマゼンタは剣・盾の王フォルム値のまま。ねつこうかん／こぼれダネ／ばんけん／ヘドロえき／グラスメイカーは計算式に直接効果がないため名前のみ。こおりのりんぷん・トランジスタ・りゅうのあぎと・いわはこび・こだいかっせい／クォークチャージ・わざわい系は和名化のみで計算未実装（別タスク。がんじょうあごはリリース前調整で実装済み）
 
 ### V3.18.0: 「ダメージ進行」ツールバー再設計（常時効果カタログ＋タブ化）
 

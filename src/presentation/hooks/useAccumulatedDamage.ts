@@ -9,8 +9,8 @@ import {
 } from '@/domain/calculators/BattleSequenceCalc'
 import { expandAttackEvent, type AttackEvent } from '@/presentation/hooks/expandAttackEvent'
 import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
-import { resolveGlaiveRushDoubling } from '@/domain/calculators/GlaiveRushState'
-import { useAttackerStore } from '@/presentation/store/pokemonStore'
+import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
+import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -34,10 +34,10 @@ export function expandAttack(
   e: AttackEvent,
   isFirstOverall: boolean,
   firstHadMultiscale: boolean,
-  doubleDamage = false,
+  damageScale = 1,
 ): { normal: SeqEvent[]; crit: SeqEvent[] } {
   return expandAttackEvent(e, {
-    mode: 'accumFixedAttacker', isFirstOverall, firstHadMultiscale, doubleDamage,
+    mode: 'accumFixedAttacker', isFirstOverall, firstHadMultiscale, damageScale,
   })
 }
 
@@ -46,8 +46,9 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const defenderBerryCfg  = useProgressionStore(s => s.defenderBerry)
   const attackerBerryCfg  = useProgressionStore(s => s.attackerBerry)
   const passiveEffects    = useProgressionStore(s => s.passiveEffects)
-  // きょけんとつげき後の被ダメ2倍（攻撃側パネルの手動トグルが時系列の初期状態）
+  // きょけんとつげき後の被ダメ2倍（各パネルの手動トグルが時系列の初期状態）
   const attackerGlaiveRush = useAttackerStore(s => s.glaiveRushVulnerable)
+  const defenderGlaiveRush = useDefenderStore(s => s.glaiveRushVulnerable)
   // 攻撃側HPに影響するイベントがある構成では、攻撃側HPを追跡する2Dシーケンスの
   // 結果をそのまま累積の出力として使う（累積とシミュレーションの食い違いを防ぐ）
   const seq = useBattleSequence()
@@ -119,7 +120,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
 
     // きょけんとつげき後の2倍判定は攻守シミュレーションと同じ純粋関数を使う
     // （incoming があれば必ず統合パスへ入るため、ここは主に保険）
-    const glaiveDoubling = resolveGlaiveRushDoubling(events, attackerGlaiveRush)
+    const glaiveScales = resolveGlaiveRushDoubling(events, {
+      initialAttackerVulnerable: attackerGlaiveRush,
+      initialDefenderVulnerable: defenderGlaiveRush,
+    })
 
     // 攻撃イベントの累積モード変換（incoming/attackerConst/attackerRecover は累積では無視）
     let attackIdx = 0
@@ -129,7 +133,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
           const isFirstOverall = attackIdx === 0
           attackIdx++
           const { normal, crit } = expandAttack(
-            ev, isFirstOverall, firstHadMultiscale, glaiveDoubling.get(ev.id) === true,
+            ev, isFirstOverall, firstHadMultiscale, glaiveRushScaleOf(glaiveScales, ev.id).factor,
           )
           normalEvents.push(...normal)
           critEvents.push(...crit)
@@ -195,7 +199,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       critResult.defenderKoProb,
     )
   }, [
-    events, passiveEffects, attackerGlaiveRush,
+    events, passiveEffects, attackerGlaiveRush, defenderGlaiveRush,
     defenderBerryCfg, attackerBerryCfg,
     defenderMaxHp, seq,
   ])

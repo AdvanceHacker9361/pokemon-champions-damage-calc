@@ -6,6 +6,7 @@ import { calculateHP } from '@/domain/calculators/StatCalculator'
 import type { TypeName } from '@/domain/models/Pokemon'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
 import { resolvePassiveAmount, type PassiveEffect } from '@/domain/models/PassiveEffect'
+import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 
 function formatProb(prob: number): string {
   if (prob >= 1.0) return '確定KO'
@@ -41,6 +42,8 @@ export function AccumExportButton() {
   const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp = useAttackerStore(s => s.sp.hp)
   const attackerTypes = useAttackerStore(s => s.types)
+  const attackerGlaiveRush = useAttackerStore(s => s.glaiveRushVulnerable)
+  const defenderGlaiveRush = useDefenderStore(s => s.glaiveRushVulnerable)
   const defenderTypes = useDefenderStore(s => s.types)
   const results = useResultStore(s => s.results)
   const defenderBaseHp = useDefenderStore(s => s.baseStats.hp)
@@ -53,6 +56,11 @@ export function AccumExportButton() {
     ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : storeDefHp)
   const attackerMaxHp = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const accum = useAccumulatedDamage(defenderMaxHp)
+  // きょけんとつげき後の自動補正（フック・時系列UIと同一の純粋関数）
+  const glaiveScales = resolveGlaiveRushDoubling(events, {
+    initialAttackerVulnerable: attackerGlaiveRush,
+    initialDefenderVulnerable: defenderGlaiveRush,
+  })
 
   if (!accum.hasAnything) return null
 
@@ -64,15 +72,17 @@ export function AccumExportButton() {
     for (const ev of events) {
       switch (ev.kind) {
         case 'attack': {
-          const subMin = ev.minDmg * ev.usages
-          const subMax = ev.maxDmg * ev.usages
+          const glaive = glaiveRushScaleOf(glaiveScales, ev.id)
+          const subMin = Math.round(ev.minDmg * glaive.factor) * ev.usages
+          const subMax = Math.round(ev.maxDmg * glaive.factor) * ev.usages
           const usageStr = ev.usages > 1 ? ` ×${ev.usages}` : ''
+          const glaiveStr = glaive.doubled ? '(被ダメ2倍)' : ''
           const range = subMin === subMax ? `${subMin}` : `${subMin}〜${subMax}`
-          lines.push(`${ev.label}${usageStr}: ${range}`)
+          lines.push(`${ev.label}${usageStr}${glaiveStr}: ${range}`)
           break
         }
         case 'painSplit': lines.push('痛み分け（両者HP平均化）'); break
-        case 'incoming': lines.push(`攻撃側被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}`); break
+        case 'incoming': lines.push(`攻撃側被ダメ ${ev.moveName ?? '(未選択)'}${ev.crit ? '（急所）' : ''}${glaiveRushScaleOf(glaiveScales, ev.id).doubled ? '(被ダメ2倍)' : ''}`); break
         case 'setupTurn': lines.push(ev.label?.trim() || `${ev.side === 'attacker' ? '攻撃側' : '防御側'}補助技使用`); break
         case 'megaEvolve': lines.push(`${ev.side === 'attacker' ? '攻撃側' : '防御側'}メガシンカ`); break
         case 'defenderConst': lines.push(`${ev.label ?? '防御側ダメ'}: ${ev.amount}`); break

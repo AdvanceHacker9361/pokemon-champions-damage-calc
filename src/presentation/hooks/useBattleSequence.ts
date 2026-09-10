@@ -17,8 +17,9 @@ import {
 } from '@/domain/calculators/BattleSequenceCalc'
 import { expandAttackEvent, needsCritPass } from '@/presentation/hooks/expandAttackEvent'
 import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
-import { resolveGlaiveRushDoubling } from '@/domain/calculators/GlaiveRushState'
+import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { toBerryOption } from '@/presentation/hooks/berryOption'
+import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
 import {
   buildPassiveSchedule,
   autoItemToSeqEvent,
@@ -162,6 +163,8 @@ export function useBattleSequence(): BattleSequenceComputed {
       defenderMaxHp,
       attackerTypes: attacker.types,
       defenderTypes: defender.types,
+      // ゴツゴツメット等の接触限定効果は、そのイベントの技が接触技のときだけ展開する
+      isContactAttack: makeIsContactAttack(events),
     })
 
     const battleField = {
@@ -208,8 +211,12 @@ export function useBattleSequence(): BattleSequenceComputed {
       }
     }
 
-    // きょけんとつげき後の被ダメ2倍。攻撃側パネルの手動トグルは最初の attack まで有効
-    const glaiveDoubling = resolveGlaiveRushDoubling(events, attacker.glaiveRushVulnerable)
+    // きょけんとつげき後の被ダメ2倍。各パネルの手動トグルが時系列の初期状態
+    // （攻撃側トグルは最初の attack まで、防御側トグルは最初の incoming まで有効）
+    const glaiveScales = resolveGlaiveRushDoubling(events, {
+      initialAttackerVulnerable: attacker.glaiveRushVulnerable,
+      initialDefenderVulnerable: defender.glaiveRushVulnerable,
+    })
 
     // イベント id → ターン範囲（attack は usages 分のターンを占有）
     const turnRanges = new Map(computeTurnRanges(events).map(r => [r.eventId, r]))
@@ -272,8 +279,8 @@ export function useBattleSequence(): BattleSequenceComputed {
           const drainTag = drainRate ? `（吸収${Math.round(drainRate * 100)}%）` : ''
           const recoilTag = recoilRate ? `（反動${Math.round(recoilRate * 100)}%）` : ''
           const critTag = ev.isForcedCrit ? '（急所）' : ''
-          const glaiveDoubled = glaiveDoubling.get(ev.id) === true
-          const glaiveTag = glaiveDoubled ? '（被ダメ2倍）' : ''
+          const glaive = glaiveRushScaleOf(glaiveScales, ev.id)
+          const glaiveTag = glaive.doubled ? '（被ダメ2倍）' : ''
           // usages 展開（マルチスケイル/半減実: 全体の1発目のみ rolls、以降 rawRolls）。
           // 攻撃側HPを実HPで追跡するモードなので吸収・反動も SeqEvent に載せる。
           const expanded = expandAttackEvent(ev, {
@@ -283,7 +290,7 @@ export function useBattleSequence(): BattleSequenceComputed {
             drain: drainRate,
             drainBoosted,
             recoil: recoilRate,
-            doubleDamage: glaiveDoubled,
+            damageScale: glaive.factor,
           })
           // expanded.normal は必ず usages 個（ラベルと1:1）
           // 通常パスは usages と 1:1、急所込みパスはおやこあいで親子2件になりうるため
@@ -293,7 +300,7 @@ export function useBattleSequence(): BattleSequenceComputed {
           resolved.push({
             event: ev,
             label: `与ダメ ${ev.label}${critTag}${glaiveTag}${drainTag}${recoilTag}${usageTag}`,
-            glaiveRushDoubled: glaiveDoubled,
+            glaiveRushDoubled: glaive.doubled,
           })
           const attackTurnStart = turnStartOf(ev.id)
           expanded.normal.forEach((seqEv, u) => {
@@ -321,7 +328,7 @@ export function useBattleSequence(): BattleSequenceComputed {
             resolved.push({ event: ev, label: '攻撃側被ダメ（技未選択）', error: '防御側の技を選択してください' })
             break
           }
-          const incomingDoubled = glaiveDoubling.get(ev.id) === true
+          const incomingDoubled = glaiveRushScaleOf(glaiveScales, ev.id).doubled
           const rolls = incomingRolls(ev.moveName, ev.crit, incomingDoubled)
           if (!rolls) {
             resolved.push({ event: ev, label: `攻撃側被ダメ ${ev.moveName}`, error: '計算できませんでした' })

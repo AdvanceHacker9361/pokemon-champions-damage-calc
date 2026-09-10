@@ -4,6 +4,7 @@ import type { MegaPokemonRecord } from '@/data/schemas/types'
 import type { TurnRange } from '@/domain/models/PassiveEffect'
 import { EventInsertPopover } from './EventInsertMenu'
 import type { InsertEventCtx } from './eventInsertActions'
+import type { GlaiveRushScale } from '@/domain/calculators/GlaiveRushState'
 
 const RECOVER_FRACTIONS = [
   { label: '1/3', num: 1, den: 3 },
@@ -35,8 +36,8 @@ export interface EventRowProps {
   /** このイベントの直後へ挿入する。key は INSERT_EVENT_ACTIONS のキー */
   onInsertAfter: (key: string) => void
   onUpdate: (patch: Partial<ProgressionEvent>) => void
-  /** きょけんとつげき後の状態により、この行のダメージが自動で2倍になっているか */
-  glaiveRushDoubled?: boolean
+  /** きょけんとつげき後の状態によるこの行のダメージ補正（倍率・2倍状態か） */
+  glaiveRush?: GlaiveRushScale
 }
 
 type TimelineRowTone = 'attack' | 'accent' | 'warning' | 'success' | 'default'
@@ -113,21 +114,21 @@ export function EventRow({
   attackerMaxHp, defenderMaxHp, defenderMoveOptions,
   attackerMegaOptions, defenderMegaOptions,
   onSetAttackUsages, onRemove, onMoveUp, onMoveDown, onInsertAfter, onUpdate,
-  glaiveRushDoubled,
+  glaiveRush,
 }: EventRowProps) {
   const rowProps = { idx, total, isHighlighted, insertCtx, onInsertAfter, onMoveUp, onMoveDown, onRemove }
 
   if (ev.kind === 'attack') {
-    // きょけんとつげき後の自動2倍はロールにのみ適用されるため、表示レンジも合わせる
-    const dmgMult = glaiveRushDoubled ? 2 : 1
-    const subMin = ev.minDmg * ev.usages * dmgMult
-    const subMax = ev.maxDmg * ev.usages * dmgMult
+    // きょけんとつげきの自動補正はロールへ適用されるため、表示レンジも同じ倍率に合わせる
+    const dmgMult = glaiveRush?.factor ?? 1
+    const subMin = Math.round(ev.minDmg * dmgMult) * ev.usages
+    const subMax = Math.round(ev.maxDmg * dmgMult) * ev.usages
     return (
       <TimelineRow {...rowProps} tone="attack">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <TurnChip turnRange={turnRange} />
           <span className="min-w-[8rem] flex-1 truncate font-medium text-fg">{ev.label}</span>
-          <GlaiveRushBadge active={glaiveRushDoubled} />
+          <GlaiveRushBadge active={glaiveRush?.doubled} />
           <div className="flex items-center gap-0.5 flex-shrink-0">
             <button
               type="button"
@@ -173,7 +174,7 @@ export function EventRow({
       <TimelineRow {...rowProps} tone="warning">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="font-semibold text-warning">攻撃側被ダメ</span>
-          <GlaiveRushBadge active={glaiveRushDoubled} />
+          <GlaiveRushBadge active={glaiveRush?.doubled} />
           <select
             value={ev.moveName ?? ''}
             onChange={e => onUpdate({ moveName: e.target.value || null } as Partial<ProgressionEvent>)}

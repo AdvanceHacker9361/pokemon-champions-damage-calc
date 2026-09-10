@@ -31,10 +31,11 @@ export interface AttackExpandParams {
   /** 反動率（sequenceTrackedAttacker のときだけ SeqEvent に載る） */
   recoil?: number
   /**
-   * きょけんとつげき後の防御側に当てる与ダメ: ロールをすべて2倍にする。
+   * きょけんとつげき後の被ダメ補正（`GlaiveRushState` が返す factor）。
+   * 2 = 2倍、0.5 = 織り込み済みロールを等倍へ戻す、1（既定）= 補正なし。
    * ばけのかわ等の固定ダメージ（`firstHitFixedDamage`）は技のダメージではないため対象外。
    */
-  doubleDamage?: boolean
+  damageScale?: number
 }
 
 export interface ExpandedAttack {
@@ -78,9 +79,10 @@ export function expandAttackEvent(e: AttackEvent, params: AttackExpandParams): E
   const atk = (dmg: DmgDist, noTurnBoundary?: boolean): SeqEvent =>
     ({ kind: 'attack', dmg, drain, drainBoosted, recoil, noTurnBoundary })
 
-  /** きょけんとつげき後の被ダメ2倍。すべてのロール系配列へ一律に適用する */
-  const dbl = (arr: number[]): number[] =>
-    params.doubleDamage === true ? arr.map(v => v * 2) : arr
+  /** きょけんとつげき後の被ダメ補正。すべてのロール系配列へ一律に適用する */
+  const scale = params.damageScale ?? 1
+  const scl = (arr: number[]): number[] =>
+    scale === 1 ? arr : arr.map(v => Math.round(v * scale))
 
   const normal: SeqEvent[] = []
   const crit: SeqEvent[] = []
@@ -88,8 +90,8 @@ export function expandAttackEvent(e: AttackEvent, params: AttackExpandParams): E
   for (let u = 0; u < e.usages; u++) {
     const isVeryFirst = params.isFirstOverall && u === 0
     const useRaw = !isVeryFirst && params.firstHadMultiscale
-    const normalRolls = dbl(useRaw ? e.rawRolls : e.rolls)
-    const critRolls   = dbl(useRaw ? e.rawCritRolls : e.critRolls)
+    const normalRolls = scl(useRaw ? e.rawRolls : e.rolls)
+    const critRolls   = scl(useRaw ? e.rawCritRolls : e.critRolls)
     const firstHitFixedDamage = u === 0 ? (e.firstHitFixedDamage ?? 0) : 0
 
     if (e.variableHitDist) {
@@ -100,8 +102,8 @@ export function expandAttackEvent(e: AttackEvent, params: AttackExpandParams): E
       const hit1CritRolls = nullifyFirstHit
         ? critRolls.map(() => firstHitFixedDamage)
         : critRolls.map(r => r + firstHitFixedDamage)
-      const hit2plusRolls = dbl(e.rawRolls)
-      const hit2plusCritRolls = dbl(e.rawCritRolls)
+      const hit2plusRolls = scl(e.rawRolls)
+      const hit2plusCritRolls = scl(e.rawCritRolls)
       const dist = calcVariableHitsSingleUsageDist(hit1Rolls, e.variableHitDist, hit2plusRolls)
       normal.push(atk(dist))
       if (e.isForcedCrit) {
@@ -123,10 +125,10 @@ export function expandAttackEvent(e: AttackEvent, params: AttackExpandParams): E
     if (e.pbChildRolls !== undefined) {
       const parentNormSrc = useRaw ? e.pbParentRawRolls : e.pbParentRolls
       const parentCritSrc = useRaw ? e.pbParentRawCritRolls : e.pbParentCritRolls
-      const parentNorm = parentNormSrc !== undefined ? dbl(parentNormSrc) : normalRolls
-      const parentCrit = parentCritSrc !== undefined ? dbl(parentCritSrc) : critRolls
-      const childNorm = dbl(e.pbChildRolls)
-      const childCrit = e.pbChildCritRolls !== undefined ? dbl(e.pbChildCritRolls) : childNorm
+      const parentNorm = parentNormSrc !== undefined ? scl(parentNormSrc) : normalRolls
+      const parentCrit = parentCritSrc !== undefined ? scl(parentCritSrc) : critRolls
+      const childNorm = scl(e.pbChildRolls)
+      const childCrit = e.pbChildCritRolls !== undefined ? scl(e.pbChildCritRolls) : childNorm
       // おやこあいは親+子で1ターン。親（中間ヒット）はターン境界を発生させず、
       // 子（最終ヒット）のみがターンを終了させる（通常パスの単一マージイベントと整合）。
       if (e.isForcedCrit) {

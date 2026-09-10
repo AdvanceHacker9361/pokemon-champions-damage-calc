@@ -145,6 +145,28 @@ describe('レギュレーション M-C 追加特性', () => {
     })
   })
 
+  describe('がんじょうあご', () => {
+    const biteMove = makeMove('かみくだく', 'あく', '物理', 80, { contact: true, bite: true })
+    const nonBiteMove = makeMove('かみくだく相当(非かみつき)', 'あく', '物理', 80, { contact: true })
+
+    it('かみつく属性技の威力が1.5倍になる（きれあじと同じ倍率）', () => {
+      const base = dmg({ move: biteMove })
+      const boosted = dmg({ move: biteMove, attackerAbility: 'がんじょうあご' })
+      const sliceRef = dmg({
+        move: makeMove('切る技', 'あく', '物理', 80, { contact: true, slice: true }),
+        attackerAbility: 'きれあじ',
+      })
+      expect(boosted.max).toBeGreaterThan(base.max)
+      expect(boosted.rolls).toEqual(sliceRef.rolls)
+    })
+
+    it('かみつく属性でない技は変化しない', () => {
+      const base = dmg({ move: nonBiteMove })
+      const boosted = dmg({ move: nonBiteMove, attackerAbility: 'がんじょうあご' })
+      expect(boosted.rolls).toEqual(base.rolls)
+    })
+  })
+
   describe('はりこみ', () => {
     it('発動時は攻撃実数値2倍でダメージが約2倍になる', () => {
       const base = dmg({ move: contactMove })

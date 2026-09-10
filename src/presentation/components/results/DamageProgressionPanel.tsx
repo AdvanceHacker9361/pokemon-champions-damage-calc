@@ -6,7 +6,8 @@ import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { computeTurnRanges } from '@/domain/models/PassiveEffect'
 import { buildPassiveSchedule, type AutoEventItem } from '@/domain/calculators/PassiveEffectExpansion'
 import { collectEffectIds } from '@/domain/calculators/PassiveEffectPinning'
-import { resolveGlaiveRushDoubling } from '@/domain/calculators/GlaiveRushState'
+import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
+import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
 import { EventRow } from './EventRow'
 import { PassiveGhostRow } from './PassiveGhostRow'
 import { ProgressionTabs } from './ProgressionTabs'
@@ -43,6 +44,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const attackerMaxHp  = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const attackerTypes  = useAttackerStore(s => s.types)
   const attackerGlaiveRush = useAttackerStore(s => s.glaiveRushVulnerable)
+  const defenderGlaiveRush = useDefenderStore(s => s.glaiveRushVulnerable)
   const defenderTypes  = useDefenderStore(s => s.types)
   const attackerCanMega = useAttackerStore(s => s.canMega)
   const attackerAvailableMegas = useAttackerStore(s => s.availableMegas)
@@ -64,16 +66,23 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     return map
   }, [turnRanges])
 
-  // きょけんとつげき後の自動2倍バッジ（フックと同じ純粋関数。2D DP は再実行しない）
-  const glaiveDoubling = useMemo(
-    () => resolveGlaiveRushDoubling(events, attackerGlaiveRush),
-    [events, attackerGlaiveRush],
+  // きょけんとつげき後の自動補正（フックと同じ純粋関数。2D DP は再実行しない）
+  const glaiveScales = useMemo(
+    () => resolveGlaiveRushDoubling(events, {
+      initialAttackerVulnerable: attackerGlaiveRush,
+      initialDefenderVulnerable: defenderGlaiveRush,
+    }),
+    [events, attackerGlaiveRush, defenderGlaiveRush],
   )
 
   // 常時効果のゴースト行用スケジュール（純粋計算・シミュレーションは実行しない）
   const expansionCtx = useMemo(
-    () => ({ attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes }),
-    [attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes],
+    () => ({
+      attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes,
+      // ゴースト行・固定化もフックと同じ接触判定を使う（結果がずれないように）
+      isContactAttack: makeIsContactAttack(events),
+    }),
+    [attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes, events],
   )
   const passiveSchedule = useMemo(
     () => buildPassiveSchedule(events, passiveEffects, expansionCtx),
@@ -254,7 +263,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
                 onMoveDown={() => moveEvent(ev.id, 1)}
                 onInsertAfter={key => handleInsertByKey(key, ev.id)}
                 onUpdate={patch => updateEvent(ev.id, patch)}
-                glaiveRushDoubled={glaiveDoubling.get(ev.id) === true}
+                glaiveRush={glaiveRushScaleOf(glaiveScales, ev.id)}
               />
               <PassiveGhostRow
                 items={passiveSchedule.afterEvent[ev.id] ?? []}

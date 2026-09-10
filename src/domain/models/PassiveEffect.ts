@@ -106,6 +106,12 @@ export interface PassivePreset {
   order: number
   /** ＋ を押したときの初期 count */
   defaultCount: number | 'all'
+  /**
+   * perAttack のうち「接触技のときだけ発動する」効果（ゴツゴツメット等）。
+   * 展開時に `PassiveExpansionContext.isContactAttack` で判定する
+   * （コールバック未指定・技不明のときは従来どおり適用する）。
+   */
+  requiresContact?: boolean
 }
 
 /**
@@ -243,6 +249,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
     timing: 'perAttack',
     order: TURN_END_ORDER.custom,
     defaultCount: 'all',
+    requiresContact: true,
   },
   {
     key: 'poison',

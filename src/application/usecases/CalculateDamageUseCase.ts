@@ -1,4 +1,4 @@
-import { calculateDamage } from '@/domain/calculators/DamageCalculator'
+import { calculateDamage, isMoldBreaker } from '@/domain/calculators/DamageCalculator'
 import { calculateStats } from '@/application/usecases/CalculateStatsUseCase'
 import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
 import type { DamageResult } from '@/domain/models/DamageResult'
@@ -46,10 +46,8 @@ export interface CalculateDamageInput {
 export function executeDamageCalculation(
   input: CalculateDamageInput,
 ): DamageResult {
-  /** かたやぶり系: 相手の特性を無効化する特性 */
-  const MOLD_BREAKER_ABILITIES = new Set(['かたやぶり', 'ターボブレイズ', 'テラボルテージ'])
   const CRITICAL_BLOCKER_ABILITIES = new Set(['シェルアーマー', 'カブトアーマー'])
-  const attackerHasMoldBreaker = MOLD_BREAKER_ABILITIES.has(input.attacker.abilityName)
+  const attackerHasMoldBreaker = isMoldBreaker(input.attacker.abilityName)
   const effectiveCritical =
     input.isCritical === true && !CRITICAL_BLOCKER_ABILITIES.has(input.defender.abilityName)
 

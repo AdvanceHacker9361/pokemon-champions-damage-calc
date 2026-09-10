@@ -18,6 +18,7 @@ import type { TypeName } from '@/domain/models/Pokemon'
 import type { SeqEvent } from '@/domain/calculators/BattleSequenceCalc'
 import {
   computeTurnRanges,
+  findPassivePreset,
   resolvePassiveAmount,
   type PassiveEffect,
   type PassiveSide,
@@ -77,6 +78,12 @@ export interface PassiveExpansionContext {
   defenderMaxHp: number
   attackerTypes: TypeName[]
   defenderTypes: TypeName[]
+  /**
+   * そのイベントの技が接触技かを返す（ゴツゴツメット等 `requiresContact` の判定用）。
+   * 攻撃側 perAttack は attack イベント、防御側 perAttack は incoming イベントの技を見る。
+   * 未指定・技が特定できない場合は従来どおり適用する（`true` 扱い）。
+   */
+  isContactAttack?: (eventId: string) => boolean
 }
 
 /** count が既存ターンを超えたときに末尾へ追加するターン数の上限（暴走防止） */
@@ -110,6 +117,21 @@ function makeItem(
     effectId: eff.id,
     timing: eff.timing,
   }
+}
+
+/**
+ * その効果が「接触技のときだけ発動する」もので、かつ当該イベントが非接触技のときに
+ * 展開をスキップすべきかを判定する。判定材料がなければ従来どおり適用する。
+ */
+function isSuppressedByContact(
+  eff: PassiveEffect,
+  eventId: string,
+  ctx: PassiveExpansionContext,
+): boolean {
+  if (eff.presetKey === undefined) return false
+  if (findPassivePreset(eff.presetKey)?.requiresContact !== true) return false
+  if (ctx.isContactAttack === undefined) return false
+  return ctx.isContactAttack(eventId) === false
 }
 
 /** count を数値へ正規化（'all' は Infinity、start では 1 回扱い） */
@@ -201,6 +223,7 @@ export function buildPassiveSchedule(
         for (const { eff } of sorted) {
           if (eff.timing !== 'perAttack' || eff.side !== 'attacker') continue
           if (turn < Math.max(1, eff.startTurn)) continue
+          if (isSuppressedByContact(eff, ev.id, ctx)) continue
           const used = perAttackUsed.get(eff.id) ?? 0
           if (used >= countLimit(eff)) continue
           perAttackUsed.set(eff.id, used + 1)
@@ -212,6 +235,7 @@ export function buildPassiveSchedule(
       for (const { eff } of sorted) {
         if (eff.timing !== 'perAttack' || eff.side !== 'defender') continue
         if (turn < Math.max(1, eff.startTurn)) continue
+        if (isSuppressedByContact(eff, ev.id, ctx)) continue
         const used = perAttackUsed.get(eff.id) ?? 0
         if (used >= countLimit(eff)) continue
         perAttackUsed.set(eff.id, used + 1)

@@ -166,6 +166,42 @@ describe('きょけんとつげき: 攻守シミュレーションでの自動2�
     expect(accum.combinedProbWithCrit).toBeCloseTo(seq.critResult!.defenderKoProb, 10)
   })
 
+  it('(d-2) 織り込み済みエントリは、防御側が既に動いていれば等倍へ戻される（0.5倍）', () => {
+    setupPokemon()
+
+    const afterDefenderMoved = runSequence(store => {
+      // 防御側が動いた後（incoming）に、トグルON時の2倍ロールを持つエントリを置く
+      store.addEventAfter(null, { kind: 'incoming', moveName: 'じしん', crit: false })
+      store.addAttack(attackPayload({
+        rolls: fill(100), moveName: 'じしん', defenderGlaiveRush: true,
+      }))
+    })
+    // 保存済みロール 100（＝素の50の2倍）が 50 へ戻る
+    expect(hpRange(afterDefenderMoved.steps[1].defenderHpDist)).toEqual([150, 150])
+  })
+
+  it('防御側トグルは最初の incoming まで有効（初期状態として扱う）', () => {
+    setupPokemon()
+    useDefenderStore.setState({ glaiveRushVulnerable: true })
+
+    const result = runSequence(store => {
+      // トグルON中に加算した2倍ロール（そのまま）
+      store.addAttack(attackPayload({
+        rolls: fill(40), moveName: 'じしん', defenderGlaiveRush: true,
+      }))
+      // 防御側が動く
+      store.addEventAfter(null, { kind: 'incoming', moveName: 'じしん', crit: false })
+      // 以降は同じ織り込み済みロールでも等倍へ戻る
+      store.addAttack(attackPayload({
+        rolls: fill(40), moveName: 'じしん', defenderGlaiveRush: true,
+      }))
+    })
+
+    expect(hpRange(result.steps[0].defenderHpDist)).toEqual([160, 160])
+    // 200 - 40 - 20 = 140
+    expect(hpRange(result.steps[2].defenderHpDist)).toEqual([140, 140])
+  })
+
   it('(d) 加算時に2倍が織り込み済みのエントリは再度2倍にならない', () => {
     setupPokemon()
 
