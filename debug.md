@@ -1039,3 +1039,32 @@ GitHub Actions:
 
 - Web 検索の要約は数値・帰属の誤りが混在するため（例: メガグソクムシャ体重 148 を「信頼度低」と評価していたが Showdown では正）、一次データは Showdown を正とし、Champions 独自要素（新特性名・効果）だけ公式 X で裏取りする方針にした
 - 和名化した特性の計算実装（がんじょうあご等）は M-C の範囲外として見送り、別タスクとして記録
+
+## 2026-09-10: V3.19.0 リリース後調整（バージョン据え置き）
+
+### 依頼内容
+
+1. 「きあいだめ」「じゅうでん」のトグルを、対応する技または特性「でんきにかえる」があるときだけ表示する
+2. ルカリオのメガシンカ切替が「メガLUCARIO」「メガZ」と表示されるバグの修正と、他種の同種バグ調査
+
+### 調査結果
+
+- **トグル表示**: `PokemonPanel.tsx` は攻撃側なら無条件に両トグルを描画していた。状態フラグ自体は `pokemonStore.focusEnergyActive` / `chargeActive` で正常
+- **メガ表記**: `MegaToggle.tsx` が複数形態のボタン名を `mega.key.split('-').pop()?.toUpperCase()` で生成していた。X/Y 形態（リザードン・ライチュウ・ミュウツー）は key 末尾が `x` / `y` のため偶然正しく、Reg.M-C で Z 形態が加わったアブソル・ガブリアス・ルカリオでは通常メガの key 末尾が種族名（`absol` / `garchomp` / `lucario`）になり「メガABSOL」等と表示されていた
+- 他箇所の走査（`key.split` / `nameEn.replace` / `toUpperCase` / `mega.name` の描画箇所）では同種の問題なし。ダメージ進行のメガシンカイベントは日本語メガ名をそのまま表示
+
+### 実施した修正
+
+- `PokemonPanel.tsx`: `showFocusEnergyToggle = moves に「きあいだめ」`、`showChargeToggle = moves に「じゅうでん」 or effectiveAbility ∈ {でんきにかえる, ふうりょくでんき}`。条件を失ったとき `useEffect` で `focusEnergyActive` / `chargeActive` を false に戻し、非表示のまま補正が残らないようにした
+- `MegaToggle.tsx`: `megaFormLabel(mega)` を export。日本語メガ名から「メガ」と種族名（`PokemonRepository.findById(basePokemonId).name`）を除いた残りを形態名とし、空なら「メガ」。X/Y 形態は従来どおり「メガX」「メガY」
+
+### 検証
+
+- `npm run typecheck` / `npm run lint` / `npx vitest run --dir tests`（34 ファイル 557 件、`tests/presentation/megaFormLabel.test.ts` 3 件追加＝通常メガ／X・Y・Z 形態／複数形態全種のラベルが `^メガ[XYZ]?$` に収まり同一種内で重複しない）
+- main へ fast-forward マージし GitHub Pages デプロイ成功（Actions run #275 / #276）
+
+### 判断メモ
+
+- 「ふうりょくでんき」は依頼に無かったが、風技被弾で じゅうでん 状態になる特性のため表示条件に含めた
+- ラベルを key 由来にしない方針に統一。今後 Z 以外の形態（例: 性別違い）を複数形態として追加する場合も、日本語メガ名の差分がそのままボタン名になる
+- バージョンは 3.19.0 のまま据え置き
