@@ -12382,5 +12382,305 @@
       "slice": false
     },
     "special": null
+  },
+  {
+    "name": "リベンジ",
+    "nameEn": "Revenge",
+    "type": "かくとう",
+    "category": "物理",
+    "power": 60,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": -4,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": null,
+    "powerOptions": [
+      60,
+      120
+    ]
+  },
+  {
+    "name": "おうふくビンタ",
+    "nameEn": "Double Slap",
+    "type": "ノーマル",
+    "category": "物理",
+    "power": 15,
+    "accuracy": 85,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": {
+      "type": "variable"
+    }
+  },
+  {
+    "name": "オーバードライブ",
+    "nameEn": "Overdrive",
+    "type": "でんき",
+    "category": "特殊",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": true,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "でんこうそうげき",
+    "nameEn": "Double Shock",
+    "type": "でんき",
+    "category": "物理",
+    "power": 120,
+    "accuracy": 100,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "ドラムアタック",
+    "nameEn": "Drum Beating",
+    "type": "くさ",
+    "category": "物理",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "hasSecondaryEffect": true
+  },
+  {
+    "name": "ダブルチョップ",
+    "nameEn": "Dual Chop",
+    "type": "ドラゴン",
+    "category": "物理",
+    "power": 40,
+    "accuracy": 90,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": {
+      "type": "fixed",
+      "count": 2
+    }
+  },
+  {
+    "name": "きょけんとつげき",
+    "nameEn": "Glaive Rush",
+    "type": "ドラゴン",
+    "category": "物理",
+    "power": 120,
+    "accuracy": 100,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "くらいつく",
+    "nameEn": "Jaw Lock",
+    "type": "あく",
+    "category": "物理",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": true,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "メテオアサルト",
+    "nameEn": "Meteor Assault",
+    "type": "かくとう",
+    "category": "物理",
+    "power": 150,
+    "accuracy": 100,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
+    "name": "オクタンほう",
+    "nameEn": "Octazooka",
+    "type": "みず",
+    "category": "特殊",
+    "power": 65,
+    "accuracy": 85,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": true,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "hasSecondaryEffect": true
+  },
+  {
+    "name": "かえんボール",
+    "nameEn": "Pyro Ball",
+    "type": "ほのお",
+    "category": "物理",
+    "power": 120,
+    "accuracy": 90,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": true,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "hasSecondaryEffect": true
+  },
+  {
+    "name": "ねらいうち",
+    "nameEn": "Snipe Shot",
+    "type": "みず",
+    "category": "特殊",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "multiHit": null,
+    "critChance": 1
+  },
+  {
+    "name": "じごくぐるま",
+    "nameEn": "Submission",
+    "type": "かくとう",
+    "category": "物理",
+    "power": 80,
+    "accuracy": 80,
+    "pp": 20,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false,
+      "recoil": true
+    },
+    "special": null,
+    "recoil": 0.25
+  },
+  {
+    "name": "びりびりちくちく",
+    "nameEn": "Zing Zap",
+    "type": "でんき",
+    "category": "物理",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 12,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "hasSecondaryEffect": true
   }
 ]

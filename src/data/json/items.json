@@ -32,6 +32,13 @@
   { "name": "だっしゅつボタン", "nameEn": "Eject Button", "calcTag": "eject-button" },
   { "name": "だっしゅつパック", "nameEn": "Eject Pack", "calcTag": "eject-pack" },
   { "name": "レッドカード", "nameEn": "Red Card", "calcTag": "red-card" },
+  { "name": "ながねぎ", "nameEn": "Leek", "calcTag": "leek" },
+  { "name": "しめつけバンド", "nameEn": "Binding Band", "calcTag": "binding-band" },
+  { "name": "グランドコート", "nameEn": "Terrain Extender", "calcTag": "terrain-extender" },
+  { "name": "エレキシード", "nameEn": "Electric Seed", "calcTag": "electric-seed" },
+  { "name": "グラスシード", "nameEn": "Grassy Seed", "calcTag": "grassy-seed" },
+  { "name": "ミストシード", "nameEn": "Misty Seed", "calcTag": "misty-seed" },
+  { "name": "サイコシード", "nameEn": "Psychic Seed", "calcTag": "psychic-seed" },
   { "name": "メガストーン", "nameEn": "Mega Stone", "calcTag": "mega-stone" },
 
   { "name": "しろいハーブ", "nameEn": "White Herb", "calcTag": "white-herb" },

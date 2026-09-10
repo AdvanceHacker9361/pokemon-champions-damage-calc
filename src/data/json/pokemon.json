@@ -389,7 +389,7 @@
     "abilities": [
       "メロメロボディ",
       "マジックガード",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 7.5
   },
@@ -499,7 +499,7 @@
     "abilities": [
       "メロメロボディ",
       "かちき",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 5.5
   },
@@ -566,7 +566,7 @@
     },
     "abilities": [
       "ようりょくそ",
-      "Stench"
+      "あくしゅう"
     ],
     "weight": 8.6
   },
@@ -610,7 +610,7 @@
     },
     "abilities": [
       "ふくがん",
-      "Tinted Lens",
+      "いろめがね",
       "にげあし"
     ],
     "weight": 30
@@ -633,8 +633,8 @@
     },
     "abilities": [
       "りんぷん",
-      "Tinted Lens",
-      "Wonder Skin"
+      "いろめがね",
+      "ミラクルスキン"
     ],
     "weight": 12.5
   },
@@ -655,7 +655,7 @@
     },
     "abilities": [
       "すながくれ",
-      "Arena Trap",
+      "ありじごく",
       "すなのちから"
     ],
     "weight": 0.8
@@ -677,7 +677,7 @@
     },
     "abilities": [
       "すながくれ",
-      "Arena Trap",
+      "ありじごく",
       "すなのちから"
     ],
     "weight": 33.3
@@ -725,6 +725,28 @@
       "テクニシャン"
     ],
     "weight": 32
+  },
+  {
+    "id": 10053,
+    "name": "アローラペルシアン",
+    "nameEn": "Persian-Alola",
+    "types": [
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 65,
+      "atk": 60,
+      "def": 60,
+      "spa": 75,
+      "spd": 65,
+      "spe": 115
+    },
+    "abilities": [
+      "ファーコート",
+      "テクニシャン",
+      "びびり"
+    ],
+    "weight": 33
   },
   {
     "id": 54,
@@ -1055,7 +1077,7 @@
     },
     "abilities": [
       "クリアボディ",
-      "Liquid Ooze",
+      "ヘドロえき",
       "あめうけざら"
     ],
     "weight": 45.5
@@ -1078,7 +1100,7 @@
     },
     "abilities": [
       "クリアボディ",
-      "Liquid Ooze",
+      "ヘドロえき",
       "あめうけざら"
     ],
     "weight": 55
@@ -1246,6 +1268,29 @@
     "weight": 60
   },
   {
+    "id": 83,
+    "name": "カモネギ",
+    "nameEn": "Farfetch'd",
+    "types": [
+      "ノーマル",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 52,
+      "atk": 90,
+      "def": 55,
+      "spa": 58,
+      "spd": 62,
+      "spe": 60
+    },
+    "abilities": [
+      "するどいめ",
+      "せいしんりょく",
+      "まけんき"
+    ],
+    "weight": 15
+  },
+  {
     "id": 84,
     "name": "ドードー",
     "nameEn": "Doduo",
@@ -1352,8 +1397,8 @@
       "spe": 25
     },
     "abilities": [
-      "Stench",
-      "Sticky Hold",
+      "あくしゅう",
+      "ねんちゃく",
       "どくしゅ"
     ],
     "weight": 30
@@ -1374,8 +1419,8 @@
       "spe": 50
     },
     "abilities": [
-      "Stench",
-      "Sticky Hold",
+      "あくしゅう",
+      "ねんちゃく",
       "どくしゅ"
     ],
     "weight": 30
@@ -1551,7 +1596,7 @@
     "abilities": [
       "ぼうおん",
       "せいでんき",
-      "Aftermath"
+      "ゆうばく"
     ],
     "weight": 10.4
   },
@@ -1573,7 +1618,7 @@
     "abilities": [
       "ぼうおん",
       "せいでんき",
-      "Aftermath"
+      "ゆうばく"
     ],
     "weight": 66.6
   },
@@ -1726,8 +1771,8 @@
     },
     "abilities": [
       "ふゆう",
-      "Neutralizing Gas",
-      "Stench"
+      "かがくへんかガス",
+      "あくしゅう"
     ],
     "weight": 1
   },
@@ -1748,8 +1793,8 @@
     },
     "abilities": [
       "ふゆう",
-      "Neutralizing Gas",
-      "Stench"
+      "かがくへんかガス",
+      "あくしゅう"
     ],
     "weight": 9.5
   },
@@ -1933,6 +1978,29 @@
     ],
     "megaEvolutionKey": "mega-starmie",
     "weight": 80
+  },
+  {
+    "id": 122,
+    "name": "バリヤード",
+    "nameEn": "Mr. Mime",
+    "types": [
+      "エスパー",
+      "フェアリー"
+    ],
+    "baseStats": {
+      "hp": 40,
+      "atk": 45,
+      "def": 65,
+      "spa": 100,
+      "spd": 120,
+      "spe": 90
+    },
+    "abilities": [
+      "ぼうおん",
+      "フィルター",
+      "テクニシャン"
+    ],
+    "weight": 54.5
   },
   {
     "id": 123,
@@ -2128,7 +2196,7 @@
     },
     "abilities": [
       "じゅうなん",
-      "Imposter"
+      "かわりもの"
     ],
     "weight": 4
   },
@@ -2191,7 +2259,7 @@
       "spe": 130
     },
     "abilities": [
-      "Volt Absorb",
+      "ちくでん",
       "はやあし"
     ],
     "weight": 24.5
@@ -2234,7 +2302,7 @@
     },
     "abilities": [
       "トレース",
-      "Download",
+      "ダウンロード",
       "アナライズ"
     ],
     "weight": 36.5
@@ -2712,7 +2780,7 @@
     "abilities": [
       "ふみん",
       "するどいめ",
-      "Tinted Lens"
+      "いろめがね"
     ],
     "weight": 21.2
   },
@@ -2735,7 +2803,7 @@
     "abilities": [
       "ふみん",
       "するどいめ",
-      "Tinted Lens"
+      "いろめがね"
     ],
     "weight": 40.8
   },
@@ -2802,7 +2870,7 @@
       "spe": 67
     },
     "abilities": [
-      "Volt Absorb",
+      "ちくでん",
       "はっこう",
       "ちょすい"
     ],
@@ -2825,7 +2893,7 @@
       "spe": 67
     },
     "abilities": [
-      "Volt Absorb",
+      "ちくでん",
       "はっこう",
       "ちょすい"
     ],
@@ -2870,7 +2938,7 @@
     "abilities": [
       "メロメロボディ",
       "マジックガード",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 3
   },
@@ -2893,7 +2961,7 @@
     "abilities": [
       "メロメロボディ",
       "かちき",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 1
   },
@@ -4057,7 +4125,7 @@
     },
     "abilities": [
       "トレース",
-      "Download",
+      "ダウンロード",
       "アナライズ"
     ],
     "weight": 32.5
@@ -4759,7 +4827,7 @@
     },
     "abilities": [
       "ようりょくそ",
-      "Wind Rider",
+      "かぜのり",
       "わるいてぐせ"
     ],
     "weight": 59.6
@@ -5317,7 +5385,7 @@
     },
     "abilities": [
       "マイナス",
-      "Volt Absorb"
+      "ちくでん"
     ],
     "weight": 4.2
   },
@@ -5360,7 +5428,7 @@
     },
     "abilities": [
       "どんかん",
-      "Tinted Lens",
+      "いろめがね",
       "いたずらごころ"
     ],
     "weight": 17.7
@@ -5381,8 +5449,8 @@
       "spe": 40
     },
     "abilities": [
-      "Liquid Ooze",
-      "Sticky Hold",
+      "ヘドロえき",
+      "ねんちゃく",
       "くいしんぼう"
     ],
     "weight": 10.3
@@ -5403,8 +5471,8 @@
       "spe": 55
     },
     "abilities": [
-      "Liquid Ooze",
-      "Sticky Hold",
+      "ヘドロえき",
+      "ねんちゃく",
       "くいしんぼう"
     ],
     "weight": 80
@@ -5496,7 +5564,7 @@
       "spe": 20
     },
     "abilities": [
-      "White Smoke",
+      "しろいけむり",
       "ひでり",
       "シェルアーマー"
     ],
@@ -5563,7 +5631,7 @@
     },
     "abilities": [
       "かいりきバサミ",
-      "Arena Trap",
+      "ありじごく",
       "ちからずく"
     ],
     "weight": 15
@@ -7039,7 +7107,7 @@
     "abilities": [
       "にげあし",
       "ものひろい",
-      "Volt Absorb"
+      "ちくでん"
     ],
     "weight": 3.9
   },
@@ -7101,8 +7169,8 @@
       "spe": 34
     },
     "abilities": [
-      "Sticky Hold",
-      "Storm Drain",
+      "ねんちゃく",
+      "よびみず",
       "すなのちから"
     ],
     "weight": 6.3
@@ -7124,8 +7192,8 @@
       "spe": 39
     },
     "abilities": [
-      "Sticky Hold",
-      "Storm Drain",
+      "ねんちゃく",
+      "よびみず",
       "すなのちから"
     ],
     "weight": 29.9
@@ -7169,9 +7237,9 @@
       "spe": 70
     },
     "abilities": [
-      "Aftermath",
+      "ゆうばく",
       "かるわざ",
-      "Flare Boost"
+      "ねつぼうそう"
     ],
     "weight": 1.2
   },
@@ -7192,9 +7260,9 @@
       "spe": 80
     },
     "abilities": [
-      "Aftermath",
+      "ゆうばく",
       "かるわざ",
-      "Flare Boost"
+      "ねつぼうそう"
     ],
     "weight": 15
   },
@@ -7323,8 +7391,8 @@
       "spe": 74
     },
     "abilities": [
-      "Stench",
-      "Aftermath",
+      "あくしゅう",
+      "ゆうばく",
       "するどいめ"
     ],
     "weight": 19.2
@@ -7346,8 +7414,8 @@
       "spe": 84
     },
     "abilities": [
-      "Stench",
-      "Aftermath",
+      "あくしゅう",
+      "ゆうばく",
       "するどいめ"
     ],
     "weight": 38
@@ -7438,7 +7506,7 @@
     "abilities": [
       "しぜんかいふく",
       "てんのめぐみ",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 24.4
   },
@@ -7750,7 +7818,7 @@
     },
     "abilities": [
       "すいすい",
-      "Storm Drain",
+      "よびみず",
       "みずのベール"
     ],
     "weight": 7
@@ -7772,7 +7840,7 @@
     },
     "abilities": [
       "すいすい",
-      "Storm Drain",
+      "よびみず",
       "みずのベール"
     ],
     "weight": 24
@@ -7973,7 +8041,7 @@
     },
     "abilities": [
       "かそく",
-      "Tinted Lens",
+      "いろめがね",
       "おみとおし"
     ],
     "weight": 51.5
@@ -8083,7 +8151,7 @@
     },
     "abilities": [
       "てきおうりょく",
-      "Download",
+      "ダウンロード",
       "アナライズ"
     ],
     "weight": 34
@@ -8342,7 +8410,7 @@
       "spe": 100
     },
     "abilities": [
-      "Slow Start"
+      "スロースタート"
     ],
     "weight": 420
   },
@@ -8485,7 +8553,7 @@
       "spe": 120
     },
     "abilities": [
-      "Multitype"
+      "マルチタイプ"
     ],
     "weight": 320
   },
@@ -10085,8 +10153,7 @@
     "name": "オノノクス",
     "nameEn": "Haxorus",
     "types": [
-      "ドラゴン",
-      "フェアリー"
+      "ドラゴン"
     ],
     "baseStats": {
       "hp": 76,
@@ -10232,15 +10299,14 @@
       "すてみ",
       "さいせいりょく"
     ],
-    "weight": 35
+    "weight": 35.5
   },
   {
     "id": 621,
     "name": "クリムガン",
     "nameEn": "Druddigon",
     "types": [
-      "ドラゴン",
-      "フェアリー"
+      "ドラゴン"
     ],
     "baseStats": {
       "hp": 77,
@@ -10674,7 +10740,7 @@
     "abilities": [
       "ターボブレイズ"
     ],
-    "weight": 345
+    "weight": 330
   },
   {
     "id": 644,
@@ -10695,7 +10761,7 @@
     "abilities": [
       "テラボルテージ"
     ],
-    "weight": 330
+    "weight": 345
   },
   {
     "id": 645,
@@ -10999,7 +11065,7 @@
       "ちからもち",
       "ほおぶくろ"
     ],
-    "weight": 36.4
+    "weight": 42.4
   },
   {
     "id": 661,
@@ -11085,7 +11151,7 @@
     "abilities": [
       "りんぷん",
       "ふくがん",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 2.5
   },
@@ -11106,7 +11172,7 @@
     },
     "abilities": [
       "だっぴ",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 8.4
   },
@@ -11129,7 +11195,7 @@
     "abilities": [
       "りんぷん",
       "ふくがん",
-      "Friend Guard"
+      "フレンドガード"
     ],
     "weight": 17
   },
@@ -11282,7 +11348,7 @@
     },
     "abilities": [
       "そうしょく",
-      "Grass Pelt"
+      "くさのけがわ"
     ],
     "weight": 31
   },
@@ -11303,7 +11369,7 @@
     },
     "abilities": [
       "そうしょく",
-      "Grass Pelt"
+      "くさのけがわ"
     ],
     "weight": 91
   },
@@ -12449,8 +12515,8 @@
       "spe": 45
     },
     "abilities": [
-      "Stakeout",
-      "Strong Jaw",
+      "はりこみ",
+      "がんじょうあご",
       "てきおうりょく"
     ],
     "weight": 6
@@ -12471,8 +12537,8 @@
       "spe": 45
     },
     "abilities": [
-      "Stakeout",
-      "Strong Jaw",
+      "はりこみ",
+      "がんじょうあご",
       "てきおうりょく"
     ],
     "weight": 14.2
@@ -12514,7 +12580,7 @@
       "spe": 36
     },
     "abilities": [
-      "Battery"
+      "バッテリー"
     ],
     "weight": 10.5
   },
@@ -12601,7 +12667,7 @@
       "spe": 93
     },
     "abilities": [
-      "Dancer"
+      "おどりこ"
     ],
     "weight": 3.4
   },
@@ -12869,7 +12935,7 @@
       "リーフガード",
       "あまのじゃく"
     ],
-    "weight": 18
+    "weight": 18.5
   },
   {
     "id": 757,
@@ -13021,7 +13087,7 @@
     },
     "abilities": [
       "フラワーベール",
-      "Triage",
+      "ヒーリングシフト",
       "しぜんかいふく"
     ],
     "weight": 0.3
@@ -13065,7 +13131,7 @@
       "spe": 80
     },
     "abilities": [
-      "Receiver",
+      "レシーバー",
       "まけんき"
     ],
     "weight": 82.8
@@ -13109,7 +13175,7 @@
       "spe": 15
     },
     "abilities": [
-      "Water Compaction",
+      "みずがため",
       "すながくれ"
     ],
     "weight": 70
@@ -13131,7 +13197,7 @@
       "spe": 35
     },
     "abilities": [
-      "Water Compaction",
+      "みずがため",
       "すながくれ"
     ],
     "weight": 250
@@ -13173,7 +13239,7 @@
       "spe": 120
     },
     "abilities": [
-      "Shields Down"
+      "リミットシールド"
     ],
     "weight": 0.3
   },
@@ -13193,7 +13259,7 @@
       "spe": 65
     },
     "abilities": [
-      "Comatose"
+      "ぜったいねむり"
     ],
     "weight": 19.9
   },
@@ -13256,9 +13322,9 @@
       "spe": 92
     },
     "abilities": [
-      "Dazzling",
-      "Strong Jaw",
-      "Wonder Skin"
+      "ビビッドボディ",
+      "がんじょうあご",
+      "ミラクルスキン"
     ],
     "weight": 19
   },
@@ -13283,7 +13349,7 @@
       "そうしょく",
       "ノーてんき"
     ],
-    "weight": 185.0,
+    "weight": 185,
     "megaEvolutionKey": "mega-drampa"
   },
   {
@@ -13432,7 +13498,7 @@
       "spe": 97
     },
     "abilities": [
-      "Full Metal Body"
+      "メタルプロテクト"
     ],
     "weight": 230
   },
@@ -13515,7 +13581,7 @@
       "spe": 65
     },
     "abilities": [
-      "Soul-Heart"
+      "ソウルハート"
     ],
     "weight": 80.5
   },
@@ -13536,7 +13602,7 @@
     },
     "abilities": [
       "しんりょく",
-      "Grassy Surge"
+      "グラスメイカー"
     ],
     "weight": 5
   },
@@ -13557,7 +13623,7 @@
     },
     "abilities": [
       "しんりょく",
-      "Grassy Surge"
+      "グラスメイカー"
     ],
     "weight": 14
   },
@@ -13578,7 +13644,7 @@
     },
     "abilities": [
       "しんりょく",
-      "Grassy Surge"
+      "グラスメイカー"
     ],
     "weight": 90
   },
@@ -13599,7 +13665,7 @@
     },
     "abilities": [
       "もうか",
-      "Libero"
+      "リベロ"
     ],
     "weight": 4.5
   },
@@ -13620,7 +13686,7 @@
     },
     "abilities": [
       "もうか",
-      "Libero"
+      "リベロ"
     ],
     "weight": 9
   },
@@ -13641,7 +13707,7 @@
     },
     "abilities": [
       "もうか",
-      "Libero"
+      "リベロ"
     ],
     "weight": 33
   },
@@ -13818,6 +13884,28 @@
     "weight": 75
   },
   {
+    "id": 828,
+    "name": "フォクスライ",
+    "nameEn": "Thievul",
+    "types": [
+      "あく"
+    ],
+    "baseStats": {
+      "hp": 70,
+      "atk": 58,
+      "def": 58,
+      "spa": 87,
+      "spd": 92,
+      "spe": 90
+    },
+    "abilities": [
+      "にげあし",
+      "かるわざ",
+      "はりこみ"
+    ],
+    "weight": 19.9
+  },
+  {
     "id": 833,
     "name": "カムカメ",
     "nameEn": "Chewtle",
@@ -13833,7 +13921,7 @@
       "spe": 44
     },
     "abilities": [
-      "Strong Jaw",
+      "がんじょうあご",
       "シェルアーマー",
       "すいすい"
     ],
@@ -13856,7 +13944,7 @@
       "spe": 74
     },
     "abilities": [
-      "Strong Jaw",
+      "がんじょうあご",
       "シェルアーマー",
       "すいすい"
     ],
@@ -13878,7 +13966,7 @@
       "spe": 30
     },
     "abilities": [
-      "Steam Engine",
+      "じょうききかん",
       "たいねつ",
       "もらいび"
     ],
@@ -13901,7 +13989,7 @@
       "spe": 50
     },
     "abilities": [
-      "Steam Engine",
+      "じょうききかん",
       "ほのおのからだ",
       "もらいび"
     ],
@@ -13924,7 +14012,7 @@
       "spe": 30
     },
     "abilities": [
-      "Steam Engine",
+      "じょうききかん",
       "ほのおのからだ",
       "もらいび"
     ],
@@ -13947,7 +14035,7 @@
       "spe": 20
     },
     "abilities": [
-      "Ripen",
+      "じゅくせい",
       "くいしんぼう",
       "ぼうだん"
     ],
@@ -13970,7 +14058,7 @@
       "spe": 70
     },
     "abilities": [
-      "Ripen",
+      "じゅくせい",
       "くいしんぼう",
       "はりきり"
     ],
@@ -13993,7 +14081,7 @@
       "spe": 30
     },
     "abilities": [
-      "Ripen",
+      "じゅくせい",
       "くいしんぼう",
       "あついしぼう"
     ],
@@ -14015,7 +14103,7 @@
       "spe": 46
     },
     "abilities": [
-      "Sand Spit",
+      "すなはき",
       "だっぴ",
       "すながくれ"
     ],
@@ -14037,7 +14125,7 @@
       "spe": 71
     },
     "abilities": [
-      "Sand Spit",
+      "すなはき",
       "だっぴ",
       "すながくれ"
     ],
@@ -14060,7 +14148,7 @@
       "spe": 85
     },
     "abilities": [
-      "Gulp Missile"
+      "うのミサイル"
     ],
     "weight": 18
   },
@@ -14081,7 +14169,7 @@
     },
     "abilities": [
       "すいすい",
-      "Propeller Tail"
+      "スクリューおびれ"
     ],
     "weight": 1
   },
@@ -14102,7 +14190,7 @@
     },
     "abilities": [
       "すいすい",
-      "Propeller Tail"
+      "スクリューおびれ"
     ],
     "weight": 30
   },
@@ -14131,7 +14219,7 @@
   },
   {
     "id": 849,
-    "name": "ストリンダー",
+    "name": "ストリンダー(ハイなすがた)",
     "nameEn": "Toxtricity",
     "types": [
       "でんき",
@@ -14146,11 +14234,55 @@
       "spe": 75
     },
     "abilities": [
-      "Punk Rock",
+      "パンクロック",
       "プラス",
       "テクニシャン"
     ],
     "weight": 40
+  },
+  {
+    "id": 10849,
+    "name": "ストリンダー(ローなすがた)",
+    "nameEn": "Toxtricity-Low-Key",
+    "types": [
+      "でんき",
+      "どく"
+    ],
+    "baseStats": {
+      "hp": 75,
+      "atk": 98,
+      "def": 70,
+      "spa": 114,
+      "spd": 70,
+      "spe": 75
+    },
+    "abilities": [
+      "パンクロック",
+      "マイナス",
+      "テクニシャン"
+    ],
+    "weight": 40
+  },
+  {
+    "id": 853,
+    "name": "オトスパス",
+    "nameEn": "Grapploct",
+    "types": [
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 80,
+      "atk": 118,
+      "def": 90,
+      "spa": 70,
+      "spd": 80,
+      "spe": 42
+    },
+    "abilities": [
+      "じゅうなん",
+      "テクニシャン"
+    ],
+    "weight": 39
   },
   {
     "id": 854,
@@ -14348,9 +14480,30 @@
     "abilities": [
       "カブトアーマー",
       "かたいツメ",
-      "Steely Spirit"
+      "はがねのせいしん"
     ],
     "weight": 28
+  },
+  {
+    "id": 865,
+    "name": "ネギガナイト",
+    "nameEn": "Sirfetch'd",
+    "types": [
+      "かくとう"
+    ],
+    "baseStats": {
+      "hp": 62,
+      "atk": 135,
+      "def": 95,
+      "spa": 68,
+      "spd": 82,
+      "spe": 65
+    },
+    "abilities": [
+      "ふくつのこころ",
+      "きもったま"
+    ],
+    "weight": 117
   },
   {
     "id": 866,
@@ -14413,7 +14566,7 @@
     },
     "abilities": [
       "スイートベール",
-      "Aroma Veil"
+      "アロマベール"
     ],
     "weight": 0.3
   },
@@ -14434,7 +14587,7 @@
     },
     "abilities": [
       "スイートベール",
-      "Aroma Veil"
+      "アロマベール"
     ],
     "weight": 0.5
   },
@@ -14499,7 +14652,7 @@
     },
     "abilities": [
       "りんぷん",
-      "Ice Scales"
+      "こおりのりんぷん"
     ],
     "weight": 3.8
   },
@@ -14521,7 +14674,7 @@
     },
     "abilities": [
       "りんぷん",
-      "Ice Scales"
+      "こおりのりんぷん"
     ],
     "weight": 42
   },
@@ -14541,7 +14694,7 @@
       "spe": 70
     },
     "abilities": [
-      "Power Spot"
+      "パワースポット"
     ],
     "weight": 520
   },
@@ -14561,7 +14714,7 @@
       "spe": 50
     },
     "abilities": [
-      "Ice Face"
+      "アイスフェイス"
     ],
     "weight": 89
   },
@@ -14605,7 +14758,7 @@
       "spe": 97
     },
     "abilities": [
-      "Hunger Switch"
+      "はらぺこスイッチ"
     ],
     "weight": 3
   },
@@ -14883,7 +15036,7 @@
       "spe": 200
     },
     "abilities": [
-      "Transistor"
+      "トランジスタ"
     ],
     "weight": 145
   },
@@ -14903,7 +15056,7 @@
       "spe": 80
     },
     "abilities": [
-      "Dragon's Maw"
+      "りゅうのあぎと"
     ],
     "weight": 200
   },
@@ -14923,7 +15076,7 @@
       "spe": 30
     },
     "abilities": [
-      "Chilling Neigh"
+      "しろのいななき"
     ],
     "weight": 800
   },
@@ -14943,7 +15096,7 @@
       "spe": 130
     },
     "abilities": [
-      "Grim Neigh"
+      "くろのいななき"
     ],
     "weight": 44.5
   },
@@ -15336,7 +15489,7 @@
       "spe": 35
     },
     "abilities": [
-      "Aroma Veil",
+      "アロマベール",
       "くいしんぼう",
       "あついしぼう"
     ],
@@ -15358,7 +15511,7 @@
       "spe": 65
     },
     "abilities": [
-      "Lingering Aroma",
+      "とれないにおい",
       "くいしんぼう",
       "あついしぼう"
     ],
@@ -15381,7 +15534,7 @@
     },
     "abilities": [
       "ふみん",
-      "Stakeout"
+      "はりこみ"
     ],
     "weight": 4
   },
@@ -15402,7 +15555,7 @@
     },
     "abilities": [
       "ふみん",
-      "Stakeout"
+      "はりこみ"
     ],
     "weight": 16.5
   },
@@ -15423,7 +15576,7 @@
     },
     "abilities": [
       "むしのしらせ",
-      "Tinted Lens"
+      "いろめがね"
     ],
     "weight": 1
   },
@@ -15445,7 +15598,7 @@
     },
     "abilities": [
       "むしのしらせ",
-      "Tinted Lens"
+      "いろめがね"
     ],
     "weight": 17.5
   },
@@ -15488,7 +15641,7 @@
       "spe": 85
     },
     "abilities": [
-      "Volt Absorb",
+      "ちくでん",
       "しぜんかいふく",
       "てつのこぶし"
     ],
@@ -15511,7 +15664,7 @@
       "spe": 105
     },
     "abilities": [
-      "Volt Absorb",
+      "ちくでん",
       "しぜんかいふく",
       "てつのこぶし"
     ],
@@ -15555,7 +15708,7 @@
       "spe": 111
     },
     "abilities": [
-      "Friend Guard",
+      "フレンドガード",
       "ほおぶくろ",
       "テクニシャン"
     ],
@@ -15598,8 +15751,8 @@
       "spe": 95
     },
     "abilities": [
-      "Well-Baked Body",
-      "Aroma Veil"
+      "こんがりボディ",
+      "アロマベール"
     ],
     "weight": 14.9
   },
@@ -15664,14 +15817,14 @@
       "spe": 39
     },
     "abilities": [
-      "Seed Sower",
+      "こぼれダネ",
       "しゅうかく"
     ],
     "weight": 48.2
   },
   {
     "id": 931,
-    "name": "イキリンコ",
+    "name": "イキリンコ(グリーン/ブルー)",
     "nameEn": "Squawkabilly",
     "types": [
       "ノーマル",
@@ -15693,6 +15846,29 @@
     "weight": 2.4
   },
   {
+    "id": 10931,
+    "name": "イキリンコ(イエロー/ホワイト)",
+    "nameEn": "Squawkabilly-Yellow",
+    "types": [
+      "ノーマル",
+      "ひこう"
+    ],
+    "baseStats": {
+      "hp": 82,
+      "atk": 96,
+      "def": 51,
+      "spa": 45,
+      "spd": 51,
+      "spe": 92
+    },
+    "abilities": [
+      "いかく",
+      "はりきり",
+      "ちからずく"
+    ],
+    "weight": 2.4
+  },
+  {
     "id": 932,
     "name": "コジオ",
     "nameEn": "Nacli",
@@ -15708,7 +15884,7 @@
       "spe": 25
     },
     "abilities": [
-      "Purifying Salt",
+      "きよめのしお",
       "がんじょう",
       "クリアボディ"
     ],
@@ -15730,7 +15906,7 @@
       "spe": 35
     },
     "abilities": [
-      "Purifying Salt",
+      "きよめのしお",
       "がんじょう",
       "クリアボディ"
     ],
@@ -15752,7 +15928,7 @@
       "spe": 35
     },
     "abilities": [
-      "Purifying Salt",
+      "きよめのしお",
       "がんじょう",
       "クリアボディ"
     ],
@@ -15884,8 +16060,8 @@
       "spe": 70
     },
     "abilities": [
-      "Wind Power",
-      "Volt Absorb",
+      "ふうりょくでんき",
+      "ちくでん",
       "かちき"
     ],
     "weight": 3.6
@@ -15907,8 +16083,8 @@
       "spe": 125
     },
     "abilities": [
-      "Wind Power",
-      "Volt Absorb",
+      "ふうりょくでんき",
+      "ちくでん",
       "かちき"
     ],
     "weight": 38.6
@@ -15931,7 +16107,7 @@
     "abilities": [
       "いかく",
       "にげあし",
-      "Stakeout"
+      "はりこみ"
     ],
     "weight": 16
   },
@@ -15952,8 +16128,8 @@
     },
     "abilities": [
       "いかく",
-      "Guard Dog",
-      "Stakeout"
+      "ばんけん",
+      "はりこみ"
     ],
     "weight": 61
   },
@@ -16004,30 +16180,6 @@
     "weight": 27.2
   },
   {
-    "id": 946,
-    "name": "イッカネズミ",
-    "nameEn": "Tandemaus",
-    "types": [
-      "ノーマル"
-    ],
-    "baseStats": {
-      "hp": 74,
-      "atk": 75,
-      "def": 70,
-      "spa": 65,
-      "spd": 75,
-      "spe": 111
-    },
-    "abilities": [
-      "フレンドガード",
-      "テクニシャン",
-      "にげあし",
-      "ものひろい",
-      "マイペース"
-    ],
-    "weight": 1.8
-  },
-  {
     "id": 947,
     "name": "アノホラグサ",
     "nameEn": "Brambleghast",
@@ -16044,7 +16196,7 @@
       "spe": 90
     },
     "abilities": [
-      "Wind Rider",
+      "かぜのり",
       "すりぬけ"
     ],
     "weight": 6
@@ -16066,7 +16218,7 @@
       "spe": 70
     },
     "abilities": [
-      "Mycelium Might"
+      "きんしのちから"
     ],
     "weight": 33
   },
@@ -16087,7 +16239,7 @@
       "spe": 100
     },
     "abilities": [
-      "Mycelium Might"
+      "きんしのちから"
     ],
     "weight": 58
   },
@@ -16107,7 +16259,7 @@
       "spe": 75
     },
     "abilities": [
-      "Anger Shell",
+      "いかりのこうら",
       "シェルアーマー",
       "さいせいりょく"
     ],
@@ -16240,7 +16392,7 @@
       "spe": 105
     },
     "abilities": [
-      "Opportunist",
+      "びんじょう",
       "おみとおし",
       "かそく"
     ],
@@ -16378,7 +16530,7 @@
     "abilities": [
       "はとむね",
       "するどいめ",
-      "Rocky Payload"
+      "いわはこび"
     ],
     "weight": 42.9
   },
@@ -16423,31 +16575,6 @@
     "weight": 60.2
   },
   {
-    "id": 965,
-    "name": "キョジオーン",
-    "nameEn": "Clodsire",
-    "types": [
-      "いわ",
-      "はがね"
-    ],
-    "baseStats": {
-      "hp": 100,
-      "atk": 100,
-      "def": 130,
-      "spa": 45,
-      "spd": 90,
-      "spe": 35
-    },
-    "abilities": [
-      "きよめのしお",
-      "クリアボディ",
-      "どくのトゲ",
-      "ちょすい",
-      "てんねん"
-    ],
-    "weight": 223
-  },
-  {
     "id": 966,
     "name": "ブロロローム",
     "nameEn": "Revavroom",
@@ -16465,7 +16592,7 @@
     },
     "abilities": [
       "ぼうじん",
-      "Filter"
+      "フィルター"
     ],
     "weight": 120
   },
@@ -16507,7 +16634,7 @@
       "spe": 65
     },
     "abilities": [
-      "Earth Eater",
+      "どしょく",
       "すながくれ"
     ],
     "weight": 310
@@ -16617,7 +16744,7 @@
     "abilities": [
       "きもったま",
       "ちどりあし",
-      "Costar"
+      "きょうえん"
     ],
     "weight": 37
   },
@@ -16726,8 +16853,8 @@
       "spe": 82
     },
     "abilities": [
-      "Commander",
-      "Storm Drain"
+      "しれいとう",
+      "よびみず"
     ],
     "weight": 8
   },
@@ -16795,7 +16922,7 @@
     },
     "abilities": [
       "はんすう",
-      "Armor Tail",
+      "テイルアーマー",
       "そうしょく"
     ],
     "weight": 160
@@ -16862,7 +16989,7 @@
       "spe": 87
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 320
   },
@@ -16883,7 +17010,7 @@
       "spe": 111
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 8
   },
@@ -16904,7 +17031,7 @@
       "spe": 55
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 21
   },
@@ -16925,7 +17052,7 @@
       "spe": 135
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 4
   },
@@ -16946,7 +17073,7 @@
       "spe": 81
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 92
   },
@@ -16967,7 +17094,7 @@
       "spe": 101
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 60
   },
@@ -17035,27 +17162,6 @@
     "weight": 380.7
   },
   {
-    "id": 993,
-    "name": "テツノブジン",
-    "nameEn": "Iron Valiant",
-    "types": [
-      "フェアリー",
-      "かくとう"
-    ],
-    "baseStats": {
-      "hp": 74,
-      "atk": 130,
-      "def": 90,
-      "spa": 120,
-      "spd": 60,
-      "spe": 116
-    },
-    "abilities": [
-      "クォークチャージ"
-    ],
-    "weight": 35
-  },
-  {
     "id": 994,
     "name": "テツノドクガ",
     "nameEn": "Iron Moth",
@@ -17114,7 +17220,7 @@
       "spe": 55
     },
     "abilities": [
-      "Thermal Exchange",
+      "ねつこうかん",
       "アイスボディ"
     ],
     "weight": 17
@@ -17136,7 +17242,7 @@
       "spe": 62
     },
     "abilities": [
-      "Thermal Exchange",
+      "ねつこうかん",
       "アイスボディ"
     ],
     "weight": 30
@@ -17158,10 +17264,11 @@
       "spe": 87
     },
     "abilities": [
-      "Thermal Exchange",
+      "ねつこうかん",
       "アイスボディ"
     ],
-    "weight": 210
+    "weight": 210,
+    "megaEvolutionKey": "mega-baxcalibur"
   },
   {
     "id": 999,
@@ -17221,7 +17328,7 @@
       "spe": 70
     },
     "abilities": [
-      "Tablets of Ruin"
+      "わざわいのおふだ"
     ],
     "weight": 74.2
   },
@@ -17242,7 +17349,7 @@
       "spe": 135
     },
     "abilities": [
-      "Sword of Ruin"
+      "わざわいのつるぎ"
     ],
     "weight": 152.2
   },
@@ -17263,7 +17370,7 @@
       "spe": 45
     },
     "abilities": [
-      "Vessel of Ruin"
+      "わざわいのうつわ"
     ],
     "weight": 699.7
   },
@@ -17284,7 +17391,7 @@
       "spe": 100
     },
     "abilities": [
-      "Beads of Ruin"
+      "わざわいのたま"
     ],
     "weight": 4.9
   },
@@ -17305,7 +17412,7 @@
       "spe": 119
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 380
   },
@@ -17347,7 +17454,7 @@
       "spe": 135
     },
     "abilities": [
-      "Orichalcum Pulse"
+      "ひひいろのこどう"
     ],
     "weight": 303
   },
@@ -17368,7 +17475,7 @@
       "spe": 135
     },
     "abilities": [
-      "Hadron Engine"
+      "ハドロンエンジン"
     ],
     "weight": 240
   },
@@ -17389,7 +17496,7 @@
       "spe": 109
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 280
   },
@@ -17431,9 +17538,9 @@
       "spe": 40
     },
     "abilities": [
-      "Supersweet Syrup",
+      "かんろなミツ",
       "くいしんぼう",
-      "Sticky Hold"
+      "ねんちゃく"
     ],
     "weight": 4.4
   },
@@ -17498,8 +17605,8 @@
       "spe": 80
     },
     "abilities": [
-      "Toxic Chain",
-      "Guard Dog"
+      "どくのくさり",
+      "ばんけん"
     ],
     "weight": 92
   },
@@ -17520,7 +17627,7 @@
       "spe": 106
     },
     "abilities": [
-      "Toxic Chain",
+      "どくのくさり",
       "おみとおし"
     ],
     "weight": 12.2
@@ -17542,7 +17649,7 @@
       "spe": 99
     },
     "abilities": [
-      "Toxic Chain",
+      "どくのくさり",
       "テクニシャン"
     ],
     "weight": 30.1
@@ -17607,9 +17714,9 @@
       "spe": 44
     },
     "abilities": [
-      "Supersweet Syrup",
+      "かんろなミツ",
       "さいせいりょく",
-      "Sticky Hold"
+      "ねんちゃく"
     ],
     "weight": 93
   },
@@ -17630,7 +17737,7 @@
       "spe": 91
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 590
   },
@@ -17651,7 +17758,7 @@
       "spe": 75
     },
     "abilities": [
-      "Protosynthesis"
+      "こだいかっせい"
     ],
     "weight": 480
   },
@@ -17713,7 +17820,7 @@
       "spe": 60
     },
     "abilities": [
-      "Tera Shift"
+      "テラスチェンジ"
     ],
     "weight": 6.5
   },
@@ -17734,7 +17841,7 @@
       "spe": 88
     },
     "abilities": [
-      "Poison Puppeteer"
+      "どくくぐつ"
     ],
     "weight": 0.3
   },
@@ -17866,7 +17973,7 @@
       "しんりょく",
       "きもったま"
     ],
-    "weight": 37.0
+    "weight": 37
   },
   {
     "id": 10502,
@@ -18101,6 +18208,6 @@
     "abilities": [
       "イリュージョン"
     ],
-    "weight": 73.0
+    "weight": 73
   }
 ]

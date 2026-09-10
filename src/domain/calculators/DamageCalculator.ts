@@ -76,6 +76,33 @@ const HALF_BERRIES: Record<string, TypeName> = {
 /** かたやぶり系: 相手の特性（ふゆう等）を無効化する特性 */
 const MOLD_BREAKER_ABILITIES = new Set(['かたやぶり', 'ターボブレイズ', 'テラボルテージ'])
 
+/** へんげんじざい系（技タイプ＝自分のタイプに変換される特性） */
+const PROTEAN_LIKE_ABILITIES = new Set(['へんげんじざい', 'リベロ'])
+
+/**
+ * へんげんじざい / リベロ など「使用技のタイプに自分のタイプが変わる」特性かを判定する。
+ * 文字列比較の重複を避けるため、UI・ユースケース層からもこの関数を利用する。
+ */
+export function isProteanLike(ability: string | null | undefined): boolean {
+  return ability != null && PROTEAN_LIKE_ABILITIES.has(ability)
+}
+
+/** 特定タイプの技を無効化する特性 → 無効化するタイプ（かたやぶり系で貫通） */
+const TYPE_IMMUNITY_ABILITIES: Record<string, TypeName> = {
+  'ちょすい': 'みず', 'よびみず': 'みず', 'かんそうはだ': 'みず',
+  'ちくでん': 'でんき', 'ひらいしん': 'でんき', 'でんきエンジン': 'でんき',
+  'もらいび': 'ほのお',
+  'そうしょく': 'くさ',
+  'どしょく': 'じめん',
+}
+
+/** 技フラグ単位で無効化する特性（かたやぶり系で貫通） */
+function isFlagImmuneAbility(defenderAbility: string, move: MoveData): boolean {
+  if (defenderAbility === 'ぼうおん') return move.flags.sound
+  if (defenderAbility === 'ぼうだん') return move.flags.bullet
+  return false
+}
+
 /** 五捨五超入（pokeRound）: 0.5を切り上げる四捨五入 */
 function pokeRound(n: number): number {
   return Math.floor(n) + (n - Math.floor(n) > 0.5 ? 1 : 0)
@@ -175,6 +202,8 @@ function resolveAtk(input: DamageCalcInput): number {
     if (attackerAbility === 'もうか'     && move.type === 'ほのお') atkMod *= 1.5
     if (attackerAbility === 'しんりょく' && move.type === 'くさ') atkMod *= 1.5
     if (attackerAbility === 'むしのしらせ' && move.type === 'むし') atkMod *= 1.5
+    // はりこみ: 交代直後の相手に対して攻撃・特攻2倍（Showdown も攻撃実数値補正で実装）
+    if (attackerAbility === 'はりこみ') atkMod *= 2
   }
 
   // そうだいしょう: 味方の倒れた数に応じて攻撃・特攻を強化（手動入力）
@@ -224,6 +253,17 @@ function resolveDef(input: DamageCalcInput): number {
   }
   // ふしぎなうろこ: 状態異常時に防御1.5倍（statusフィールドから自動判定）
   if (defenderAbility === 'ふしぎなうろこ' && input.defenderStatus !== null) {
+    if (effectiveDefStat === 'def') defMod *= 1.5
+  }
+  // かたやぶり系は防御側の防御補正特性（ファーコート・くさのけがわ）も貫通する
+  const defenseAbilitySuppressed = MOLD_BREAKER_ABILITIES.has(input.attackerAbility)
+  // ファーコート: 防御実数値2倍
+  if (defenderAbility === 'ファーコート' && !defenseAbilitySuppressed) {
+    if (effectiveDefStat === 'def') defMod *= 2
+  }
+  // くさのけがわ: グラスフィールド中は防御実数値1.5倍
+  if (defenderAbility === 'くさのけがわ' && !defenseAbilitySuppressed &&
+      input.field.terrain === 'グラス') {
     if (effectiveDefStat === 'def') defMod *= 1.5
   }
 
@@ -291,9 +331,9 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   const def = resolveDef(input)
   const moveType = resolveMoveType(input)
 
-  // へんげんじざい: 防御側タイプを変換済みタイプで上書き
+  // へんげんじざい / リベロ: 防御側タイプを変換済みタイプで上書き
   const baseDefenderTypes: TypeName[] =
-    (defenderAbility === 'へんげんじざい' &&
+    (isProteanLike(defenderAbility) &&
      input.defenderAbilityActivated &&
      input.defenderProteanType != null)
       ? [input.defenderProteanType]
@@ -323,6 +363,11 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     !grounded && !MOLD_BREAKER_ABILITIES.has(attackerAbility)
   const airBalloonImmuneToGround =
     input.defenderItem === 'ふうせん' && moveType === 'じめん' && !grounded
+  // タイプ／フラグ単位の無効化特性（ちょすい・ぼうおん等）。かたやぶり系で貫通される
+  const abilityTypeImmune =
+    !MOLD_BREAKER_ABILITIES.has(attackerAbility) &&
+    (TYPE_IMMUNITY_ABILITIES[defenderAbility] === moveType ||
+     isFlagImmuneAbility(defenderAbility, move))
 
   // ===== 基本ダメージ =====
   // floor((レベル×2÷5+2)) = floor((50×2÷5+2)) = floor(22) = 22
@@ -362,7 +407,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     // 4. タイプ一致補正 (STAB)
     // へんげんじざい: 技タイプ=自分のタイプになるため常にSTAB
     // ただし attackerProteanStab=false のときはSTABを乗せない（可変STAB）
-    const proteanActive = attackerAbility === 'へんげんじざい' && input.attackerAbilityActivated
+    const proteanActive = isProteanLike(attackerAbility) && input.attackerAbilityActivated
     const hasSTAB = proteanActive
       ? (input.attackerProteanStab ?? true)
       : input.attackerTypes.includes(moveType)
@@ -413,7 +458,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     typeEffCheck = typeEffCheck === 0 ? 0 : 1  // 0以外はすべて有効
   }
   // 浮遊系特性: じめん技を無効化（接地・かたやぶり系で解除済みの場合は false）
-  if (levitateImmuneToGround || airBalloonImmuneToGround) typeEffCheck = 0
+  if (levitateImmuneToGround || airBalloonImmuneToGround || abilityTypeImmune) typeEffCheck = 0
   const effectiveRolls = typeEffCheck === 0
     ? ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] as DamageResult['rolls'])
     : (finalRolls as DamageResult['rolls'])
@@ -505,6 +550,16 @@ function applyOtherModifiers(
   if (defenderAbility === 'フィルター' || defenderAbility === 'ハードロック') {
     if (typeEff > 1) d = pokeRound(d * 0.75)
   }
+  // かたやぶり系は防御側の被ダメ軽減特性（はどうのぼうご・パンクロック）を貫通する
+  const defenderAbilitySuppressed = MOLD_BREAKER_ABILITIES.has(attackerAbility)
+  // はどうのぼうご: 接触技のダメージ0.5倍
+  if (defenderAbility === 'はどうのぼうご' && !defenderAbilitySuppressed && move.flags.contact) {
+    d = pokeRound(d * 0.5)
+  }
+  // パンクロック（防御側）: 音技のダメージ0.5倍
+  if (defenderAbility === 'パンクロック' && !defenderAbilitySuppressed && move.flags.sound) {
+    d = pokeRound(d * 0.5)
+  }
   if (defenderAbility === 'もふもふ' && move.type === 'ほのお') {
     d = pokeRound(d * 2)
   }
@@ -519,6 +574,10 @@ function applyOtherModifiers(
   // たいねつ: ほのお技を0.5倍
   if (defenderAbility === 'たいねつ' && moveType === 'ほのお') {
     d = pokeRound(d * 0.5)
+  }
+  // かんそうはだ: ほのお技を1.25倍（みず技は無効化側で処理）
+  if (defenderAbility === 'かんそうはだ' && moveType === 'ほのお') {
+    d = pokeRound(d * 1.25)
   }
 
   // フェアリーオーラ: 攻撃側・防御側どちらが持っていてもフェアリー技1.33倍
@@ -560,6 +619,14 @@ function applyOtherModifiers(
   }
   // きれあじ: 切る属性技の威力1.5倍
   if (attackerAbility === 'きれあじ' && move.flags.slice) {
+    d = pokeRound(d * 1.5)
+  }
+  // パンクロック（攻撃側）: 音技の威力1.3倍
+  if (attackerAbility === 'パンクロック' && move.flags.sound) {
+    d = pokeRound(d * 1.3)
+  }
+  // はがねのせいしん: はがね技の威力1.5倍（スキン等の変換後タイプで判定）
+  if (attackerAbility === 'はがねのせいしん' && moveType === 'はがね') {
     d = pokeRound(d * 1.5)
   }
   // すいほう（攻撃側）: みず技を2倍

@@ -5,7 +5,7 @@ import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { calcRollPercent, type DamageResult } from '@/domain/models/DamageResult'
-import { wouldHalfBerryActivate } from '@/domain/calculators/DamageCalculator'
+import { wouldHalfBerryActivate, isProteanLike } from '@/domain/calculators/DamageCalculator'
 import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import type { BattleField } from '@/domain/models/BattleField'
@@ -134,7 +134,7 @@ export function calculateMoveResults({
           HP_FULL_ABILITIES.has(defender.abilityName) && defender.abilityActivated === true
 
         const defenderEffTypes =
-          (defender.abilityName === 'へんげんじざい' &&
+          (isProteanLike(defender.abilityName) &&
            defender.abilityActivated &&
            defender.proteanType)
             ? [defender.proteanType]

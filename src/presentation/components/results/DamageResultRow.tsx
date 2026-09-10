@@ -138,6 +138,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
     attackerAbility,
     attackerItem,
     focusEnergyActive,
+    attackerPokemonName: attackerName,
   })
 
   // 表示用の実効ダメージ（ばけのかわ・おやこあい・多段合計・段階低下・変動連続技加重）は

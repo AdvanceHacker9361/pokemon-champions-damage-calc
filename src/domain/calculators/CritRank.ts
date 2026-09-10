@@ -11,6 +11,9 @@ const CRIT_RANK_PLUS1_ITEMS = new Set(['ピントレンズ', 'するどいツメ
 /** 急所ランク +1 を与える特性 */
 const CRIT_RANK_PLUS1_ABILITIES = new Set(['きょううん'])
 
+/** ながねぎ（急所ランク +2）が有効になる種族 */
+const LEEK_HOLDERS = new Set(['カモネギ', 'ガラルカモネギ', 'ネギガナイト'])
+
 interface CritRankParams {
   /** 技の急所ランク補正 (move.critChance: 0=通常, 1=高急所技) */
   moveCritBonus: number
@@ -18,19 +21,28 @@ interface CritRankParams {
   attackerItem: string | null
   /** きあいだめ状態（+2ランク） */
   focusEnergyActive: boolean
+  /** ながねぎ等、種族限定アイテム判定に使う攻撃側の日本語種族名 */
+  attackerPokemonName?: string | null
 }
 
 /**
  * 急所率を計算する
- * ランク加算: 高急所技+1 / きょううん+1 / ピントレンズ・するどいツメ+1 / きあいだめ+2
+ * ランク加算: 高急所技+1 / きょううん+1 / ピントレンズ・するどいツメ+1 /
+ * ながねぎ（カモネギ系）+2 / きあいだめ+2
  */
 export function calcCritChance(params: CritRankParams): number {
-  const { moveCritBonus, attackerAbility, attackerItem, focusEnergyActive } = params
+  const { moveCritBonus, attackerAbility, attackerItem, focusEnergyActive,
+          attackerPokemonName } = params
 
   let rank = 0
   if (moveCritBonus >= 1) rank += 1
   if (CRIT_RANK_PLUS1_ABILITIES.has(attackerAbility)) rank += 1
   if (attackerItem && CRIT_RANK_PLUS1_ITEMS.has(attackerItem)) rank += 1
+  // ながねぎ: カモネギ / ネギガナイトが持つときのみ急所ランク+2
+  if (attackerItem === 'ながねぎ' && attackerPokemonName &&
+      LEEK_HOLDERS.has(attackerPokemonName)) {
+    rank += 2
+  }
   if (focusEnergyActive) rank += 2
 
   return CRIT_RANK_TABLE[Math.min(rank, CRIT_RANK_TABLE.length - 1)]

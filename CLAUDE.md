@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.18.1**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,33 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.19.0: レギュレーション M-C 対応（2026-09-10）
+
+#### データ追加
+- **メガ 4 件**（`pokemon-mega.json`）: `mega-absol-z`（あく/ゴースト、きれあじ、65/154/60/75/60/151、49kg）、`mega-garchomp-z`（ドラゴン、ふゆう、108/130/85/141/85/151、99kg）、`mega-lucario-z`（かくとう/はがね、はどうのぼうご、70/100/70/164/70/151、49.4kg）、`mega-baxcalibur`（ドラゴン/こおり、ねつこうかん、115/175/117/105/101/87、315kg）
+  - Z 形態は既存メガと `basePokemonId` を共有し、`PokemonRepository.getMegasByBaseId` 経由で X/Y と同じ複数形態 UI に載る
+- **ポケモン 8 件**（`pokemon.json`）: アローラペルシアン(10053)、カモネギ(83)、バリヤード(122)、フォクスライ(828)、オトスパス(853)、ネギガナイト(865)、ストリンダー(ローなすがた)(10849)、イキリンコ(イエロー/ホワイト)(10931)。既存 849/931 は「(ハイなすがた)」「(グリーン/ブルー)」へ改名
+- **持ち物 7 件**（`items.json`）: ながねぎ / しめつけバンド / グランドコート / エレキ・グラス・ミスト・サイコシード。シードのランク +1 は手動ランク入力で扱う（自動適用なし）
+- **技 14 件**（`moves.json`）: Showdown learnsets（Gen 8/9）と突合して欠落していたダメージ技。PP は Champions 4 段階へ換算
+- 特性名の和訳統一: 英語表記 66 件を公式和名に変更し、和名と重複していた英語エントリを削除。`data-integrity.test.ts` に「ASCII 名が残らない」「ポケモン名/id が一意」のガードを追加
+
+#### 計算エンジン（`DamageCalculator.ts`）
+- `isProteanLike(ability)`（へんげんじざい／リベロ）を export し、ユースケース・UI の文字列比較を置換
+- `TYPE_IMMUNITY_ABILITIES`（特性→無効タイプ）と `isFlagImmuneAbility`（ぼうおん=音技／ぼうだん=弾技）で無効化を一括処理。ふゆう/ふうせんと同じ `typeEffCheck = 0` 経路（かたやぶり系で貫通）
+- 防御実数値補正: ファーコート ×2、くさのけがわ（グラス中）×1.5 — `resolveDef` 内、`effectiveDefStat === 'def'` で判定（サイコショック等も正しく対象）。かたやぶり系で貫通
+- 攻撃実数値補正: はりこみ ×2（`attackerAbilityActivated` 時。`ACTIVATABLE_ABILITIES` に「交代直後の相手」）
+- 最終ダメージ補正: はどうのぼうご（接触 ×0.5）、パンクロック防御側（音技 ×0.5）、かんそうはだ（ほのお ×1.25）、パンクロック攻撃側（音技 ×1.3）、はがねのせいしん（はがね ×1.5）— かたいツメ等と同じ `pokeRound` 逐次適用
+- `CritRank.calcCritChance` に `attackerPokemonName` を追加。ながねぎ × カモネギ/ネギガナイト で急所ランク +2
+- `PASSIVE_PRESETS` に `rockyHelmet`（damage/ratio 1/6 floor, perAttack）を追加。対象トグルを攻撃側にすると攻撃側最大 HP 基準で課金される
+- テスト: `tests/domain/RegMCAbilities.test.ts`（45 件）、`tests/domain/CritRank.test.ts`（7 件）、`data-integrity.test.ts` に `Reg.M-C data` describe（ピン留め）
+
+#### データ修正（Showdown 全件クロスチェックで発見）
+- メガグソクムシャ: ききかいひ → かたいツメ、108 → 148kg。メガガブリアス 130 → 95kg。Z-A 由来メガ 18 件の体重を公式値へ
+- オノノクス／クリムガン: ドラゴン/フェアリー → ドラゴン単（ヌメルゴンと同型の誤り）
+- 重複ゴミエントリ削除: id 946（イッカネズミ/Tandemaus 混在）、965（キョジオーン/Clodsire 混在）、993（テツノブジン重複）
+- 体重: コジョンド 35.5 / レシラム 330 / ゼクロム 345 / ホルード 42.4 / ラランテス 18.5
+- 未対応（意図的）: ザシアン/ザマゼンタは剣・盾の王フォルム値のまま。ねつこうかん／こぼれダネ／ばんけん／ヘドロえき／グラスメイカーは計算式に直接効果がないため名前のみ。がんじょうあご・こおりのりんぷん・トランジスタ・りゅうのあぎと・いわはこび・こだいかっせい／クォークチャージ・わざわい系は和名化のみで計算未実装（別タスク）
 
 ### V3.18.0: 「ダメージ進行」ツールバー再設計（常時効果カタログ＋タブ化）
 

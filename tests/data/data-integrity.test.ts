@@ -620,3 +620,148 @@ describe('items.json integrity', () => {
     expect(items.find(i => i.name === 'ようせいのはね')).toBeUndefined()
   })
 })
+
+// ────────────────────────────────────────────────
+// Regulation M-C 追加データのテスト
+// ────────────────────────────────────────────────
+describe('Reg.M-C data', () => {
+  it('Reg.M-C megas should be pinned', () => {
+    const byKey = new Map(mega.map(m => [m.key, m]))
+
+    expect(byKey.get('mega-absol-z')).toMatchObject({
+      name: 'メガアブソルZ',
+      nameEn: 'Mega Absol Z',
+      types: ['あく', 'ゴースト'],
+      ability: 'きれあじ',
+    })
+    expect(byKey.get('mega-garchomp-z')).toMatchObject({
+      name: 'メガガブリアスZ',
+      nameEn: 'Mega Garchomp Z',
+      types: ['ドラゴン'],
+      ability: 'ふゆう',
+    })
+    expect(byKey.get('mega-lucario-z')).toMatchObject({
+      name: 'メガルカリオZ',
+      nameEn: 'Mega Lucario Z',
+      types: ['かくとう', 'はがね'],
+      ability: 'はどうのぼうご',
+    })
+    expect(byKey.get('mega-baxcalibur')).toMatchObject({
+      name: 'メガセグレイブ',
+      nameEn: 'Mega Baxcalibur',
+      types: ['ドラゴン', 'こおり'],
+      ability: 'ねつこうかん',
+    })
+
+    expect(byKey.get('mega-golisopod')).toMatchObject({
+      ability: 'かたいツメ',
+      weight: 148,
+    })
+    expect(byKey.get('mega-garchomp')?.weight).toBe(95)
+  })
+
+  it('Reg.M-C roster should be available', () => {
+    const byId = new Map(pokemon.map(p => [p.id, p]))
+
+    expect(byId.get(10053)).toMatchObject({ name: 'アローラペルシアン', types: ['あく'] })
+    expect(byId.get(83)).toMatchObject({ nameEn: "Farfetch'd", types: ['ノーマル', 'ひこう'] })
+    expect(byId.get(122)).toMatchObject({ nameEn: 'Mr. Mime', types: ['エスパー', 'フェアリー'] })
+    expect(byId.get(828)).toMatchObject({ nameEn: 'Thievul', types: ['あく'] })
+    expect(byId.get(853)).toMatchObject({ nameEn: 'Grapploct', types: ['かくとう'] })
+    expect(byId.get(865)).toMatchObject({ nameEn: "Sirfetch'd", types: ['かくとう'] })
+    expect(byId.get(10849)).toMatchObject({
+      name: 'ストリンダー(ローなすがた)',
+      nameEn: 'Toxtricity-Low-Key',
+      abilities: ['パンクロック', 'マイナス', 'テクニシャン'],
+    })
+    expect(byId.get(10931)).toMatchObject({
+      name: 'イキリンコ(イエロー/ホワイト)',
+      nameEn: 'Squawkabilly-Yellow',
+      abilities: ['いかく', 'はりきり', 'ちからずく'],
+    })
+
+    expect(byId.get(849)?.name).toContain('ストリンダー')
+    expect(byId.get(931)?.name).toContain('イキリンコ')
+  })
+
+  it('Reg.M-C items should be available', () => {
+    const calcTags = new Set(items.map(i => i.calcTag))
+    const required = [
+      'leek', 'binding-band', 'terrain-extender', 'electric-seed',
+      'grassy-seed', 'misty-seed', 'psychic-seed',
+      'rocky-helmet', 'air-balloon', 'red-card', 'eject-button', 'normal-gem',
+    ]
+    for (const tag of required) {
+      expect(calcTags.has(tag), `Missing item: ${tag}`).toBe(true)
+    }
+  })
+
+  it('Reg.M-C moves should be available', () => {
+    const pyroBall = moves.find(m => m.name === 'かえんボール')
+    expect(pyroBall).toMatchObject({
+      nameEn: 'Pyro Ball',
+      power: 120,
+      accuracy: 90,
+    })
+    expect(pyroBall?.flags.bullet).toBe(true)
+
+    const snipeShot = moves.find(m => m.name === 'ねらいうち')
+    expect(snipeShot?.critChance).toBe(1)
+
+    const dualChop = moves.find(m => m.name === 'ダブルチョップ')
+    expect(dualChop?.multiHit).toEqual({ type: 'fixed', count: 2 })
+
+    const doubleSlap = moves.find(m => m.name === 'おうふくビンタ')
+    expect(doubleSlap?.multiHit).toEqual({ type: 'variable' })
+
+    const revenge = moves.find(m => m.name === 'リベンジ')
+    expect(revenge?.powerOptions).toEqual([60, 120])
+  })
+
+  it('M-C ability names should be Japanese', () => {
+    const englishNames = [
+      'Punk Rock', 'Steely Spirit', 'Stakeout', 'Grass Pelt', 'Libero',
+      'Liquid Ooze', 'Grassy Surge', 'Volt Absorb', 'Seed Sower',
+      'Guard Dog', 'Thermal Exchange',
+    ]
+    for (const name of englishNames) {
+      expect(abilities.some(a => a.name === name), `${name} should not remain in abilities.json`).toBe(false)
+      for (const p of pokemon) {
+        expect(p.abilities.includes(name), `${p.nameEn} still has English ability "${name}"`).toBe(false)
+      }
+    }
+  })
+
+  it('cross-checked base data corrections should stay pinned', () => {
+    const haxorus = pokemon.find(p => p.nameEn === 'Haxorus')
+    expect(haxorus?.types).toEqual(['ドラゴン'])
+
+    const druddigon = pokemon.find(p => p.nameEn === 'Druddigon')
+    expect(druddigon?.types).toEqual(['ドラゴン'])
+
+    // キョジオーン / イッカネズミ / テツノブジン の重複ゴミエントリ（id 965 / 946 / 993）は削除済み
+    const garganacl = pokemon.filter(p => p.name === 'キョジオーン')
+    expect(garganacl).toHaveLength(1)
+    expect(garganacl[0].nameEn).toBe('Garganacl')
+    const maushold = pokemon.find(p => p.name === 'イッカネズミ')
+    expect(maushold?.nameEn).toBe('Maushold')
+    expect(maushold?.baseStats).toEqual({ hp: 74, atk: 75, def: 70, spa: 65, spd: 75, spe: 111 })
+  })
+
+  it('pokemon names (JP/EN) and ids should be unique', () => {
+    const jp = new Set<string>()
+    const en = new Set<string>()
+    const ids = new Set<number>()
+    for (const p of pokemon) {
+      expect(jp.has(p.name), `duplicate JP name ${p.name}`).toBe(false)
+      expect(en.has(p.nameEn), `duplicate EN name ${p.nameEn}`).toBe(false)
+      expect(ids.has(p.id), `duplicate id ${p.id}`).toBe(false)
+      jp.add(p.name); en.add(p.nameEn); ids.add(p.id)
+    }
+  })
+
+  it('all ability display names should be Japanese (no ASCII-only names)', () => {
+    const ascii = abilities.filter(a => /^[\x20-\x7e]+$/.test(a.name)).map(a => a.name)
+    expect(ascii, `English ability names remain: ${ascii.join(', ')}`).toEqual([])
+  })
+})

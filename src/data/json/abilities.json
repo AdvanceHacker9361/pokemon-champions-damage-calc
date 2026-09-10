@@ -967,12 +967,12 @@
   {
     "name": "フレンドガード",
     "nameEn": "Friend Guard",
-    "calcTag": "none"
+    "calcTag": "friend-guard"
   },
   {
     "name": "きよめのしお",
     "nameEn": "Purifying Salt",
-    "calcTag": "none"
+    "calcTag": "purifying-salt"
   },
   {
     "name": "いかりのツボ",
@@ -1000,39 +1000,14 @@
     "calcTag": "piercing-drill"
   },
   {
-    "name": "Friend Guard",
-    "nameEn": "Friend Guard",
-    "calcTag": "friend-guard"
-  },
-  {
-    "name": "Tinted Lens",
-    "nameEn": "Tinted Lens",
-    "calcTag": "tinted-lens"
-  },
-  {
-    "name": "Wonder Skin",
-    "nameEn": "Wonder Skin",
-    "calcTag": "wonder-skin"
-  },
-  {
-    "name": "Stench",
-    "nameEn": "Stench",
-    "calcTag": "stench"
-  },
-  {
-    "name": "Arena Trap",
+    "name": "ありじごく",
     "nameEn": "Arena Trap",
     "calcTag": "arena-trap"
   },
   {
-    "name": "Liquid Ooze",
+    "name": "ヘドロえき",
     "nameEn": "Liquid Ooze",
     "calcTag": "liquid-ooze"
-  },
-  {
-    "name": "Sticky Hold",
-    "nameEn": "Sticky Hold",
-    "calcTag": "sticky-hold"
   },
   {
     "name": "よちむ",
@@ -1040,62 +1015,57 @@
     "calcTag": "forewarn"
   },
   {
-    "name": "Aftermath",
-    "nameEn": "Aftermath",
-    "calcTag": "aftermath"
-  },
-  {
-    "name": "Neutralizing Gas",
+    "name": "かがくへんかガス",
     "nameEn": "Neutralizing Gas",
     "calcTag": "neutralizing-gas"
   },
   {
-    "name": "Imposter",
+    "name": "かわりもの",
     "nameEn": "Imposter",
     "calcTag": "imposter"
   },
   {
-    "name": "Download",
+    "name": "ダウンロード",
     "nameEn": "Download",
     "calcTag": "download"
   },
   {
-    "name": "Volt Absorb",
+    "name": "ちくでん",
     "nameEn": "Volt Absorb",
     "calcTag": "volt-absorb"
   },
   {
-    "name": "Wind Rider",
+    "name": "かぜのり",
     "nameEn": "Wind Rider",
     "calcTag": "wind-rider"
   },
   {
-    "name": "White Smoke",
+    "name": "しろいけむり",
     "nameEn": "White Smoke",
     "calcTag": "white-smoke"
   },
   {
-    "name": "Storm Drain",
+    "name": "よびみず",
     "nameEn": "Storm Drain",
     "calcTag": "storm-drain"
   },
   {
-    "name": "Flare Boost",
+    "name": "ねつぼうそう",
     "nameEn": "Flare Boost",
     "calcTag": "flare-boost"
   },
   {
-    "name": "Slow Start",
+    "name": "スロースタート",
     "nameEn": "Slow Start",
     "calcTag": "slow-start"
   },
   {
-    "name": "Multitype",
+    "name": "マルチタイプ",
     "nameEn": "Multitype",
     "calcTag": "multitype"
   },
   {
-    "name": "Grass Pelt",
+    "name": "くさのけがわ",
     "nameEn": "Grass Pelt",
     "calcTag": "grass-pelt"
   },
@@ -1105,22 +1075,17 @@
     "calcTag": "mega-launcher"
   },
   {
-    "name": "Stakeout",
+    "name": "はりこみ",
     "nameEn": "Stakeout",
     "calcTag": "stakeout"
   },
   {
-    "name": "Strong Jaw",
-    "nameEn": "Strong Jaw",
-    "calcTag": "strong-jaw"
-  },
-  {
-    "name": "Battery",
+    "name": "バッテリー",
     "nameEn": "Battery",
     "calcTag": "battery"
   },
   {
-    "name": "Dancer",
+    "name": "おどりこ",
     "nameEn": "Dancer",
     "calcTag": "dancer"
   },
@@ -1130,52 +1095,52 @@
     "calcTag": "stamina"
   },
   {
-    "name": "Triage",
+    "name": "ヒーリングシフト",
     "nameEn": "Triage",
     "calcTag": "triage"
   },
   {
-    "name": "Receiver",
+    "name": "レシーバー",
     "nameEn": "Receiver",
     "calcTag": "receiver"
   },
   {
-    "name": "Water Compaction",
+    "name": "みずがため",
     "nameEn": "Water Compaction",
     "calcTag": "water-compaction"
   },
   {
-    "name": "Shields Down",
+    "name": "リミットシールド",
     "nameEn": "Shields Down",
     "calcTag": "shields-down"
   },
   {
-    "name": "Comatose",
+    "name": "ぜったいねむり",
     "nameEn": "Comatose",
     "calcTag": "comatose"
   },
   {
-    "name": "Full Metal Body",
+    "name": "メタルプロテクト",
     "nameEn": "Full Metal Body",
     "calcTag": "full-metal-body"
   },
   {
-    "name": "Soul-Heart",
+    "name": "ソウルハート",
     "nameEn": "Soul-Heart",
     "calcTag": "soul-heart"
   },
   {
-    "name": "Dazzling",
+    "name": "ビビッドボディ",
     "nameEn": "Dazzling",
     "calcTag": "dazzling"
   },
   {
-    "name": "Grassy Surge",
+    "name": "グラスメイカー",
     "nameEn": "Grassy Surge",
     "calcTag": "grassy-surge"
   },
   {
-    "name": "Libero",
+    "name": "リベロ",
     "nameEn": "Libero",
     "calcTag": "libero"
   },
@@ -1185,39 +1150,34 @@
     "calcTag": "mirror-armor"
   },
   {
-    "name": "Steam Engine",
+    "name": "じょうききかん",
     "nameEn": "Steam Engine",
     "calcTag": "steam-engine"
   },
   {
-    "name": "Ripen",
+    "name": "じゅくせい",
     "nameEn": "Ripen",
     "calcTag": "ripen"
   },
   {
-    "name": "Sand Spit",
+    "name": "すなはき",
     "nameEn": "Sand Spit",
     "calcTag": "sand-spit"
   },
   {
-    "name": "Propeller Tail",
+    "name": "スクリューおびれ",
     "nameEn": "Propeller Tail",
     "calcTag": "propeller-tail"
   },
   {
-    "name": "Gulp Missile",
+    "name": "うのミサイル",
     "nameEn": "Gulp Missile",
     "calcTag": "gulp-missile"
   },
   {
-    "name": "Punk Rock",
+    "name": "パンクロック",
     "nameEn": "Punk Rock",
     "calcTag": "punk-rock"
-  },
-  {
-    "name": "Aroma Veil",
-    "nameEn": "Aroma Veil",
-    "calcTag": "aroma-veil"
   },
   {
     "name": "かたいツメ",
@@ -1225,22 +1185,22 @@
     "calcTag": "tough-claws"
   },
   {
-    "name": "Steely Spirit",
+    "name": "はがねのせいしん",
     "nameEn": "Steely Spirit",
     "calcTag": "steely-spirit"
   },
   {
-    "name": "Hunger Switch",
+    "name": "はらぺこスイッチ",
     "nameEn": "Hunger Switch",
     "calcTag": "hunger-switch"
   },
   {
-    "name": "Ice Scales",
+    "name": "こおりのりんぷん",
     "nameEn": "Ice Scales",
     "calcTag": "ice-scales"
   },
   {
-    "name": "Power Spot",
+    "name": "パワースポット",
     "nameEn": "Power Spot",
     "calcTag": "power-spot"
   },
@@ -1250,12 +1210,7 @@
     "calcTag": "stalwart"
   },
   {
-    "name": "Psychic Surge",
-    "nameEn": "Psychic Surge",
-    "calcTag": "psychic-surge"
-  },
-  {
-    "name": "Ice Face",
+    "name": "アイスフェイス",
     "nameEn": "Ice Face",
     "calcTag": "ice-face"
   },
@@ -1270,47 +1225,42 @@
     "calcTag": "dragon-skin"
   },
   {
-    "name": "Dragon's Maw",
+    "name": "りゅうのあぎと",
     "nameEn": "Dragon's Maw",
     "calcTag": "dragon's-maw"
   },
   {
-    "name": "Grim Neigh",
+    "name": "くろのいななき",
     "nameEn": "Grim Neigh",
     "calcTag": "grim-neigh"
   },
   {
-    "name": "Transistor",
+    "name": "トランジスタ",
     "nameEn": "Transistor",
     "calcTag": "transistor"
   },
   {
-    "name": "Chilling Neigh",
+    "name": "しろのいななき",
     "nameEn": "Chilling Neigh",
     "calcTag": "chilling-neigh"
   },
   {
-    "name": "Lingering Aroma",
+    "name": "とれないにおい",
     "nameEn": "Lingering Aroma",
     "calcTag": "lingering-aroma"
   },
   {
-    "name": "Well-Baked Body",
+    "name": "こんがりボディ",
     "nameEn": "Well-Baked Body",
     "calcTag": "well-baked-body"
   },
   {
-    "name": "Seed Sower",
+    "name": "こぼれダネ",
     "nameEn": "Seed Sower",
     "calcTag": "seed-sower"
   },
   {
-    "name": "Purifying Salt",
-    "nameEn": "Purifying Salt",
-    "calcTag": "purifying-salt"
-  },
-  {
-    "name": "Wind Power",
+    "name": "ふうりょくでんき",
     "nameEn": "Wind Power",
     "calcTag": "wind-power"
   },
@@ -1320,22 +1270,22 @@
     "calcTag": "electromorphosis"
   },
   {
-    "name": "Guard Dog",
+    "name": "ばんけん",
     "nameEn": "Guard Dog",
     "calcTag": "guard-dog"
   },
   {
-    "name": "Mycelium Might",
+    "name": "きんしのちから",
     "nameEn": "Mycelium Might",
     "calcTag": "mycelium-might"
   },
   {
-    "name": "Anger Shell",
+    "name": "いかりのこうら",
     "nameEn": "Anger Shell",
     "calcTag": "anger-shell"
   },
   {
-    "name": "Opportunist",
+    "name": "びんじょう",
     "nameEn": "Opportunist",
     "calcTag": "opportunist"
   },
@@ -1345,12 +1295,12 @@
     "calcTag": "zero-to-hero"
   },
   {
-    "name": "Earth Eater",
+    "name": "どしょく",
     "nameEn": "Earth Eater",
     "calcTag": "earth-eater"
   },
   {
-    "name": "Rocky Payload",
+    "name": "いわはこび",
     "nameEn": "Rocky Payload",
     "calcTag": "rocky-payload"
   },
@@ -1360,17 +1310,12 @@
     "calcTag": "toxic-debris"
   },
   {
-    "name": "Filter",
-    "nameEn": "Filter",
-    "calcTag": "filter"
-  },
-  {
-    "name": "Commander",
+    "name": "しれいとう",
     "nameEn": "Commander",
     "calcTag": "commander"
   },
   {
-    "name": "Costar",
+    "name": "きょうえん",
     "nameEn": "Costar",
     "calcTag": "costar"
   },
@@ -1380,12 +1325,12 @@
     "calcTag": "cud-chew"
   },
   {
-    "name": "Armor Tail",
+    "name": "テイルアーマー",
     "nameEn": "Armor Tail",
     "calcTag": "armor-tail"
   },
   {
-    "name": "Protosynthesis",
+    "name": "こだいかっせい",
     "nameEn": "Protosynthesis",
     "calcTag": "protosynthesis"
   },
@@ -1400,42 +1345,42 @@
     "calcTag": "good-as-gold"
   },
   {
-    "name": "Thermal Exchange",
+    "name": "ねつこうかん",
     "nameEn": "Thermal Exchange",
     "calcTag": "thermal-exchange"
   },
   {
-    "name": "Tablets of Ruin",
+    "name": "わざわいのおふだ",
     "nameEn": "Tablets of Ruin",
     "calcTag": "tablets-of-ruin"
   },
   {
-    "name": "Sword of Ruin",
+    "name": "わざわいのつるぎ",
     "nameEn": "Sword of Ruin",
     "calcTag": "sword-of-ruin"
   },
   {
-    "name": "Orichalcum Pulse",
+    "name": "ひひいろのこどう",
     "nameEn": "Orichalcum Pulse",
     "calcTag": "orichalcum-pulse"
   },
   {
-    "name": "Beads of Ruin",
+    "name": "わざわいのたま",
     "nameEn": "Beads of Ruin",
     "calcTag": "beads-of-ruin"
   },
   {
-    "name": "Vessel of Ruin",
+    "name": "わざわいのうつわ",
     "nameEn": "Vessel of Ruin",
     "calcTag": "vessel-of-ruin"
   },
   {
-    "name": "Supersweet Syrup",
+    "name": "かんろなミツ",
     "nameEn": "Supersweet Syrup",
     "calcTag": "supersweet-syrup"
   },
   {
-    "name": "Hadron Engine",
+    "name": "ハドロンエンジン",
     "nameEn": "Hadron Engine",
     "calcTag": "hadron-engine"
   },
@@ -1445,17 +1390,17 @@
     "calcTag": "hospitality"
   },
   {
-    "name": "Toxic Chain",
+    "name": "どくのくさり",
     "nameEn": "Toxic Chain",
     "calcTag": "toxic-chain"
   },
   {
-    "name": "Tera Shift",
+    "name": "テラスチェンジ",
     "nameEn": "Tera Shift",
     "calcTag": "tera-shift"
   },
   {
-    "name": "Poison Puppeteer",
+    "name": "どくくぐつ",
     "nameEn": "Poison Puppeteer",
     "calcTag": "poison-puppeteer"
   },
@@ -1528,5 +1473,10 @@
     "name": "とびだすなかみ",
     "nameEn": "Innards Out",
     "calcTag": "innards-out"
+  },
+  {
+    "name": "はどうのぼうご",
+    "nameEn": "Aura Guard",
+    "calcTag": "aura-guard"
   }
 ]

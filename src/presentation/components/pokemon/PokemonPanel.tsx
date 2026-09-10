@@ -13,6 +13,7 @@ import { BuildLibraryModal } from './BuildLibraryModal'
 import { MoveSlots } from '@/presentation/components/moves/MoveSlots'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import { PokemonRepository } from '@/data/repositories/PokemonRepository'
+import { isProteanLike } from '@/domain/calculators/DamageCalculator'
 import { useBuildLibraryStore, BUILD_LIBRARY_MAX } from '@/presentation/store/buildLibraryStore'
 import type { PokemonRecord } from '@/data/schemas/types'
 import type { TypeName, StatKey } from '@/domain/models/Pokemon'
@@ -69,6 +70,8 @@ const ACTIVATABLE_ABILITIES: Record<string, string> = {
   'マルチスケイル':   'HP満タン',
   'ファントムガード':  'HP満タン',
   'へんげんじざい':   'タイプ変換',
+  'リベロ':           'タイプ変換',
+  'はりこみ':         '交代直後の相手',
   'ばけのかわ':   'ばけのかわ有効',
 }
 
@@ -404,15 +407,15 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
                     : abilityConditionLabel}
                 </button>
               </div>
-              {/* へんげんじざい: 発動中かつ防御側（または攻撃側でタイプ選択を指定する場合）にタイプピッカーを表示 */}
-              {store.effectiveAbility === 'へんげんじざい' && store.abilityActivated && label === '防御側' && (
+              {/* へんげんじざい / リベロ: 発動中かつ防御側（または攻撃側でタイプ選択を指定する場合）にタイプピッカーを表示 */}
+              {isProteanLike(store.effectiveAbility) && store.abilityActivated && label === '防御側' && (
                 <ProteanTypePicker
                   value={store.proteanType}
                   onChange={store.setProteanType}
                 />
               )}
-              {/* へんげんじざい: 攻撃側はSTAB可変トグル（なし / 1.5倍） */}
-              {store.effectiveAbility === 'へんげんじざい' && store.abilityActivated && label === '攻撃側' && (
+              {/* へんげんじざい / リベロ: 攻撃側はSTAB可変トグル（なし / 1.5倍） */}
+              {isProteanLike(store.effectiveAbility) && store.abilityActivated && label === '攻撃側' && (
                 <div>
                   <label className="label block mb-1">タイプ一致補正</label>
                   <div className="flex gap-1.5">
