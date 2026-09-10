@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PokemonStore } from '@/presentation/store/pokemonStore'
 import { useStatCalc } from '@/presentation/hooks/useStatCalc'
 import { PokemonSearch } from './PokemonSearch'
@@ -20,6 +20,12 @@ import type { TypeName, StatKey } from '@/domain/models/Pokemon'
 
 /** セグレイブ（きょけんとつげき使用者）の図鑑番号 */
 const BAXCALIBUR_ID = 998
+/** きあいだめ状態を得る技 */
+const FOCUS_ENERGY_MOVE = 'きあいだめ'
+/** じゅうでん状態を得る技 */
+const CHARGE_MOVE = 'じゅうでん'
+/** じゅうでん状態を自動で得る特性（でんきにかえる: 被弾時 / ふうりょくでんき: 風技被弾時） */
+const CHARGE_GRANTING_ABILITIES = new Set(['でんきにかえる', 'ふうりょくでんき'])
 
 interface PokemonPanelProps {
   store: PokemonStore
@@ -107,6 +113,19 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
   const megaAbility = store.isMega ? store.effectiveAbility : undefined
 
   const abilityConditionLabel = ACTIVATABLE_ABILITIES[store.effectiveAbility]
+
+  // きあいだめ / じゅうでん のトグルは、状態を得る手段（技・特性）があるときだけ表示する
+  const hasMove = (name: string) => store.moves.includes(name)
+  const showFocusEnergyToggle = label === '攻撃側' && hasMove(FOCUS_ENERGY_MOVE)
+  const showChargeToggle =
+    label === '攻撃側' &&
+    (hasMove(CHARGE_MOVE) || CHARGE_GRANTING_ABILITIES.has(store.effectiveAbility))
+  // 手段がなくなったら（技を外した・特性を変えた）状態も解除し、隠れたまま補正が残らないようにする
+  useEffect(() => {
+    if (label !== '攻撃側') return
+    if (!showFocusEnergyToggle && store.focusEnergyActive) store.setFocusEnergyActive(false)
+    if (!showChargeToggle && store.chargeActive) store.setChargeActive(false)
+  }, [label, showFocusEnergyToggle, showChargeToggle, store])
 
   function openRegisterForm() {
     setNicknameDraft(store.pokemonName)
@@ -305,39 +324,43 @@ export function PokemonPanel({ store, label, showMoves = false }: PokemonPanelPr
               </div>
             )}
 
-          {/* きあいだめ + じゅうでん（攻撃側のみ） */}
-          {label === '攻撃側' && (
+          {/* きあいだめ + じゅうでん（攻撃側のみ。技または特性で状態を得られるときだけ表示） */}
+          {label === '攻撃側' && (showFocusEnergyToggle || showChargeToggle) && (
             <div className="flex gap-3">
-              <div>
-                <label className="label block mb-1">急所ランク</label>
-                <button
-                  type="button"
-                  onClick={() => store.setFocusEnergyActive(!store.focusEnergyActive)}
-                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                    store.focusEnergyActive
-                      ? 'bg-accent-bg text-accent border-accent-border'
-                      : 'text-fg-muted border-edge hover:bg-surface-3'
-                  }`}
-                >
-                  {store.focusEnergyActive ? '✓ きあいだめ (+2)' : 'きあいだめ (+2)'}
-                </button>
-                <p className="text-[11px] text-fg-subtle mt-0.5">急所ランク+2</p>
-              </div>
-              <div>
-                <label className="label block mb-1">じゅうでん</label>
-                <button
-                  type="button"
-                  onClick={() => store.setChargeActive(!store.chargeActive)}
-                  className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                    store.chargeActive
-                      ? 'bg-accent-bg text-accent border-accent-border'
-                      : 'text-fg-muted border-edge hover:bg-surface-3'
-                  }`}
-                >
-                  {store.chargeActive ? '✓ じゅうでん (×2)' : 'じゅうでん (×2)'}
-                </button>
-                <p className="text-[11px] text-fg-subtle mt-0.5">電気技の威力×2</p>
-              </div>
+              {showFocusEnergyToggle && (
+                <div>
+                  <label className="label block mb-1">急所ランク</label>
+                  <button
+                    type="button"
+                    onClick={() => store.setFocusEnergyActive(!store.focusEnergyActive)}
+                    className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                      store.focusEnergyActive
+                        ? 'bg-accent-bg text-accent border-accent-border'
+                        : 'text-fg-muted border-edge hover:bg-surface-3'
+                    }`}
+                  >
+                    {store.focusEnergyActive ? '✓ きあいだめ (+2)' : 'きあいだめ (+2)'}
+                  </button>
+                  <p className="text-[11px] text-fg-subtle mt-0.5">急所ランク+2</p>
+                </div>
+              )}
+              {showChargeToggle && (
+                <div>
+                  <label className="label block mb-1">じゅうでん</label>
+                  <button
+                    type="button"
+                    onClick={() => store.setChargeActive(!store.chargeActive)}
+                    className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                      store.chargeActive
+                        ? 'bg-accent-bg text-accent border-accent-border'
+                        : 'text-fg-muted border-edge hover:bg-surface-3'
+                    }`}
+                  >
+                    {store.chargeActive ? '✓ じゅうでん (×2)' : 'じゅうでん (×2)'}
+                  </button>
+                  <p className="text-[11px] text-fg-subtle mt-0.5">電気技の威力×2</p>
+                </div>
+              )}
             </div>
           )}
 

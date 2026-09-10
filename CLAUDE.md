@@ -827,6 +827,7 @@ src/
 - 仕様（Gen 9 / Showdown `glaiverush`）: 使用者が次に技を使うまで、受ける攻撃の**最終ダメージ ×2**（乱数・急所等すべての補正の後）＋ 使用者への攻撃は必中
 - エンジン: `DamageCalcInput.defenderGlaiveRushVulnerable` → `applyOtherModifiers` の最後で `pokeRound(d * 2)`。`CalculateDamageUseCase` の `PokemonBattleState.glaiveRushVulnerable` 経由で伝搬（`chargeActive` と同じ経路）
 - ストア: `pokemonStore.glaiveRushVulnerable` / `setGlaiveRushVulnerable`（`COMMON_RESET_FIELDS` でリセット）。スナップショット・`swapStores`・`buildLibraryStore`（戦闘中フラグとして正規化時にリセット）に追加
+- `PokemonPanel` の きあいだめ／じゅうでん トグル表示条件（リリース後調整）: きあいだめ は `store.moves` に「きあいだめ」があるとき、じゅうでん は「じゅうでん」があるか `effectiveAbility` が `CHARGE_GRANTING_ABILITIES`（でんきにかえる・ふうりょくでんき）のときのみ表示。条件を失うと `useEffect` で `focusEnergyActive` / `chargeActive` を false に戻す（隠れた補正の残留防止）
 - UI: `PokemonPanel` で `pokemonId === 998`（セグレイブ、メガ含む）のとき攻守両パネルにトグル。防御側 ON → 結果行 ×2 かつ `hitRate = 1`（「XX%命中」表示が消える）。攻撃側 ON → ダメージ進行の被ダメイベントの初期状態
 - 自動化: `src/domain/calculators/GlaiveRushState.ts` の純関数 `resolveGlaiveRushDoubling(events, initialAttackerVulnerable)` がイベント id → 2 倍要否の Map を返し、`useBattleSequence` / `useAccumulatedDamage` / `DamageProgressionPanel`（バッジ）が共有
   - `attack`: 適用時に `defenderVulnerable` なら与ダメ ×2（usages 全回）。適用後 `attackerVulnerable = (moveName === 'きょけんとつげき')`
