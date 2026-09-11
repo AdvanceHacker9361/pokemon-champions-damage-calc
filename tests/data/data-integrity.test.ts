@@ -718,6 +718,22 @@ describe('Reg.M-C data', () => {
     expect(revenge?.powerOptions).toEqual([60, 120])
   })
 
+  it('Reg.M-C balance changes (2026-09-09 update) should stay pinned', () => {
+    // でんこうそうげき: M-C でパンチ技に分類（てつのこぶし / パンチグローブ対象）
+    const doubleShock = moves.find(m => m.name === 'でんこうそうげき')
+    expect(doubleShock?.nameEn).toBe('Double Shock')
+    expect(doubleShock?.flags.punch).toBe(true)
+    expect(doubleShock?.flags.contact).toBe(true)
+
+    // 上方修正
+    expect(moves.find(m => m.name === 'スターアサルト')?.power).toBe(170)
+    expect(moves.find(m => m.name === 'ねらいうち')?.power).toBe(85)
+    expect(moves.find(m => m.name === 'きりさく')?.power).toBe(80)
+
+    // 下方修正（PP）
+    expect(moves.find(m => m.name === 'ねがいごと')?.pp).toBe(8)
+  })
+
   it('M-C ability names should be Japanese', () => {
     const englishNames = [
       'Punk Rock', 'Steely Spirit', 'Stakeout', 'Grass Pelt', 'Libero',

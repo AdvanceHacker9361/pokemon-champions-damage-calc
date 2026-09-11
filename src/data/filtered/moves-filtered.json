@@ -9083,7 +9083,7 @@
     "nameEn": "Slash",
     "type": "ノーマル",
     "category": "物理",
-    "power": 70,
+    "power": 80,
     "accuracy": 100,
     "pp": 20,
     "priority": 0,
@@ -11579,7 +11579,7 @@
     "category": "変化",
     "power": null,
     "accuracy": null,
-    "pp": 12,
+    "pp": 8,
     "priority": 0,
     "flags": {
       "contact": false,

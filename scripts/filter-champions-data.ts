@@ -310,6 +310,12 @@ function convertPP(pp: number): 8 | 12 | 16 | 20 {
 /** 従来作品と異なる Pokemon Champions 固有の技威力 */
 const CHAMPIONS_MOVE_POWER_OVERRIDES: Record<string, number> = {
   bonerush: 30,
+  slash: 80,  // Reg.M-C: 70 → 80
+}
+
+/** 従来作品と異なる Pokemon Champions 固有の技 PP（Reg.M-C 調整分） */
+const CHAMPIONS_MOVE_PP_OVERRIDES: Record<string, 8 | 12 | 16 | 20> = {
+  wish: 8,
 }
 
 // ────────────────────────────────────────────────
@@ -513,7 +519,7 @@ function main(): void {
       power: CHAMPIONS_MOVE_POWER_OVERRIDES[moveId] ??
         (move.basePower && move.basePower > 0 ? move.basePower : null),
       accuracy: typeof move.accuracy === 'number' ? move.accuracy : null,
-      pp: convertPP(move.pp ?? 10),
+      pp: CHAMPIONS_MOVE_PP_OVERRIDES[moveId] ?? convertPP(move.pp ?? 10),
       priority: move.priority ?? 0,
       flags,
       special: getSpecialTag(moveId),
