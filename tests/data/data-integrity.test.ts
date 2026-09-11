@@ -718,6 +718,12 @@ describe('Reg.M-C data', () => {
     expect(revenge?.powerOptions).toEqual([60, 120])
   })
 
+  it('おはかまいり should expose power options up to 250 (さいきのいのり による再瀕死を考慮)', () => {
+    const move = moves.find(m => m.name === 'おはかまいり')
+    expect(move?.power).toBe(50)
+    expect(move?.powerOptions).toEqual([50, 100, 150, 200, 250])
+  })
+
   it('Reg.M-C balance changes (2026-09-09 update) should stay pinned', () => {
     // でんこうそうげき: M-C でパンチ技に分類（てつのこぶし / パンチグローブ対象）
     const doubleShock = moves.find(m => m.name === 'でんこうそうげき')
