@@ -1,7 +1,7 @@
 import type { SpecialMoveTag } from '@/domain/models/Move'
-import type { ComputedStats, StatusCondition, Weather } from '@/domain/models/Pokemon'
+import type { ComputedStats, StatusCondition, TerrainField, Weather } from '@/domain/models/Pokemon'
 import { resolveSpecialMove } from '@/domain/calculators/SpecialMoveCalc'
-import { resolveEffectiveWeather } from '@/domain/calculators/MoveResolution'
+import { isTerrainPulseActive, resolveEffectiveWeather } from '@/domain/calculators/MoveResolution'
 
 /**
  * 基本威力の解決に必要な技の最小情報。
@@ -24,6 +24,10 @@ export interface BasePowerContext {
   /** アシストパワー等で参照する攻撃側のランク補正（実数値ではなく段階） */
   attackerRankModifiers?: Record<string, number>
   weather: Weather
+  /** だいちのはどう等、フィールドで威力が変わる技の判定に使う */
+  terrain?: TerrainField
+  /** 使用者が接地しているか（省略時は接地扱い） */
+  attackerGrounded?: boolean
   attackerAbility?: string
   defenderAbility?: string
 }
@@ -62,6 +66,15 @@ export function resolveBasePower(ctx: BasePowerContext): number {
     defenderAbility: ctx.defenderAbility,
   }) !== null) {
     return 100
+  }
+
+  // だいちのはどう: フィールド中（使用者が接地）は威力2倍
+  if (isTerrainPulseActive({
+    moveSpecial: move.special,
+    terrain: ctx.terrain,
+    attackerGrounded: ctx.attackerGrounded,
+  })) {
+    return (move.power ?? 50) * 2
   }
 
   return move.power ?? 0

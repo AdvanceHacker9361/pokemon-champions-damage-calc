@@ -2,13 +2,17 @@ import { useState, useEffect, useMemo } from 'react'
 import { MoveSelect } from './MoveSelect'
 import { useAttackerStore, useDefenderStore, type PokemonStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
-import type { ComputedStats, StatKey, StatusCondition, TypeName } from '@/domain/models/Pokemon'
+import type { ComputedStats, StatKey, StatusCondition, TerrainField, TypeName } from '@/domain/models/Pokemon'
 import type { MoveRecord } from '@/data/schemas/types'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
 import { calculateStats } from '@/application/usecases/CalculateStatsUseCase'
 import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 import { resolveBasePower } from '@/domain/calculators/MovePowerResolution'
-import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
+import {
+  resolveAttackerGrounded,
+  resolveTerrainPulseType,
+  resolveWeatherAwareMoveType,
+} from '@/domain/calculators/MoveResolution'
 import { typeColor } from '@/presentation/components/shared/typeColors'
 import { MoveMetaChips } from './MoveMetaChips'
 
@@ -34,6 +38,8 @@ interface SideContext {
   status: StatusCondition
   ranks: Record<StatKey, number>
   ability: string
+  types: TypeName[]
+  item: string | null
 }
 
 /** 可変威力技の威力の根拠を1行で説明する（ツールチップ用） */
@@ -62,8 +68,24 @@ function describeBasePower(
   }
 }
 
+/** だいちのはどうのフィールド依存タイプ・威力の根拠（ツールチップ用） */
+function describeTerrainPulse(
+  move: MoveRecord,
+  power: number,
+  terrain: TerrainField,
+  actingGrounded: boolean,
+): string | undefined {
+  if (move.special !== 'terrain-pulse') return undefined
+  const terrainType = resolveTerrainPulseType(terrain)
+  if (terrainType === null) return undefined
+  if (!actingGrounded) return '使用者が接地していないため変化なし'
+  return `${terrain}フィールド → ${terrainType}・威力${power}`
+}
+
 export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxHP }: MoveSlotsProps) {
   const weather = useFieldStore(s => s.weather)
+  const terrain = useFieldStore(s => s.terrain)
+  const isGravity = useFieldStore(s => s.isGravity)
 
   const atkBaseStats = useAttackerStore(s => s.baseStats)
   const atkSp = useAttackerStore(s => s.sp)
@@ -71,6 +93,8 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxH
   const atkRanks = useAttackerStore(s => s.ranks)
   const atkWeight = useAttackerStore(s => s.weight)
   const atkStatus = useAttackerStore(s => s.status)
+  const atkTypes = useAttackerStore(s => s.types)
+  const atkItem = useAttackerStore(s => s.itemName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
 
   const defBaseStats = useDefenderStore(s => s.baseStats)
@@ -79,6 +103,8 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxH
   const defRanks = useDefenderStore(s => s.ranks)
   const defWeight = useDefenderStore(s => s.weight)
   const defStatus = useDefenderStore(s => s.status)
+  const defTypes = useDefenderStore(s => s.types)
+  const defItem = useDefenderStore(s => s.itemName)
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
 
   const attackerCtx = useMemo<SideContext>(() => ({
@@ -86,18 +112,27 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxH
       baseStats: atkBaseStats, sp: atkSp, statNatures: atkNatures, ranks: atkRanks,
     }),
     weight: atkWeight, status: atkStatus, ranks: atkRanks, ability: attackerAbility,
-  }), [atkBaseStats, atkSp, atkNatures, atkRanks, atkWeight, atkStatus, attackerAbility])
+    types: atkTypes, item: atkItem,
+  }), [atkBaseStats, atkSp, atkNatures, atkRanks, atkWeight, atkStatus, attackerAbility,
+       atkTypes, atkItem])
 
   const defenderCtx = useMemo<SideContext>(() => ({
     stats: calculateStats({
       baseStats: defBaseStats, sp: defSp, statNatures: defNatures, ranks: defRanks,
     }),
     weight: defWeight, status: defStatus, ranks: defRanks, ability: defenderAbility,
-  }), [defBaseStats, defSp, defNatures, defRanks, defWeight, defStatus, defenderAbility])
+    types: defTypes, item: defItem,
+  }), [defBaseStats, defSp, defNatures, defRanks, defWeight, defStatus, defenderAbility,
+       defTypes, defItem])
 
   // 防御側パネルの「攻撃側被ダメ用の技」では防御側が撃つ側になる（useBattleSequence の incoming と同じ向き）
   const acting = side === 'attacker' ? attackerCtx : defenderCtx
   const target = side === 'attacker' ? defenderCtx : attackerCtx
+
+  // だいちのはどう: 「撃つ側」が接地しているかでフィールドの効果が決まる
+  const actingGrounded = useMemo(() => resolveAttackerGrounded({
+    types: acting.types, ability: acting.ability, item: acting.item, isGravity,
+  }), [acting.types, acting.ability, acting.item, isGravity])
 
   // きしかいせい / じたばた 用の HP テキスト入力（スロットごと）
   const [hpInputs, setHpInputs] = useState<[string, string, string, string]>(['', '', '', ''])
@@ -152,6 +187,8 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxH
                 moveType: moveRecord.type as TypeName,
                 moveSpecial: moveRecord.special,
                 weather,
+                terrain,
+                attackerGrounded: actingGrounded,
                 attackerAbility: acting.ability,
                 defenderAbility: target.ability,
               })
@@ -176,10 +213,14 @@ export function MoveSlots({ moves, setMove, movePowers, setMovePower, side, maxH
                 attackerStatus: acting.status,
                 attackerRankModifiers: acting.ranks,
                 weather,
+                terrain,
+                attackerGrounded: actingGrounded,
                 attackerAbility: acting.ability,
                 defenderAbility: target.ability,
               })
-              powerTitle = describeBasePower(moveRecord, displayPower, acting, target)
+              powerTitle =
+                describeTerrainPulse(moveRecord, displayPower, terrain, actingGrounded) ??
+                describeBasePower(moveRecord, displayPower, acting, target)
             }
           }
           const typeBarColor = displayType ? typeColor(displayType) : 'transparent'

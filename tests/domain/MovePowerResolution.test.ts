@@ -155,6 +155,33 @@ describe('resolveBasePower（共有の基本威力リゾルバ）', () => {
     })
   })
 
+  describe('だいちのはどう（フィールド）', () => {
+    const terrainPulse = makeMove(50, 'terrain-pulse', { category: '特殊' })
+
+    it.each(['エレキ', 'グラス', 'サイコ', 'ミスト'] as const)(
+      '%sフィールド中（接地）→ 威力100',
+      terrain => {
+        expect(resolveBasePower(ctx({ move: terrainPulse, terrain }))).toBe(100)
+      },
+    )
+
+    it('フィールドなし → 威力50', () => {
+      expect(resolveBasePower(ctx({ move: terrainPulse, terrain: null }))).toBe(50)
+      // terrain 省略時も同じ
+      expect(resolveBasePower(ctx({ move: terrainPulse }))).toBe(50)
+    })
+
+    it('使用者が接地していない → フィールドがあっても威力50', () => {
+      expect(resolveBasePower(ctx({
+        move: terrainPulse, terrain: 'エレキ', attackerGrounded: false,
+      }))).toBe(50)
+    })
+
+    it('attackerGrounded 省略時は接地扱い（威力100）', () => {
+      expect(resolveBasePower(ctx({ move: terrainPulse, terrain: 'サイコ' }))).toBe(100)
+    })
+  })
+
   it('特殊タグを持たない通常技は moves.json の威力をそのまま返す', () => {
     expect(resolveBasePower(ctx({ move: makeMove(90, null) }))).toBe(90)
   })

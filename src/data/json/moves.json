@@ -5326,7 +5326,7 @@
       "bite": false,
       "slice": false
     },
-    "special": null,
+    "special": "terrain-pulse",
     "multiHit": null
   },
   {

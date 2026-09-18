@@ -345,6 +345,7 @@ type SpecialMoveTag =
   | 'foul-play' | 'body-press' | 'photon-geyser' | 'psyshock' | 'gyro-ball'
   | 'grass-knot' | 'low-kick' | 'hex' | 'facade' | 'stealth-rock'
   | 'freeze-dry' | 'weather-ball' | 'knock-off' | 'stored-power' | 'reversal'
+  | 'terrain-pulse'
 
 const SPECIAL_MOVE_MAP: Record<string, SpecialMoveTag> = {
   foulplay: 'foul-play',
@@ -366,6 +367,7 @@ const SPECIAL_MOVE_MAP: Record<string, SpecialMoveTag> = {
   storedpower: 'stored-power',
   reversal: 'reversal',
   finalgambit: 'reversal',
+  terrainpulse: 'terrain-pulse',
 }
 
 function getSpecialTag(moveId: string): SpecialMoveTag | null {

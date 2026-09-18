@@ -6,7 +6,7 @@ import { resolveReversalPower } from '@/domain/calculators/SpecialMoveCalc'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { calcRollPercent, type DamageResult } from '@/domain/models/DamageResult'
 import { wouldHalfBerryActivate, isProteanLike } from '@/domain/calculators/DamageCalculator'
-import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
+import { resolveAttackerGrounded, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import type { BattleField } from '@/domain/models/BattleField'
 
@@ -144,6 +144,13 @@ export function calculateMoveResults({
           moveType: move.type,
           moveSpecial: move.special,
           weather: field.weather,
+          terrain: field.terrain,
+          attackerGrounded: resolveAttackerGrounded({
+            types: attacker.types,
+            ability: attacker.abilityName,
+            item: attacker.itemName,
+            isGravity: field.isGravity,
+          }),
           attackerAbility: attacker.abilityName,
           defenderAbility: defender.abilityName,
         })

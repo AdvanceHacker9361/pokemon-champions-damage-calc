@@ -6,7 +6,13 @@ import { getTypeEffectiveness } from '@/domain/constants/typeChart'
 import { calcKoProbability } from '@/domain/calculators/KoProbabilityCalc'
 import { resolveSpecialMove } from '@/domain/calculators/SpecialMoveCalc'
 import { resolveBasePower } from '@/domain/calculators/MovePowerResolution'
-import { resolveEffectiveWeather, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
+import {
+  isLevitateLikeAbility,
+  isTerrainPulseActive,
+  resolveAttackerGrounded,
+  resolveEffectiveWeather,
+  resolveWeatherAwareMoveType,
+} from '@/domain/calculators/MoveResolution'
 import { calcRollPercent } from '@/domain/models/DamageResult'
 
 export interface DamageCalcInput {
@@ -123,6 +129,19 @@ function pokeRound(n: number): number {
 }
 
 /**
+ * 攻撃側（技の使用者）が接地しているか。
+ * だいちのはどうのフィールド判定に使う（じゅうりょく中は全員接地）。
+ */
+function resolveInputAttackerGrounded(input: DamageCalcInput): boolean {
+  return resolveAttackerGrounded({
+    types: input.attackerTypes,
+    ability: input.attackerAbility,
+    item: input.attackerItem,
+    isGravity: input.field.isGravity,
+  })
+}
+
+/**
  * 技の基本威力を解決（特殊技を含む）。
  * 共有実装 `MovePowerResolution.resolveBasePower` に委譲し、UI 表示と同じ値を返す。
  */
@@ -136,6 +155,8 @@ export function resolveInputBasePower(input: DamageCalcInput): number {
     attackerStatus: input.attackerStatus,
     attackerRankModifiers: input.attackerRankModifiers,
     weather: input.field.weather,
+    terrain: input.field.terrain,
+    attackerGrounded: resolveInputAttackerGrounded(input),
     attackerAbility: input.attackerAbility,
     defenderAbility: input.defenderAbility,
   })
@@ -306,12 +327,14 @@ function resolveDef(input: DamageCalcInput): number {
   return Math.floor(def * defMod)
 }
 
-/** 技のタイプを解決（スキン特性によるタイプ変換を含む） */
+/** 技のタイプを解決（スキン特性・フィールド（だいちのはどう）によるタイプ変換を含む） */
 function resolveMoveType(input: DamageCalcInput): TypeName {
   return resolveWeatherAwareMoveType({
     moveType: input.move.type,
     moveSpecial: input.move.special,
     weather: input.field.weather,
+    terrain: input.field.terrain,
+    attackerGrounded: resolveInputAttackerGrounded(input),
     attackerAbility: input.attackerAbility,
     defenderAbility: input.defenderAbility,
   })
@@ -344,6 +367,12 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   const atk = resolveAtk(input)
   const def = resolveDef(input)
   const moveType = resolveMoveType(input)
+  // だいちのはどうがフィールドでタイプ変化している間、スキン特性は何もしない（×1.2も乗らない）
+  const terrainPulseActive = isTerrainPulseActive({
+    moveSpecial: move.special,
+    terrain: field.terrain,
+    attackerGrounded: resolveInputAttackerGrounded(input),
+  })
 
   // へんげんじざい / リベロ: 防御側タイプを変換済みタイプで上書き
   const baseDefenderTypes: TypeName[] =
@@ -370,8 +399,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
       ? effectiveDefenderTypes.filter(t => t !== 'ひこう')
       : effectiveDefenderTypes
   // ふゆう / うなぎのぼり: じめん技を無効化（接地時 または かたやぶり系特性で解除）
-  const hasLevitateLikeGroundImmunity =
-    defenderAbility === 'ふゆう' || defenderAbility === 'うなぎのぼり'
+  const hasLevitateLikeGroundImmunity = isLevitateLikeAbility(defenderAbility)
   const levitateImmuneToGround =
     hasLevitateLikeGroundImmunity && moveType === 'じめん' &&
     !grounded && !isMoldBreaker(attackerAbility)
@@ -460,7 +488,7 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
     }
 
     // 7. その他補正
-    d = applyOtherModifiers(d, input, moveType, typeEff)
+    d = applyOtherModifiers(d, input, moveType, typeEff, terrainPulseActive)
 
     // 8. きょけんとつげき後の被ダメ2倍（すべての補正の最後に適用）
     if (input.defenderGlaiveRushVulnerable) {
@@ -542,6 +570,8 @@ function applyOtherModifiers(
   input: DamageCalcInput,
   moveType: TypeName,
   typeEff: number,
+  /** だいちのはどうがフィールドでタイプ変化中（スキン特性の×1.2を抑止する） */
+  terrainPulseActive = false,
 ): number {
   let d = damage
   const { attackerAbility, attackerItem, defenderAbility, defenderItem,
@@ -667,9 +697,10 @@ function applyOtherModifiers(
     }
   }
   // スキン特性: ノーマル→他タイプ変換 + 威力1.2倍
+  // だいちのはどうがフィールドでタイプ変化している場合、変換はフィールド側が行うため×1.2は乗らない
   if ((attackerAbility === 'フェアリースキン' || attackerAbility === 'スカイスキン' ||
        attackerAbility === 'エレキスキン' || attackerAbility === 'フリーズスキン') &&
-      move.type === 'ノーマル') {
+      move.type === 'ノーマル' && !terrainPulseActive) {
     d = pokeRound(d * 1.2)
   }
 

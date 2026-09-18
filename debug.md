@@ -1129,3 +1129,36 @@ GitHub Actions:
 
 - ユーザー判断により、シングルでは威力250が非現実的であること、および選択ボタンが2段に折り返して見づらいことから、`powerOptions` を `[50, 100, 150, 200]` に変更（250を撤去）。固定テストも同期。
 - 検証: typecheck / lint / `npx vitest run --dir tests` 559件全パス / build。バージョン 3.19.0 据え置き。
+
+## 2026-09-18: V3.19.1 だいちのはどうのフィールド対応
+
+### 発覚内容
+
+- 技「だいちのはどう」（Terrain Pulse）が `special: null` のノーマル特殊・威力50固定で登録されており、フィールド設定に一切反応していなかった（ユーザー報告）。
+
+### 仕様（Gen 8+ / Showdown `terrainpulse`）
+
+- フィールドがあり、かつ**使用者が接地**しているとき: 威力 50 → 100、タイプが エレキ=でんき／グラス=くさ／サイコ=エスパー／ミスト=フェアリー に変化。
+- その後、通常のフィールド補正（でんき・くさ・エスパー ×1.3）が解決後タイプに対して乗る。ミストは補正なし。
+- タイプ変化はスキン特性より先。フィールド内ではスキンの変換も ×1.2 も発生しない。フィールドなし／非接地ではノーマル威力50のままで、スキンは従来どおり適用。
+- 接地判定: ひこうタイプ／ふゆう・うなぎのぼり／ふうせん所持 は非接地。じゅうりょく中、または くろいてっきゅう所持は接地扱い。
+
+### 実施した修正
+
+- `Move.ts`: `SpecialMoveTag` に `'terrain-pulse'` を追加。
+- `MoveResolution.ts`: 入力に `terrain` / `attackerGrounded` を追加し、`isLevitateLikeAbility` / `resolveAttackerGrounded` / `resolveTerrainPulseType` / `isTerrainPulseActive` を新設。`resolveWeatherAwareMoveType` はスキン処理の前にフィールドタイプを返す。
+- `MovePowerResolution.ts`: `BasePowerContext` に `terrain` / `attackerGrounded` を追加し、発動時 `(power ?? 50) × 2`。エンジンと UI 表示が同じ解決を共有（`DamageResult.basePower` にも反映）。
+- `DamageCalculator.ts`: `resolveInputAttackerGrounded(input)` を `resolveMoveType` と `resolveInputBasePower` の両方へ供給。防御側のふゆう判定も `isLevitateLikeAbility` に集約（挙動不変）。スキン ×1.2 は `move.type === 'ノーマル'` 判定のため、フィールド内で二重に乗らないよう `terrainPulseActive` フラグで抑止。
+- 呼び出し側: `CalculateMoveResultsUseCase`（半減実の事前判定）、`MoveSlots`（攻守方向を考慮した行動側の接地判定。ツールチップ「エレキフィールド → でんき・威力100」／非接地時「使用者が接地していないため変化なし」）、`DamageResultRow`（タイプバッジ）。`useBattleSequence` の被ダメはエンジン経由のため変更不要。
+- データ: `moves.json` / `moves-filtered.json` の だいちのはどう を `special: "terrain-pulse"` に、`scripts/filter-champions-data.ts` の `SPECIAL_MOVE_MAP` に `terrainpulse` を追加（再生成に追従）。
+
+### 検証
+
+- `npm run typecheck` / `npm run build`。`npm run lint` はエラー0（警告1件は今回未変更の `MegaToggle.tsx` の既存 react-refresh 警告）。
+- `npx vitest run --dir tests`: 35ファイル 592件全パス（+33件。新規 `TerrainPulse.test.ts`: 4フィールドそれぞれで「同タイプ・威力100の通常技と16乱数が完全一致」、フィールドなし＝ノーマル50、ひこう／ふゆう／ふうせんで不発、じゅうりょくで再発動、くろいてっきゅうで接地、フェアリースキンの両ケース、`basePower` 100/50、メガランチャー ×1.5）。
+- ブラウザQA（サーナイト→カバルドン）: なし=ノーマル50（30〜36）／エレキ=でんき化でじめんに無効／グラス=くさ100（156〜184）／サイコ=エスパー100（117〜138）／ミスト=フェアリー100（90〜106）。
+
+### 判断メモ
+
+- 既存の一般フィールド補正（×1.3）は使用者の接地を見ていない（従来からの簡略化）。だいちのはどうは非接地ならノーマルのままで補正対象タイプにならないため矛盾は生じない。一般補正の接地対応は別タスク。
+- バージョンを 3.19.1 に更新。3.19.0 以降に据え置きで入れた M-C バランス調整・おはかまいり拡張も CHANGELOG の 3.19.1 にまとめて記載。

@@ -15,7 +15,7 @@ import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
 import { MoveRepository } from '@/data/repositories/MoveRepository'
-import { resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
+import { resolveAttackerGrounded, resolveWeatherAwareMoveType } from '@/domain/calculators/MoveResolution'
 import type { MultiHitData } from '@/domain/models/Move'
 import { TypeBadge } from '@/presentation/components/shared/Badge'
 import type { TypeName } from '@/domain/models/Pokemon'
@@ -86,6 +86,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const attackerName = useAttackerStore(s => s.pokemonName)
   const attackerAbility = useAttackerStore(s => s.effectiveAbility)
   const attackerItem = useAttackerStore(s => s.itemName)
+  const attackerTypes = useAttackerStore(s => s.types)
   const focusEnergyActive = useAttackerStore(s => s.focusEnergyActive)
   const attackerRanks = useAttackerStore(s => s.ranks)
   const setAttackerRank = useAttackerStore(s => s.setRank)
@@ -95,6 +96,7 @@ export function DamageResultRow(props: DamageResultRowProps) {
   const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const defenderAbilityActivated = useDefenderStore(s => s.abilityActivated)
   const weather = useFieldStore(s => s.weather)
+  const terrain = useFieldStore(s => s.terrain)
   const isGravity = useFieldStore(s => s.isGravity)
 
   const isParentalBond = attackerAbility === 'おやこあい'
@@ -106,6 +108,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
         moveType: moveRecord.type as TypeName,
         moveSpecial: moveRecord.special,
         weather,
+        terrain,
+        attackerGrounded: resolveAttackerGrounded({
+          types: attackerTypes,
+          ability: attackerAbility,
+          item: attackerItem,
+          isGravity,
+        }),
         attackerAbility,
         defenderAbility,
       })

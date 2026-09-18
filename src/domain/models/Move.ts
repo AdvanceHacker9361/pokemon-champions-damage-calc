@@ -27,6 +27,7 @@ export type SpecialMoveTag =
   | 'reversal'      // きしかいせい: HPが少ないほど威力増加
   | 'heavy-slam'    // ヘビーボンバー: 攻撃側/防御側の体重比で威力変化
   | 'grav-apple'    // Gのちから: じゅうりょく中は威力1.5倍
+  | 'terrain-pulse' // だいちのはどう: フィールド中（接地時）はタイプがフィールド依存で威力2倍
 
 export interface MoveFlags {
   contact: boolean

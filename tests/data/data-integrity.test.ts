@@ -38,7 +38,7 @@ const VALID_SPECIAL_TAGS = new Set([
   null, 'foul-play', 'body-press', 'photon-geyser', 'psyshock', 'gyro-ball',
   'grass-knot', 'low-kick', 'hex', 'facade', 'stealth-rock',
   'freeze-dry', 'weather-ball', 'stored-power', 'reversal',
-  'heavy-slam', 'grav-apple',
+  'heavy-slam', 'grav-apple', 'terrain-pulse',
 ])
 
 // ────────────────────────────────────────────────
@@ -222,6 +222,17 @@ describe('moves.json integrity', () => {
   it('all move special tags should be valid', () => {
     const invalid = moves.filter(m => !VALID_SPECIAL_TAGS.has(m.special))
     expect(invalid.map(m => `${m.nameEn}: special=${String(m.special)}`)).toHaveLength(0)
+  })
+
+  it('だいちのはどう should carry the terrain-pulse tag with its unboosted base data', () => {
+    const terrainPulse = moves.find(m => m.nameEn === 'Terrain Pulse')
+    expect(terrainPulse).toBeDefined()
+    expect(terrainPulse!.name).toBe('だいちのはどう')
+    // フィールドでのタイプ変化・威力2倍はエンジン側（terrain-pulse タグ）で解決する
+    expect(terrainPulse!.special).toBe('terrain-pulse')
+    expect(terrainPulse!.power).toBe(50)
+    expect(terrainPulse!.type).toBe('ノーマル')
+    expect(terrainPulse!.flags.pulse).toBe(true)
   })
 
   it('all moves should have Japanese names', () => {
