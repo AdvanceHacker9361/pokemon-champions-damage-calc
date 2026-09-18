@@ -803,11 +803,12 @@ src/
 
 ### V3.19.1: だいちのはどうのフィールド対応 + M-C バランス調整（2026-09-18）
 
-- **だいちのはどう**（）: フィールドあり かつ 使用者が接地 → 威力 50→100、タイプが エレキ=でんき／グラス=くさ／サイコ=エスパー／ミスト=フェアリー に変化。解決後タイプに通常のフィールド補正 ×1.3 が乗る。フィールド内ではスキン特性（変換・×1.2）より優先
-  - : （ひこう／ふゆう・うなぎのぼり／ふうせん は非接地。じゅうりょく・くろいてっきゅう は接地）、、、。 /  に  /  を渡す
-  - エンジン・ユースケース（半減実判定）・・ が同じ判定を共有。テストは 
-- **Reg.M-C バランス調整**: でんこうそうげき 、スターアサルト 170、ねらいうち 85、きりさく 80、ねがいごと PP8。生成スクリプトに  と  を追加
-- **おはかまいり**: （さいきのいのりによる再瀕死を考慮。250 は UI が2段になるため見送り）
+- **だいちのはどう**（`special: "terrain-pulse"`）: フィールドあり かつ 使用者が接地 → 威力 50→100、タイプが エレキ=でんき／グラス=くさ／サイコ=エスパー／ミスト=フェアリー に変化。解決後タイプに通常のフィールド補正 ×1.3 が乗る。フィールド内ではスキン特性（変換・×1.2）より優先
+  - `MoveResolution.ts`: `resolveAttackerGrounded({ types, ability, item, isGravity })`（ひこう／ふゆう・うなぎのぼり／ふうせん は非接地。じゅうりょく・くろいてっきゅう は接地）、`resolveTerrainPulseType`、`isTerrainPulseActive`、`isLevitateLikeAbility`。`resolveWeatherAwareMoveType` / `resolveBasePower` に `terrain` / `attackerGrounded` を渡す
+  - スキン ×1.2 は `move.type === 'ノーマル'` 判定のため、`DamageCalculator` は `terrainPulseActive` フラグでフィールド内の二重適用を抑止
+  - エンジン・ユースケース（半減実判定）・`MoveSlots`・`DamageResultRow` が同じ判定を共有。テストは `tests/domain/TerrainPulse.test.ts`
+- **Reg.M-C バランス調整**: でんこうそうげき `flags.punch: true`、スターアサルト 170、ねらいうち 85、きりさく 80、ねがいごと PP8。生成スクリプトに `CHAMPIONS_MOVE_POWER_OVERRIDES.slash` と `CHAMPIONS_MOVE_PP_OVERRIDES.wish` を追加
+- **おはかまいり**: `powerOptions: [50, 100, 150, 200]`（さいきのいのりによる再瀕死を考慮。250 は UI が2段になるため見送り）
 
 ### V3.19.0: レギュレーション M-C 対応（2026-09-10）
 
