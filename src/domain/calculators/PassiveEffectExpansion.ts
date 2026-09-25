@@ -19,8 +19,10 @@ import type { SeqEvent } from '@/domain/calculators/BattleSequenceCalc'
 import {
   computeTurnRanges,
   findPassivePreset,
+  passiveOriginSuffix,
   resolvePassiveAmount,
   type PassiveEffect,
+  type PassiveOrigin,
   type PassiveSide,
   type PassiveTiming,
   type TurnEventLike,
@@ -41,6 +43,8 @@ export interface AutoEventItem {
   effectId: string
   /** 由来のタイミング（UI のバッジ表示用） */
   timing: PassiveTiming
+  /** パネル状態から導出された効果の由来（手動効果は undefined）。固定化の対象外 */
+  origin?: PassiveOrigin
 }
 
 /**
@@ -116,6 +120,7 @@ function makeItem(
     amount,
     effectId: eff.id,
     timing: eff.timing,
+    ...(eff.origin !== undefined ? { origin: eff.origin } : {}),
   }
 }
 
@@ -298,14 +303,20 @@ export function autoItemToSeqEvent(item: AutoEventItem): SeqEvent {
     : { kind: 'defenderConst', amount: item.amount }
 }
 
-/** 自動項目の表示ラベル（例: `T2末 すなあらし −9`） */
+/** 自動項目の名前（導出効果は「（持ち物）」「（状態異常）」を付ける） */
+export function autoItemName(item: AutoEventItem): string {
+  return `${item.label}${passiveOriginSuffix(item.origin)}`
+}
+
+/** 自動項目の表示ラベル（例: `T2末 すなあらし −9` / `T1攻撃後 いのちのたま（持ち物） 攻−10`） */
 export function autoItemLabel(item: AutoEventItem): string {
   const when = item.turn === 0 ? '開始時' : item.timing === 'perAttack' ? `T${item.turn}攻撃後` : `T${item.turn}末`
+  const name = autoItemName(item)
   if (item.kind === 'leechSeed') {
     const arrow = item.side === 'defender' ? '攻→防' : '防→攻'
-    return `${when} ${item.label}（${arrow} ${item.amount}）`
+    return `${when} ${name}（${arrow} ${item.amount}）`
   }
   const sign = item.kind === 'recover' ? '+' : '−'
   const who = item.side === 'attacker' ? '攻' : '防'
-  return `${when} ${item.label} ${who}${sign}${item.amount}`
+  return `${when} ${name} ${who}${sign}${item.amount}`
 }

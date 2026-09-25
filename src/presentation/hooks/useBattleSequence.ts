@@ -20,6 +20,8 @@ import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { toBerryOption } from '@/presentation/hooks/berryOption'
 import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
+import { impliedPassivesFromStores } from '@/presentation/hooks/useEffectivePassiveEffects'
+import { mergePassiveEffects } from '@/domain/calculators/ImpliedPassiveEffects'
 import {
   buildPassiveSchedule,
   autoItemToSeqEvent,
@@ -143,12 +145,19 @@ export function useBattleSequence(): BattleSequenceComputed {
     const defenderMaxHp = defender.baseStats.hp > 0
       ? calculateHP(defender.baseStats.hp, defender.sp.hp) : 0
 
+    // 手動の常時効果 + パネル状態（持ち物・状態異常・特性）からの導出効果。
+    // メガシンカイベントがあってもライブストアの値で導出する（既知の簡略化）
+    const effectivePassives = mergePassiveEffects(
+      passiveEffects,
+      impliedPassivesFromStores(attacker, defender),
+    )
+
     const showSequence = hasSequenceImpact({
-      events, attackerStartHp, passiveEffects, attackerBerry: attackerBerryCfg,
+      events, attackerStartHp, passiveEffects: effectivePassives, attackerBerry: attackerBerryCfg,
     })
     // 防御側だけの常時効果は攻守シミュレーションを表示しないが、総合累積には反映するため
     // 計算自体は実行する（useAccumulatedDamage が result を再利用する）
-    const shouldCompute = showSequence || passiveEffects.length > 0
+    const shouldCompute = showSequence || effectivePassives.length > 0
 
     if (!shouldCompute || !attacker.pokemonId || !defender.pokemonId) {
       return {
@@ -158,7 +167,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     }
 
     // 常時効果の展開スケジュール（ターン境界は events の attack usages / setupTurn で決まる）
-    const passiveSchedule = buildPassiveSchedule(events, passiveEffects, {
+    const passiveSchedule = buildPassiveSchedule(events, effectivePassives, {
       attackerMaxHp,
       defenderMaxHp,
       attackerTypes: attacker.types,

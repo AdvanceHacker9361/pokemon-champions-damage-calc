@@ -1,16 +1,12 @@
-import { useProgressionStore, hasSequenceImpact } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import { SequenceResultPanel } from './SequenceResultPanel'
 
 export function DamageSequenceSummary() {
-  const events = useProgressionStore(s => s.events)
-  const attackerStartHp = useProgressionStore(s => s.attackerStartHp)
-  const passiveEffects = useProgressionStore(s => s.passiveEffects)
   const attackerName = useAttackerStore(s => s.pokemonName)
   const defenderName = useDefenderStore(s => s.pokemonName)
-  const showSequence = hasSequenceImpact({ events, attackerStartHp, passiveEffects })
-  const { result } = useBattleSequence()
+  // showSequence はフックが 手動 + 導出（持ち物・状態異常）の常時効果・攻撃側きのみ込みで判定する
+  const { result, showSequence } = useBattleSequence()
 
   if (!showSequence || !result) return null
 

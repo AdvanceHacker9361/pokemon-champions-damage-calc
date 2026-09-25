@@ -291,7 +291,10 @@ export const useProgressionStore = create<ProgressionStore>((set, get) => ({
     return inserted
   },
 
-  pinAllPassiveEffects: (ctx) => get().pinPassiveEffects(get().passiveEffects.map(p => p.id), ctx),
+  // ストアの passiveEffects は手動効果のみ（導出効果は保存しない）。念のため origin 付きは除外
+  pinAllPassiveEffects: (ctx) => get().pinPassiveEffects(
+    get().passiveEffects.filter(p => p.origin === undefined).map(p => p.id), ctx,
+  ),
 
   setBerry: (side, patch) => set(s => side === 'attacker'
     ? { attackerBerry: normalizeBerryConfig({ ...s.attackerBerry, ...patch }) }
@@ -311,6 +314,8 @@ export const useProgressionStore = create<ProgressionStore>((set, get) => ({
 
 /**
  * 攻撃側に影響するイベント・常時効果があるか（シーケンス出力＝生存率・各ステップHPを表示するか判定用）。
+ * `passiveEffects` には手動の常時効果に加えて、パネル状態からの導出効果
+ * （`mergePassiveEffects` の結果。攻撃側のいのちのたま等）を渡すこと。
  */
 export function hasSequenceImpact(
   s: Pick<ProgressionStore, 'events' | 'attackerStartHp' | 'passiveEffects'> &

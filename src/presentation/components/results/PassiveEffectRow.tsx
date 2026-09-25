@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { PassiveEffect, PassiveTiming } from '@/domain/models/PassiveEffect'
+import { passiveOriginSuffix, type PassiveEffect, type PassiveOrigin, type PassiveTiming } from '@/domain/models/PassiveEffect'
 import { TIMING_BADGE } from './passiveCatalogUtils'
 
 export interface PassiveEffectRowProps {
@@ -20,6 +20,11 @@ export interface PassiveEffectRowProps {
   onStartTurnChange?: (turn: number) => void
   /** カスタム行のみ: ✕ で丸ごと削除 */
   onDelete?: () => void
+  /**
+   * パネルの持ち物・状態異常から自動で効いているとき、その由来。
+   * 指定時はステッパーの代わりに「自動（持ち物）」等のバッジを出す（回数は編集できない）。
+   */
+  autoOrigin?: PassiveOrigin
 }
 
 /**
@@ -29,10 +34,11 @@ export interface PassiveEffectRowProps {
 export function PassiveEffectRow({
   testId, mainLabel, sources, timing, amountPreview,
   count, canAll, effect,
-  onIncrement, onDecrement, onToggleAll, onStartTurnChange, onDelete,
+  onIncrement, onDecrement, onToggleAll, onStartTurnChange, onDelete, autoOrigin,
 }: PassiveEffectRowProps) {
   const [detailOpen, setDetailOpen] = useState(false)
-  const isActive = count !== 0
+  const isAuto = autoOrigin !== undefined
+  const isActive = count !== 0 || isAuto
   const badge = TIMING_BADGE[timing]
   const countText = count === 'all' ? '全' : String(count)
 
@@ -61,6 +67,15 @@ export function PassiveEffectRow({
           {amountPreview}
         </span>
 
+        {isAuto ? (
+          <span
+            data-testid={`${testId}-auto`}
+            className="flex-shrink-0 whitespace-nowrap rounded border border-accent-border bg-accent-bg px-1.5 py-0.5 text-[10px] text-accent"
+            title="攻撃側・防御側パネルの持ち物・状態異常から自動で適用されています（変更はパネル側で）"
+          >
+            自動{passiveOriginSuffix(autoOrigin)}
+          </span>
+        ) : (
         <div className="flex flex-shrink-0 items-center gap-0.5 whitespace-nowrap">
           <button
             type="button"
@@ -105,6 +120,7 @@ export function PassiveEffectRow({
             >✕</button>
           )}
         </div>
+        )}
       </div>
 
       {isActive && effect && timing !== 'start' && (

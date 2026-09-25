@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.1**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.2**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,14 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.19.2: 持ち物・状態異常からの常時効果の自動導出（2026-09-25）
+
+- `src/domain/calculators/ImpliedPassiveEffects.ts`: `deriveImpliedPassiveEffects({ attacker, defender })` がパネル状態（`itemName` / `status` / `effectiveAbility` / `types`）からカタログ準拠の `PassiveEffect` を導出（id `implied:<side>:<presetKey>`、`origin: 'item' | 'status'`）。いのちのたま→`lifeOrb`、たべのこし→`leftovers`、くろいヘドロ→`blackSludge`（どくタイプ）/ `blackSludgeDamage`、やけど/どく/もうどく→`burn`/`poison`/`toxic`、ポイズンヒール＋どく系→`poisonHeal`、マジックガードはダメージ系のみ抑止
+- `mergePassiveEffects(manual, implied)`: 同じ `(presetKey, side)` の手動効果があれば自動分を除外（二重計上防止）
+- `src/presentation/hooks/useEffectivePassiveEffects.ts`: 手動＋自動の統合リストを両フック・ゴースト行・エクスポート・シミュレーション表示判定（`DamageSequenceSummary` は `useBattleSequence().showSequence`）で共有。自動効果はストア・スナップショットに保存しない
+- 固定化: `origin` 付き効果は対象外（自動項目のみのゴースト行は「固定化」非表示、「すべて固定化」は手動のみ）。表示は「（持ち物）」「（状態異常）」付記、カタログは「自動（…）」バッジ
+- 未対応: ちからずくの反動無効化・たいねつのやけど半減・メガシンカ前後の持ち物差（ライブ値使用）。テスト: `tests/domain/ImpliedPassiveEffects.test.ts` / `tests/presentation/impliedPassives.test.tsx`
 
 ### V3.19.1: だいちのはどうのフィールド対応 + M-C バランス調整（2026-09-18）
 

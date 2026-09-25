@@ -11,6 +11,7 @@ import { expandAttackEvent, type AttackEvent } from '@/presentation/hooks/expand
 import { useBattleSequence } from '@/presentation/hooks/useBattleSequence'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
 import type { KoResult } from '@/domain/models/DamageResult'
 
 export interface AccumulatedDamage {
@@ -45,7 +46,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const events            = useProgressionStore(s => s.events)
   const defenderBerryCfg  = useProgressionStore(s => s.defenderBerry)
   const attackerBerryCfg  = useProgressionStore(s => s.attackerBerry)
-  const passiveEffects    = useProgressionStore(s => s.passiveEffects)
+  // 手動の常時効果（hasAnything 用）と、導出効果込みの実効リスト（統合パス判定用）
+  const { manual: passiveEffects, effective: effectivePassives } = useEffectivePassiveEffects()
   // きょけんとつげき後の被ダメ2倍（各パネルの手動トグルが時系列の初期状態）
   const attackerGlaiveRush = useAttackerStore(s => s.glaiveRushVulnerable)
   const defenderGlaiveRush = useDefenderStore(s => s.glaiveRushVulnerable)
@@ -93,9 +95,10 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     // 攻撃側HPに影響するイベント（被ダメ・痛み分け・攻撃側定数 等）がある構成では、
     // 攻撃側HPを追跡する2Dシーケンスの結果をそのまま累積の出力にする。
     // 攻撃側HP固定の近似（痛み分けの静的 attackerHp 等）はここでは使わない。
-    // 常時効果（passiveEffects）は攻撃側HPも動かしうるため、1件でもあれば統合パスを使う
+    // 常時効果（手動 + 持ち物・状態異常からの導出）は攻撃側HPも動かしうるため、
+    // 1件でもあれば統合パスを使う
     const seqResult = seq.result
-    if ((seq.showSequence || passiveEffects.length > 0)
+    if ((seq.showSequence || effectivePassives.length > 0)
         && seqResult !== null && seq.defenderMaxHp === defenderMaxHp) {
       const critRun: BattleSequenceResult = seq.critResult ?? seqResult
       return finalize(
@@ -199,7 +202,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
       critResult.defenderKoProb,
     )
   }, [
-    events, passiveEffects, attackerGlaiveRush, defenderGlaiveRush,
+    events, passiveEffects, effectivePassives, attackerGlaiveRush, defenderGlaiveRush,
     defenderBerryCfg, attackerBerryCfg,
     defenderMaxHp, seq,
   ])

@@ -21,11 +21,17 @@
  *   （マルチスケイル/半減実の「全体の1発目だけ」判定は `firstHadMultiscale` により
  *     時系列全体の最初の attack から引き継がれるため、分割の影響を受けない）
  *
+ * パネル状態からの導出効果（`PassiveEffect.origin` あり。いのちのたま・やけど 等）:
+ *   ストアに存在せず毎回導出されるため固定化の対象外（`effectIdsToPin` に含まれていても無視する）。
+ *   固定化後も導出効果は自動展開のまま残る。
+ *
  * 既知の制限:
  *   一部の常時効果だけを固定化した場合、残った常時効果のターン末項目は
  *   「固定化されたイベント」が同ターンの最後のイベントになることで、その**後ろ**へ回る。
  *   同一ターン末の `order` による前後関係が変わりうるが、HP のしきい値（きのみ発動）に
  *   絡まない限り数値は変わらない。全件固定化（`すべて固定化` / ゴースト行の固定化）では起きない。
+ *   導出効果が残っている場合は全件固定化でも同じ入れ替わりが起こりうる（導出効果のターン末項目が
+ *   固定化行の後ろへ回る）。ダメージ同士・回復同士の入れ替わりは数値に影響しない。
  */
 
 import {
@@ -108,11 +114,15 @@ export function materializePassiveItem(item: AutoEventItem, id: string): PinnedE
     : { kind: 'defenderConst', id, amount: item.amount, label, source: 'pinned' }
 }
 
-/** 与えられた自動項目群に現れる常時効果 id（重複除去・出現順） */
+/**
+ * 与えられた自動項目群に現れる常時効果 id（重複除去・出現順）。
+ * パネル状態からの導出効果（`origin` あり）は固定化できないため含めない。
+ */
 export function collectEffectIds(items: readonly AutoEventItem[]): string[] {
   const seen = new Set<string>()
   const out: string[] = []
   for (const item of items) {
+    if (item.origin !== undefined) continue
     if (seen.has(item.effectId)) continue
     seen.add(item.effectId)
     out.push(item.effectId)
@@ -155,7 +165,11 @@ export function pinPassiveEffects<T extends ProgressionEventLike>(
   genId: () => string,
 ): PinResult<T> {
   const requested = new Set(effectIdsToPin)
-  const removedEffectIds = effects.filter(e => requested.has(e.id)).map(e => e.id)
+  // パネル状態からの導出効果（origin あり）はストアから取り除けないため固定化しない
+  // （実体化すると導出側と二重に適用される）。スケジュールは渡された全効果で構築する
+  const removedEffectIds = effects
+    .filter(e => requested.has(e.id) && e.origin === undefined)
+    .map(e => e.id)
   if (removedEffectIds.length === 0) {
     return { events: [...events], removedEffectIds: [] }
   }

@@ -5,7 +5,8 @@ import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemon
 import { calculateHP } from '@/domain/calculators/StatCalculator'
 import type { TypeName } from '@/domain/models/Pokemon'
 import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
-import { resolvePassiveAmount, type PassiveEffect } from '@/domain/models/PassiveEffect'
+import { passiveOriginSuffix, resolvePassiveAmount, type PassiveEffect } from '@/domain/models/PassiveEffect'
+import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 
 function formatProb(prob: number): string {
@@ -30,7 +31,7 @@ function passiveLine(eff: PassiveEffect, attackerMaxHp: number, defenderMaxHp: n
   const count = eff.count === 'all' ? '全ターン' : `${eff.count}回`
   const from = eff.startTurn > 1 ? ` T${eff.startTurn}〜` : ''
   const progressive = eff.amount.type === 'toxic' ? '（累進）' : ''
-  return `${side} ${eff.label}: ${sign}${amount}${progressive} / ${TIMING_LABEL[eff.timing]} ${count}${from}${kindLabel}`
+  return `${side} ${eff.label}${passiveOriginSuffix(eff.origin)}: ${sign}${amount}${progressive} / ${TIMING_LABEL[eff.timing]} ${count}${from}${kindLabel}`
 }
 
 export function AccumExportButton() {
@@ -38,7 +39,8 @@ export function AccumExportButton() {
   const events = useProgressionStore(s => s.events)
   const defenderBerry = useProgressionStore(s => s.defenderBerry)
   const attackerBerry = useProgressionStore(s => s.attackerBerry)
-  const passiveEffects = useProgressionStore(s => s.passiveEffects)
+  // 手動 + 持ち物・状態異常からの導出効果（導出分は「（持ち物）」等の注記つきで出力）
+  const { effective: passiveEffects } = useEffectivePassiveEffects()
   const attackerBaseHp = useAttackerStore(s => s.baseStats.hp)
   const attackerSpHp = useAttackerStore(s => s.sp.hp)
   const attackerTypes = useAttackerStore(s => s.types)

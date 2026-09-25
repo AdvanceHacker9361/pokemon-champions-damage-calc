@@ -66,6 +66,22 @@ export interface PassiveEffect {
   presetKey?: string
   /** 表示ラベル（プリセットのラベル、またはカスタム入力の名前） */
   label: string
+  /**
+   * パネル状態（持ち物・状態異常）から自動導出された効果の由来（`ImpliedPassiveEffects.ts`）。
+   * 未指定 = ユーザーがカタログから積んだ手動の効果。
+   * 導出効果はストア・スナップショットに保存されず、固定化の対象にもならない。
+   */
+  origin?: PassiveOrigin
+}
+
+/** 導出効果の由来（持ち物 / 状態異常） */
+export type PassiveOrigin = 'item' | 'status'
+
+/** 導出効果の表示用サフィックス（手動効果は空文字） */
+export function passiveOriginSuffix(origin: PassiveOrigin | undefined): string {
+  if (origin === 'item') return '（持ち物）'
+  if (origin === 'status') return '（状態異常）'
+  return ''
 }
 
 /**
@@ -257,11 +273,24 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
     tab: 'damage',
     subTab: 'ratio',
     label: '1/8 切り捨て（どく）',
-    sources: 'どく / くろいヘドロ(非どく)',
+    sources: 'どく',
     kind: 'damage',
     amount: { type: 'ratio', num: 1, den: 8, rounding: 'floor' },
     timing: 'turnEnd',
     order: TURN_END_ORDER.poison,
+    defaultCount: 'all',
+  },
+  {
+    key: 'blackSludgeDamage',
+    short: 'くろいヘドロ',
+    tab: 'damage',
+    subTab: 'ratio',
+    label: '1/8 切り捨て（持ち物）',
+    sources: 'くろいヘドロ（どくタイプ以外が所持）',
+    kind: 'damage',
+    amount: { type: 'ratio', num: 1, den: 8, rounding: 'floor' },
+    timing: 'turnEnd',
+    order: TURN_END_ORDER.itemHeal,
     defaultCount: 'all',
   },
   {
@@ -337,7 +366,20 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
     tab: 'recover',
     subTab: 'ratio',
     label: '1/16 切り捨て',
-    sources: 'たべのこし / くろいヘドロ(どく) / グラスフィールド',
+    sources: 'たべのこし',
+    kind: 'recover',
+    amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
+    timing: 'turnEnd',
+    order: TURN_END_ORDER.itemHeal,
+    defaultCount: 'all',
+  },
+  {
+    key: 'blackSludge',
+    short: 'くろいヘドロ',
+    tab: 'recover',
+    subTab: 'ratio',
+    label: '1/16 切り捨て（どくタイプ）',
+    sources: 'くろいヘドロ（どくタイプが所持）',
     kind: 'recover',
     amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
     timing: 'turnEnd',

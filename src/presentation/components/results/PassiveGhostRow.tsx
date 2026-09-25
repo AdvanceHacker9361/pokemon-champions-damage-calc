@@ -1,4 +1,4 @@
-import type { AutoEventItem } from '@/domain/calculators/PassiveEffectExpansion'
+import { autoItemName, type AutoEventItem } from '@/domain/calculators/PassiveEffectExpansion'
 
 /** 適用タイミングの見出し（開始時 / T2末 / T2攻撃後） */
 function whenLabel(item: AutoEventItem): string {
@@ -6,23 +6,24 @@ function whenLabel(item: AutoEventItem): string {
   return item.timing === 'perAttack' ? `T${item.turn}攻撃後` : `T${item.turn}末`
 }
 
-/** 1項目分の表示（例: `すなあらし 防−11`） */
+/** 1項目分の表示（例: `すなあらし 防−11` / `いのちのたま（持ち物） 攻−10`） */
 function itemText(item: AutoEventItem): string {
+  const name = autoItemName(item)
   if (item.kind === 'leechSeed') {
     return item.side === 'defender'
-      ? `${item.label} 防−${item.amount} → 攻+${item.amount}`
-      : `${item.label} 攻−${item.amount} → 防+${item.amount}`
+      ? `${name} 防−${item.amount} → 攻+${item.amount}`
+      : `${name} 攻−${item.amount} → 防+${item.amount}`
   }
   const who = item.side === 'attacker' ? '攻' : '防'
   const sign = item.kind === 'recover' ? '+' : '−'
-  return `${item.label} ${who}${sign}${item.amount}`
+  return `${name} ${who}${sign}${item.amount}`
 }
 
 export interface PassiveGhostRowProps {
   items: AutoEventItem[]
   /**
    * 「固定化」ボタンのハンドラ。この行に現れる常時効果を全ターン分の手動イベントへ
-   * 展開する。未指定ならボタンを描画しない。
+   * 展開する。未指定ならボタンを描画しない（持ち物・状態異常からの自動分だけの行など）。
    */
   onPin?: () => void
 }
@@ -51,7 +52,7 @@ export function PassiveGhostRow({ items, onPin }: PassiveGhostRowProps) {
       <div className="min-w-0 flex-1 space-y-0.5">
         {groups.map(group => (
           <div key={group.key} className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-fg-faint">
-            <span className="rounded border border-edge px-1 text-[10px] text-fg-faint" title="常時効果から自動で適用される項目（並べ替え・削除は各タブから）">
+            <span className="rounded border border-edge px-1 text-[10px] text-fg-faint" title="常時効果から自動で適用される項目（並べ替え・削除は各タブから。「（持ち物）」「（状態異常）」はパネルの設定から自動）">
               自動
             </span>
             <span className="font-mono whitespace-nowrap">{group.when}:</span>

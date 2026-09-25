@@ -8,6 +8,7 @@ import { buildPassiveSchedule, type AutoEventItem } from '@/domain/calculators/P
 import { collectEffectIds } from '@/domain/calculators/PassiveEffectPinning'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
+import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
 import { EventRow } from './EventRow'
 import { PassiveGhostRow } from './PassiveGhostRow'
 import { ProgressionTabs } from './ProgressionTabs'
@@ -21,7 +22,8 @@ interface DamageProgressionPanelProps {
 
 export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanelProps) {
   const events           = useProgressionStore(s => s.events)
-  const passiveEffects   = useProgressionStore(s => s.passiveEffects)
+  // manual = カタログで積んだ効果（固定化・クリアの対象）/ effective = 持ち物・状態異常からの導出込み（表示用）
+  const { manual: passiveEffects, effective: effectivePassives } = useEffectivePassiveEffects()
   const defenderBerry    = useProgressionStore(s => s.defenderBerry)
   const attackerBerry    = useProgressionStore(s => s.attackerBerry)
   const attackerStartHp  = useProgressionStore(s => s.attackerStartHp)
@@ -85,8 +87,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     [attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes, events],
   )
   const passiveSchedule = useMemo(
-    () => buildPassiveSchedule(events, passiveEffects, expansionCtx),
-    [events, passiveEffects, expansionCtx],
+    () => buildPassiveSchedule(events, effectivePassives, expansionCtx),
+    [events, effectivePassives, expansionCtx],
   )
   const hasGhostRows =
     passiveSchedule.start.length > 0 ||
@@ -114,9 +116,14 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     previousEventIdsRef.current = events.map(ev => ev.id)
   }, [events])
 
-  /** ゴースト行の「固定化」: その行に現れる常時効果を全ターン分イベント化する */
-  function pinRow(items: AutoEventItem[]) {
-    pinPassive(collectEffectIds(items), expansionCtx)
+  /**
+   * ゴースト行の「固定化」: その行に現れる常時効果を全ターン分イベント化する。
+   * 持ち物・状態異常からの導出効果は固定化できないため、手動効果が無い行ではボタンを出さない。
+   */
+  function pinHandler(items: AutoEventItem[]): (() => void) | undefined {
+    const ids = collectEffectIds(items)
+    if (ids.length === 0) return undefined
+    return () => { pinPassive(ids, expansionCtx) }
   }
 
   function addAfter(kind: EventKind, targetId: string | null) {
@@ -214,7 +221,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               type="button"
               onClick={() => pinAllPassive(expansionCtx)}
               className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded border border-edge text-fg-muted hover:border-accent-border hover:text-accent transition-colors"
-              title="すべての常時効果を、自動適用されている位置そのままの手動イベントへ展開する（数値は変わりません）"
+              title="すべての常時効果（持ち物・状態異常からの自動分を除く）を、自動適用されている位置そのままの手動イベントへ展開する（数値は変わりません）"
             >
               <span>📌</span>
               <span>すべて固定化</span>
@@ -242,7 +249,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       {/* イベント一覧（常時効果は淡色のゴースト行として自動表示） */}
       {hasEvents || hasGhostRows ? (
         <div className="space-y-1">
-          <PassiveGhostRow items={passiveSchedule.start} onPin={() => pinRow(passiveSchedule.start)} />
+          <PassiveGhostRow items={passiveSchedule.start} onPin={pinHandler(passiveSchedule.start)} />
           {events.map((ev, idx) => (
             <Fragment key={ev.id}>
               <EventRow
@@ -267,11 +274,11 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               />
               <PassiveGhostRow
                 items={passiveSchedule.afterEvent[ev.id] ?? []}
-                onPin={() => pinRow(passiveSchedule.afterEvent[ev.id] ?? [])}
+                onPin={pinHandler(passiveSchedule.afterEvent[ev.id] ?? [])}
               />
             </Fragment>
           ))}
-          <PassiveGhostRow items={passiveSchedule.trailing} onPin={() => pinRow(passiveSchedule.trailing)} />
+          <PassiveGhostRow items={passiveSchedule.trailing} onPin={pinHandler(passiveSchedule.trailing)} />
         </div>
       ) : (
         <div className="text-xs text-fg-faint text-center py-1">

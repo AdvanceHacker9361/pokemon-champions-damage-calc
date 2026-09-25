@@ -14,6 +14,7 @@ import {
 } from '@/domain/models/PassiveEffect'
 import { useProgressionStore } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
 import { PassiveEffectRow } from './PassiveEffectRow'
 import {
   amountPreviewText,
@@ -74,7 +75,8 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
   const [subTab, setSubTab] = useState<CatalogSubTab>('ratio')
 
   const events = useProgressionStore(s => s.events)
-  const passiveEffects = useProgressionStore(s => s.passiveEffects)
+  // manual = カタログで積んだ効果 / implied = 持ち物・状態異常から自動で効いている効果
+  const { manual: passiveEffects, implied: impliedEffects } = useEffectivePassiveEffects()
   const addPassiveEffect = useProgressionStore(s => s.addPassiveEffect)
   const updatePassiveEffect = useProgressionStore(s => s.updatePassiveEffect)
   const removePassiveEffect = useProgressionStore(s => s.removePassiveEffect)
@@ -96,6 +98,11 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
 
   function effectOfPreset(preset: PassivePreset): PassiveEffect | undefined {
     return passiveEffects.find(p => p.presetKey === preset.key && p.side === side)
+  }
+
+  /** パネル状態から自動で効いている効果（手動で積んでいる場合は手動が優先されるので不要） */
+  function impliedOfPreset(preset: PassivePreset): PassiveEffect | undefined {
+    return impliedEffects.find(p => p.presetKey === preset.key && p.side === side)
   }
 
   function addFromPreset(preset: PassivePreset, count: number | 'all'): void {
@@ -247,6 +254,7 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
         <div className="space-y-1">
           {presets.map(preset => {
             const effect = effectOfPreset(preset)
+            const implied = effect ? undefined : impliedOfPreset(preset)
             return (
               <PassiveEffectRow
                 key={preset.key}
@@ -262,6 +270,7 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
                 onDecrement={() => decrement(effect)}
                 onToggleAll={() => toggleAll(effect, preset)}
                 onStartTurnChange={turn => effect && updatePassiveEffect(effect.id, { startTurn: turn })}
+                autoOrigin={implied?.origin}
               />
             )
           })}
