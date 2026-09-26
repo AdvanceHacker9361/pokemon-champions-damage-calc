@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest'
-import { migrateProgressionSnapshot, cloneSnapshot, type ProgressionSnapshot } from '@/presentation/store/sessionSnapshot'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  migrateProgressionSnapshot, cloneSnapshot, snapshotLiveState, restoreState,
+  type ProgressionSnapshot,
+} from '@/presentation/store/sessionSnapshot'
 import type { ProgressionEvent } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
+import { useAttackerTabsStore, useDefenderTabsStore } from '@/presentation/store/pokemonTabsStore'
 import { useFieldStore } from '@/presentation/store/fieldStore'
 
 /** cloneSnapshot 経由で ProgressionEvent の複製（＝旧データ移行）結果を取り出す */
@@ -144,5 +148,107 @@ describe('migrateProgressionSnapshot（旧きのみフィールド → 両側 Be
     const legacyEvent = { kind: 'rearmBerry', id: 'r1' } as unknown as ProgressionEvent
     const snap = cloneSnapshotOfEvents([legacyEvent])
     expect(snap[0]).toMatchObject({ kind: 'rearmBerry', id: 'r1', side: 'defender' })
+  })
+})
+
+// メガフラエッテ（えいえんのはな）: id 10670, mega key 'mega-floette-eternal'
+// 正しい weight = 100.8, baseStats = { hp:74, atk:85, def:87, spa:155, spd:148, spe:102 }, ability = フェアリーオーラ
+const MEGA_FLOETTE = 10670
+// ヒスイヌメルゴン: id 10706（非メガ）。正しい weight = 334.1, baseStats = { hp:80, atk:100, def:100, spa:110, spd:150, spe:60 }
+const HISUI_GOODRA = 10706
+// ギルガルド: id 681（バトルスイッチ、ブレード時に atk↔def, spa↔spd が入れ替わる）
+const AEGISLASH = 681
+const UNKNOWN_POKEMON_ID = 999999
+
+describe('restoreState: 派生データの再解決', () => {
+  afterEach(() => {
+    useAttackerStore.getState().reset()
+    useDefenderStore.getState().reset()
+    useAttackerTabsStore.setState({ tabs: [], activeTabId: null })
+    useDefenderTabsStore.setState({ tabs: [], activeTabId: null })
+  })
+
+  it('陳腐化したメガの weight/baseStats をリポジトリから再解決する', () => {
+    useDefenderStore.getState().setPokemon(MEGA_FLOETTE)
+    useDefenderStore.getState().setMega(true)
+
+    const snap = cloneSnapshot(snapshotLiveState())
+    // データ更新前に永続化された「陳腐化したメガフラエッテ」を模す
+    snap.defender.weight = 0.9
+    snap.defender.baseStats = { ...snap.defender.baseStats, hp: 1 }
+
+    restoreState(snap)
+
+    const state = useDefenderStore.getState()
+    expect(state.weight).toBe(100.8)
+    expect(state.baseStats).toEqual({ hp: 74, atk: 85, def: 87, spa: 155, spd: 148, spe: 102 })
+    expect(state.effectiveAbility).toBe('フェアリーオーラ')
+    expect(state.isMega).toBe(true)
+    expect(state.megaKey).toBe('mega-floette-eternal')
+  })
+
+  it('陳腐化した非メガの weight をリポジトリから再解決し、特性/ランク/技威力は保持する', () => {
+    useAttackerStore.getState().setPokemon(HISUI_GOODRA)
+    useAttackerStore.getState().setRank('atk', 3)
+    useAttackerStore.getState().setMovePower(0, 130)
+    const originalEffectiveAbility = useAttackerStore.getState().effectiveAbility
+
+    const snap = cloneSnapshot(snapshotLiveState())
+    snap.attacker.weight = 1 // 陳腐化した体重（本来は 334.1）
+
+    restoreState(snap)
+
+    const state = useAttackerStore.getState()
+    expect(state.weight).toBe(334.1)
+    expect(state.baseStats).toEqual({ hp: 80, atk: 100, def: 100, spa: 110, spd: 150, spe: 60 })
+    // ライブの effectiveAbility は勝手に abilityName へ戻さない
+    expect(state.effectiveAbility).toBe(originalEffectiveAbility)
+    expect(state.ranks.atk).toBe(3)
+    expect(state.movePowers[0]).toBe(130)
+  })
+
+  it('ブレードフォルムの baseStats 上書きは維持しつつ weight だけ再解決する', () => {
+    useAttackerStore.getState().setPokemon(AEGISLASH)
+    useAttackerStore.getState().setBlade(true)
+    const bladeBaseStats = { ...useAttackerStore.getState().baseStats }
+    expect(bladeBaseStats).toEqual({ hp: 60, atk: 140, def: 50, spa: 140, spd: 50, spe: 60 })
+
+    const snap = cloneSnapshot(snapshotLiveState())
+    snap.attacker.weight = 999 // 陳腐化した体重（本来は 53）
+
+    restoreState(snap)
+
+    const state = useAttackerStore.getState()
+    expect(state.isBlade).toBe(true)
+    expect(state.baseStats).toEqual(bladeBaseStats)
+    expect(state.weight).toBe(53)
+  })
+
+  it('タブ内のスナップショットも復元時に再解決される', () => {
+    useAttackerStore.getState().setPokemon(MEGA_FLOETTE)
+    useAttackerStore.getState().setMega(true)
+    useAttackerTabsStore.getState().initIfEmpty()
+
+    const snap = cloneSnapshot(snapshotLiveState())
+    expect(snap.attackerTabs!.tabs.length).toBe(1)
+    snap.attackerTabs!.tabs[0]!.snapshot.weight = 0.9
+
+    restoreState(snap)
+
+    expect(useAttackerTabsStore.getState().tabs[0]!.snapshot.weight).toBe(100.8)
+  })
+
+  it('データから消えた pokemonId はスナップショットの値をそのまま維持する', () => {
+    useAttackerStore.getState().reset()
+
+    const snap = cloneSnapshot(snapshotLiveState())
+    snap.attacker.pokemonId = UNKNOWN_POKEMON_ID
+    snap.attacker.weight = 123
+
+    restoreState(snap)
+
+    const state = useAttackerStore.getState()
+    expect(state.pokemonId).toBe(UNKNOWN_POKEMON_ID)
+    expect(state.weight).toBe(123)
   })
 })

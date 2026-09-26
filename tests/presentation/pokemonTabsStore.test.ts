@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { useAttackerTabsStore, useDefenderTabsStore } from '@/presentation/store/pokemonTabsStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { useSessionStore } from '@/presentation/store/sessionStore'
-import { snapshotLiveState, restoreState } from '@/presentation/store/sessionSnapshot'
+import { snapshotLiveState, restoreState, clonePokemonSnapshot } from '@/presentation/store/sessionSnapshot'
 
 const GARCHOMP = 445
 const CHARIZARD = 6
@@ -187,6 +187,29 @@ describe('pokemonTabsStore（攻撃側）', () => {
     expect(state.tabs.length).toBe(1)
     expect(state.tabs[0].snapshot.pokemonId).toBe(legacy.attacker.pokemonId)
     expect(state.activeTabId).toBe(state.tabs[0].id)
+  })
+
+  it('switchTab は陳腐化した派生データ（体重等）をリポジトリから再解決してライブへ書き込む', () => {
+    const MEGA_FLOETTE = 10670 // メガフラエッテ（えいえんのはな）。正しい weight = 100.8
+    useAttackerStore.getState().setPokemon(GARCHOMP)
+    useAttackerTabsStore.getState().initIfEmpty()
+    const tab1 = useAttackerTabsStore.getState().activeTabId!
+
+    useAttackerTabsStore.getState().addTab()
+    const tab2 = useAttackerTabsStore.getState().activeTabId!
+    useAttackerStore.getState().setPokemon(MEGA_FLOETTE)
+    useAttackerStore.getState().setMega(true)
+
+    // tab2 のライブ内容を、データ更新前に永続化されていた陳腐化状態に差し替える
+    const staleSnapshot = { ...clonePokemonSnapshot(useAttackerStore.getState()), weight: 0.9 }
+    useAttackerTabsStore.setState(s => ({
+      tabs: s.tabs.map(t => t.id === tab2 ? { ...t, snapshot: staleSnapshot } : t),
+    }))
+    // tab1 経由でライブを一旦別の状態にしてから tab2 へ切替
+    useAttackerTabsStore.getState().switchTab(tab1)
+    useAttackerTabsStore.getState().switchTab(tab2)
+
+    expect(useAttackerStore.getState().weight).toBe(100.8)
   })
 
   it('defenderTabs のみ欠けたスナップショット（V3.16.0 世代）は防御側を snap.defender から単一タブ生成する', () => {

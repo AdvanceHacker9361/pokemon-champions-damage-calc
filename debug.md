@@ -1240,3 +1240,26 @@ GitHub Actions:
 ### 判断メモ
 
 - バージョンは据え置き（3.19.3）。CHANGELOG は Unreleased に記載。
+---
+
+## 2026-09-27: ヘビーボンバーの威力がメガフラエッテ相手に 120 と表示される（保存済みタブの陳腐化）
+
+### 発覚内容
+
+- ユーザー報告: ヒスイヌメルゴン（334.1kg）のヘビーボンバー → メガフラエッテ（100.8kg）で、技スロット・結果行とも威力120（本来は比 3.3 → 80）。
+- 調査: 現行コード・本番バンドルとも `heavy-slam` は 5 段階すべてを返し、新規状態の再現では 威力80（102〜122）。`useSessionStore`（`pcma-session-v1`）がタブごとに `PokemonSnapshot` を体重ごと永続化しており、前日のメガフラエッテ体重修正（0.9 → 100.8）より前に保存されたタブを復元すると 0.9 のまま → 334.1/0.9 で 120。`onRehydrateStorage` → `restoreState` と `pokemonTabsStore.switchTab` が保存値をそのまま `setState` していた。
+
+### 実施した修正
+
+- `src/presentation/store/resolveDerivedFields.ts`（新規）: `buildLibraryStore` の private `resolveDerivedFields` を移設し `keepFormBaseStats` オプションを追加。`refreshDerivedFields(s)` はメガ解決成功時は派生値（`effectiveAbility = mega.ability` 含む）を適用、保存メガキーが解決できない場合は非メガへフォールバック、元から非メガなら `effectiveAbility` を上書きしない。`pokemonId` 不明なら元のまま。
+- `sessionSnapshot.restoreState` / `restorePokemonTabs`、`pokemonTabsStore.switchTab / closeTab` で適用。`buildLibraryStore` は移設先を import（挙動不変）。
+
+### 検証
+
+- `npx vitest run --dir tests`: 628 件全パス（+6）。typecheck / build OK、lint 警告 1 件は既存。
+- ブラウザ QA（開発サーバー）: localStorage の防御側スナップショットを weight 0.9 に書き換えてリロード → 復元後 100.8 に自己修復され、ヘビーボンバー 威力80。
+
+### 判断メモ
+
+- 復元時の再解決はデータ更新に対する恒久策。永続化フォーマットは変えない（migrate 不要）。
+- ユーザー環境では、更新後のリロードで保存済みタブが自動修復される。バージョン据え置き（3.19.3）。

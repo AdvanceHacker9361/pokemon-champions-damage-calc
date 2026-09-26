@@ -7,6 +7,7 @@ import {
 } from './progressionStore'
 import { TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
 import { useAttackerTabsStore, useDefenderTabsStore } from './pokemonTabsStore'
+import { refreshDerivedFields } from './resolveDerivedFields'
 
 /** ポケモンストアのうちスナップショット対象となるデータフィールドのみ */
 export type PokemonSnapshot = Pick<PokemonStore,
@@ -205,19 +206,28 @@ function capturePokemonTabs(
   }
 }
 
-/** タブスナップショットを復元。無い（旧永続化）場合はライブ内容から単一タブを生成 */
+/**
+ * タブスナップショットを復元。無い（旧永続化）場合はライブ内容から単一タブを生成。
+ * 復元する各タブのスナップショットには `refreshDerivedFields` を適用する
+ * （永続化されたタブは、保存後のデータ更新で baseStats/types/weight/メガ関連が
+ * 陳腐化している可能性があるため）。
+ */
 function restorePokemonTabs(
   tabsStore: typeof useAttackerTabsStore,
   tabsSnap: PokemonTabsSnapshot | undefined,
   fallback: PokemonSnapshot
 ): void {
   if (tabsSnap && tabsSnap.tabs.length >= 1) {
-    tabsStore.setState(clonePokemonTabsSnapshot(tabsSnap))
+    const cloned = clonePokemonTabsSnapshot(tabsSnap)
+    tabsStore.setState({
+      activeTabId: cloned.activeTabId,
+      tabs: cloned.tabs.map(t => ({ id: t.id, snapshot: refreshDerivedFields(t.snapshot) })),
+    })
     return
   }
   const id = genId()
   tabsStore.setState({
-    tabs: [{ id, snapshot: clonePokemonSnapshot(fallback) }],
+    tabs: [{ id, snapshot: refreshDerivedFields(clonePokemonSnapshot(fallback)) }],
     activeTabId: id,
   })
 }
@@ -352,10 +362,13 @@ function migratePassiveSnapshot(p: ProgressionSnapshot): ProgressionSnapshot {
 /**
  * スナップショットをライブストアへ復元。
  * setState はマージなのでアクション関数は保持される。
+ * 永続化されたスナップショットは、保存後のデータ修正（種族値・タイプ・体重・メガ
+ * 形態の追加/変更等）によって baseStats/types/weight/メガ関連が陳腐化している
+ * 場合があるため、`refreshDerivedFields` でリポジトリから再解決してから適用する。
  */
 export function restoreState(snap: SessionSnapshot): void {
-  useAttackerStore.setState(clonePokemonSnapshot(snap.attacker))
-  useDefenderStore.setState(clonePokemonSnapshot(snap.defender))
+  useAttackerStore.setState(refreshDerivedFields(clonePokemonSnapshot(snap.attacker)))
+  useDefenderStore.setState(refreshDerivedFields(clonePokemonSnapshot(snap.defender)))
   useFieldStore.setState({ ...snap.field })
   const progression = migrateProgressionSnapshot(cloneProgressionSnapshot(snap.progression))
   // 旧フィールド（constDmg / constRec / poisonTurns）はライブストアに存在しないため明示的に取捨する

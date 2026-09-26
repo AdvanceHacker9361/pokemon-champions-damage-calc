@@ -5,10 +5,9 @@ import { ALL_TYPE_NAMES } from '@/domain/models/Pokemon'
 import { createSpDistribution, type SpDistribution } from '@/domain/models/StatPoints'
 import { SP_MAX_STAT } from '@/domain/constants/spLimits'
 import type { StatNatures } from '@/application/usecases/CalculateStatsUseCase'
-import type { MegaPokemonRecord } from '@/data/schemas/types'
-import { PokemonRepository } from '@/data/repositories/PokemonRepository'
 import { defaultAbilityActivated, useAttackerStore, useDefenderStore } from './pokemonStore'
 import { clonePokemonSnapshot, genId, type PokemonSnapshot } from './sessionSnapshot'
+import { resolveDerivedFields } from './resolveDerivedFields'
 
 /** 登録できる個体の上限数 */
 export const BUILD_LIBRARY_MAX = 300
@@ -34,56 +33,6 @@ const DEFAULT_RANKS: Record<StatKey, number> = { hp: 0, atk: 0, def: 0, spa: 0, 
 const NATURE_STAT_KEYS = ['atk', 'def', 'spa', 'spd', 'spe'] as const
 const NATURE_VALUES = [0.9, 1.0, 1.1]
 const STATUS_VALUES: StatusCondition[] = ['やけど', 'まひ', 'どく', 'もうどく', 'ねむり']
-
-interface DerivedFields {
-  baseStats: BaseStats
-  types: TypeName[]
-  weight: number
-  effectiveAbility: string
-  canMega: boolean
-  availableMegas: MegaPokemonRecord[]
-  isMega: boolean
-  megaKey: string | null
-}
-
-/**
- * baseStats / types / weight / メガ関連をリポジトリから再解決する。
- * 保存済みスナップショットの陳腐化と、ブレード/マイティによる種族値上書きを打ち消す。
- * 解決できない（未選択・データから消えた種族）場合は null を返し、呼び出し側で元値を維持する。
- */
-function resolveDerivedFields(s: PokemonSnapshot): DerivedFields | null {
-  if (s.pokemonId == null) return null
-  const record = PokemonRepository.findById(s.pokemonId)
-  if (!record) return null
-
-  const availableMegas = PokemonRepository.getMegasByBaseId(s.pokemonId)
-  const mega = s.isMega && s.megaKey ? PokemonRepository.getMegaByKey(s.megaKey) : undefined
-
-  // 登録時のメガ形態がデータから消えている / 別種族のキーだった場合は非メガへフォールバック
-  if (mega && mega.basePokemonId === s.pokemonId) {
-    return {
-      baseStats: { ...mega.baseStats },
-      types: [...mega.types],
-      weight: mega.weight !== undefined ? mega.weight : record.weight,
-      effectiveAbility: mega.ability,
-      canMega: availableMegas.length > 0,
-      availableMegas,
-      isMega: true,
-      megaKey: mega.key,
-    }
-  }
-
-  return {
-    baseStats: { ...record.baseStats },
-    types: [...record.types],
-    weight: record.weight,
-    effectiveAbility: s.abilityName,
-    canMega: availableMegas.length > 0,
-    availableMegas,
-    isMega: false,
-    megaKey: null,
-  }
-}
 
 /**
  * 登録個体は「構成」であって「戦闘中の状態」ではない。

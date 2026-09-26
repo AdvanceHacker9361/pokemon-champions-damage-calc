@@ -866,6 +866,7 @@ src/
 #### データ修正（Showdown 全件クロスチェックで発見）
 - メガグソクムシャ: ききかいひ → かたいツメ、108 → 148kg。メガガブリアス 130 → 95kg。Z-A 由来メガ 18 件の体重を公式値へ
 - メガフラエッテ（えいえんのはな）: 0.9 → 100.8kg（2026-09-26。Showdown `floettemega` と全 88 件のメガを突合し、ズレはこの 1 件のみ。`data-integrity.test.ts` にピン留め）
+- **セッション復元時の派生データ再解決（2026-09-27）**: `useSessionStore` は各タブの `PokemonSnapshot`（baseStats / types / weight / メガ関連を含む）を localStorage に永続化するため、データ修正後も保存済みタブが古い値を持ち越していた（メガフラエッテ 0.9kg → ヘビーボンバー威力120）。`src/presentation/store/resolveDerivedFields.ts` に `resolveDerivedFields(s, { keepFormBaseStats? })`（`buildLibraryStore` から移設）と `refreshDerivedFields(s)` を置き、`restoreState`（攻守ライブ＋タブ復元）と `pokemonTabsStore.switchTab / closeTab` で適用。非メガでは `effectiveAbility` を上書きせず、ブレード／マイティ中は baseStats を維持。テスト: `sessionSnapshot.test.ts`「派生データの再解決」5 件、`pokemonTabsStore.test.ts` 1 件
 - オノノクス／クリムガン: ドラゴン/フェアリー → ドラゴン単（ヌメルゴンと同型の誤り）
 - 重複ゴミエントリ削除: id 946（イッカネズミ/Tandemaus 混在）、965（キョジオーン/Clodsire 混在）、993（テツノブジン重複）
 - 体重: コジョンド 35.5 / レシラム 330 / ゼクロム 345 / ホルード 42.4 / ラランテス 18.5

@@ -3,6 +3,7 @@ import { useAttackerStore, useDefenderStore } from './pokemonStore'
 import {
   clonePokemonSnapshot, genId, type PokemonTab, type PokemonSnapshot,
 } from './sessionSnapshot'
+import { refreshDerivedFields } from './resolveDerivedFields'
 
 /** ポケモンタブの上限数（攻撃側・防御側とも共通） */
 export const POKEMON_TABS_MAX = 8
@@ -74,7 +75,8 @@ export function createPokemonTabsStore(pokemonStore: PokemonStoreHook) {
         t.id === activeTabId ? { ...t, snapshot: liveSnapshot() } : t
       )
       set({ tabs: saved, activeTabId: id })
-      pokemonStore.setState(clonePokemonSnapshot(target.snapshot))
+      // 保存済みタブは陳腐化した派生データ（体重・種族値等）を持ちうるため再解決する
+      pokemonStore.setState(refreshDerivedFields(clonePokemonSnapshot(target.snapshot)))
     },
 
     closeTab: (id) => {
@@ -97,7 +99,7 @@ export function createPokemonTabsStore(pokemonStore: PokemonStoreHook) {
       // アクティブタブ: ライブ状態を破棄し、左隣（無ければ先頭）へ切替・復元
       const neighbor = remaining[idx - 1] ?? remaining[0]
       set({ tabs: remaining, activeTabId: neighbor.id })
-      pokemonStore.setState(clonePokemonSnapshot(neighbor.snapshot))
+      pokemonStore.setState(refreshDerivedFields(clonePokemonSnapshot(neighbor.snapshot)))
     },
 
     saveActiveSnapshot: () => {
