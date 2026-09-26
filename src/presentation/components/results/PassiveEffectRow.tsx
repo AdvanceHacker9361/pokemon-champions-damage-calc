@@ -25,6 +25,11 @@ export interface PassiveEffectRowProps {
    * 指定時はステッパーの代わりに「自動（持ち物）」等のバッジを出す（回数は編集できない）。
    */
   autoOrigin?: PassiveOrigin
+  /**
+   * この効果の1回分を時系列の末尾へ手動イベントとして即時挿入するハンドラ。
+   * 未指定ならボタンを描画しない（もうどく等の累進効果は対象外）。
+   */
+  onInsertNow?: () => void
 }
 
 /**
@@ -34,7 +39,7 @@ export interface PassiveEffectRowProps {
 export function PassiveEffectRow({
   testId, mainLabel, sources, timing, amountPreview,
   count, canAll, effect,
-  onIncrement, onDecrement, onToggleAll, onStartTurnChange, onDelete, autoOrigin,
+  onIncrement, onDecrement, onToggleAll, onStartTurnChange, onDelete, autoOrigin, onInsertNow,
 }: PassiveEffectRowProps) {
   const [detailOpen, setDetailOpen] = useState(false)
   const isAuto = autoOrigin !== undefined
@@ -67,60 +72,72 @@ export function PassiveEffectRow({
           {amountPreview}
         </span>
 
-        {isAuto ? (
-          <span
-            data-testid={`${testId}-auto`}
-            className="flex-shrink-0 whitespace-nowrap rounded border border-accent-border bg-accent-bg px-1.5 py-0.5 text-[10px] text-accent"
-            title="攻撃側・防御側パネルの持ち物・状態異常から自動で適用されています（変更はパネル側で）"
-          >
-            自動{passiveOriginSuffix(autoOrigin)}
-          </span>
-        ) : (
-        <div className="flex flex-shrink-0 items-center gap-0.5 whitespace-nowrap">
-          <button
-            type="button"
-            onClick={onDecrement}
-            disabled={count === 0}
-            className="h-5 w-5 rounded bg-surface-3 text-xs text-fg-muted hover:bg-surface-2 disabled:opacity-30"
-            title="回数を減らす（1で削除）"
-            aria-label={`${mainLabel} の回数を減らす`}
-          >−</button>
-          <span
-            data-testid={`${testId}-count`}
-            className={`w-6 text-center font-mono text-xs ${isActive ? 'font-medium text-accent' : 'text-fg-faint'}`}
-          >{countText}</span>
-          <button
-            type="button"
-            onClick={onIncrement}
-            className="h-5 w-5 rounded bg-surface-3 text-xs text-fg-muted hover:bg-surface-2"
-            title="回数を増やす"
-            aria-label={`${mainLabel} の回数を増やす`}
-          >＋</button>
-          {canAll && (
+        <div className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap">
+          {isAuto ? (
+            <span
+              data-testid={`${testId}-auto`}
+              className="whitespace-nowrap rounded border border-accent-border bg-accent-bg px-1.5 py-0.5 text-[10px] text-accent"
+              title="攻撃側・防御側パネルの持ち物・状態異常から自動で適用されています（変更はパネル側で）"
+            >
+              自動{passiveOriginSuffix(autoOrigin)}
+            </span>
+          ) : (
+          <div className="flex items-center gap-0.5 whitespace-nowrap">
             <button
               type="button"
-              onClick={onToggleAll}
-              aria-pressed={count === 'all'}
-              className={`ml-0.5 rounded border px-1 py-0.5 text-[10px] transition-colors ${
-                count === 'all'
-                  ? 'border-accent-border bg-accent-bg text-accent'
-                  : 'border-edge bg-surface-3 text-fg-muted hover:bg-surface-2'
-              }`}
-              title="時系列の全ターンに適用する"
-              aria-label={`${mainLabel} を全ターンに適用`}
-            >全</button>
+              onClick={onDecrement}
+              disabled={count === 0}
+              className="h-5 w-5 rounded bg-surface-3 text-xs text-fg-muted hover:bg-surface-2 disabled:opacity-30"
+              title="回数を減らす（1で削除）"
+              aria-label={`${mainLabel} の回数を減らす`}
+            >−</button>
+            <span
+              data-testid={`${testId}-count`}
+              className={`w-6 text-center font-mono text-xs ${isActive ? 'font-medium text-accent' : 'text-fg-faint'}`}
+            >{countText}</span>
+            <button
+              type="button"
+              onClick={onIncrement}
+              className="h-5 w-5 rounded bg-surface-3 text-xs text-fg-muted hover:bg-surface-2"
+              title="回数を増やす"
+              aria-label={`${mainLabel} の回数を増やす`}
+            >＋</button>
+            {canAll && (
+              <button
+                type="button"
+                onClick={onToggleAll}
+                aria-pressed={count === 'all'}
+                className={`ml-0.5 rounded border px-1 py-0.5 text-[10px] transition-colors ${
+                  count === 'all'
+                    ? 'border-accent-border bg-accent-bg text-accent'
+                    : 'border-edge bg-surface-3 text-fg-muted hover:bg-surface-2'
+                }`}
+                title="時系列の全ターンに適用する"
+                aria-label={`${mainLabel} を全ターンに適用`}
+              >全</button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                className="ml-0.5 h-5 w-5 rounded bg-surface-3 text-xs text-fg-faint transition-colors hover:text-danger-2"
+                title="この効果を削除"
+                aria-label={`${mainLabel} を削除`}
+              >✕</button>
+            )}
+          </div>
           )}
-          {onDelete && (
+          {onInsertNow && (
             <button
               type="button"
-              onClick={onDelete}
-              className="ml-0.5 h-5 w-5 rounded bg-surface-3 text-xs text-fg-faint transition-colors hover:text-danger-2"
-              title="この効果を削除"
-              aria-label={`${mainLabel} を削除`}
-            >✕</button>
+              onClick={onInsertNow}
+              data-testid={`${testId}-now`}
+              aria-label={`${mainLabel} を即時挿入`}
+              title="この効果の1回分を時系列の末尾に手動イベントとして挿入します（「開始時」と違い、後から加算した攻撃はこの後ろに並びます。↑↓で移動できます）"
+              className="rounded border border-edge bg-surface-3 px-1 py-0.5 text-[10px] text-fg-muted transition-colors hover:border-accent-border hover:text-accent"
+            >即時</button>
           )}
         </div>
-        )}
       </div>
 
       {isActive && effect && timing !== 'start' && (

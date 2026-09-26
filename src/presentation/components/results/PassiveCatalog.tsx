@@ -18,6 +18,7 @@ import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePas
 import { PassiveEffectRow } from './PassiveEffectRow'
 import {
   amountPreviewText,
+  passiveToManualEvent,
   resolveForSide,
   type PassiveTargetContext,
 } from './passiveCatalogUtils'
@@ -146,6 +147,16 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
     updatePassiveEffect(effect.id, { count: effect.count === 'all' ? 1 : 'all' })
   }
 
+  /**
+   * 「即時」: 常時効果1回分を、時系列の末尾へ手動イベントとして即座に挿入する。
+   * 「開始時」タイミングと違い、以後に加算した攻撃はこの後ろに並ぶ（↑↓で移動可能）。
+   * もうどく（累進）は対象外（呼び出し側で amount.type === 'toxic' を除外する）。
+   */
+  function insertNow(source: { kind: PassiveKind; amount: PassiveAmount; label: string }): void {
+    const amount = resolveForSide(source.amount, side, targetCtx)
+    addEventAfter(null, passiveToManualEvent(source.kind, side, amount, `${source.label}（即時）`))
+  }
+
   /** 単発（回復技など）: 時系列末尾へ回復イベントを追加 */
   function appendOneShot(preset: PassivePreset): void {
     const amount = resolveForSide(preset.amount, side, targetCtx)
@@ -271,6 +282,9 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
                 onToggleAll={() => toggleAll(effect, preset)}
                 onStartTurnChange={turn => effect && updatePassiveEffect(effect.id, { startTurn: turn })}
                 autoOrigin={implied?.origin}
+                onInsertNow={preset.amount.type === 'toxic'
+                  ? undefined
+                  : () => insertNow({ kind: preset.kind, amount: preset.amount, label: preset.short })}
               />
             )
           })}
@@ -291,6 +305,9 @@ export function PassiveCatalog({ tab, defenderMaxHp, attackerMaxHp }: PassiveCat
               onToggleAll={() => toggleAll(effect)}
               onStartTurnChange={turn => updatePassiveEffect(effect.id, { startTurn: turn })}
               onDelete={() => removePassiveEffect(effect.id)}
+              onInsertNow={effect.amount.type === 'toxic'
+                ? undefined
+                : () => insertNow({ kind: effect.kind, amount: effect.amount, label: effect.label })}
             />
           ))}
 

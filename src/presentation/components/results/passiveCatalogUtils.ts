@@ -10,6 +10,7 @@ import type {
 } from '@/domain/models/PassiveEffect'
 import { resolvePassiveAmount } from '@/domain/models/PassiveEffect'
 import type { TypeName } from '@/domain/models/Pokemon'
+import type { ProgressionEventInput } from '@/presentation/store/progressionStore'
 
 /** タイミングバッジの表示文言とツールチップ（1文で規則を説明） */
 export const TIMING_BADGE: Record<PassiveTiming, { text: string; title: string }> = {
@@ -64,4 +65,33 @@ export function amountPreviewText(
   const who = side === 'attacker' ? '攻' : '防'
   const sign = kind === 'recover' ? '+' : '−'
   return `${who}${sign}${value}${progressive}/回`
+}
+
+/**
+ * 常時効果1回分を、時系列の末尾に即座に挿入できる手動イベントへ変換する（「即時」挿入で共用）。
+ * カタログ行の即時挿入・ゴースト行の即時挿入の両方から使う単一のマッピング。
+ */
+export function passiveToManualEvent(
+  kind: PassiveKind,
+  side: PassiveSide,
+  amount: number,
+  label: string,
+): ProgressionEventInput {
+  if (kind === 'leechSeed') {
+    return {
+      kind: 'leechSeed',
+      direction: side === 'defender' ? 'fromAttacker' : 'fromDefender',
+      amount,
+      label,
+      source: 'manual',
+    }
+  }
+  if (kind === 'recover') {
+    return side === 'attacker'
+      ? { kind: 'attackerRecover', amount, label, source: 'manual' }
+      : { kind: 'defenderRecover', amount, label, source: 'manual' }
+  }
+  return side === 'attacker'
+    ? { kind: 'attackerConst', amount, label, source: 'manual' }
+    : { kind: 'defenderConst', amount, label, source: 'manual' }
 }

@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.2**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.3**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,13 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.19.3: 常時効果の「即時」挿入（2026-09-26）
+
+- 常時効果は `start` / `turnEnd` / `perAttack` のターン境界に自動展開されるため、防御側の いのちのたま（防御側 `perAttack` ＝ `incoming` 直後）は被ダメイベントなしでは総合累積に乗らなかった。`PassiveTiming` を増やさず、「1 回分を時系列末尾へ手動イベントとして実体化する」方式で解決
+- `src/presentation/components/results/passiveCatalogUtils.ts`: `passiveToManualEvent(kind, side, amount, label)` が `damage` → `attackerConst` / `defenderConst`、`recover` → `attackerRecover` / `defenderRecover`、`leechSeed` → `leechSeed{direction, amount}` の `source: 'manual'` イベントへ変換（カタログ行・ゴースト行で共用）
+- `PassiveEffectRow` に `onInsertNow?`（「即時」ボタン、通常行と「自動（…）」行の両方）、`PassiveGhostRow` に `onInsertNow?`（その行の全項目を 1 回分ずつ末尾へ追加）。`PassiveCatalog.insertNow` は `resolveForSide` で現在の対象側の実量を解決し、ラベルは `${label}（即時）`。`amount.type === 'toxic'` の行はボタンなし
+- 挿入後は通常の手動 const / recover 行なので、スナップショット保存・↑↓・削除が使える。`hasSequenceImpact` は既存どおり手動 const 行でも true になるため、攻守シミュレーション表が表示される（攻撃側 HP は不変）。テスト: `tests/presentation/passiveCatalog.test.tsx`（即時挿入 describe 5 件 ＋ ゴースト行 1 件）
 
 ### V3.19.2: 持ち物・状態異常からの常時効果の自動導出（2026-09-25）
 

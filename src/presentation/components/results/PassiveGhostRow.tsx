@@ -26,14 +26,20 @@ export interface PassiveGhostRowProps {
    * 展開する。未指定ならボタンを描画しない（持ち物・状態異常からの自動分だけの行など）。
    */
   onPin?: () => void
+  /**
+   * 「即時」ボタンのハンドラ。この行に現れる効果の1回分ずつを、時系列の末尾へ
+   * 手動イベントとして即座に挿入する。未指定ならボタンを描画しない。
+   */
+  onInsertNow?: () => void
 }
 
 /**
  * 常時効果の自動展開を示す読み取り専用のゴースト行（V3.18.0 フェーズC）。
  * 同じタイミング（ターン）の項目を1行にまとめ、`・` 区切りで並べる。
  * 右端の「固定化」で編集可能な手動イベントへ変換できる（V3.18.2）。
+ * 「即時」で1回分だけを末尾へ手動イベントとして挿入することもできる（即時挿入機能）。
  */
-export function PassiveGhostRow({ items, onPin }: PassiveGhostRowProps) {
+export function PassiveGhostRow({ items, onPin, onInsertNow }: PassiveGhostRowProps) {
   if (items.length === 0) return null
 
   const groups: { key: string; when: string; items: AutoEventItem[] }[] = []
@@ -62,6 +68,17 @@ export function PassiveGhostRow({ items, onPin }: PassiveGhostRowProps) {
           </div>
         ))}
       </div>
+      {onInsertNow && (
+        <button
+          type="button"
+          onClick={onInsertNow}
+          aria-label="この行の効果を即時挿入"
+          title="この行に現れる効果の1回分ずつを、時系列の末尾に手動イベントとして挿入します"
+          className="flex-shrink-0 rounded border border-edge px-1.5 py-0.5 text-[10px] text-fg-faint transition-colors hover:border-accent-border hover:text-accent focus-visible:ring-1 focus-visible:ring-accent-border"
+        >
+          即時
+        </button>
+      )}
       {onPin && (
         <button
           type="button"

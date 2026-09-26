@@ -1191,3 +1191,29 @@ GitHub Actions:
 - 未対応: ちからずくによる いのちのたま反動無効化、たいねつのやけど半減、メガシンカイベント前後での持ち物・特性差（ライブ値を使用）。
 - 部分固定化時に自動効果のターン末項目が固定化行の後ろへ回る既知制限は従来と同型。
 - バージョンを 3.19.2 に更新。
+---
+
+## 2026-09-26: V3.19.3 常時効果の「即時」挿入
+
+### 発覚内容
+
+- ユーザー提案: 「開始時」「毎ターン末」「攻撃時」に加えて「即時挿入」を用意し、定数ダメージ／回復を無条件で総合累積に加算できるようにしたい。防御側が持つ いのちのたま は被ダメイベント（防御側の攻撃処理）を追加しないと乗らず不便。
+- 原因: 防御側 `perAttack` は `incoming` 直後にのみ展開される（`PassiveEffectExpansion.ts`）。逃げ道の「＋防御側ダメ」は量の手計算が必要で、回復タブ「単発」の「＋末尾に追加」に相当する入口が定数ダメ側・カタログ全行に無かった。
+
+### 実施した修正
+
+- 方針: `PassiveTiming` に 4 つ目の値は足さず、「効果 1 回分を時系列末尾へ手動イベントとして実体化」する。展開・固定化・等価性テストは無変更。
+- `passiveCatalogUtils.passiveToManualEvent`（新規）: kind × side → `attackerConst` / `defenderConst` / `attackerRecover` / `defenderRecover` / `leechSeed{direction}` の `source: 'manual'` 変換を一元化。
+- `PassiveEffectRow.onInsertNow?`: 「即時」ボタン（`data-testid=${testId}-now`、通常行のステッパー横と「自動（持ち物）」行の両方）。`PassiveCatalog.insertNow` が `resolveForSide` で対象側の実量を解決し `addEventAfter(null, …)`、ラベル `${short}（即時）`。もうどく（`amount.type === 'toxic'`）は非対象。
+- `PassiveGhostRow.onInsertNow?` ＋ `DamageProgressionPanel.insertNowHandler(items)`: ゴースト行の全項目を 1 回分ずつ末尾へ追加（`autoItemName(item)（即時）`）。常時効果自体は残す。
+
+### 検証
+
+- `npx vitest run --dir tests`: 37 ファイル 622 件全パス（+6: 即時挿入 describe＝いのちのたま 防御側 18 ×2 回、攻撃側切替で 17、自動行でも挿入可、もうどく行にボタンなし、たべのこし 回復 11 ／ ゴースト行 即時＝すなあらし 11 追加で常時効果は不変）。`npm run typecheck` / `npm run build` OK、lint 警告 1 件は既存。
+- ブラウザ QA（ガブリアス じしん → ガルーラ いのちのたま）: 定数ダメタブの いのちのたま 行が「自動（持ち物） 即時」表示、即時クリックで時系列に「いのちのたま（即時）」（20）が追加され、総合累積 85〜102 → 105〜122。
+
+### 判断メモ
+
+- 「即時」は時系列の現在末尾への挿入。後から加算した攻撃はその後ろに並ぶ（↑↓で移動可）。ツールチップに明記。
+- 手動 const 行は既存仕様どおり `hasSequenceImpact` を true にするため攻守シミュレーション表も表示される（攻撃側 HP は不変）。事前の議論で「表示されない」と説明したのは誤りで、実装は既存挙動に合わせた。
+- バージョンを 3.19.3 に更新。

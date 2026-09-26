@@ -4,7 +4,7 @@ import type { EventKind } from '@/presentation/store/progressionStore'
 import { useAttackerStore, useDefenderStore } from '@/presentation/store/pokemonStore'
 import { calculateHP } from '@/domain/calculators/StatCalculator'
 import { computeTurnRanges } from '@/domain/models/PassiveEffect'
-import { buildPassiveSchedule, type AutoEventItem } from '@/domain/calculators/PassiveEffectExpansion'
+import { buildPassiveSchedule, autoItemName, type AutoEventItem } from '@/domain/calculators/PassiveEffectExpansion'
 import { collectEffectIds } from '@/domain/calculators/PassiveEffectPinning'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
@@ -13,6 +13,7 @@ import { EventRow } from './EventRow'
 import { PassiveGhostRow } from './PassiveGhostRow'
 import { ProgressionTabs } from './ProgressionTabs'
 import { findInsertEventAction, type InsertEventCtx } from './eventInsertActions'
+import { passiveToManualEvent } from './passiveCatalogUtils'
 
 const EMPTY_IDS: ReadonlySet<string> = new Set<string>()
 
@@ -124,6 +125,19 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     const ids = collectEffectIds(items)
     if (ids.length === 0) return undefined
     return () => { pinPassive(ids, expansionCtx) }
+  }
+
+  /**
+   * ゴースト行の「即時」: この行に現れる効果の1回分ずつを、時系列の末尾へ
+   * 手動イベントとして即座に挿入する（常時効果はそのまま残る）。
+   */
+  function insertNowHandler(items: AutoEventItem[]): (() => void) | undefined {
+    if (items.length === 0) return undefined
+    return () => {
+      for (const item of items) {
+        addEventAfter(null, passiveToManualEvent(item.kind, item.side, item.amount, `${autoItemName(item)}（即時）`))
+      }
+    }
   }
 
   function addAfter(kind: EventKind, targetId: string | null) {
@@ -249,7 +263,11 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       {/* イベント一覧（常時効果は淡色のゴースト行として自動表示） */}
       {hasEvents || hasGhostRows ? (
         <div className="space-y-1">
-          <PassiveGhostRow items={passiveSchedule.start} onPin={pinHandler(passiveSchedule.start)} />
+          <PassiveGhostRow
+            items={passiveSchedule.start}
+            onPin={pinHandler(passiveSchedule.start)}
+            onInsertNow={insertNowHandler(passiveSchedule.start)}
+          />
           {events.map((ev, idx) => (
             <Fragment key={ev.id}>
               <EventRow
@@ -275,10 +293,15 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
               <PassiveGhostRow
                 items={passiveSchedule.afterEvent[ev.id] ?? []}
                 onPin={pinHandler(passiveSchedule.afterEvent[ev.id] ?? [])}
+                onInsertNow={insertNowHandler(passiveSchedule.afterEvent[ev.id] ?? [])}
               />
             </Fragment>
           ))}
-          <PassiveGhostRow items={passiveSchedule.trailing} onPin={pinHandler(passiveSchedule.trailing)} />
+          <PassiveGhostRow
+            items={passiveSchedule.trailing}
+            onPin={pinHandler(passiveSchedule.trailing)}
+            onInsertNow={insertNowHandler(passiveSchedule.trailing)}
+          />
         </div>
       ) : (
         <div className="text-xs text-fg-faint text-center py-1">

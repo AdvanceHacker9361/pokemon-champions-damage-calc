@@ -199,6 +199,70 @@ describe('PassiveCatalog（定数ダメ / 回復タブ）', () => {
   })
 })
 
+describe('PassiveCatalog（即時挿入）', () => {
+  afterEach(() => {
+    cleanup()
+    useProgressionStore.getState().clear()
+    useAttackerStore.getState().reset()
+    useDefenderStore.getState().reset()
+  })
+
+  function nowButton(testId: string) {
+    return within(screen.getByTestId(testId)).getByTestId(`${testId}-now`)
+  }
+
+  it('定数ダメ/割合: いのちのたまの「即時」で defenderConst を末尾に追加する（HP183の1/10切り捨て=18）。連打すると1件ずつ増える', () => {
+    renderDamageTab()
+    fireEvent.click(nowButton('passive-row-lifeOrb'))
+
+    expect(useProgressionStore.getState().events).toEqual([
+      expect.objectContaining({ kind: 'defenderConst', amount: 18, label: 'いのちのたま（即時）', source: 'manual' }),
+    ])
+    expect(effects()).toHaveLength(0)
+
+    fireEvent.click(nowButton('passive-row-lifeOrb'))
+    expect(useProgressionStore.getState().events).toHaveLength(2)
+  })
+
+  it('対象を攻撃側へ切り替えると「即時」は attackerConst になる（HP175の1/10切り捨て=17）', () => {
+    renderDamageTab()
+    fireEvent.click(screen.getByRole('button', { name: '攻撃側' }))
+    fireEvent.click(nowButton('passive-row-lifeOrb'))
+
+    expect(useProgressionStore.getState().events).toEqual([
+      expect.objectContaining({ kind: 'attackerConst', amount: 17, label: 'いのちのたま（即時）', source: 'manual' }),
+    ])
+  })
+
+  it('自動（持ち物）バッジの行でも「即時」ボタンは残り、defenderConst を挿入できる', () => {
+    useDefenderStore.setState({ itemName: 'いのちのたま' })
+    renderDamageTab()
+    expect(screen.getByTestId('passive-row-lifeOrb-auto').textContent).toBe('自動（持ち物）')
+
+    fireEvent.click(nowButton('passive-row-lifeOrb'))
+    expect(useProgressionStore.getState().events).toEqual([
+      expect.objectContaining({ kind: 'defenderConst', amount: 18, label: 'いのちのたま（即時）', source: 'manual' }),
+    ])
+    // カタログには積まれない（導出効果のまま）
+    expect(effects()).toHaveLength(0)
+  })
+
+  it('もうどく行には「即時」ボタンが無い（累進のため対象外）', () => {
+    renderDamageTab()
+    fireEvent.click(screen.getByRole('button', { name: 'もうどく' }))
+    expect(screen.queryByTestId('passive-row-toxic-now')).toBeNull()
+  })
+
+  it('回復タブ: たべのこしの「即時」で defenderRecover を追加する（HP183の1/16切り捨て=11）', () => {
+    renderRecoverTab()
+    fireEvent.click(nowButton('passive-row-leftovers'))
+
+    expect(useProgressionStore.getState().events).toEqual([
+      expect.objectContaining({ kind: 'defenderRecover', amount: 11, label: 'たべのこし（即時）', source: 'manual' }),
+    ])
+  })
+})
+
 function attackPayload(usages: number): AttackPayload {
   const rolls = Array(16).fill(30)
   return {
@@ -274,6 +338,34 @@ describe('DamageProgressionPanel のゴースト行', () => {
     expect(events.filter(e => e.kind === 'defenderConst').every(e => e.source === 'pinned')).toBe(true)
     // 「固定」バッジが行に出る
     expect(screen.getAllByTitle(/常時効果を固定化して生成された行/).length).toBe(2)
+  })
+
+  it('ゴースト行の「即時」でその回分だけ末尾へ手動イベントを追加し、常時効果はそのまま残る', () => {
+    const store = useProgressionStore.getState()
+    store.addAttack(attackPayload(1))
+    store.addPassiveEffect({
+      side: 'defender', kind: 'damage',
+      amount: { type: 'ratio', num: 1, den: 16, rounding: 'floor' },
+      timing: 'turnEnd', count: 1, startTurn: 1,
+      order: TURN_END_ORDER.weather, presetKey: 'sandstorm', label: 'すなあらし',
+    })
+
+    render(<DamageProgressionPanel defenderMaxHp={DEFENDER_MAX_HP} />)
+    const insertNowBtn = screen.getByRole('button', { name: 'この行の効果を即時挿入' })
+    act(() => { fireEvent.click(insertNowBtn) })
+
+    // 常時効果は取り除かれず、ゴースト行も残る
+    expect(useProgressionStore.getState().passiveEffects).toHaveLength(1)
+    expect(screen.getAllByLabelText('自動適用').length).toBeGreaterThan(0)
+
+    // 末尾に1回分だけ手動イベントが追加される（HP183 の 1/16 切り捨て = 11）
+    const events = useProgressionStore.getState().events
+    expect(events).toHaveLength(2)
+    expect(events[0].kind).toBe('attack')
+    expect(events[1]).toMatchObject({
+      kind: 'defenderConst', amount: 11, source: 'manual',
+      label: expect.stringMatching(/（即時）$/),
+    })
   })
 
   it('ヘッダーの「すべて固定化」は常時効果があるときだけ出て、全件を固定化する', () => {
