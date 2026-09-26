@@ -6,6 +6,9 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+### Fixed
+- メガフラエッテ（えいえんのはな）の体重が 0.9kg のままだったのを 100.8kg に修正（Showdown 準拠）。けたぐり／くさむすびの威力 20 → 100、ヘビーボンバーの体重比にも反映
+
 ## [3.19.3] - 2026-09-26
 
 ### Added

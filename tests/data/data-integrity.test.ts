@@ -669,6 +669,8 @@ describe('Reg.M-C data', () => {
       weight: 148,
     })
     expect(byKey.get('mega-garchomp')?.weight).toBe(95)
+    // メガフラエッテ（えいえんのはな）: 0.9 → 100.8kg（Showdown 準拠。けたぐり/くさむすび 20 → 100）
+    expect(byKey.get('mega-floette-eternal')?.weight).toBe(100.8)
   })
 
   it('Reg.M-C roster should be available', () => {

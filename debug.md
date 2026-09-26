@@ -1217,3 +1217,26 @@ GitHub Actions:
 - 「即時」は時系列の現在末尾への挿入。後から加算した攻撃はその後ろに並ぶ（↑↓で移動可）。ツールチップに明記。
 - 手動 const 行は既存仕様どおり `hasSequenceImpact` を true にするため攻守シミュレーション表も表示される（攻撃側 HP は不変）。事前の議論で「表示されない」と説明したのは誤りで、実装は既存挙動に合わせた。
 - バージョンを 3.19.3 に更新。
+---
+
+## 2026-09-26: メガフラエッテ（えいえんのはな）の体重が反映されない
+
+### 発覚内容
+
+- ユーザー報告: フラエッテ(えいえんのはな) のメガシンカで体重が正常に反映されない。
+- 調査: `pokemon-mega.json` の `mega-floette-eternal` が `weight: 0.9`（ベースと同値）で、メガ時の体重切替（`pokemonStore.setMega` は `mega.weight` を採用）は正しく動いていた。データ側の誤りで、Showdown `floettemega` は 100.8kg。
+
+### 実施した修正
+
+- `pokemon-mega.json`: `mega-floette-eternal` の `weight` を 0.9 → 100.8。けたぐり／くさむすび 威力 20 → 100、ヘビーボンバーの体重比にも影響。
+- Showdown pokedex（`play.pokemonshowdown.com/data/pokedex.json`）と `pokemon-mega.json` 全 88 件を nameEn から導出したキーで突合し、体重・種族値のズレはこの 1 件のみであることを確認。
+- `tests/data/data-integrity.test.ts` に `mega-floette-eternal` の体重 100.8 をピン留め。
+
+### 検証
+
+- `npx vitest run --dir tests`: 622 件全パス。`npm run build` OK。
+- 本番: 防御側 メガフラエッテ に対する けたぐり の威力表示で確認。
+
+### 判断メモ
+
+- バージョンは据え置き（3.19.3）。CHANGELOG は Unreleased に記載。
