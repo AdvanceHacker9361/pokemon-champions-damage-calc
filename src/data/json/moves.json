@@ -60,7 +60,8 @@
       "slice": false
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "ignoreDefenseStages": true
   },
   {
     "name": "Ｖジェネレート",
@@ -5117,7 +5118,8 @@
       "slice": true
     },
     "special": null,
-    "multiHit": null
+    "multiHit": null,
+    "ignoreDefenseStages": true
   },
   {
     "name": "せいなるほのお",

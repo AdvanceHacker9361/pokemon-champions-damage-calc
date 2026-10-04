@@ -1263,3 +1263,26 @@ GitHub Actions:
 
 - 復元時の再解決はデータ更新に対する恒久策。永続化フォーマットは変えない（migrate 不要）。
 - ユーザー環境では、更新後のリロードで保存済みタブが自動修復される。バージョン据え置き（3.19.3）。
+---
+
+## 2026-10-04: せいなるつるぎの防御ランク無視が未実装
+
+### 発覚内容
+
+- ユーザー報告: せいなるつるぎの「相手のランク補正無効化」が反映されていない。
+- 調査: `moves.json` の せいなるつるぎ・ＤＤラリアット は `special: null` の通常技扱いで、防御側ランクを無視する経路が無かった（攻撃側 てんねん のみ `CalculateDamageUseCase` で対応済み）。なしくずし は未収録。
+
+### 実施した修正
+
+- `Move.ts` / `schemas/types.ts`: `ignoreDefenseStages?: boolean` を追加。`moves.json` の せいなるつるぎ・ＤＤラリアット に付与。
+- `CalculateDamageUseCase`: `baseDefenderRanks` の条件を「攻撃側 てんねん または `move.ignoreDefenseStages`」に拡張（def / spd を 0 として実数値を再計算）。上昇・低下とも無視、急所時も B±0 基準。
+- `DamageResultRow`: 該当技に「防御ランク無視」バッジ（ツールチップ付き）。
+
+### 検証
+
+- `npx vitest run --dir tests`: 634 件全パス（+6: フラグのデータピン、B+2 / B+6 / B-2 / 急所で B±0 と同一ロール、ＤＤラリアット、対照のインファイトは B+2 で減少）。typecheck / build OK、lint 警告 1 件は既存。
+
+### 判断メモ
+
+- 回避ランク無視はダメージ計算外のため対象外。命中率表示にも影響しない。
+- バージョン据え置き（3.19.3）。CHANGELOG は Unreleased に記載。

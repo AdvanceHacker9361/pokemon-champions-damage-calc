@@ -867,6 +867,7 @@ src/
 - メガグソクムシャ: ききかいひ → かたいツメ、108 → 148kg。メガガブリアス 130 → 95kg。Z-A 由来メガ 18 件の体重を公式値へ
 - メガフラエッテ（えいえんのはな）: 0.9 → 100.8kg（2026-09-26。Showdown `floettemega` と全 88 件のメガを突合し、ズレはこの 1 件のみ。`data-integrity.test.ts` にピン留め）
 - **セッション復元時の派生データ再解決（2026-09-27）**: `useSessionStore` は各タブの `PokemonSnapshot`（baseStats / types / weight / メガ関連を含む）を localStorage に永続化するため、データ修正後も保存済みタブが古い値を持ち越していた（メガフラエッテ 0.9kg → ヘビーボンバー威力120）。`src/presentation/store/resolveDerivedFields.ts` に `resolveDerivedFields(s, { keepFormBaseStats? })`（`buildLibraryStore` から移設）と `refreshDerivedFields(s)` を置き、`restoreState`（攻守ライブ＋タブ復元）と `pokemonTabsStore.switchTab / closeTab` で適用。非メガでは `effectiveAbility` を上書きせず、ブレード／マイティ中は baseStats を維持。テスト: `sessionSnapshot.test.ts`「派生データの再解決」5 件、`pokemonTabsStore.test.ts` 1 件
+- **防御ランク無視技（2026-10-04）**: `MoveData` / `MoveRecord` に `ignoreDefenseStages?: boolean` を追加し、せいなるつるぎ・ＤＤラリアットに付与。`CalculateDamageUseCase` で攻撃側てんねんと同じ経路（防御側 `def` / `spd` ランクを 0 として実数値を再計算）に乗せる。急所・くだけるよろい／じきゅうりょくの多段中ランク変動も無効。`DamageResultRow` に「防御ランク無視」バッジ。テスト: `tests/application/IgnoreDefenseStages.test.ts`
 - オノノクス／クリムガン: ドラゴン/フェアリー → ドラゴン単（ヌメルゴンと同型の誤り）
 - 重複ゴミエントリ削除: id 946（イッカネズミ/Tandemaus 混在）、965（キョジオーン/Clodsire 混在）、993（テツノブジン重複）
 - 体重: コジョンド 35.5 / レシラム 330 / ゼクロム 345 / ホルード 42.4 / ラランテス 18.5

@@ -61,6 +61,8 @@ export interface MoveData {
   selfStatDrops?: { stat: StatKey; stages: number }[]
   /** 確定急所技（常に急所補正で計算） */
   alwaysCrit?: boolean
+  /** 相手の防御・特防ランク補正を無視する技（せいなるつるぎ・ＤＤラリアット等） */
+  ignoreDefenseStages?: boolean
   /** ちからずくの対象となる追加効果を持つ技 */
   hasSecondaryEffect?: boolean
   /**

@@ -68,8 +68,10 @@ export function executeDamageCalculation(
         }
       : baseAttackerRanks
 
+  // せいなるつるぎ・ＤＤラリアット: 相手の防御/特防ランク補正を（上昇・低下とも）無視する。
+  // 攻撃側てんねんと同じ扱いで、くだけるよろい／じきゅうりょくの多段中のランク変動も無効になる
   const baseDefenderRanks =
-    input.attacker.abilityName === 'てんねん'
+    input.attacker.abilityName === 'てんねん' || input.move.ignoreDefenseStages === true
       ? { ...input.defender.ranks, def: 0, spd: 0 }
       : input.defender.ranks
 

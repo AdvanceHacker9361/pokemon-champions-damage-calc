@@ -294,6 +294,14 @@ export function DamageResultRow(props: DamageResultRowProps) {
                 : '2〜5回'}
             </span>
           )}
+          {moveRecord?.ignoreDefenseStages === true && (
+            <span
+              className="text-[10px] px-1 py-0 rounded bg-surface-3 text-fg-muted font-medium"
+              title="相手の防御・特防ランク補正（上昇・低下とも）を無視して計算します"
+            >
+              防御ランク無視
+            </span>
+          )}
           {isParentalBond && (
             <span className="text-[10px] px-1 py-0 rounded bg-surface-3 text-fg-muted font-medium">
               おやこあい
