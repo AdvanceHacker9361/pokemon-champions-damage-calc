@@ -237,6 +237,8 @@ function resolveAtk(input: DamageCalcInput): number {
     if (attackerAbility === 'もうか'     && move.type === 'ほのお') atkMod *= 1.5
     if (attackerAbility === 'しんりょく' && move.type === 'くさ') atkMod *= 1.5
     if (attackerAbility === 'むしのしらせ' && move.type === 'むし') atkMod *= 1.5
+    // もらいび: ほのお技を受けて発動した後、ほのお技の攻撃・特攻 1.5 倍（Showdown も攻撃実数値補正）
+    if (attackerAbility === 'もらいび' && move.type === 'ほのお') atkMod *= 1.5
     // はりこみ: 交代直後の相手に対して攻撃・特攻2倍（Showdown も攻撃実数値補正で実装）
     if (attackerAbility === 'はりこみ') atkMod *= 2
   }

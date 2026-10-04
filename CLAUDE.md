@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.3**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.4**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,13 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.19.4: もらいびの発動条件（2026-10-04）
+
+- もらいびは `TYPE_IMMUNITY_ABILITIES`（防御側のほのお無効）だけが実装され、発動後の強化を指定できなかった。`PokemonPanel` の `ACTIVATABLE_ABILITIES` に `'もらいび': 'ほのお技を受けた後'` を追加し、`DamageCalculator` の攻撃実数値補正（`attackerAbilityActivated` ブロック、もうか等と同じ枠）で ほのお技 ×1.5
+- 防御側パネルのトグルは被ダメイベント（防御側が撃つ側）で効く。防御側としてのほのお無効はトグルに関係なく常時
+- 同リリースに含む（Unreleased から繰り入れ）: せいなるつるぎ・ＤＤラリアットの防御ランク無視、メガフラエッテ体重、セッション復元時の派生データ再解決
+- テスト: `tests/domain/RegMCAbilities.test.ts` の「もらいび」4 件
 
 ### V3.19.3: 常時効果の「即時」挿入（2026-09-26）
 

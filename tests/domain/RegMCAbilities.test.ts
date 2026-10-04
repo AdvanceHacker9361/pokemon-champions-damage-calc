@@ -183,6 +183,36 @@ describe('レギュレーション M-C 追加特性', () => {
     })
   })
 
+  describe('もらいび', () => {
+    it('発動時はほのお技の攻撃実数値 1.5 倍', () => {
+      const base = dmg({ move: fireMove })
+      const boosted = dmg({
+        move: fireMove, attackerAbility: 'もらいび', attackerAbilityActivated: true,
+      })
+      expect(boosted.max).toBeGreaterThan(base.max * 1.45)
+      expect(boosted.max).toBeLessThan(base.max * 1.55)
+    })
+
+    it('未発動なら変化しない', () => {
+      const base = dmg({ move: fireMove })
+      expect(dmg({ move: fireMove, attackerAbility: 'もらいび' }).rolls).toEqual(base.rolls)
+    })
+
+    it('発動中でもほのお以外の技は変化しない', () => {
+      const base = dmg({ move: waterMove })
+      const active = dmg({
+        move: waterMove, attackerAbility: 'もらいび', attackerAbilityActivated: true,
+      })
+      expect(active.rolls).toEqual(base.rolls)
+    })
+
+    it('防御側のもらいびは発動トグルに関係なくほのお技を無効化する', () => {
+      expect(dmg({ move: fireMove, defenderAbility: 'もらいび' }).max).toBe(0)
+      expect(dmg({
+        move: fireMove, defenderAbility: 'もらいび', defenderAbilityActivated: true,
+      }).max).toBe(0)
+    })
+  })
   describe('くさのけがわ', () => {
     const grassyField = { ...createDefaultBattleField(), terrain: 'グラス' as const }
 
