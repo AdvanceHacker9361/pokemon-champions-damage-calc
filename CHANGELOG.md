@@ -6,6 +6,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [3.19.5] - 2026-10-05
+
+### Added
+- 技「ぶちかまし」（Headlong Rush）を追加。じめん／物理／威力 120／命中 100／PP 8、接触・パンチ技。使用後の B・D 各 −1 は結果行のランク変化ボタンで反映できる
+
 ## [3.19.4] - 2026-10-04
 
 ### Fixed

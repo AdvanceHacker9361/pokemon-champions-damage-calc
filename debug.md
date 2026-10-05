@@ -1309,3 +1309,24 @@ GitHub Actions:
 
 - 技タイプは もうか と同じく `move.type` で判定（ウェザーボール等のタイプ変化後は対象外＝既存のピンチ特性と同じ制限）。
 - バージョンを 3.19.4 に更新。Unreleased だった せいなるつるぎ・メガフラエッテ体重・セッション復元の修正を同リリースに繰り入れ。
+---
+
+## 2026-10-05: V3.19.5 技「ぶちかまし」未収録
+
+### 発覚内容
+
+- ユーザー報告: 技「ぶちかまし」が無い。`moves.json` に Headlong Rush が未収録だった。
+
+### 実施した修正
+
+- `moves.json`: ぶちかまし を追加（じめん／物理／威力 120／命中 100／PP 8、接触・パンチ、`selfStatDrops` で B −1・D −1）。値は Showdown `headlongrush` と突合（PP 5 は Champions の 4 段階換算で 8）。
+- `ja.json` に `headlong rush`、`data-integrity.test.ts` にピン留めテストを追加。
+
+### 検証
+
+- `npx vitest run --dir tests`: 639 件全パス（+1）。typecheck / build OK、lint 警告 1 件は既存。
+- 本番: 技検索で ぶちかまし を選択し、威力 120・ランク低下ボタンの表示を確認。
+
+### 判断メモ
+
+- バージョンを 3.19.5 に更新。

@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.4**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.5**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,10 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.19.5: 技「ぶちかまし」追加（2026-10-05）
+
+- `moves.json` に ぶちかまし（Headlong Rush、じめん／物理／120／命中100／PP 5 → Champions 換算 8）を追加。`flags.contact` / `flags.punch`（てつのこぶし・パンチグローブ対象）、`selfStatDrops: def -1 / spd -1`（アーマーキャノンと同形）。`ja.json` に和名、`data-integrity.test.ts` にピン留め
 
 ### V3.19.4: もらいびの発動条件（2026-10-04）
 

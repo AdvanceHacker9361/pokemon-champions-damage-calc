@@ -12166,6 +12166,36 @@
     "hasSecondaryEffect": true
   },
   {
+    "name": "ぶちかまし",
+    "nameEn": "Headlong Rush",
+    "type": "じめん",
+    "category": "物理",
+    "power": 120,
+    "accuracy": 100,
+    "pp": 8,
+    "priority": 0,
+    "flags": {
+      "contact": true,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": true,
+      "bite": false,
+      "slice": false
+    },
+    "special": null,
+    "selfStatDrops": [
+      {
+        "stat": "def",
+        "stages": -1
+      },
+      {
+        "stat": "spd",
+        "stages": -1
+      }
+    ]
+  },
+  {
     "name": "アーマーキャノン",
     "nameEn": "Armor Cannon",
     "type": "ほのお",

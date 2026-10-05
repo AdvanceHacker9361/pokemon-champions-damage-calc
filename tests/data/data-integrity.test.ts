@@ -673,6 +673,19 @@ describe('Reg.M-C data', () => {
     expect(byKey.get('mega-floette-eternal')?.weight).toBe(100.8)
   })
 
+  it('ぶちかまし（Headlong Rush）が収録されている', () => {
+    expect(moves.find(m => m.name === 'ぶちかまし')).toMatchObject({
+      nameEn: 'Headlong Rush',
+      type: 'じめん',
+      category: '物理',
+      power: 120,
+      accuracy: 100,
+      pp: 8,
+      flags: { contact: true, punch: true },
+      selfStatDrops: [{ stat: 'def', stages: -1 }, { stat: 'spd', stages: -1 }],
+    })
+  })
+
   it('Reg.M-C roster should be available', () => {
     const byId = new Map(pokemon.map(p => [p.id, p]))
 
