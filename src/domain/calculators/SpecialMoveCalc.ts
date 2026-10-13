@@ -46,6 +46,10 @@ export interface SpecialMoveContext {
 export interface SpecialMoveResult {
   /** 実際に使用する攻撃実数値 */
   effectiveAtk: number
+  /** 攻撃実数値として参照するステータス（わざわい系・こだいかっせい等のステータス別補正用） */
+  effectiveAtkStat: 'atk' | 'def' | 'spa' | 'spd'
+  /** 攻撃実数値の持ち主（イカサマは防御側のこうげきを使う） */
+  effectiveAtkOwner: 'attacker' | 'defender'
   /** 実際に使用する防御実数値 */
   effectiveDef: number
   /** 防御側のB/Dどちらを参照するか */
@@ -63,18 +67,18 @@ export function resolveSpecialMove(ctx: SpecialMoveContext): Partial<SpecialMove
   switch (tag) {
     case 'foul-play':
       // イカサマ: 相手のこうげきで計算
-      return { effectiveAtk: defenderStats.atk }
+      return { effectiveAtk: defenderStats.atk, effectiveAtkStat: 'atk', effectiveAtkOwner: 'defender' }
 
     case 'body-press':
       // ボディプレス: 自分のぼうぎょで攻撃
-      return { effectiveAtk: attackerStats.def, effectiveCategory: '物理' }
+      return { effectiveAtk: attackerStats.def, effectiveAtkStat: 'def', effectiveAtkOwner: 'attacker', effectiveCategory: '物理' }
 
     case 'photon-geyser':
       // フォトンゲイザー: 攻撃 > 特攻なら物理扱い
       if (attackerStats.atk > attackerStats.spa) {
-        return { effectiveAtk: attackerStats.atk, effectiveCategory: '物理' }
+        return { effectiveAtk: attackerStats.atk, effectiveAtkStat: 'atk', effectiveAtkOwner: 'attacker', effectiveCategory: '物理' }
       }
-      return { effectiveAtk: attackerStats.spa, effectiveCategory: '特殊' }
+      return { effectiveAtk: attackerStats.spa, effectiveAtkStat: 'spa', effectiveAtkOwner: 'attacker', effectiveCategory: '特殊' }
 
     case 'psyshock':
       // サイコショック・サイコブレイク: 特殊技だが相手のぼうぎょで計算

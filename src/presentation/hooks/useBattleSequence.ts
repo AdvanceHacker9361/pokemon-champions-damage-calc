@@ -20,12 +20,14 @@ import { recoilRateForMove } from '@/domain/calculators/RecoilCalc'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { toBerryOption } from '@/presentation/hooks/berryOption'
 import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
+import { makeIsSheerForceAttack } from '@/presentation/hooks/isSheerForceAttack'
 import { impliedPassivesFromStores } from '@/presentation/hooks/useEffectivePassiveEffects'
 import { mergePassiveEffects } from '@/domain/calculators/ImpliedPassiveEffects'
 import {
   buildPassiveSchedule,
   autoItemToSeqEvent,
   autoItemLabel,
+  turnEndItemsAfter,
   type AutoEventItem,
   type PassiveSchedule,
 } from '@/domain/calculators/PassiveEffectExpansion'
@@ -67,7 +69,7 @@ export interface BattleSequenceComputed {
 
 const EMPTY_SCHEDULE: PassiveSchedule = {
   start: [], afterEvent: {}, trailing: [],
-  turnEnd: {}, turnEndOwner: {}, perAttackByTurn: {}, perAttackByEventId: {},
+  turnEnd: {}, turnEndOwner: {}, turnEndByEventId: {}, perAttackByTurn: {}, perAttackByEventId: {},
   totalTurns: 0,
 }
 
@@ -174,6 +176,8 @@ export function useBattleSequence(): BattleSequenceComputed {
       defenderTypes: defender.types,
       // ゴツゴツメット等の接触限定効果は、そのイベントの技が接触技のときだけ展開する
       isContactAttack: makeIsContactAttack(events),
+      // ちからずく対象の技では いのちのたま の反動を展開しない
+      isSheerForceAttack: makeIsSheerForceAttack(events, attacker.effectiveAbility, defender.effectiveAbility),
     })
 
     const battleField = {
@@ -230,7 +234,6 @@ export function useBattleSequence(): BattleSequenceComputed {
     // イベント id → ターン範囲（attack は usages 分のターンを占有）
     const turnRanges = new Map(computeTurnRanges(events).map(r => [r.eventId, r]))
     const turnStartOf = (id: string) => turnRanges.get(id)?.startTurn ?? 0
-    const turnEndOf = (id: string) => turnRanges.get(id)?.endTurn ?? 0
 
     const seqEvents: SeqEvent[] = []
     const critSeqEvents: SeqEvent[] = []
@@ -260,13 +263,13 @@ export function useBattleSequence(): BattleSequenceComputed {
       })
     }
 
-    /** ターン開始イベント以外の直後に走る自動項目（防御側 perAttack → そのターン末） */
+    /**
+     * ターン開始イベント以外の直後に走る自動項目（防御側 perAttack → このイベントに割り当てられたターン末）。
+     * ターン末項目の割り当ては固定化行の order を考慮済み（`assignTurnEndItems`）
+     */
     function pushAutoAfterEvent(ev: ProgressionEvent) {
       pushAuto(passiveSchedule.perAttackByEventId[ev.id], autoSeq++)
-      const turn = turnEndOf(ev.id)
-      if (turn >= 1 && passiveSchedule.turnEndOwner[turn] === ev.id) {
-        pushAuto(passiveSchedule.turnEnd[turn], autoSeq++)
-      }
+      pushAuto(turnEndItemsAfter(passiveSchedule, ev.id), autoSeq++)
     }
 
     // start タイミングは時系列の先頭
@@ -301,10 +304,8 @@ export function useBattleSequence(): BattleSequenceComputed {
             recoil: recoilRate,
             damageScale: glaive.factor,
           })
-          // expanded.normal は必ず usages 個（ラベルと1:1）
-          // 通常パスは usages と 1:1、急所込みパスはおやこあいで親子2件になりうるため
-          // usage 単位で切り出して自動項目を同じ位置に挟む
-          const critPerUsage = Math.max(1, Math.round(expanded.crit.length / ev.usages))
+          // expanded.normal / expanded.crit はどちらも必ず usages 個（ラベルと1:1）。
+          // 連続技・おやこあいは1使用=1つの multiHit にまとまっている
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({
             event: ev,
@@ -315,14 +316,12 @@ export function useBattleSequence(): BattleSequenceComputed {
           expanded.normal.forEach((seqEv, u) => {
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
             seqEvents.push(seqEv)
-            critSeqEvents.push(...expanded.crit.slice(u * critPerUsage, (u + 1) * critPerUsage))
+            critSeqEvents.push(expanded.crit[u])
             labels.push(`与ダメ ${ev.label}${critTag}${glaiveTag}${drainTag}${recoilTag}${usageSuffix}`)
             const turn = attackTurnStart + u
             // 攻撃側 perAttack（いのちのたま等）→ そのターンのターン末 の順で適用
             pushAuto(passiveSchedule.perAttackByTurn[turn], autoSeq++)
-            if (passiveSchedule.turnEndOwner[turn] === ev.id) {
-              pushAuto(passiveSchedule.turnEnd[turn], autoSeq++)
-            }
+            pushAuto(turnEndItemsAfter(passiveSchedule, ev.id, turn), autoSeq++)
           })
           break
         }

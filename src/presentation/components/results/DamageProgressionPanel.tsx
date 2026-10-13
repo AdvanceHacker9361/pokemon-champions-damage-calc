@@ -8,6 +8,7 @@ import { buildPassiveSchedule, autoItemName, type AutoEventItem } from '@/domain
 import { collectEffectIds } from '@/domain/calculators/PassiveEffectPinning'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
 import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
+import { makeIsSheerForceAttack } from '@/presentation/hooks/isSheerForceAttack'
 import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
 import { EventRow } from './EventRow'
 import { PassiveGhostRow } from './PassiveGhostRow'
@@ -49,6 +50,8 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
   const attackerGlaiveRush = useAttackerStore(s => s.glaiveRushVulnerable)
   const defenderGlaiveRush = useDefenderStore(s => s.glaiveRushVulnerable)
   const defenderTypes  = useDefenderStore(s => s.types)
+  const attackerAbility = useAttackerStore(s => s.effectiveAbility)
+  const defenderAbility = useDefenderStore(s => s.effectiveAbility)
   const attackerCanMega = useAttackerStore(s => s.canMega)
   const attackerAvailableMegas = useAttackerStore(s => s.availableMegas)
   const attackerMegaKey = useAttackerStore(s => s.megaKey)
@@ -84,8 +87,9 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
       attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes,
       // ゴースト行・固定化もフックと同じ接触判定を使う（結果がずれないように）
       isContactAttack: makeIsContactAttack(events),
+      isSheerForceAttack: makeIsSheerForceAttack(events, attackerAbility, defenderAbility),
     }),
-    [attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes, events],
+    [attackerMaxHp, defenderMaxHp, attackerTypes, defenderTypes, events, attackerAbility, defenderAbility],
   )
   const passiveSchedule = useMemo(
     () => buildPassiveSchedule(events, effectivePassives, expansionCtx),

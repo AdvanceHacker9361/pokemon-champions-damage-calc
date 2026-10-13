@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.19.5**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -801,6 +801,51 @@ src/
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
 
+### V3.21.0: 連続技途中のきのみ発動（ヒット単位エンジン）と開始HPの累積反映（2026-10-13）
+
+#### エンジン: `multiHit` イベント（`BattleSequenceCalc.ts`）
+- `{ kind: 'multiHit'; hits: DmgDist[]; hitCountDist?: {hits, prob}[]; drain?; recoil?; drainBoosted?; noTurnBoundary? }`。`hits[k]` = k+1 発目の分布、`hitCountDist` 省略時は全発命中（固定/段階/おやこあい）、指定時（変動連続技）は最大ヒット数分の `hits` と P(n発)
+- `applyAttackRoll` に 1ロール分の処理（ダメージ→吸収/反動→撃破/瀕死バケット→両側きのみ判定）を共通化し、`attack` と `multiHit` の各ヒットで共有
+- `applyMultiHit`: 同時分布全体に対してヒット連鎖DPを実行。n発目の後に P(n)/P(≥n) の質量を出力へ分岐し、残りを次ヒットへ（cur の質量は p·P(≥k+1) の不変量）。途中撃破はそこで打ち切り（以降のヒット・吸収・反動は発生しない）。ターン境界はイベント後に1回
+- `collapseMultiHitDist(hits, hitCountDist?)`: ヒット間に何も起きない前提で合算分布へ畳む（等価性テスト用）
+
+#### ペイロード / 展開
+- `AttackPayload.perHitRolls / perHitRawRolls / perHitCritRolls / perHitRawCritRolls`（index=ヒット。raw は 2 回目以降の使用で用いる初撃非半減版）。`buildAttackPayload` が escalating（`perHitResults`）・fixed（くだけるよろい per-hit）・variable（`weakArmorVariableRawRollsByHit`）・おやこあい（親/子）から充填。`sessionSnapshot.cloneProgressionEvent` で深いコピー
+- `expandAttackEvent`: 使用ごとに per-hit データがあれば `multiHit` を1件（旧 `pb*` のみ / 旧 variable も再構築）、なければ従来の `attack`。初撃のみ `firstHitFixedDamage` 加算 / `firstHitNullified` 置換。急所パスは各ヒットを `mixToMap` で独立混合し `crit.length === normal.length === usages` を保証（`useBattleSequence` の `critPerUsage` 比率を廃止）
+- **固定連続技の ×N は「使用回数」に統一**（既定 ×1、ラベル「(N発)」）。`rolls/min/max` は 1 使用分の N 発合計。旧データ（usages=ヒット数・per-hit なし）は従来展開
+- 挙動変化: 各ヒットの乱数・急所が独立（従来は同一インデックス合算）。ばけのかわは fixed/escalating/おやこあい でもヒット単位（初回使用のみ初撃無効）
+- 範囲外: トリプルアクセルの発ごとの命中率、固定技 2 回目以降使用でのランク継続変化
+
+#### 開始HPの累積反映（`useAccumulatedDamage.ts`）
+- 攻撃側HP固定パスにも `defenderStartHp` を初期HPとして渡す（従来は被ダメ等がない構成で「防 開始HP」が無視されていた）。きのみのしきい値・撃破判定が開始HP基準になる
+- テスト: `BattleSequenceCalc.test.ts`（+8: 等価性・途中発動・途中撃破・吸収・ターン境界・攻撃側きのみ）、`buildAttackPayload.test.ts`（+11）、`sessionSnapshot.test.ts`（+1）、`useAccumulatedDamage.test.ts`（+4: 防御側オボン1D経路・境界・usages間・開始HP）
+
+### V3.20.0: 未実装特性の実装・フィールド接地判定・常時効果の精度向上（2026-10-13）
+
+#### 特性10件（`DamageCalculator.ts`）
+- **ステータス別補正の基盤**: `SpecialMoveResult.effectiveAtkStat`（atk/def/spa/spd）と `effectiveAtkOwner`（attacker/defender）を追加。`resolveAtk` が「どのステータスを誰のものとして参照しているか」を把握できるようになり、ボディプレス（自分のB）・イカサマ（相手のA）でも正しい側・正しいステータスに補正が乗る
+- **こおりのりんぷん**: `applyOtherModifiers` で特殊技 ×0.5（`defenderAbilitySuppressed` でかたやぶり貫通）
+- **トランジスタ（×1.3, Gen 9）/ りゅうのあぎと（×1.5）/ いわはこび（×1.5）**: `resolveAtk` の攻撃実数値補正。自分の A/C を参照する技のみ（Showdown の ModifyAtk/ModifySpA と同じ枠）
+- **こだいかっせい / クォークチャージ**: `resolveParadoxBoostStat(rawStats)` でランク補正前の最大ステータスを決定（同値は A>B>C>D>S）。`isParadoxAbilityActive` = 手動トグル ∨ ブーストエナジー ∨（晴れ / エレキ）。攻撃側は `atkStat` 一致で ×1.3、防御側は `effectiveDefStat` 一致で ×1.3。`DamageCalcInput.attackerRawStats / defenderRawStats` を `CalculateDamageUseCase` が `ranks: {}` で計算して渡す（省略時はランク込み実数値で代用）。`PokemonPanel.ACTIVATABLE_ABILITIES` にトグルを追加
+- **わざわい系**: `RUIN_ABILITY_BY_STAT`（atk=おふだ, def=つるぎ, spa=うつわ, spd=たま）と `ruinMultiplier(stat, ownerAbility, otherAbility)`。持ち主以外が該当特性を持ち、持ち主が同特性でなければ ×0.75。かたやぶりでは貫通されない
+- テスト: `tests/domain/StatAbilities.test.ts`（24件）。倍率検証は「ステータス直書きの参照入力」との rolls 完全一致で行う
+
+#### フィールド補正の接地判定
+- `applyFieldModifier(damage, moveType, terrain, moveName, attackerGrounded, defenderGrounded)`: 強化（×1.3）は使用者接地が条件、軽減（ミストのドラゴン / グラスのじしん・じならし・マグニチュード）は受け手接地が条件
+- 使用者側は既存の `resolveInputAttackerGrounded`、受け手側は `grounded`（うちおとす/じゅうりょく/くろいてっきゅう）∨ `resolveAttackerGrounded({types: effectiveDefenderTypes, ability, item, isGravity})` で判定
+- だいちのはどう以外の一般フィールド補正も接地を見るようになった（V3.19.1 の既知制限を解消）
+
+#### 常時効果の精度向上（V3.19.2 の未対応3件）
+- **ちからずく × いのちのたま**: プリセット `lifeOrb` に `suppressedBySheerForce: true`、`PassiveExpansionContext.isSheerForceAttack?(eventId)` を追加（ゴツゴツメットの `requiresContact` / `isContactAttack` と同じ枠）。`src/presentation/hooks/isSheerForceAttack.ts` の `makeIsSheerForceAttack(events, attackerAbility, defenderAbility)` が「その行動側の特性がちからずく ∧ 技に `hasSecondaryEffect`」を判定し、与ダメ（attack）・被ダメ（incoming）の両方で反動行をスキップ。`useBattleSequence` とゴースト行/固定化の ctx 両方に配線
+- **たいねつ × やけど**: `deriveForSide` で status=やけど ∧ ability=たいねつ なら 1/32（floor）、ラベルに「（たいねつ）」。`presetKey` は `burn` のまま（手動行とのマージ重複排除を維持）
+- **メガ前後の持ち物差**: 実装見送り（設計判断）。Champions のメガシンカはメガストーン所持が前提で持ち物由来の常時効果とは本来両立せず、メガ進化は通常1ターン目に起きるためライブ値（メガ後の特性）で導出する現行挙動が実戦上は正しい。引き続きライブ値を使用
+
+#### 部分固定化時のターン末適用順の保持
+- 固定化で生成する手動イベントに `pinnedTurn / pinnedOrder / pinnedTiming`（`PinnedEventMeta`）を付与し、`TurnEventLike` にも伝搬
+- `PassiveEffectExpansion.assignTurnEndItems(turnEvents, items)`: 残りのターン末項目を `order` 順に走査し、「通常イベント、または `pinnedTiming==='turnEnd'` かつ `pinnedOrder <= order` の固定行」のうち最後のものの直後に割り当てる。`schedule.turnEndByEventId` と `turnEndItemsAfter(schedule, eventId, turn?)` を新設し、`useBattleSequence` / `afterEvent` / `pinPassiveEffects` がすべてこれを使う（`turnEndOwner` はレガシー扱い）
+- 結果: 一部だけ固定化しても、残りゴースト行は固定行と TURN_END_ORDER どおりに交互配置され、段階的な部分固定化でも全件固定化と同じ列になる（等価性テストで保証）。残る注意点: 同一 `order` 同士は固定行が先、trailing 項目は末尾固定、固定行を手動で並べ替えた場合はその位置を尊重
+- テスト: `PassiveEffectExpansion.test.ts`（+8）、`ImpliedPassiveEffects.test.ts`（+2）、`PassiveEffectPinning.test.ts`（+3）、`tests/presentation/isSheerForceAttack.test.ts`（新規4件）
+
 ### V3.19.5: 技「ぶちかまし」追加（2026-10-05）
 
 - `moves.json` に ぶちかまし（Headlong Rush、じめん／物理／120／命中100／PP 5 → Champions 換算 8）を追加。`flags.contact` / `flags.punch`（てつのこぶし・パンチグローブ対象）、`selfStatDrops: def -1 / spd -1`（アーマーキャノンと同形）。`ja.json` に和名、`data-integrity.test.ts` にピン留め
@@ -943,6 +988,22 @@ src/
 - 既知の制限: 部分固定化では残った常時効果のターン末項目が固定化済み行の後ろに回る（同一ターン末の order 前後が入れ替わりうる。数値はきのみしきい値に絡まない限り不変）
 
 ---
+
+### V3.17.x: 個体登録・防御側タブ・総合累積のシーケンス統合（2026-08-07〜08-17）
+
+#### V3.17.0 個体登録（`buildLibraryStore.ts` / `BuildLibraryModal.tsx`）
+- 種族・メガ・SP・性格・特性・持ち物・技を名前付きで最大300件保存（localStorage `pcma-builds-v1`）。各パネルの「登録」「個体」ボタン、ポケモン検索の空クエリで最新8件を候補表示
+- 読込は攻守とも現在パネルを上書き（新規タブ展開案は取りやめ）。クリップボード文字列でエクスポート/インポート（個別・全件、28フィールドのホワイトリストで再構築）
+- 同時収録: 吸収回復の結果行併記（`DrainCalc.ts`）、持ち物19件追加（でんきだま・くろいてっきゅう・こうかくレンズ・おおきなねっこ等を計算反映）、フェイタルクロー
+
+#### V3.17.1 防御側タブ（`pokemonTabsStore.ts` / `PokemonTabsBar.tsx`）
+- `attackerTabsStore` を `createPokemonTabsStore` ファクトリに一般化し、防御側にも最大8タブ（攻守独立）。タブバーはヘッダー内から独立行へ
+- `SessionSnapshot.defenderTabs?` を追加、旧データは防御側単一タブへ自動移行
+
+#### V3.17.2 総合累積と攻守シミュレーションの一本化
+- 痛み分けを「累積時HP」手入力で計算していた V3.5.0 の名残が原因で、累積と攻守シミュレーションが矛盾（撃破84%と「倒せない」が並存）。`hasSequenceImpact` が真なら総合累積も 2D エンジン結果から防御側分布・撃破率を導出するよう統合。攻撃展開を `expandAttackEvent.ts` に共通化、「累積時HP」入力欄を撤去
+- stale な `vite.config.js` / `vitest.config.js` / `tailwind.config.js`（コミット済みの tsc 出力）が `vite.config.ts` より優先され `@/utils` が本番ビルドで解決できなかった問題を修正（削除＋ `.gitignore`）
+- サマリーヘッダーが生の `MoveResult.min/max` を使い個別行（ばけのかわ・おやこあい等の補正後）と乖離していた問題を `computeMoveDisplaySummary.ts` の共有で解消
 
 ### V3.11.6: 与ダメ吸収技の回復が攻守シミュレーションに反映されないバグを修正
 
@@ -1235,7 +1296,23 @@ type ProgressionEvent =
 | `src/domain/calculators/CritRank.ts` | 急所ランク計算（技・特性・アイテム・きあいだめを統合して急所率を返す） |
 | `src/domain/calculators/DamageCalculator.ts` | コアダメージ計算（タイプ相性・STAB・特性等） |
 | `src/domain/calculators/RecoilCalc.ts` | 反動技の自傷反動ダメ計算（率解決＝いしあたま/マジックガード無効、`max(1, round(実ダメ×率))`、防御側最大HPクランプ）。結果行の反動併記とシミュレーションで共有（V3.16.2） |
-| `src/domain/calculators/DrainCalc.ts` | 吸収技の回復量計算（`max(1, floor(実ダメ×率))`、防御側最大HPクランプ、分数ラベル）。結果行の吸収併記用（V3.16.3） |
+| `src/domain/calculators/DrainCalc.ts` | 吸収技の回復量計算（`max(1, floor(実ダメ×率))`、防御側最大HPクランプ、分数ラベル、おおきなねっこ ×5324/4096）。結果行の吸収併記とシミュレーションで共有（V3.16.3 / V3.17.1） |
+| `src/domain/calculators/ImpliedPassiveEffects.ts` | パネル状態（持ち物・状態異常・特性）から常時効果を自動導出しマージ。`deriveImpliedPassiveEffects` / `mergePassiveEffects`（V3.19.2） |
+| `src/presentation/hooks/useEffectivePassiveEffects.ts` | 手動常時効果と自動導出効果を合成するフック。`useEffectivePassiveEffects` / `impliedPassivesFromStores`（V3.19.2） |
+| `src/presentation/components/results/passiveCatalogUtils.ts` | 常時効果カタログ用の定数・ヘルパー。`TIMING_BADGE` / `resolveForSide` / `passiveToManualEvent`（「即時」挿入 V3.19.3） |
+| `src/presentation/store/resolveDerivedFields.ts` | 種族値・タイプ・体重・メガ形態をリポジトリから再解決。`resolveDerivedFields` / `refreshDerivedFields`（保存タブ復元時 V3.19.4） |
+| `src/domain/calculators/MovePowerResolution.ts` | 技の基本威力を解決する唯一の実装（体重依存・ジャイロボール・つけあがる等）。`resolveBasePower`（V3.18.2） |
+| `src/presentation/components/moves/movePowerLabel.ts` | 技チップの威力ラベル文字列（「威力可変」等）を生成。`getPowerLabel` |
+| `src/presentation/hooks/computeMoveDisplaySummary.ts` | 結果行用のダメージ範囲・KO表示サマリを純関数で算出（ばけのかわ・おやこあい・連続技補正込み）。結果行とサマリーヘッダーで共有 |
+| `src/presentation/hooks/expandAttackEvent.ts` | 攻撃イベントを SeqEvent 列へ展開（usages・マルチスケイル・急所混合）。`expandAttackEvent` / `needsCritPass`。累積/シーケンス両フックで共有（V3.17.2） |
+| `src/domain/calculators/GlaiveRushState.ts` | きょけんとつげき後の被ダメ倍率（×2）を時系列から解決。`resolveGlaiveRushDoubling` / `glaiveRushScaleOf`（V3.19.0） |
+| `src/presentation/hooks/isContactAttack.ts` | 接触技判定コールバックを生成（ゴツゴツメット課金用）。`makeIsContactAttack` |
+| `src/presentation/hooks/berryOption.ts` | `BerryConfig` を実HPしきい値の engine オプションに変換。`toBerryOption` |
+| `src/domain/calculators/MoveResolution.ts` | 接地・天候・フィールドによる技タイプ/威力の解決。`resolveAttackerGrounded` / `resolveTerrainPulseType` / `resolveWeatherAwareMovePower`（V3.19.1） |
+| `src/presentation/store/buildLibraryStore.ts` | 登録個体ライブラリ（上限300、localStorage `pcma-builds-v1`）。`useBuildLibraryStore` / `normalizeBuildSnapshot` / `loadRegisteredBuild`（V3.17.0） |
+| `src/presentation/store/pokemonTabsStore.ts` | 攻守ポケモンタブ（上限8）のストアファクトリ。`createPokemonTabsStore` / `useAttackerTabsStore` / `useDefenderTabsStore`（V3.17.1） |
+| `src/presentation/components/pokemon/BuildLibraryModal.tsx` | 登録個体の登録・検索・エクスポート/インポート UI（V3.17.0） |
+| `src/presentation/components/pokemon/PokemonTabsBar.tsx` | 片側ポケモンのタブバー UI（`side` prop で攻守共用）（V3.17.1） |
 | `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `critChance` / `escalating` フィールドを含む |
 | `src/data/schemas/types.ts` | JSON スキーマ型定義（MoveRecord に上記フィールドすべてあり） |
 | `src/data/json/moves.json` | 技データ（日本語名・英語名・威力・命中・特殊フラグ・`critChance` 等） |
@@ -1246,7 +1323,8 @@ type ProgressionEvent =
 | `src/presentation/store/resultStore.ts` | `MoveResult` 型（`result`, `critResult` の両方を保持） |
 | `src/domain/models/PassiveEffect.ts` | 常時効果の型・カタログ `PASSIVE_PRESETS`・丸め・`resolvePassiveAmount`・ターン境界 `computeTurnRanges`（V3.18.0） |
 | `src/domain/calculators/PassiveEffectExpansion.ts` | 常時効果をターン境界へ展開する純関数 `buildPassiveSchedule` / `autoItemToSeqEvent`（V3.18.0） |
-| `src/domain/calculators/PassiveEffectPinning.ts` | 常時効果の固定化（自動展開分を位置そのままの手動イベントへ変換、usages 分割）（V3.18.1） |
+| `src/domain/calculators/PassiveEffectPinning.ts` | 常時効果の固定化（自動展開分を位置そのままの手動イベントへ変換、usages 分割、`pinnedTurn/Order/Timing` メタ付与で部分固定化後も順序保持）（V3.18.1 / V3.20.0） |
+| `src/presentation/hooks/isSheerForceAttack.ts` | ちからずく × 追加効果技の判定コールバックを生成（いのちのたま反動のスキップ用）。`makeIsSheerForceAttack`（V3.20.0） |
 | `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 常時効果 `passiveEffects` ＋ きのみ設定 `defenderBerry / attackerBerry` ＋ 開始HP |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | progression events を SeqEvent 列（攻撃側HP固定モード）に変換し2Dエンジン経由で累積分布/KO確率を導出 |
 | `src/presentation/hooks/useBattleSequence.ts` | 同じ progression events を読み攻撃イベントの usages 展開・被ダメ攻守入替を継承。`hasSequenceImpact()` で出力可否を自動判定 |
@@ -1267,7 +1345,7 @@ type ProgressionEvent =
 | `src/application/usecases/FindOptimalSpUseCase.ts` | 耐久調整ロジック（二分探索 + 全組み合わせ列挙） |
 | `src/infrastructure/version.ts` | `__APP_VERSION__`（Vite が package.json から注入） |
 | `src/domain/calculators/SpecialMoveCalc.ts` | 特殊技の威力解決（体重依存・ジャイロボール・ヘビーボンバー等） |
-| `src/data/json/pokemon-mega.json` | メガポケモンデータ（`weight` フィールド含む全 74 件） |
+| `src/data/json/pokemon-mega.json` | メガポケモンデータ（`weight` フィールド含む全 88 件。Z形態は basePokemonId を共有） |
 | `tests/domain/pkdxCrossCheck.test.ts` | pkdx v0.4.12 の damage engine との挙動一致テスト |
 
 ---

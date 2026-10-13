@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PassiveEffect, PassiveTab } from '@/domain/models/PassiveEffect'
+import type { PassiveEffect, PassiveTab, PinnedTiming } from '@/domain/models/PassiveEffect'
 import { pinPassiveEffects as pinPassiveEffectsPure } from '@/domain/calculators/PassiveEffectPinning'
 import type { PassiveExpansionContext } from '@/domain/calculators/PassiveEffectExpansion'
 
@@ -44,6 +44,20 @@ export interface AttackPayload {
   pbChildRolls?: number[]
   pbChildCritRolls?: number[]
 
+  /**
+   * 連続技（固定多段・段階威力・変動連続技・おやこあい）のヒット別ロール（添字 = ヒット番号-1）。
+   * 指定時は時系列エンジンへ1使用分を `multiHit` として渡し、ヒット間のきのみ発動を再現する。
+   * 変動連続技は最大ヒット数ぶんを持ち、実際のヒット数は `variableHitDist` で重み付けする。
+   * 旧データ（未指定）は従来どおり `rolls`/`pb*` から1イベントを組み立てる。
+   */
+  perHitRolls?: number[][]
+  /** 2回目以降の使用で使うヒット別ロール（マルチスケイル/半減実の初撃補正なし）。未指定なら perHitRolls */
+  perHitRawRolls?: number[][]
+  /** 急所時のヒット別ロール。未指定なら perHitRolls */
+  perHitCritRolls?: number[][]
+  /** 急所時・2回目以降のヒット別ロール。未指定なら perHitCritRolls */
+  perHitRawCritRolls?: number[][]
+
   /** 変動連続技のヒット数分布 */
   variableHitDist?: { hits: number; prob: number }[]
   /** ばけのかわ等により、このイベントの最初の使用だけ1発目が無効になる */
@@ -56,6 +70,17 @@ export interface AttackPayload {
    * 時系列側の自動2倍（`GlaiveRushState`）を重ねて適用しない。
    */
   defenderGlaiveRush?: boolean
+}
+
+/**
+ * 固定化イベント（source: 'pinned'）が持つ由来の自動項目のメタ情報。
+ * 部分固定化後に残った常時効果のターン末項目を `order` どおりに並べるために使う
+ * （`PassiveEffectExpansion.assignTurnEndItems`）。手動・旧セッションのイベントには無い。
+ */
+export interface PinnedEventMeta {
+  pinnedTurn?: number
+  pinnedOrder?: number
+  pinnedTiming?: PinnedTiming
 }
 
 /** イベント種別ごとの payload */
@@ -74,10 +99,10 @@ export type ProgressionEvent =
   /** メガシンカのタイミング。以降の動的な被ダメ計算でメガ後ステータスを使う */
   | { kind: 'megaEvolve'; id: string; side: 'attacker' | 'defender'; megaKey: string }
   /** 定数イベント。label/source は背景プリセット由来の表示用メタ情報 */
-  | { kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
-  | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
-  | { kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
-  | { kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
+  | ({ kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
+  | ({ kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
+  | ({ kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
+  | ({ kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
   /** きのみ再装填（リサイクル等）。直後のHP減少で再びその側のきのみが発動できる */
   | { kind: 'rearmBerry'; id: string; side: 'attacker' | 'defender' }
   /**
@@ -85,7 +110,7 @@ export type ProgressionEvent =
    * direction='fromAttacker': 攻撃側が植え主 → 防御側-1/8(防御側最大HP)、攻撃側+同量
    * direction='fromDefender': 防御側が植え主 → 攻撃側-1/8(攻撃側最大HP)、防御側+同量
    */
-  | {
+  | ({
       kind: 'leechSeed'
       id: string
       direction: 'fromAttacker' | 'fromDefender'
@@ -93,7 +118,7 @@ export type ProgressionEvent =
       amount?: number
       label?: string
       source?: 'manual' | 'pinned'
-    }
+    } & PinnedEventMeta)
 
 /** きのみ設定の対象側 */
 export type BerrySide = 'attacker' | 'defender'

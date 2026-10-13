@@ -10,7 +10,7 @@
  *   - 持ち物 いのちのたま → `lifeOrb`（その側の攻撃ごとに 1/10 反動）
  *   - 持ち物 たべのこし   → `leftovers`（毎ターン末 1/16 回復）
  *   - 持ち物 くろいヘドロ → どくタイプ: `blackSludge`（1/16 回復）/ それ以外: `blackSludgeDamage`（1/8 ダメ）
- *   - 状態 やけど        → `burn`（毎ターン末 1/16）
+ *   - 状態 やけど        → `burn`（毎ターン末 1/16。特性 たいねつ なら 1/32）
  *   - 状態 どく          → `poison`（毎ターン末 1/8）
  *   - 状態 もうどく      → `toxic`（k/16 累進）
  *   - 特性 ポイズンヒール + どく/もうどく → `poisonHeal`（毎ターン末 1/8 回復）に置き換え
@@ -45,6 +45,7 @@ export interface ImpliedPassiveInput {
 
 export const MAGIC_GUARD = 'マジックガード'
 export const POISON_HEAL = 'ポイズンヒール'
+export const HEATPROOF = 'たいねつ'
 
 /** 導出効果の決定的 id（`implied:<side>:<presetKey>`） */
 export function impliedEffectId(side: PassiveSide, presetKey: string): string {
@@ -101,7 +102,15 @@ function deriveForSide(side: PassiveSide, s: ImpliedSideState): PassiveEffect[] 
   if (poisoned && s.ability === POISON_HEAL) {
     out.push(fromPreset(side, 'poisonHeal', 'status'))
   } else if (!magicGuard) {
-    if (s.status === 'やけど') out.push(fromPreset(side, 'burn', 'status'))
+    if (s.status === 'やけど') {
+      const burn = fromPreset(side, 'burn', 'status')
+      if (s.ability === HEATPROOF) {
+        // たいねつ: やけどダメージ半減（1/32）。presetKey は 'burn' のまま（手動行とのマージ判定を保つ）
+        burn.amount = { type: 'ratio', num: 1, den: 32, rounding: 'floor' }
+        burn.label = `${burn.label}（たいねつ）`
+      }
+      out.push(burn)
+    }
     else if (s.status === 'どく') out.push(fromPreset(side, 'poison', 'status'))
     else if (s.status === 'もうどく') out.push(fromPreset(side, 'toxic', 'status'))
   }

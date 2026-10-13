@@ -267,6 +267,13 @@ export function DamageResultRow(props: DamageResultRowProps) {
       rolls, rawRolls, effectiveRolls, critRollsBase, rawCritRollsBase, effectiveCritRolls,
       activeRawResult, rawCritResult: props.rawCritResult, defenderMaxHp,
       defenderGlaiveRush,
+      // ヒット別ロール（時系列でヒット間のきのみ発動を再現するため）
+      perHitRolls: perHitResults?.map(r => Array.from(r.rolls)),
+      critPerHitRolls: props.critPerHitResults?.map(r => Array.from(r.rolls)),
+      weakArmorPerHitRolls: weakArmorPerHitResults?.map(r => Array.from(r.rolls)),
+      weakArmorCritPerHitRolls: weakArmorCritPerHitResults?.map(r => Array.from(r.rolls)),
+      weakArmorVariableRawRollsByHit,
+      weakArmorVariableRawCritRollsByHit,
     })
     addEntry(payload)
     setAdded(true)

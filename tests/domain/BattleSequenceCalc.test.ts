@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { runBattleSequence, extractDefenderDamageDistribution } from '@/domain/calculators/BattleSequenceCalc'
-import type { SeqEvent } from '@/domain/calculators/BattleSequenceCalc'
-import { calcCombinedKoProbability } from '@/domain/calculators/KoProbabilityCalc'
+import {
+  runBattleSequence,
+  extractDefenderDamageDistribution,
+  collapseMultiHitDist,
+} from '@/domain/calculators/BattleSequenceCalc'
+import type { SeqEvent, BattleSequenceResult } from '@/domain/calculators/BattleSequenceCalc'
+import {
+  calcCombinedKoProbability,
+  calcCombinedDamageDistribution,
+  calcVariableHitsSingleUsageDist,
+  VARIABLE_MULTI_HIT_DIST,
+} from '@/domain/calculators/KoProbabilityCalc'
 
 describe('BattleSequenceCalc', () => {
   describe('単発攻撃', () => {
@@ -823,6 +832,142 @@ describe('BattleSequenceCalc', () => {
       const r = runBattleSequence(events, 120, 100)
       const total = r.defenderKoProb + r.attackerFaintProb + r.bothAliveProb
       expect(total).toBeCloseTo(1, 6)
+    })
+  })
+  describe('連続技（multiHit: ヒット別イベント）', () => {
+    function expectSameDefender(a: BattleSequenceResult, b: BattleSequenceResult, hp: number) {
+      const da = extractDefenderDamageDistribution(a, hp)
+      const db = extractDefenderDamageDistribution(b, hp)
+      const keys = new Set([...da.keys(), ...db.keys()])
+      for (const k of keys) expect(da.get(k) ?? 0).toBeCloseTo(db.get(k) ?? 0, 9)
+      expect(a.defenderKoProb).toBeCloseTo(b.defenderKoProb, 9)
+    }
+
+    it('固定3発: 途中介入がなければ合計分布の単一 attack と完全一致する', () => {
+      const h1 = Array.from({ length: 16 }, (_, i) => 10 + i)
+      const h2 = Array.from({ length: 16 }, (_, i) => 12 + i)
+      const h3 = Array.from({ length: 16 }, (_, i) => 14 + i)
+      const summed = calcCombinedDamageDistribution([h1, h2, h3])
+      for (const hp of [60, 200]) {
+        const multi = runBattleSequence(
+          [{ kind: 'multiHit', hits: [h1, h2, h3] }, { kind: 'attack', dmg: h1 }], 1, hp,
+        )
+        const single = runBattleSequence(
+          [{ kind: 'attack', dmg: summed }, { kind: 'attack', dmg: h1 }], 1, hp,
+        )
+        expectSameDefender(multi, single, hp)
+      }
+      expect(collapseMultiHitDist([h1, h2, h3]).size).toBe(summed.size)
+    })
+
+    it('変動2〜5発: hitCountDist 付き multiHit は calcVariableHitsSingleUsageDist の attack と一致する', () => {
+      const rolls = Array.from({ length: 16 }, (_, i) => 20 + i)
+      const raw = Array.from({ length: 16 }, (_, i) => 30 + i)
+      const collapsed = calcVariableHitsSingleUsageDist(rolls, VARIABLE_MULTI_HIT_DIST, raw)
+      const hits = [rolls, raw, raw, raw, raw]
+      for (const hp of [90, 400]) {
+        const multi = runBattleSequence(
+          [{ kind: 'multiHit', hits, hitCountDist: VARIABLE_MULTI_HIT_DIST }], 1, hp,
+        )
+        const single = runBattleSequence([{ kind: 'attack', dmg: collapsed }], 1, hp)
+        expectSameDefender(multi, single, hp)
+      }
+      const c = collapseMultiHitDist(hits, VARIABLE_MULTI_HIT_DIST)
+      for (const [k, v] of collapsed) expect(c.get(k) ?? 0).toBeCloseTo(v, 12)
+    })
+
+    it('オボンは連続技のヒット間で発動し、残りのヒットは回復後のHPに当たる', () => {
+      // HP100, オボン(≤50で+25)。40×3: 100→60→20→オボン45→5（生存・95ダメ）
+      const berry = { threshold: 50, amount: 25 }
+      const multi = runBattleSequence(
+        [{ kind: 'multiHit', hits: [[40], [40], [40]] }], 1, 100, { defenderBerry: berry },
+      )
+      expect(multi.defenderKoProb).toBe(0)
+      expect(multi.steps[0].defenderHpDist.get(5)).toBeCloseTo(1, 9)
+
+      // 対照: 合計120の単一 attack ではきのみが間に合わず撃破
+      const single = runBattleSequence(
+        [{ kind: 'attack', dmg: [120] }], 1, 100, { defenderBerry: berry },
+      )
+      expect(single.defenderKoProb).toBeCloseTo(1, 9)
+    })
+
+    it('変動連続技 + オボン: ヒット数ごとの質量を正しく分配する', () => {
+      // 2発50% / 3発50%、各40。2発: 100→60→20→オボン45 で終了。3発: さらに40 → 5
+      const r = runBattleSequence(
+        [{
+          kind: 'multiHit', hits: [[40], [40], [40]],
+          hitCountDist: [{ hits: 2, prob: 0.5 }, { hits: 3, prob: 0.5 }],
+        }],
+        1, 100, { defenderBerry: { threshold: 50, amount: 25 } },
+      )
+      const dist = r.steps[0].defenderHpDist
+      expect(dist.get(45)).toBeCloseTo(0.5, 9)
+      expect(dist.get(5)).toBeCloseTo(0.5, 9)
+      expect(r.defenderKoProb).toBe(0)
+      expect(r.bothAliveProb).toBeCloseTo(1, 9)
+    })
+
+    it('途中で撃破したら残りのヒットは当たらない（反動も当たったヒット分だけ）', () => {
+      // 防御側HP100、攻撃側HP70、反動1/2。60→反動30(残40)、残り40→反動20(残20)で撃破。
+      // 3発目が当たっていれば反動30で攻撃側も瀕死になるはず
+      const r = runBattleSequence(
+        [{ kind: 'multiHit', hits: [[60], [60], [60]], recoil: 0.5 }], 70, 100,
+      )
+      expect(r.defenderKoProb).toBeCloseTo(1, 9)
+      expect(r.bothFaintProb).toBe(0)
+      expect(r.attackerFaintProb).toBe(0)
+    })
+
+    it('吸収は実際に当たったヒット数ぶんだけ加算される', () => {
+      // 2発確定（hits は3発分ある）。各20ダメ → 吸収10×2 = 攻撃側 10→30
+      const r = runBattleSequence(
+        [{
+          kind: 'multiHit', hits: [[20], [20], [20]], drain: 0.5,
+          hitCountDist: [{ hits: 2, prob: 1 }],
+        }],
+        200, 1000, { attackerStartHp: 10 },
+      )
+      expect(r.steps[0].attackerHpDist.get(30)).toBeCloseTo(1, 9)
+      expect(r.steps[0].defenderHpDist.get(960)).toBeCloseTo(1, 9)
+    })
+
+    it('ターン境界はイベント全体の後に1回だけ。noTurnBoundary なら発生しない', () => {
+      // しゅうかく100%。30×3: 100→70→40→オボン70（消費）→40（イベント内では再装填しない）
+      const berry = { threshold: 50, amount: 30, harvestChance: 1.0 }
+      const withBoundary = runBattleSequence(
+        [{ kind: 'multiHit', hits: [[30], [30], [30]] }, { kind: 'attack', dmg: [30] }],
+        1, 100, { defenderBerry: berry },
+      )
+      expect(withBoundary.steps[0].defenderHpDist.get(40)).toBeCloseTo(1, 9)
+      // イベント後の境界で再装填 → 次の30で 10 → 再発動 40
+      expect(withBoundary.steps[1].defenderHpDist.get(40)).toBeCloseTo(1, 9)
+
+      const noBoundary = runBattleSequence(
+        [{ kind: 'multiHit', hits: [[30], [30], [30]], noTurnBoundary: true }, { kind: 'attack', dmg: [30] }],
+        1, 100, { defenderBerry: berry },
+      )
+      expect(noBoundary.steps[0].defenderHpDist.get(40)).toBeCloseTo(1, 9)
+      // 再装填されないので 10 のまま
+      expect(noBoundary.steps[1].defenderHpDist.get(10)).toBeCloseTo(1, 9)
+      expect(withBoundary.steps).toHaveLength(2)
+    })
+
+    it('攻撃側のきのみは反動のヒット間で発動し、瀕死を回避できる', () => {
+      // 攻撃側HP100、オボン(≤50で+30)、反動1/2。60×4 → 反動30×4: 100→70→40→+30=70→40→10（生存）
+      const attackerBerry = { threshold: 50, amount: 30 }
+      const multi = runBattleSequence(
+        [{ kind: 'multiHit', hits: [[60], [60], [60], [60]], recoil: 0.5 }],
+        100, 1000, { attackerBerry },
+      )
+      expect(multi.attackerFaintProb).toBe(0)
+      expect(multi.steps[0].attackerHpDist.get(10)).toBeCloseTo(1, 9)
+
+      // 対照: 合計240の単一 attack では反動120で瀕死
+      const single = runBattleSequence(
+        [{ kind: 'attack', dmg: [240], recoil: 0.5 }], 100, 1000, { attackerBerry },
+      )
+      expect(single.attackerFaintProb).toBeCloseTo(1, 9)
     })
   })
 })

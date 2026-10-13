@@ -8,7 +8,9 @@
  * 位置の規則（`useBattleSequence` の適用順と 1:1）:
  *   - `start` 項目            → 時系列の先頭（順序そのまま）
  *   - 攻撃側 perAttack 項目   → 対応する attack の各 usage 直後
- *   - ターン t のターン末項目 → ターン t を含む**最後のイベント**の直後（`turnEndOwner`）
+ *   - ターン t のターン末項目 → `assignTurnEndItems` が決める位置（`turnEndByEventId`）。
+ *                               固定化行が無ければターン t を含む**最後のイベント**の直後。
+ *                               既に固定化されたターン末行があれば、order が自分以下のものの直後
  *   - 防御側 perAttack 項目   → 対応する `incoming` の直後
  *   - trailing 項目           → 時系列の末尾
  *
@@ -25,21 +27,28 @@
  *   ストアに存在せず毎回導出されるため固定化の対象外（`effectIdsToPin` に含まれていても無視する）。
  *   固定化後も導出効果は自動展開のまま残る。
  *
- * 既知の制限:
- *   一部の常時効果だけを固定化した場合、残った常時効果のターン末項目は
- *   「固定化されたイベント」が同ターンの最後のイベントになることで、その**後ろ**へ回る。
- *   同一ターン末の `order` による前後関係が変わりうるが、HP のしきい値（きのみ発動）に
- *   絡まない限り数値は変わらない。全件固定化（`すべて固定化` / ゴースト行の固定化）では起きない。
- *   導出効果が残っている場合は全件固定化でも同じ入れ替わりが起こりうる（導出効果のターン末項目が
- *   固定化行の後ろへ回る）。ダメージ同士・回復同士の入れ替わりは数値に影響しない。
+ * 部分固定化と order の保証:
+ *   固定化イベントは由来の自動項目の適用ターン・order・タイミング（`pinnedTurn` / `pinnedOrder` /
+ *   `pinnedTiming`）を持つ。展開（`assignTurnEndItems`）はこれを見て、残った常時効果（導出効果を含む）の
+ *   ターン末項目を固定化行と `order` どおりに交互配置する。固定化側も同じ規則で挿入位置を決めるため、
+ *   一部ずつ何回に分けて固定化しても、全件を一度に固定化しても、フックの適用順は固定化前と同じになる。
+ *
+ * 残る注意点:
+ *   - 同 order 同士（例: たべのこし と くろいヘドロ）の前後は、固定化行が先になる（配列順は保たれない）。
+ *     ダメージ同士・回復同士の入れ替わりは数値に影響しない。
+ *   - trailing（既存ターンを超えた分）の項目は従来どおり時系列の末尾へまとめて置くため、
+ *     trailing を部分固定化すると、残った trailing 項目は固定化行の後ろへ回る。
+ *   - ユーザーが固定化行を手で別の位置へ動かした場合は、その位置を尊重する（並べ直さない）。
+ *   - メタ情報を持たない固定化行（この仕組みより前に保存されたセッション）は通常イベント扱い。
  */
 
 import {
   buildPassiveSchedule,
+  turnEndItemsAfter,
   type AutoEventItem,
   type PassiveExpansionContext,
 } from '@/domain/calculators/PassiveEffectExpansion'
-import { computeTurnRanges, type PassiveEffect } from '@/domain/models/PassiveEffect'
+import { computeTurnRanges, type PassiveEffect, type PinnedTiming } from '@/domain/models/PassiveEffect'
 
 /**
  * 固定化が参照するイベントの最小形。
@@ -56,22 +65,32 @@ export interface ProgressionEventLike {
   label?: string
   source?: string
   direction?: string
+  pinnedTurn?: number
+  pinnedOrder?: number
+  pinnedTiming?: PinnedTiming
+}
+
+/** 固定化イベントが持つメタ情報（部分固定化後の order 保証に使う） */
+export interface PinnedMeta {
+  pinnedTurn: number
+  pinnedOrder?: number
+  pinnedTiming: PinnedTiming
 }
 
 /** 固定化で生成されるイベント（`ProgressionEvent` の該当メンバーへ代入可能） */
 export type PinnedEvent =
-  | { kind: 'defenderConst'; id: string; amount: number; label: string; source: 'pinned' }
-  | { kind: 'attackerConst'; id: string; amount: number; label: string; source: 'pinned' }
-  | { kind: 'defenderRecover'; id: string; amount: number; label: string; source: 'pinned' }
-  | { kind: 'attackerRecover'; id: string; amount: number; label: string; source: 'pinned' }
-  | {
+  | ({ kind: 'defenderConst'; id: string; amount: number; label: string; source: 'pinned' } & PinnedMeta)
+  | ({ kind: 'attackerConst'; id: string; amount: number; label: string; source: 'pinned' } & PinnedMeta)
+  | ({ kind: 'defenderRecover'; id: string; amount: number; label: string; source: 'pinned' } & PinnedMeta)
+  | ({ kind: 'attackerRecover'; id: string; amount: number; label: string; source: 'pinned' } & PinnedMeta)
+  | ({
       kind: 'leechSeed'
       id: string
       direction: 'fromAttacker' | 'fromDefender'
       amount: number
       label: string
       source: 'pinned'
-    }
+    } & PinnedMeta)
 
 export interface PinResult<T extends ProgressionEventLike = ProgressionEventLike> {
   /** 固定化後の新しい時系列 */
@@ -90,9 +109,27 @@ export function pinnedEventLabel(item: AutoEventItem): string {
   return `${when} ${item.label}`
 }
 
-/** 自動項目 1 件を編集可能イベントへ実体化する */
-export function materializePassiveItem(item: AutoEventItem, id: string): PinnedEvent {
+/** 自動項目のタイミング → 固定化行のタイミング */
+function pinnedTimingOf(item: AutoEventItem, trailing: boolean): PinnedTiming {
+  if (item.timing === 'turnEnd') return trailing ? 'trailing' : 'turnEnd'
+  return item.timing
+}
+
+/**
+ * 自動項目 1 件を編集可能イベントへ実体化する。
+ * @param opts.trailing 既存ターンを超えた分（時系列末尾へ置く）項目か
+ */
+export function materializePassiveItem(
+  item: AutoEventItem,
+  id: string,
+  opts: { trailing?: boolean } = {},
+): PinnedEvent {
   const label = pinnedEventLabel(item)
+  const meta: PinnedMeta = {
+    pinnedTurn: item.turn,
+    ...(item.order !== undefined ? { pinnedOrder: item.order } : {}),
+    pinnedTiming: pinnedTimingOf(item, opts.trailing === true),
+  }
   if (item.kind === 'leechSeed') {
     return {
       kind: 'leechSeed',
@@ -102,16 +139,17 @@ export function materializePassiveItem(item: AutoEventItem, id: string): PinnedE
       amount: item.amount,
       label,
       source: 'pinned',
+      ...meta,
     }
   }
   if (item.kind === 'recover') {
     return item.side === 'attacker'
-      ? { kind: 'attackerRecover', id, amount: item.amount, label, source: 'pinned' }
-      : { kind: 'defenderRecover', id, amount: item.amount, label, source: 'pinned' }
+      ? { kind: 'attackerRecover', id, amount: item.amount, label, source: 'pinned', ...meta }
+      : { kind: 'defenderRecover', id, amount: item.amount, label, source: 'pinned', ...meta }
   }
   return item.side === 'attacker'
-    ? { kind: 'attackerConst', id, amount: item.amount, label, source: 'pinned' }
-    : { kind: 'defenderConst', id, amount: item.amount, label, source: 'pinned' }
+    ? { kind: 'attackerConst', id, amount: item.amount, label, source: 'pinned', ...meta }
+    : { kind: 'defenderConst', id, amount: item.amount, label, source: 'pinned', ...meta }
 }
 
 /**
@@ -182,8 +220,8 @@ export function pinPassiveEffects<T extends ProgressionEventLike>(
     (items ?? []).filter(i => pinSet.has(i.effectId))
 
   const out: (T | PinnedEvent)[] = []
-  const emit = (items: AutoEventItem[]) => {
-    for (const item of items) out.push(materializePassiveItem(item, genId()))
+  const emit = (items: AutoEventItem[], trailing = false) => {
+    for (const item of items) out.push(materializePassiveItem(item, genId(), { trailing }))
   }
 
   emit(pinned(schedule.start))
@@ -197,7 +235,7 @@ export function pinPassiveEffects<T extends ProgressionEventLike>(
       for (let u = 0; u < usages; u++) {
         const turn = range.startTurn + u
         const items = pinned(schedule.perAttackByTurn[turn])
-        if (schedule.turnEndOwner[turn] === ev.id) items.push(...pinned(schedule.turnEnd[turn]))
+        items.push(...pinned(turnEndItemsAfter(schedule, ev.id, turn)))
         perUsage.push(items)
       }
       // 最後の usage より前に挟むものが無ければ分割不要（末尾へまとめて置ける）
@@ -218,11 +256,11 @@ export function pinPassiveEffects<T extends ProgressionEventLike>(
     out.push(ev)
     if (!range) continue
     emit(pinned(schedule.perAttackByEventId[ev.id]))
-    const turn = range.endTurn
-    if (turn >= 1 && schedule.turnEndOwner[turn] === ev.id) emit(pinned(schedule.turnEnd[turn]))
+    // ターン末項目は既存の固定化行も含めて order どおりの位置（assignTurnEndItems）へ
+    emit(pinned(turnEndItemsAfter(schedule, ev.id)))
   }
 
-  emit(pinned(schedule.trailing))
+  emit(pinned(schedule.trailing), true)
 
   return { events: out, removedEffectIds }
 }

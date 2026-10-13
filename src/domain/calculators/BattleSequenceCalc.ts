@@ -26,11 +26,31 @@ export type SeqEvent =
   /**
    * 防御側へのダメージ（攻撃側の技）。drain/recoil 指定時は実ダメに応じて攻撃側HPを増減。
    * noTurnBoundary=true のとき、このイベントの後にターン境界処理（はんすう cud カウントダウン・
-   * しゅうかく再装填）を実行しない。1ターン内の複数ヒット（おやこあいの親子分割など）で
-   * 中間ヒットに付与し、最終ヒットのみがターンを終了させるために使う。
+   * しゅうかく再装填）を実行しない。1ターン内の複数イベントの中間に付与し、最後のイベントのみが
+   * ターンを終了させるために使う（連続技・おやこあいは `multiHit` で1イベントにまとめる）。
    * drainBoosted=true のとき、吸収回復量におおきなねっこ相当のブースト（×5324/4096）を適用する。
    */
   | { kind: 'attack'; dmg: DmgDist; drain?: number; recoil?: number; drainBoosted?: boolean; noTurnBoundary?: boolean }
+  /**
+   * 連続技（固定多段・段階威力・変動2〜5発・おやこあい）の1使用分。
+   * 各ヒットを個別にエンジンへ見せることで、ヒット間できのみ（オボン/混乱実）が発動し
+   * 残りのヒットが回復後のHPに当たる（Gen5+ 仕様）。
+   *
+   * - `hits[k]` = (k+1) 発目のダメージ分布。
+   * - `hitCountDist` 省略時は `hits.length` 発すべてが当たる。指定時（変動連続技）は
+   *   `hits.length` が最大ヒット数で、`hitCountDist` が P(n発) を与える（総和 1）。
+   * - drain / recoil はヒットごとに実ダメへ適用（`attack` と同式）。途中で撃破したら残りは当たらない。
+   * - ターン境界はイベント全体の後に1回だけ（noTurnBoundary=true なら発生しない）。
+   */
+  | {
+      kind: 'multiHit'
+      hits: DmgDist[]
+      hitCountDist?: { hits: number; prob: number }[]
+      drain?: number
+      recoil?: number
+      drainBoosted?: boolean
+      noTurnBoundary?: boolean
+    }
   /** 攻撃側へのダメージ（防御側の反撃 = 被ダメ）。drain/recoil 指定時は実ダメに応じて防御側HPを増減 */
   | { kind: 'incoming'; dmg: DmgDist; drain?: number; recoil?: number; drainBoosted?: boolean }
   /** ダメージを伴わない補助技・積み技ターン。HPは変えず、ターン経過だけを記録する */
@@ -107,6 +127,65 @@ function* iterDist(dmg: DmgDist): Iterable<[number, number]> {
     const p = 1 / n
     for (const r of dmg) yield [r, p]
   }
+}
+
+/**
+ * `multiHit` イベントを、きのみ等の途中介入がない前提で1使用分の合計ダメージ分布へ畳み込む。
+ * （ヒット数加重を含む。旧来の単一 `attack` 表現との等価性検証・表示用）
+ */
+export function collapseMultiHitDist(
+  hits: DmgDist[],
+  hitCountDist?: { hits: number; prob: number }[],
+): Map<number, number> {
+  const out = new Map<number, number>()
+  let cur = new Map<number, number>([[0, 1]])
+  const pAtLeast = (n: number) =>
+    hitCountDist ? hitCountDist.reduce((s, h) => s + (h.hits >= n ? h.prob : 0), 0) : 1
+  const moveOut = (m: Map<number, number>, f: number) => {
+    if (f <= 0) return
+    for (const [k, v] of m) out.set(k, (out.get(k) ?? 0) + v * f)
+  }
+  if (hitCountDist) {
+    const p0 = hitCountDist.reduce((s, h) => s + (h.hits <= 0 ? h.prob : 0), 0)
+    moveOut(cur, p0)
+    cur = scaleMap(cur, 1 - p0)
+  }
+  for (let k = 0; k < hits.length; k++) {
+    const next = new Map<number, number>()
+    for (const [acc, q] of cur) {
+      for (const [r, rp] of iterDist(hits[k])) {
+        const v = acc + r
+        next.set(v, (next.get(v) ?? 0) + q * rp)
+      }
+    }
+    const n = k + 1
+    const isLast = k === hits.length - 1
+    const pStop = isLast ? 1 : stopRatio(hitCountDist, n, pAtLeast)
+    moveOut(next, pStop)
+    cur = scaleMap(next, 1 - pStop)
+  }
+  return out
+}
+
+function scaleMap(m: Map<number, number>, f: number): Map<number, number> {
+  if (f === 1) return m
+  const out = new Map<number, number>()
+  if (f <= 0) return out
+  for (const [k, v] of m) out.set(k, v * f)
+  return out
+}
+
+/** n 発当てた時点で終了する条件付き確率 P(n) / P(≥n)（hitCountDist なしなら 0） */
+function stopRatio(
+  hitCountDist: { hits: number; prob: number }[] | undefined,
+  n: number,
+  pAtLeast: (n: number) => number,
+): number {
+  if (!hitCountDist) return 0
+  const geq = pAtLeast(n)
+  if (geq <= 0) return 0
+  const exact = hitCountDist.reduce((s, h) => s + (h.hits === n ? h.prob : 0), 0)
+  return Math.min(1, exact / geq)
 }
 
 /** 片側のきのみ設定（オボン/混乱実 相当の1回限り条件回復） */
@@ -249,13 +328,6 @@ export function runBattleSequence(
     return next < prev ? triggerA(next, state) : { a: next, state }
   }
 
-  const a0 = clamp(opts.attackerStartHp ?? attackerMaxHp, 0, attackerMaxHp)
-  const d0 = clamp(opts.defenderStartHp ?? defenderMaxHp, 0, defenderMaxHp)
-
-  // 初期状態でも HP ≤ threshold ならきのみを即発動
-  const initD = triggerD(d0, 0)
-  const initA = triggerA(a0, 0)
-  let joint = new Map<number, number>([[enc(initA.a, initD.d, initD.state, initA.state), 1]])
   // 3つの互いに排反な終端バケツ:
   //   koProb    = 防御側のみ瀕死（攻撃側生存）
   //   faintProb = 攻撃側のみ瀕死（防御側生存）
@@ -263,6 +335,99 @@ export function runBattleSequence(
   let koProb = 0
   let faintProb = 0
   let bothFaint = 0
+
+  type LiveSink = (a: number, d: number, dState: number, aState: number, p: number) => void
+  interface HitMods { drain?: number; recoil?: number; drainBoosted?: boolean }
+
+  /**
+   * 攻撃側の技1ヒット（ロール r、確率質量 mass）を状態 (a, d, dState, aState) に適用する。
+   * 吸収/反動は実ダメ（防御側残HPでクランプ）基準。撃破・瀕死は終端バケツへ吸収し、
+   * 生存時は両側のきのみ判定を通して sink へ流す。`attack` と `multiHit` の各ヒットで共有。
+   */
+  function applyAttackRoll(
+    a: number, d: number, dState: number, aState: number,
+    mass: number, r: number, mods: HitMods, sink: LiveSink,
+  ): void {
+    const nd0 = d - r
+    // 吸収: 実際に与えたダメージ（防御側残HPでクランプ）に応じて攻撃側が回復
+    let na = a
+    const actual = Math.min(r, d)
+    if (mods.drain && mods.drain > 0) {
+      if (actual > 0) {
+        na = clamp(a + calcDrainHeal(actual, mods.drain, mods.drainBoosted), 0, attackerMaxHp)
+      }
+    }
+    if (mods.recoil && mods.recoil > 0 && actual > 0) {
+      na -= Math.max(1, Math.round(actual * mods.recoil))
+    }
+    if (nd0 <= 0) {
+      // 防御側撃破。反動で攻撃側も同時に瀕死しうる（Gen9: 反動は相手を倒しても適用）
+      if (na <= 0) bothFaint += mass
+      else koProb += mass
+      return
+    }
+    if (na <= 0) {
+      faintProb += mass
+      return
+    }
+    const t = triggerD(nd0, dState)
+    const ta = afterAttackerHpChange(a, na, aState)
+    sink(ta.a, t.d, t.state, ta.state, mass)
+  }
+
+  /**
+   * 連続技1使用分をヒット単位の連鎖DPで適用する。各ヒットの後にきのみ判定が入るため、
+   * ヒット間でオボン等が発動し残りのヒットは回復後のHPに当たる。
+   * hitCountDist 指定時は n 発目の後に P(n)/P(≥n) の質量を出力へ移し、残りが次のヒットへ進む。
+   */
+  function applyMultiHit(
+    src: Map<number, number>,
+    ev: Extract<SeqEvent, { kind: 'multiHit' }>,
+    sink: LiveSink,
+  ): void {
+    const hcd = ev.hitCountDist
+    const pAtLeast = (n: number) =>
+      hcd ? hcd.reduce((s, h) => s + (h.hits >= n ? h.prob : 0), 0) : 1
+    const flush = (m: Map<number, number>, f: number) => {
+      if (f <= 0) return
+      for (const [key, q] of m) {
+        const st = dec(key)
+        sink(st.a, st.d, st.dState, st.aState, q * f)
+      }
+    }
+    let cur = src
+    if (hcd) {
+      // 0発（理論上のみ）: そのまま出力
+      const p0 = hcd.reduce((s, h) => s + (h.hits <= 0 ? h.prob : 0), 0)
+      flush(cur, p0)
+      cur = scaleMap(cur, 1 - p0)
+    }
+    for (let k = 0; k < ev.hits.length && cur.size > 0; k++) {
+      const next = new Map<number, number>()
+      const addNext: LiveSink = (na, nd, nds, nas, q) => {
+        const nk = enc(na, nd, nds, nas)
+        next.set(nk, (next.get(nk) ?? 0) + q)
+      }
+      for (const [key, q] of cur) {
+        const st = dec(key)
+        for (const [r, rp] of iterDist(ev.hits[k])) {
+          applyAttackRoll(st.a, st.d, st.dState, st.aState, q * rp, r, ev, addNext)
+        }
+      }
+      const isLast = k === ev.hits.length - 1
+      const pStop = isLast ? 1 : stopRatio(hcd, k + 1, pAtLeast)
+      flush(next, pStop)
+      cur = scaleMap(next, 1 - pStop)
+    }
+  }
+
+  const a0 = clamp(opts.attackerStartHp ?? attackerMaxHp, 0, attackerMaxHp)
+  const d0 = clamp(opts.defenderStartHp ?? defenderMaxHp, 0, defenderMaxHp)
+
+  // 初期状態でも HP ≤ threshold ならきのみを即発動
+  const initD = triggerD(d0, 0)
+  const initA = triggerA(a0, 0)
+  let joint = new Map<number, number>([[enc(initA.a, initD.d, initD.state, initA.state), 1]])
   const steps: SeqStepResult[] = []
 
   for (let i = 0; i < events.length; i++) {
@@ -273,37 +438,17 @@ export function runBattleSequence(
       next.set(k, (next.get(k) ?? 0) + p)
     }
 
+    // 連続技はヒット単位の連鎖DPをイベント単位で適用（マス単位の switch は通らない）
+    if (ev.kind === 'multiHit') applyMultiHit(joint, ev, addLive)
+
     for (const [key, p] of joint) {
+      if (ev.kind === 'multiHit') break
       const { a, d, dState, aState } = dec(key)
 
       switch (ev.kind) {
         case 'attack': {
           for (const [r, rp] of iterDist(ev.dmg)) {
-            const nd0 = d - r
-            // 吸収: 実際に与えたダメージ（防御側残HPでクランプ）に応じて攻撃側が回復
-            let na = a
-            const actual = Math.min(r, d)
-            if (ev.drain && ev.drain > 0) {
-              if (actual > 0) {
-                na = clamp(a + calcDrainHeal(actual, ev.drain, ev.drainBoosted), 0, attackerMaxHp)
-              }
-            }
-            if (ev.recoil && ev.recoil > 0 && actual > 0) {
-              na -= Math.max(1, Math.round(actual * ev.recoil))
-            }
-            if (nd0 <= 0) {
-              // 防御側撃破。反動で攻撃側も同時に瀕死しうる（Gen9: 反動は相手を倒しても適用）
-              if (na <= 0) bothFaint += p * rp
-              else koProb += p * rp
-            } else {
-              if (na <= 0) {
-                faintProb += p * rp
-                continue
-              }
-              const t = triggerD(nd0, dState)
-              const ta = afterAttackerHpChange(a, na, aState)
-              addLive(ta.a, t.d, t.state, ta.state, p * rp)
-            }
+            applyAttackRoll(a, d, dState, aState, p * rp, r, ev, addLive)
           }
           break
         }
@@ -423,7 +568,8 @@ export function runBattleSequence(
     // 攻撃・補助技イベント = ターン境界。はんすう再発動・しゅうかく再装填を両側独立に処理。
     // noTurnBoundary 付き攻撃（1ターン内の中間ヒット）はターンを終了させない。
     const isTurnBoundary =
-      (ev.kind === 'attack' && ev.noTurnBoundary !== true) || ev.kind === 'setupTurn'
+      ((ev.kind === 'attack' || ev.kind === 'multiHit') && ev.noTurnBoundary !== true) ||
+      ev.kind === 'setupTurn'
     const needsBoundary =
       (dBerry.active && (dBerry.cudEnabled || dBerry.harvestChance > 0)) ||
       (aBerry.active && (aBerry.cudEnabled || aBerry.harvestChance > 0))

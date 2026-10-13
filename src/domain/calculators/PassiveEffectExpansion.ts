@@ -45,6 +45,11 @@ export interface AutoEventItem {
   timing: PassiveTiming
   /** パネル状態から導出された効果の由来（手動効果は undefined）。固定化の対象外 */
   origin?: PassiveOrigin
+  /**
+   * 由来の常時効果の `order`（同一ターン末の適用順）。`buildPassiveSchedule` は常に設定する。
+   * 未設定（手組みの項目）は最後尾扱い。
+   */
+  order?: number
 }
 
 /**
@@ -55,8 +60,12 @@ export interface AutoEventItem {
  * **フックの適用順そのまま** に並べた集約リスト（usages 分の perAttack とターン末を交互に含む）。
  *
  * フック（SeqEvent への変換）は、usages 単位で割り込む必要があるため
- * `perAttackByTurn` / `perAttackByEventId` / `turnEnd` / `turnEndOwner` を使う。
+ * `perAttackByTurn` / `perAttackByEventId` / `turnEndByEventId` を使う。
  * `afterEvent` はその集約ビューなので、**両方を適用すると二重適用になる**。
+ *
+ * ターン末項目の配置（V3.18.x）: 各項目は `assignTurnEndItems` により、そのターンのイベントのうち
+ * 「通常イベント」または「order が自分以下の固定化ターン末イベント」の最後の直後へ置かれる。
+ * 部分固定化後も、残った常時効果のターン末項目は固定化行と `order` どおりに交互配置される。
  */
 export interface PassiveSchedule {
   /** 時系列の先頭で適用（start タイミング） */
@@ -67,8 +76,17 @@ export interface PassiveSchedule {
   trailing: AutoEventItem[]
   /** ターン番号 → そのターン末に適用する項目（order 昇順） */
   turnEnd: Record<number, AutoEventItem[]>
-  /** ターン番号 → そのターン末項目を適用するイベント id（無い＝trailing 側） */
+  /**
+   * ターン番号 → そのターンを含む最後のイベント id（無い＝trailing 側）。
+   * 後方互換のために残している。固定化行があるターンでは実際の配置と一致しないため、
+   * 適用位置は `turnEndByEventId` を使うこと。
+   */
   turnEndOwner: Record<number, string>
+  /**
+   * イベント id → その直後に適用するターン末項目（order 昇順）。
+   * attack（usages≥2）は複数ターンの項目を持ちうるので、usage ごとに `item.turn` で絞り込む。
+   */
+  turnEndByEventId: Record<string, AutoEventItem[]>
   /** ターン番号 → 攻撃側 perAttack 項目（その attack usage 直後・ターン末より前） */
   perAttackByTurn: Record<number, AutoEventItem[]>
   /** incoming イベント id → 防御側 perAttack 項目（その被ダメ直後） */
@@ -88,6 +106,12 @@ export interface PassiveExpansionContext {
    * 未指定・技が特定できない場合は従来どおり適用する（`true` 扱い）。
    */
   isContactAttack?: (eventId: string) => boolean
+  /**
+   * そのイベントの技が「ちからずく の対象（追加効果あり）かつ使用者の特性が ちからずく」かを返す
+   * （いのちのたま等 `suppressedBySheerForce` の判定用）。攻撃側 perAttack は attack イベント、
+   * 防御側 perAttack は incoming イベントを見る。未指定なら従来どおり適用する。
+   */
+  isSheerForceAttack?: (eventId: string) => boolean
 }
 
 /** count が既存ターンを超えたときに末尾へ追加するターン数の上限（暴走防止） */
@@ -120,6 +144,7 @@ function makeItem(
     amount,
     effectId: eff.id,
     timing: eff.timing,
+    order: eff.order,
     ...(eff.origin !== undefined ? { origin: eff.origin } : {}),
   }
 }
@@ -137,6 +162,85 @@ function isSuppressedByContact(
   if (findPassivePreset(eff.presetKey)?.requiresContact !== true) return false
   if (ctx.isContactAttack === undefined) return false
   return ctx.isContactAttack(eventId) === false
+}
+
+/**
+ * その効果が「ちからずく で発動しない」もの（いのちのたま）で、かつ当該イベントが
+ * ちからずく対象の技のときに展開をスキップすべきかを判定する。
+ */
+function isSuppressedBySheerForce(
+  eff: PassiveEffect,
+  eventId: string,
+  ctx: PassiveExpansionContext,
+): boolean {
+  if (eff.presetKey === undefined) return false
+  if (findPassivePreset(eff.presetKey)?.suppressedBySheerForce !== true) return false
+  return ctx.isSheerForceAttack?.(eventId) === true
+}
+
+/** perAttack 項目をそのイベントで展開しないか（接触限定・ちからずく） */
+function isPerAttackSuppressed(
+  eff: PassiveEffect,
+  eventId: string,
+  ctx: PassiveExpansionContext,
+): boolean {
+  return isSuppressedByContact(eff, eventId, ctx) || isSuppressedBySheerForce(eff, eventId, ctx)
+}
+
+const NO_ORDER = Number.POSITIVE_INFINITY
+
+/** 固定化行のタイミングの同一ターン内での前後（開始時 → 攻撃ごと → ターン末） */
+function pinnedTimingRank(timing: TurnEventLike['pinnedTiming']): number {
+  if (timing === 'start') return 0
+  if (timing === 'perAttack') return 1
+  return 2 // turnEnd / trailing
+}
+
+/**
+ * ターン末項目 `item` を、イベント `ev` の後ろへ置けるか。
+ * 通常イベント（固定化メタ情報なし）は常に可。固定化行は
+ * (適用ターン, タイミング, order) が項目以下のときだけ可（＝本来その項目より前に適用されるもの）。
+ */
+function canFollow(ev: TurnEventLike, item: AutoEventItem): boolean {
+  if (ev.pinnedTiming === undefined) return true
+  const evTurn = ev.pinnedTurn ?? item.turn
+  if (evTurn !== item.turn) return evTurn < item.turn
+  const rank = pinnedTimingRank(ev.pinnedTiming)
+  if (rank !== 2) return rank < 2
+  return (ev.pinnedOrder ?? Number.NEGATIVE_INFINITY) <= (item.order ?? NO_ORDER)
+}
+
+/**
+ * 1 ターン分のターン末項目を、そのターンのイベントへ割り当てる純粋関数。
+ *
+ * 項目は order 昇順（同 order は入力順）に並べ、各項目を `turnEvents` のうち
+ *   - 通常イベント（本来の所有者。order −∞ 扱い。固定化された開始時/攻撃ごと行も同様）
+ *   - 固定化ターン末行で `pinnedOrder <= item.order` のもの
+ * の**最後**の直後へ置く。固定化行が無ければ全項目がターン最後のイベント（従来の所有者）へ付く。
+ *
+ * @param turnEvents そのターンを含むイベント（時系列順）
+ * @param items      そのターンのターン末項目
+ * @returns イベント id → その直後に適用する項目（order 昇順）
+ */
+export function assignTurnEndItems(
+  turnEvents: TurnEventLike[],
+  items: AutoEventItem[],
+): Map<string, AutoEventItem[]> {
+  const out = new Map<string, AutoEventItem[]>()
+  if (turnEvents.length === 0 || items.length === 0) return out
+  const sorted = items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => ((a.item.order ?? NO_ORDER) - (b.item.order ?? NO_ORDER)) || (a.index - b.index))
+  for (const { item } of sorted) {
+    let target = turnEvents[0]
+    for (const ev of turnEvents) {
+      if (canFollow(ev, item)) target = ev
+    }
+    const list = out.get(target.id)
+    if (list) list.push(item)
+    else out.set(target.id, [item])
+  }
+  return out
 }
 
 /** count を数値へ正規化（'all' は Infinity、start では 1 回扱い） */
@@ -173,6 +277,7 @@ export function buildPassiveSchedule(
     turnEndOwner: {},
     perAttackByTurn: {},
     perAttackByEventId: {},
+    turnEndByEventId: {},
     totalTurns,
   }
   if (effects.length === 0) return schedule
@@ -216,6 +321,20 @@ export function buildPassiveSchedule(
     }
   }
 
+  // --- ターン末項目の割り当て（固定化行の order を考慮） ---
+  for (let t = 1; t <= totalTurns; t++) {
+    const items = schedule.turnEnd[t]
+    if (!items || items.length === 0) continue
+    const turnEvents: TurnEventLike[] = []
+    events.forEach((ev, i) => {
+      const r = ranges[i]
+      if (r.startTurn <= t && t <= r.endTurn && r.startTurn >= 1) turnEvents.push(ev)
+    })
+    for (const [eventId, assigned] of assignTurnEndItems(turnEvents, items)) {
+      for (const item of assigned) push(schedule.turnEndByEventId, eventId, item)
+    }
+  }
+
   // --- perAttack ---
   const perAttackUsed = new Map<string, number>()
   for (const ev of events) {
@@ -228,7 +347,7 @@ export function buildPassiveSchedule(
         for (const { eff } of sorted) {
           if (eff.timing !== 'perAttack' || eff.side !== 'attacker') continue
           if (turn < Math.max(1, eff.startTurn)) continue
-          if (isSuppressedByContact(eff, ev.id, ctx)) continue
+          if (isPerAttackSuppressed(eff, ev.id, ctx)) continue
           const used = perAttackUsed.get(eff.id) ?? 0
           if (used >= countLimit(eff)) continue
           perAttackUsed.set(eff.id, used + 1)
@@ -240,7 +359,7 @@ export function buildPassiveSchedule(
       for (const { eff } of sorted) {
         if (eff.timing !== 'perAttack' || eff.side !== 'defender') continue
         if (turn < Math.max(1, eff.startTurn)) continue
-        if (isSuppressedByContact(eff, ev.id, ctx)) continue
+        if (isPerAttackSuppressed(eff, ev.id, ctx)) continue
         const used = perAttackUsed.get(eff.id) ?? 0
         if (used >= countLimit(eff)) continue
         perAttackUsed.set(eff.id, used + 1)
@@ -259,14 +378,11 @@ export function buildPassiveSchedule(
       for (let u = 0; u < usages; u++) {
         const turn = range.startTurn + u
         bucket.push(...(schedule.perAttackByTurn[turn] ?? []))
-        if (schedule.turnEndOwner[turn] === ev.id) bucket.push(...(schedule.turnEnd[turn] ?? []))
+        bucket.push(...turnEndItemsAfter(schedule, ev.id, turn))
       }
     } else {
       bucket.push(...(schedule.perAttackByEventId[ev.id] ?? []))
-      const turn = range.endTurn
-      if (turn >= 1 && schedule.turnEndOwner[turn] === ev.id) {
-        bucket.push(...(schedule.turnEnd[turn] ?? []))
-      }
+      bucket.push(...(schedule.turnEndByEventId[ev.id] ?? []))
     }
     if (bucket.length > 0) schedule.afterEvent[ev.id] = bucket
   }
@@ -281,6 +397,19 @@ export function buildPassiveSchedule(
   }
 
   return schedule
+}
+
+/**
+ * イベントの直後に適用するターン末項目。`turn` を渡すとそのターンの分だけに絞る
+ * （attack の usage ごとに割り込む用）。
+ */
+export function turnEndItemsAfter(
+  schedule: Pick<PassiveSchedule, 'turnEndByEventId'>,
+  eventId: string,
+  turn?: number,
+): AutoEventItem[] {
+  const items = schedule.turnEndByEventId[eventId] ?? []
+  return turn === undefined ? items : items.filter(i => i.turn === turn)
 }
 
 /** 自動項目を SeqEvent へ変換する */

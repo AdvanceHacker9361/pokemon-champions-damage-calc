@@ -149,6 +149,23 @@ describe('migrateProgressionSnapshot（旧きのみフィールド → 両側 Be
     const snap = cloneSnapshotOfEvents([legacyEvent])
     expect(snap[0]).toMatchObject({ kind: 'rearmBerry', id: 'r1', side: 'defender' })
   })
+
+  it('攻撃イベントのヒット別ロール（perHit*）を深くコピーする', () => {
+    const hits = [[10, 11], [20, 21]]
+    const ev = {
+      kind: 'attack', id: 'a1', label: 'x', rolls: [30], rawRolls: [30], usages: 1,
+      minDmg: 30, maxDmg: 32, rawMin: 30, rawMax: 32, defenderMaxHp: 100, hadMultiscale: false,
+      critRolls: [45], rawCritRolls: [45], critMin: 45, critMax: 45, rawCritMin: 45, rawCritMax: 45,
+      critChance: 1 / 24, isForcedCrit: false,
+      perHitRolls: hits, perHitRawRolls: hits, perHitCritRolls: hits, perHitRawCritRolls: hits,
+    } as ProgressionEvent
+    const [copy] = cloneSnapshotOfEvents([ev])
+    if (copy.kind !== 'attack') throw new Error('attack expected')
+    expect(copy.perHitRolls).toEqual(hits)
+    expect(copy.perHitRolls).not.toBe(hits)
+    expect(copy.perHitRolls?.[0]).not.toBe(hits[0])
+    expect(copy.perHitRawCritRolls?.[1]).not.toBe(hits[1])
+  })
 })
 
 // メガフラエッテ（えいえんのはな）: id 10670, mega key 'mega-floette-eternal'

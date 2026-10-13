@@ -128,6 +128,12 @@ export interface PassivePreset {
    * （コールバック未指定・技不明のときは従来どおり適用する）。
    */
   requiresContact?: boolean
+  /**
+   * perAttack のうち「ちからずく で追加効果が消える技では発動しない」効果（いのちのたま の反動）。
+   * 展開時に `PassiveExpansionContext.isSheerForceAttack` で判定する
+   * （コールバック未指定のときは従来どおり適用する）。
+   */
+  suppressedBySheerForce?: boolean
 }
 
 /**
@@ -252,6 +258,7 @@ export const PASSIVE_PRESETS: PassivePreset[] = [
     timing: 'perAttack',
     order: TURN_END_ORDER.custom,
     defaultCount: 'all',
+    suppressedBySheerForce: true,
   },
   {
     key: 'rockyHelmet',
@@ -549,11 +556,25 @@ export function resolvePassiveAmount(amount: PassiveAmount, ctx: ResolveAmountCo
 // ターン境界
 // ---------------------------------------------------------------------------
 
+/**
+ * 固定化イベント（`source: 'pinned'`）が由来の自動項目から引き継ぐタイミング。
+ * `trailing` は既存ターンを超えた分のターン末項目（時系列末尾へ置かれたもの）。
+ */
+export type PinnedTiming = 'start' | 'perAttack' | 'turnEnd' | 'trailing'
+
 /** ターン境界計算に必要な最小のイベント形 */
 export interface TurnEventLike {
   id: string
   kind: string
   usages?: number
+  /**
+   * 固定化イベントのメタ情報（固定化元の自動項目の適用ターン・order・タイミング）。
+   * 部分固定化後に残った常時効果のターン末項目を、固定化行と `order` どおりに
+   * 交互配置するために使う（`assignTurnEndItems`）。手動イベントには無い。
+   */
+  pinnedTurn?: number
+  pinnedOrder?: number
+  pinnedTiming?: PinnedTiming
 }
 
 export interface TurnRange {
