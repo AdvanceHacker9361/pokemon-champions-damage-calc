@@ -304,10 +304,8 @@ export function useBattleSequence(): BattleSequenceComputed {
             recoil: recoilRate,
             damageScale: glaive.factor,
           })
-          // expanded.normal は必ず usages 個（ラベルと1:1）
-          // 通常パスは usages と 1:1、急所込みパスはおやこあいで親子2件になりうるため
-          // usage 単位で切り出して自動項目を同じ位置に挟む
-          const critPerUsage = Math.max(1, Math.round(expanded.crit.length / ev.usages))
+          // expanded.normal / expanded.crit はどちらも必ず usages 個（ラベルと1:1）。
+          // 連続技・おやこあいは1使用=1つの multiHit にまとまっている
           const usageTag = ev.usages > 1 ? ` ×${ev.usages}` : ''
           resolved.push({
             event: ev,
@@ -318,7 +316,7 @@ export function useBattleSequence(): BattleSequenceComputed {
           expanded.normal.forEach((seqEv, u) => {
             const usageSuffix = ev.usages > 1 ? ` ${u + 1}/${ev.usages}` : ''
             seqEvents.push(seqEv)
-            critSeqEvents.push(...expanded.crit.slice(u * critPerUsage, (u + 1) * critPerUsage))
+            critSeqEvents.push(expanded.crit[u])
             labels.push(`与ダメ ${ev.label}${critTag}${glaiveTag}${drainTag}${recoilTag}${usageSuffix}`)
             const turn = attackTurnStart + u
             // 攻撃側 perAttack（いのちのたま等）→ そのターンのターン末 の順で適用

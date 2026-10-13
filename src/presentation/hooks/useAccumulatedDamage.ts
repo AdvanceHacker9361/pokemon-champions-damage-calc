@@ -46,6 +46,8 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
   const events            = useProgressionStore(s => s.events)
   const defenderBerryCfg  = useProgressionStore(s => s.defenderBerry)
   const attackerBerryCfg  = useProgressionStore(s => s.attackerBerry)
+  // 防御側の開始HP（null=最大HP）。攻撃側HP固定パスでも初期HPとして反映する
+  const defenderStartHp   = useProgressionStore(s => s.defenderStartHp)
   // 手動の常時効果（hasAnything 用）と、導出効果込みの実効リスト（統合パス判定用）
   const { manual: passiveEffects, effective: effectivePassives } = useEffectivePassiveEffects()
   // きょけんとつげき後の被ダメ2倍（各パネルの手動トグルが時系列の初期状態）
@@ -189,13 +191,15 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     // 攻撃側HP固定パスでは攻撃側HPを追跡しないため、攻撃側きのみはここでは効かない
     // （攻撃側に影響するイベント・きのみがある構成は上の統合パスへ入る）
     const defenderBerry = toBerryOption(defenderBerryCfg, defenderMaxHp)
+    // 防御側の開始HP指定は攻撃側に影響しないため統合パスへは入らない。ここで初期HPとして渡す
+    const runOpts = { defenderBerry, defenderStartHp: defenderStartHp ?? undefined }
 
     const ATT_DUMMY = 1
     if (normalEvents.length === 0) {
       return finalize(new Map([[0, 1.0]]), 0, 0)
     }
-    const normalResult = runBattleSequence(normalEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
-    const critResult   = runBattleSequence(critEvents, ATT_DUMMY, defenderMaxHp, { defenderBerry })
+    const normalResult = runBattleSequence(normalEvents, ATT_DUMMY, defenderMaxHp, runOpts)
+    const critResult   = runBattleSequence(critEvents, ATT_DUMMY, defenderMaxHp, runOpts)
     return finalize(
       extractDefenderDamageDistribution(normalResult, defenderMaxHp),
       normalResult.defenderKoProb,
@@ -203,7 +207,7 @@ export function useAccumulatedDamage(defenderMaxHp: number): AccumulatedDamage {
     )
   }, [
     events, passiveEffects, effectivePassives, attackerGlaiveRush, defenderGlaiveRush,
-    defenderBerryCfg, attackerBerryCfg,
+    defenderBerryCfg, attackerBerryCfg, defenderStartHp,
     defenderMaxHp, seq,
   ])
 }

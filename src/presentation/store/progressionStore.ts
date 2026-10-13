@@ -44,6 +44,20 @@ export interface AttackPayload {
   pbChildRolls?: number[]
   pbChildCritRolls?: number[]
 
+  /**
+   * 連続技（固定多段・段階威力・変動連続技・おやこあい）のヒット別ロール（添字 = ヒット番号-1）。
+   * 指定時は時系列エンジンへ1使用分を `multiHit` として渡し、ヒット間のきのみ発動を再現する。
+   * 変動連続技は最大ヒット数ぶんを持ち、実際のヒット数は `variableHitDist` で重み付けする。
+   * 旧データ（未指定）は従来どおり `rolls`/`pb*` から1イベントを組み立てる。
+   */
+  perHitRolls?: number[][]
+  /** 2回目以降の使用で使うヒット別ロール（マルチスケイル/半減実の初撃補正なし）。未指定なら perHitRolls */
+  perHitRawRolls?: number[][]
+  /** 急所時のヒット別ロール。未指定なら perHitRolls */
+  perHitCritRolls?: number[][]
+  /** 急所時・2回目以降のヒット別ロール。未指定なら perHitCritRolls */
+  perHitRawCritRolls?: number[][]
+
   /** 変動連続技のヒット数分布 */
   variableHitDist?: { hits: number; prob: number }[]
   /** ばけのかわ等により、このイベントの最初の使用だけ1発目が無効になる */

@@ -130,6 +130,10 @@ export function clonePokemonSnapshot(s: PokemonSnapshot): PokemonSnapshot {
   }
 }
 
+function clonePerHit(arr: number[][] | undefined): number[][] | undefined {
+  return arr ? arr.map(h => [...h]) : undefined
+}
+
 function cloneProgressionEvent(ev: ProgressionEvent): ProgressionEvent {
   if (ev.kind === 'rearmBerry') {
     // 旧データ（side フィールドを持たない永続化）は防御側として復元する
@@ -150,6 +154,10 @@ function cloneProgressionEvent(ev: ProgressionEvent): ProgressionEvent {
       pbChildRolls: ev.pbChildRolls ? [...ev.pbChildRolls] : undefined,
       pbChildCritRolls: ev.pbChildCritRolls ? [...ev.pbChildCritRolls] : undefined,
       variableHitDist: ev.variableHitDist ? ev.variableHitDist.map(d => ({ ...d })) : undefined,
+      perHitRolls: clonePerHit(ev.perHitRolls),
+      perHitRawRolls: clonePerHit(ev.perHitRawRolls),
+      perHitCritRolls: clonePerHit(ev.perHitCritRolls),
+      perHitRawCritRolls: clonePerHit(ev.perHitRawCritRolls),
     }
   }
   return { ...ev }

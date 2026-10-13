@@ -242,3 +242,76 @@ describe('useAccumulatedDamage（攻守シミュレーションとの統合）',
     expect(seq.passiveSchedule.perAttackByTurn[1]).toHaveLength(1)
   })
 })
+
+describe('防御側きのみと開始HPの総合累積反映（攻撃側HP固定パス）', () => {
+  afterEach(() => {
+    cleanup()
+    useProgressionStore.getState().clear()
+  })
+
+  it('防御側オボンは与ダメの間で発動し、確定撃破を生存に変える', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    // 防200: 120 → 80 ≤100 → +50 → 130 → 90 → 40 で生存（きのみ無しなら 210 ≥ 200 で撃破）
+    store.addAttack(attackPayload({ rolls: Array(16).fill(120) }))
+    store.addAttack(attackPayload({ rolls: Array(16).fill(90) }))
+    const without = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(without.combinedProb).toBeCloseTo(1, 10)
+    cleanup()
+
+    store.setBerry('defender', { amount: 50, thresholdPct: 50 })
+    const withBerry = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(withBerry.combinedProb).toBeCloseTo(0, 10)
+    expect(withBerry.totalMin).toBe(160)
+    expect(withBerry.totalMax).toBe(160)
+  })
+
+  it('しきい値はちょうど（HP≤50%）で発動し、1上回ると発動しない', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    store.setBerry('defender', { amount: 50, thresholdPct: 50 })
+    store.addAttack(attackPayload({ rolls: Array(16).fill(100) }))
+    const fired = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(fired.totalMax).toBe(50)   // 200 → 100 ≤ 100 → +50 → 150 残 → 累積50
+    cleanup()
+    store.clear()
+
+    setupPokemon()
+    store.setBerry('defender', { amount: 50, thresholdPct: 50 })
+    store.addAttack(attackPayload({ rolls: Array(16).fill(99) }))
+    const notFired = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(notFired.totalMax).toBe(99)
+  })
+
+  it('使用回数 ×2 の間でもきのみが発動する', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    store.setBerry('defender', { amount: 50, thresholdPct: 50 })
+    // 120 ×2: 200 → 80 → +50 → 130 → 10 で生存（きのみ無しなら 240 で撃破）
+    store.addAttack(attackPayload({ rolls: Array(16).fill(120), usages: 2 }))
+    const accum = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(accum.combinedProb).toBeCloseTo(0, 10)
+    expect(accum.totalMax).toBe(190)
+  })
+
+  it('防御側の開始HPだけを設定しても総合累積に反映される（きのみ判定も開始HP基準）', () => {
+    setupPokemon()
+    const store = useProgressionStore.getState()
+    store.setBerry('defender', { amount: 50, thresholdPct: 50 })
+    store.setDefenderStartHp(120)
+    // 開始120 → 30 → 90 ≤100 → +50 → 140 残 → 表示上の累積ダメは 200-140=60
+    store.addAttack(attackPayload({ rolls: Array(16).fill(30) }))
+    const accum = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(accum.combinedProb).toBeCloseTo(0, 10)
+    expect(accum.totalMax).toBe(60)
+    cleanup()
+    store.clear()
+
+    // 開始100 に 100 ダメ → 撃破（最大HP基準なら未撃破になるはずの値）
+    setupPokemon()
+    store.setDefenderStartHp(100)
+    store.addAttack(attackPayload({ rolls: Array(16).fill(100) }))
+    const ko = renderHook(() => useAccumulatedDamage(DEFENDER_MAX_HP)).result.current
+    expect(ko.combinedProb).toBeCloseTo(1, 10)
+  })
+})

@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.20.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.0**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -800,6 +800,25 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.21.0: 連続技途中のきのみ発動（ヒット単位エンジン）と開始HPの累積反映（2026-10-13）
+
+#### エンジン: `multiHit` イベント（`BattleSequenceCalc.ts`）
+- `{ kind: 'multiHit'; hits: DmgDist[]; hitCountDist?: {hits, prob}[]; drain?; recoil?; drainBoosted?; noTurnBoundary? }`。`hits[k]` = k+1 発目の分布、`hitCountDist` 省略時は全発命中（固定/段階/おやこあい）、指定時（変動連続技）は最大ヒット数分の `hits` と P(n発)
+- `applyAttackRoll` に 1ロール分の処理（ダメージ→吸収/反動→撃破/瀕死バケット→両側きのみ判定）を共通化し、`attack` と `multiHit` の各ヒットで共有
+- `applyMultiHit`: 同時分布全体に対してヒット連鎖DPを実行。n発目の後に P(n)/P(≥n) の質量を出力へ分岐し、残りを次ヒットへ（cur の質量は p·P(≥k+1) の不変量）。途中撃破はそこで打ち切り（以降のヒット・吸収・反動は発生しない）。ターン境界はイベント後に1回
+- `collapseMultiHitDist(hits, hitCountDist?)`: ヒット間に何も起きない前提で合算分布へ畳む（等価性テスト用）
+
+#### ペイロード / 展開
+- `AttackPayload.perHitRolls / perHitRawRolls / perHitCritRolls / perHitRawCritRolls`（index=ヒット。raw は 2 回目以降の使用で用いる初撃非半減版）。`buildAttackPayload` が escalating（`perHitResults`）・fixed（くだけるよろい per-hit）・variable（`weakArmorVariableRawRollsByHit`）・おやこあい（親/子）から充填。`sessionSnapshot.cloneProgressionEvent` で深いコピー
+- `expandAttackEvent`: 使用ごとに per-hit データがあれば `multiHit` を1件（旧 `pb*` のみ / 旧 variable も再構築）、なければ従来の `attack`。初撃のみ `firstHitFixedDamage` 加算 / `firstHitNullified` 置換。急所パスは各ヒットを `mixToMap` で独立混合し `crit.length === normal.length === usages` を保証（`useBattleSequence` の `critPerUsage` 比率を廃止）
+- **固定連続技の ×N は「使用回数」に統一**（既定 ×1、ラベル「(N発)」）。`rolls/min/max` は 1 使用分の N 発合計。旧データ（usages=ヒット数・per-hit なし）は従来展開
+- 挙動変化: 各ヒットの乱数・急所が独立（従来は同一インデックス合算）。ばけのかわは fixed/escalating/おやこあい でもヒット単位（初回使用のみ初撃無効）
+- 範囲外: トリプルアクセルの発ごとの命中率、固定技 2 回目以降使用でのランク継続変化
+
+#### 開始HPの累積反映（`useAccumulatedDamage.ts`）
+- 攻撃側HP固定パスにも `defenderStartHp` を初期HPとして渡す（従来は被ダメ等がない構成で「防 開始HP」が無視されていた）。きのみのしきい値・撃破判定が開始HP基準になる
+- テスト: `BattleSequenceCalc.test.ts`（+8: 等価性・途中発動・途中撃破・吸収・ターン境界・攻撃側きのみ）、`buildAttackPayload.test.ts`（+11）、`sessionSnapshot.test.ts`（+1）、`useAccumulatedDamage.test.ts`（+4: 防御側オボン1D経路・境界・usages間・開始HP）
 
 ### V3.20.0: 未実装特性の実装・フィールド接地判定・常時効果の精度向上（2026-10-13）
 
