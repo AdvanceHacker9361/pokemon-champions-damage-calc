@@ -98,8 +98,23 @@ export function executeDamageCalculation(
     ranks: defenderRanks,
   })
 
+  // こだいかっせい/クォークチャージの最大ステータス判定はランク補正前の実数値で行う
+  const attackerRawStats = calculateStats({
+    baseStats: input.attacker.baseStats,
+    sp: input.attacker.sp,
+    statNatures: input.attacker.statNatures,
+    ranks: {},
+  })
+  const defenderRawStats = calculateStats({
+    baseStats: input.defender.baseStats,
+    sp: input.defender.sp,
+    statNatures: input.defender.statNatures,
+    ranks: {},
+  })
+
   return calculateDamage({
     attackerStats,
+    attackerRawStats,
     attackerTypes: input.attacker.types,
     attackerAbility: input.attacker.abilityName,
     attackerItem: input.attacker.itemName,
@@ -113,6 +128,7 @@ export function executeDamageCalculation(
     attackerChargeActive: input.attacker.chargeActive,
     attackerMetronomeMultiplier: input.attacker.metronomeMultiplier,
     defenderStats,
+    defenderRawStats,
     defenderTypes: input.defender.types,
     defenderAbility: input.defender.abilityName,
     defenderItem: input.defender.itemName,

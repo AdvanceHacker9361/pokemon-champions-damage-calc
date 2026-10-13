@@ -33,6 +33,11 @@ export interface DamageCalcInput {
   attackerChargeActive?: boolean
   /** メトロノーム: 同じ技の連続使用による威力倍率 */
   attackerMetronomeMultiplier?: number
+  /**
+   * ランク補正を含まない攻撃側実数値。こだいかっせい/クォークチャージの
+   * 「最も高いステータス」判定に使う（ゲーム仕様はランク補正前で判定）。省略時は attackerStats で代用
+   */
+  attackerRawStats?: ComputedStats
   defenderStats: ComputedStats
   defenderTypes: TypeName[]
   defenderAbility: string
@@ -43,6 +48,8 @@ export interface DamageCalcInput {
   defenderWeight?: number
   /** うちおとす等による接地状態: true のとき じめん技が ひこうタイプ/ふゆう にも当たる */
   defenderGrounded?: boolean
+  /** ランク補正を含まない防御側実数値（attackerRawStats と同様） */
+  defenderRawStats?: ComputedStats
   /**
    * きょけんとつげき使用後の防御側: 次に防御側が動くまで、受けるダメージが2倍。
    * Showdown の `onSourceModifyDamage: chainModify(2)` と同じく、
@@ -141,6 +148,59 @@ function resolveInputAttackerGrounded(input: DamageCalcInput): boolean {
   })
 }
 
+/** ステータス別補正（わざわい系・こだいかっせい等）の対象となる実数値キー */
+export type BoostableStat = 'atk' | 'def' | 'spa' | 'spd'
+
+/**
+ * こだいかっせい/クォークチャージで強化されるステータス。
+ * ランク補正前の実数値で最も高いもの（同値は こうげき > ぼうぎょ > とくこう > とくぼう > すばやさ の優先）
+ */
+export function resolveParadoxBoostStat(stats: ComputedStats): BoostableStat | 'spe' {
+  const order: (BoostableStat | 'spe')[] = ['atk', 'def', 'spa', 'spd', 'spe']
+  let best = order[0]
+  for (const k of order) {
+    if (stats[k] > stats[best]) best = k
+  }
+  return best
+}
+
+/**
+ * こだいかっせい/クォークチャージの発動判定。
+ * 手動トグル・ブーストエナジー所持・（こだいかっせい=晴れ / クォークチャージ=エレキフィールド）のいずれかで発動
+ */
+function isParadoxAbilityActive(
+  ability: string,
+  activated: boolean | undefined,
+  item: string | null,
+  effectiveWeather: Weather | null,
+  terrain: BattleField['terrain'],
+): boolean {
+  if (ability === 'こだいかっせい') {
+    return activated === true || item === 'ブーストエナジー' || effectiveWeather === 'はれ'
+  }
+  if (ability === 'クォークチャージ') {
+    return activated === true || item === 'ブーストエナジー' || terrain === 'エレキ'
+  }
+  return false
+}
+
+/** わざわい系: 「他のポケモン」の該当ステータスを 0.75 倍にする特性（かたやぶりで貫通不可） */
+const RUIN_ABILITY_BY_STAT: Record<BoostableStat, string> = {
+  atk: 'わざわいのおふだ',
+  def: 'わざわいのつるぎ',
+  spa: 'わざわいのうつわ',
+  spd: 'わざわいのたま',
+}
+
+/**
+ * わざわい系の倍率。stat の持ち主（owner）以外が該当特性を持ち、
+ * かつ持ち主自身が同じ特性でなければ 0.75（同特性同士は打ち消し合う）
+ */
+function ruinMultiplier(stat: BoostableStat, ownerAbility: string, otherAbility: string): number {
+  const ruin = RUIN_ABILITY_BY_STAT[stat]
+  return otherAbility === ruin && ownerAbility !== ruin ? 0.75 : 1
+}
+
 /**
  * 技の基本威力を解決（特殊技を含む）。
  * 共有実装 `MovePowerResolution.resolveBasePower` に委譲し、UI 表示と同じ値を返す。
@@ -190,6 +250,9 @@ function resolveAtk(input: DamageCalcInput): number {
   const { move, attackerStats, defenderStats, attackerAbility, attackerItem } = input
 
   let atk: number
+  // 攻撃実数値として参照するステータスとその持ち主（ボディプレス=自分のB、イカサマ=相手のA）
+  let atkStat: BoostableStat = move.category === '物理' ? 'atk' : 'spa'
+  let atkOwner: 'attacker' | 'defender' = 'attacker'
 
   // 特殊技による攻撃ステータス変更
   if (move.special) {
@@ -203,12 +266,15 @@ function resolveAtk(input: DamageCalcInput): number {
     })
     if (result.effectiveAtk !== undefined) {
       atk = result.effectiveAtk
+      atkStat = result.effectiveAtkStat ?? atkStat
+      atkOwner = result.effectiveAtkOwner ?? atkOwner
     } else {
       atk = move.category === '物理' ? attackerStats.atk : attackerStats.spa
     }
   } else {
     atk = move.category === '物理' ? attackerStats.atk : attackerStats.spa
   }
+  const resolvedMoveType = resolveMoveType(input)
 
   // 特性補正（攻撃側）
   let atkMod = 1.0
@@ -223,6 +289,26 @@ function resolveAtk(input: DamageCalcInput): number {
   if (attackerAbility === 'サンパワー' && effectiveWeather === 'はれ') {
     if (move.category === '特殊') atkMod *= 1.5
   }
+  // タイプ別の攻撃実数値強化（自分の A/C を参照する技のみ。Showdown も ModifyAtk/ModifySpA で実装）
+  if (atkOwner === 'attacker' && (atkStat === 'atk' || atkStat === 'spa')) {
+    // トランジスタ: でんき技 1.3倍（Gen 9 仕様。Gen 8 までは 1.5倍）
+    if (attackerAbility === 'トランジスタ' && resolvedMoveType === 'でんき') atkMod *= 1.3
+    // りゅうのあぎと: ドラゴン技 1.5倍
+    if (attackerAbility === 'りゅうのあぎと' && resolvedMoveType === 'ドラゴン') atkMod *= 1.5
+    // いわはこび: いわ技 1.5倍
+    if (attackerAbility === 'いわはこび' && resolvedMoveType === 'いわ') atkMod *= 1.5
+  }
+  // こだいかっせい/クォークチャージ（攻撃側）: 最も高いステータスが参照中の攻撃実数値なら 1.3倍
+  if (atkOwner === 'attacker' &&
+      isParadoxAbilityActive(attackerAbility, input.attackerAbilityActivated, attackerItem,
+                             effectiveWeather, input.field.terrain) &&
+      resolveParadoxBoostStat(input.attackerRawStats ?? attackerStats) === atkStat) {
+    atkMod *= 1.3
+  }
+  // わざわい系: 相手の特性が参照中の攻撃ステータスを 0.75 倍（同特性同士は無効）
+  atkMod *= atkOwner === 'attacker'
+    ? ruinMultiplier(atkStat, attackerAbility, input.defenderAbility)
+    : ruinMultiplier(atkStat, input.defenderAbility, attackerAbility)
   // こんじょう: 状態異常時に物理攻撃1.5倍
   if (attackerAbility === 'こんじょう' && input.attackerStatus !== null) {
     if (move.category === '物理') atkMod *= 1.5
@@ -325,6 +411,15 @@ function resolveDef(input: DamageCalcInput): number {
   // 持ち物補正（防御側）
   if (defenderItem === 'とつげきチョッキ' && effectiveDefStat === 'spd') defMod *= 1.5
   if (defenderItem === 'しんかのきせき') defMod *= 1.5
+
+  // こだいかっせい/クォークチャージ（防御側）: 最も高いステータスが参照中の防御実数値なら 1.3倍
+  if (isParadoxAbilityActive(defenderAbility, input.defenderAbilityActivated, defenderItem,
+                             effectiveWeather, input.field.terrain) &&
+      resolveParadoxBoostStat(input.defenderRawStats ?? defenderStats) === effectiveDefStat) {
+    defMod *= 1.3
+  }
+  // わざわいのつるぎ/たま: 攻撃側が持つと防御側の B/D を 0.75 倍（同特性同士は無効・かたやぶり貫通不可）
+  defMod *= ruinMultiplier(effectiveDefStat, defenderAbility, input.attackerAbility)
 
   return Math.floor(def * defMod)
 }
@@ -431,7 +526,17 @@ export function calculateDamage(input: DamageCalcInput): DamageResult {
   }), defenderAbility)
 
   // 2. フィールド補正（乱数より前に適用: Gen8+ / Showdown 準拠）
-  damage = applyFieldModifier(damage, moveType, field.terrain, move.name)
+  //    強化は使用者の接地、軽減は受ける側の接地が条件（ひこう/ふゆう/ふうせんは非接地）
+  const defenderGroundedForTerrain = grounded || resolveAttackerGrounded({
+    types: effectiveDefenderTypes,
+    ability: defenderAbility,
+    item: input.defenderItem,
+    isGravity: field.isGravity,
+  })
+  damage = applyFieldModifier(
+    damage, moveType, field.terrain, move.name,
+    resolveInputAttackerGrounded(input), defenderGroundedForTerrain,
+  )
 
   // 3. 急所補正（1.5倍）
   if (effectiveCritical) {
@@ -550,20 +655,31 @@ function applyField13x(damage: number): number {
   return Math.floor((damage * 5325 + 2047) / 4096)
 }
 
+/**
+ * フィールド補正。
+ * - 威力強化（エレキ/グラス/サイコ ×1.3）は技の使用者が接地している場合のみ
+ * - 軽減（グラス: じしん系 ×0.5、ミスト: ドラゴン技 ×0.5）は技を受ける側が接地している場合のみ
+ */
 function applyFieldModifier(
   damage: number,
   moveType: TypeName,
   terrain: 'エレキ' | 'グラス' | 'サイコ' | 'ミスト' | null,
   moveName: string,
+  attackerGrounded: boolean,
+  defenderGrounded: boolean,
 ): number {
-  if (terrain === 'エレキ' && moveType === 'でんき') return applyField13x(damage)
-  if (terrain === 'グラス' && moveType === 'くさ')   return applyField13x(damage)
-  if (terrain === 'グラス' &&
-      (moveName === 'じしん' || moveName === 'じならし' || moveName === 'マグニチュード')) {
-    return pokeRound(damage * 0.5)
+  if (attackerGrounded) {
+    if (terrain === 'エレキ' && moveType === 'でんき') return applyField13x(damage)
+    if (terrain === 'グラス' && moveType === 'くさ')   return applyField13x(damage)
+    if (terrain === 'サイコ' && moveType === 'エスパー') return applyField13x(damage)
   }
-  if (terrain === 'サイコ' && moveType === 'エスパー') return applyField13x(damage)
-  if (terrain === 'ミスト' && moveType === 'ドラゴン') return pokeRound(damage * 0.5)
+  if (defenderGrounded) {
+    if (terrain === 'グラス' &&
+        (moveName === 'じしん' || moveName === 'じならし' || moveName === 'マグニチュード')) {
+      return pokeRound(damage * 0.5)
+    }
+    if (terrain === 'ミスト' && moveType === 'ドラゴン') return pokeRound(damage * 0.5)
+  }
   return damage
 }
 
@@ -616,6 +732,10 @@ function applyOtherModifiers(
   }
   // あついしぼう: ほのお/こおり技を0.5倍
   if (defenderAbility === 'あついしぼう' && (moveType === 'ほのお' || moveType === 'こおり')) {
+    d = pokeRound(d * 0.5)
+  }
+  // こおりのりんぷん: 特殊技のダメージ0.5倍（かたやぶり系で貫通）
+  if (defenderAbility === 'こおりのりんぷん' && !defenderAbilitySuppressed && move.category === '特殊') {
     d = pokeRound(d * 0.5)
   }
   // すいほう（防御側）: ほのお技を0.5倍

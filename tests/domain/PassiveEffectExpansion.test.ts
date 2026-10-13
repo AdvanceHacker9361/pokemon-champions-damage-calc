@@ -4,6 +4,9 @@ import {
   autoItemToSeqEvent,
   autoItemLabel,
   MAX_TRAILING_TURNS,
+  assignTurnEndItems,
+  turnEndItemsAfter,
+  type AutoEventItem,
   type PassiveExpansionContext,
 } from '@/domain/calculators/PassiveEffectExpansion'
 import {
@@ -317,5 +320,103 @@ describe('接触限定の perAttack（ゴツゴツメット）', () => {
   it('コールバック未指定なら従来どおり適用する（後方互換）', () => {
     const s = buildPassiveSchedule([attack('a1', 2)], [rockyHelmet()], CTX)
     expect(Object.keys(s.perAttackByTurn).map(Number)).toEqual([1, 2])
+  })
+})
+
+describe('ちからずく で消える perAttack（いのちのたま）', () => {
+  const lifeOrb = (side: 'attacker' | 'defender') => eff({
+    side, timing: 'perAttack', count: 'all', label: 'いのちのたま',
+    presetKey: 'lifeOrb',
+    amount: { type: 'ratio', num: 1, den: 10, rounding: 'floor' },
+  })
+  const withSheerForce = (sf: Record<string, boolean>): PassiveExpansionContext => ({
+    ...CTX,
+    isSheerForceAttack: (eventId: string) => sf[eventId] ?? false,
+  })
+
+  it('ちからずく対象の attack では反動を展開しない／対象外なら展開する', () => {
+    const events = [attack('a1'), attack('a2')]
+    const s = buildPassiveSchedule(events, [lifeOrb('attacker')], withSheerForce({ a1: true, a2: false }))
+    expect(Object.keys(s.perAttackByTurn).map(Number)).toEqual([2])
+    expect(s.afterEvent['a1'] ?? []).toHaveLength(0)
+    expect(s.afterEvent['a2']).toHaveLength(1)
+    // 攻撃側 HP 160 の 1/10。toxicCounter 的な適用回数も抑止分は数えない
+    expect(s.perAttackByTurn[2][0].amount).toBe(16)
+  })
+
+  it('防御側 perAttack（incoming）でも ちからずく対象なら展開しない', () => {
+    const events: TurnEventLike[] = [attack('a1'), { id: 'in1', kind: 'incoming' }, attack('a2'), { id: 'in2', kind: 'incoming' }]
+    const s = buildPassiveSchedule(events, [lifeOrb('defender')], withSheerForce({ in1: true, in2: false }))
+    expect(s.perAttackByEventId['in1']).toBeUndefined()
+    expect(s.perAttackByEventId['in2']).toHaveLength(1)
+  })
+
+  it('ちからずく判定はゴツゴツメット（suppressedBySheerForce なし）には影響しない', () => {
+    const helmet = eff({
+      side: 'attacker', timing: 'perAttack', count: 'all', label: 'ゴツゴツメット',
+      presetKey: 'rockyHelmet',
+      amount: { type: 'ratio', num: 1, den: 6, rounding: 'floor' },
+    })
+    const s = buildPassiveSchedule([attack('a1')], [helmet], withSheerForce({ a1: true }))
+    expect(s.perAttackByTurn[1]).toHaveLength(1)
+  })
+
+  it('コールバック未指定なら従来どおり適用する', () => {
+    const s = buildPassiveSchedule([attack('a1')], [lifeOrb('attacker')], CTX)
+    expect(s.perAttackByTurn[1]).toHaveLength(1)
+  })
+})
+
+describe('assignTurnEndItems（固定化行を考慮したターン末項目の配置）', () => {
+  const item = (label: string, order: number, turn = 1): AutoEventItem => ({
+    turn, side: 'defender', kind: 'damage', label, amount: 1, effectId: label, timing: 'turnEnd', order,
+  })
+  const pinned = (id: string, order: number, turn = 1, timing: 'turnEnd' | 'perAttack' | 'trailing' = 'turnEnd'): TurnEventLike => ({
+    id, kind: 'defenderConst', pinnedTurn: turn, pinnedOrder: order, pinnedTiming: timing,
+  })
+  const labels = (m: Map<string, AutoEventItem[]>) =>
+    Object.fromEntries([...m].map(([k, v]) => [k, v.map(i => i.label)]))
+
+  it('固定化行が無ければ全項目が最後のイベントへ order 昇順で付く', () => {
+    const m = assignTurnEndItems(
+      [attack('a1'), { id: 'in1', kind: 'incoming' }],
+      [item('やけど', 60), item('すな', 10), item('たべのこし', 30)],
+    )
+    expect(labels(m)).toEqual({ in1: ['すな', 'たべのこし', 'やけど'] })
+  })
+
+  it('order が自分以下の固定化ターン末行の直後へ、より大きい固定化行の前へ置かれる', () => {
+    const m = assignTurnEndItems(
+      [attack('a1'), pinned('p-sand', 10), pinned('p-burn', 60)],
+      [item('たべのこし', 30), item('のろい', 70), item('天候2', 5)],
+    )
+    expect(labels(m)).toEqual({ a1: ['天候2'], 'p-sand': ['たべのこし'], 'p-burn': ['のろい'] })
+  })
+
+  it('固定化された攻撃ごと行・同ターンより前の行は通常イベント扱い、後のターン（trailing）行は飛ばす', () => {
+    const m = assignTurnEndItems(
+      [attack('a1'), pinned('p-orb', 90, 1, 'perAttack'), pinned('p-trail', 10, 2, 'trailing')],
+      [item('すな', 10)],
+    )
+    expect(labels(m)).toEqual({ 'p-orb': ['すな'] })
+  })
+
+  it('buildPassiveSchedule は turnEndByEventId を作り、afterEvent も同じ位置で集約する', () => {
+    const sand = eff({ label: 'すな', order: TURN_END_ORDER.weather })
+    const left = eff({ label: 'たべのこし', kind: 'recover', order: TURN_END_ORDER.itemHeal })
+    const events: TurnEventLike[] = [attack('a1', 2), pinned('p-burn', TURN_END_ORDER.burn, 2), { id: 'in1', kind: 'incoming' }]
+    const s = buildPassiveSchedule(events, [left, sand], CTX)
+    // T1 は attack のみ。T2 は in1 が通常イベントとして最後 → 両方 in1 の後
+    expect(turnEndItemsAfter(s, 'a1', 1).map(i => i.label)).toEqual(['すな', 'たべのこし'])
+    expect(turnEndItemsAfter(s, 'a1', 2)).toEqual([])
+    expect(s.turnEndByEventId['in1'].map(i => i.label)).toEqual(['すな', 'たべのこし'])
+    expect(s.afterEvent['in1'].map(i => i.label)).toEqual(['すな', 'たべのこし'])
+
+    // in1 が無ければ T2 のターン末は attack の後・固定化やけどの前
+    const s2 = buildPassiveSchedule([attack('a1', 2), pinned('p-burn', TURN_END_ORDER.burn, 2)], [left, sand], CTX)
+    expect(turnEndItemsAfter(s2, 'a1', 2).map(i => i.label)).toEqual(['すな', 'たべのこし'])
+    expect(s2.turnEndByEventId['p-burn']).toBeUndefined()
+    // 後方互換: turnEndOwner は従来どおりターン最後のイベント
+    expect(s2.turnEndOwner[2]).toBe('p-burn')
   })
 })

@@ -97,6 +97,30 @@ describe('deriveImpliedPassiveEffects', () => {
     expect(kept.map(e => e.presetKey)).toEqual(['leftovers'])
   })
 
+  it('たいねつ + やけど → burn を 1/32 に（presetKey は burn のまま）、他の特性は 1/16', () => {
+    const [hp] = derive({}, { status: 'やけど', ability: 'たいねつ' })
+    expect(hp).toMatchObject({
+      presetKey: 'burn', side: 'defender', origin: 'status', id: 'implied:defender:burn',
+      amount: { type: 'ratio', num: 1, den: 32, rounding: 'floor' },
+      label: 'やけど（たいねつ）',
+    })
+    const [plain] = derive({}, { status: 'やけど', ability: 'がんじょう' })
+    expectMatchesPreset(plain, 'burn')
+    // プリセット本体は書き換えない
+    expect(findPassivePreset('burn')!.amount).toEqual({ type: 'ratio', num: 1, den: 16, rounding: 'floor' })
+    // 手動の burn 行があれば導出側は捨てられる（presetKey 一致）
+    const manual: PassiveEffect = { ...plain, id: 'm1', origin: undefined }
+    expect(mergePassiveEffects([manual], [hp])).toEqual([manual])
+  })
+
+  it('たいねつ でもターン末の展開量は 1/32（HP 200 → 6）', () => {
+    const effects = derive({}, { status: 'やけど', ability: 'たいねつ' })
+    const s = buildPassiveSchedule([{ id: 'a1', kind: 'attack', usages: 1 }], effects, {
+      attackerMaxHp: 100, defenderMaxHp: 200, attackerTypes: [], defenderTypes: [],
+    })
+    expect(s.turnEnd[1].map(i => i.amount)).toEqual([6])
+  })
+
   it('ポイズンヒール + どく/もうどく → poisonHeal（1/8 回復）に置き換え。やけどはそのまま', () => {
     for (const status of ['どく', 'もうどく'] as const) {
       const effs = derive({}, { status, ability: 'ポイズンヒール' })

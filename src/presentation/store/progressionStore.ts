@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PassiveEffect, PassiveTab } from '@/domain/models/PassiveEffect'
+import type { PassiveEffect, PassiveTab, PinnedTiming } from '@/domain/models/PassiveEffect'
 import { pinPassiveEffects as pinPassiveEffectsPure } from '@/domain/calculators/PassiveEffectPinning'
 import type { PassiveExpansionContext } from '@/domain/calculators/PassiveEffectExpansion'
 
@@ -58,6 +58,17 @@ export interface AttackPayload {
   defenderGlaiveRush?: boolean
 }
 
+/**
+ * 固定化イベント（source: 'pinned'）が持つ由来の自動項目のメタ情報。
+ * 部分固定化後に残った常時効果のターン末項目を `order` どおりに並べるために使う
+ * （`PassiveEffectExpansion.assignTurnEndItems`）。手動・旧セッションのイベントには無い。
+ */
+export interface PinnedEventMeta {
+  pinnedTurn?: number
+  pinnedOrder?: number
+  pinnedTiming?: PinnedTiming
+}
+
 /** イベント種別ごとの payload */
 export type ProgressionEvent =
   | ({ kind: 'attack'; id: string } & AttackPayload)
@@ -74,10 +85,10 @@ export type ProgressionEvent =
   /** メガシンカのタイミング。以降の動的な被ダメ計算でメガ後ステータスを使う */
   | { kind: 'megaEvolve'; id: string; side: 'attacker' | 'defender'; megaKey: string }
   /** 定数イベント。label/source は背景プリセット由来の表示用メタ情報 */
-  | { kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
-  | { kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
-  | { kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
-  | { kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' }
+  | ({ kind: 'defenderConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
+  | ({ kind: 'attackerConst'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
+  | ({ kind: 'defenderRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
+  | ({ kind: 'attackerRecover'; id: string; amount: number; label?: string; source?: 'manual' | 'background' | 'pinned' } & PinnedEventMeta)
   /** きのみ再装填（リサイクル等）。直後のHP減少で再びその側のきのみが発動できる */
   | { kind: 'rearmBerry'; id: string; side: 'attacker' | 'defender' }
   /**
@@ -85,7 +96,7 @@ export type ProgressionEvent =
    * direction='fromAttacker': 攻撃側が植え主 → 防御側-1/8(防御側最大HP)、攻撃側+同量
    * direction='fromDefender': 防御側が植え主 → 攻撃側-1/8(攻撃側最大HP)、防御側+同量
    */
-  | {
+  | ({
       kind: 'leechSeed'
       id: string
       direction: 'fromAttacker' | 'fromDefender'
@@ -93,7 +104,7 @@ export type ProgressionEvent =
       amount?: number
       label?: string
       source?: 'manual' | 'pinned'
-    }
+    } & PinnedEventMeta)
 
 /** きのみ設定の対象側 */
 export type BerrySide = 'attacker' | 'defender'

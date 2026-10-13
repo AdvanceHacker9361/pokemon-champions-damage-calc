@@ -7,9 +7,11 @@ import {
 } from '@/domain/calculators/PassiveEffectPinning'
 import {
   buildPassiveSchedule,
+  turnEndItemsAfter,
+  type AutoEventItem,
   type PassiveExpansionContext,
 } from '@/domain/calculators/PassiveEffectExpansion'
-import { TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
+import { computeTurnRanges, TURN_END_ORDER, type PassiveEffect } from '@/domain/models/PassiveEffect'
 
 const CTX: PassiveExpansionContext = {
   attackerMaxHp: 160,
@@ -214,6 +216,91 @@ describe('pinPassiveEffects', () => {
           : (e.label ?? '').replace(/^(開始時|T\d+末?) /, '')
     )
     expect(actual).toEqual(expected)
+  })
+})
+
+describe('部分固定化でもターン末の order が保たれる', () => {
+  type AnyEv = TestEvent & { pinnedTiming?: string; pinnedOrder?: number; pinnedTurn?: number }
+
+  /** フックの適用順（イベント → その直後の自動項目）をラベル列にする */
+  function hookOrder(events: AnyEv[], effects: PassiveEffect[]): string[] {
+    const schedule = buildPassiveSchedule(events, effects, CTX)
+    const ranges = new Map(computeTurnRanges(events).map(r => [r.eventId, r] as const))
+    const lbl = (items: AutoEventItem[] | undefined) => (items ?? []).map(i => i.label)
+    const out: string[] = lbl(schedule.start)
+    for (const ev of events) {
+      if (ev.kind === 'attack') {
+        // useBattleSequence と同じく usage ごとに perAttack → そのターンのターン末
+        const start = ranges.get(ev.id)!.startTurn
+        for (let u = 0; u < Math.max(1, ev.usages ?? 1); u++) {
+          out.push('__attack__')
+          out.push(...lbl(schedule.perAttackByTurn[start + u]))
+          out.push(...lbl(turnEndItemsAfter(schedule, ev.id, start + u)))
+        }
+        continue
+      }
+      out.push(ev.kind === 'incoming' ? '__incoming__' : (ev.label ?? '').replace(/^(開始時|T\d+末?) /, ''))
+      out.push(...lbl(schedule.perAttackByEventId[ev.id]))
+      out.push(...lbl(turnEndItemsAfter(schedule, ev.id)))
+    }
+    out.push(...schedule.trailing.map(i => i.label))
+    return out
+  }
+
+  const effects = () => [
+    eff('burn', { label: 'やけど', order: TURN_END_ORDER.burn }),
+    eff('sand', { label: 'すなあらし', order: TURN_END_ORDER.weather }),
+    eff('left', { kind: 'recover', label: 'たべのこし', order: TURN_END_ORDER.itemHeal }),
+  ]
+  const baseEvents = (): AnyEv[] => [attack('a1', 2), { id: 'in1', kind: 'incoming' }, attack('a2')]
+
+  it('やけど だけ固定化しても、残った すなあらし・たべのこし は固定化やけどより前に適用される', () => {
+    idSeq = 0
+    const all = effects()
+    const before = hookOrder(baseEvents(), all)
+    const res = pinPassiveEffects(baseEvents(), all, ['burn'], CTX, genId)
+    const remaining = all.filter(e => !res.removedEffectIds.includes(e.id))
+    const after = hookOrder(loose(res.events) as AnyEv[], remaining)
+    expect(after).toEqual(before)
+    expect(before).toEqual([
+      '__attack__', 'すなあらし', 'たべのこし', 'やけど',
+      '__attack__', '__incoming__', 'すなあらし', 'たべのこし', 'やけど',
+      '__attack__', 'すなあらし', 'たべのこし', 'やけど',
+    ])
+    // 固定化行はメタ情報を持つ
+    expect(loose(res.events).find(e => e.kind === 'defenderConst')).toMatchObject({
+      pinnedTurn: 1, pinnedOrder: TURN_END_ORDER.burn, pinnedTiming: 'turnEnd',
+    })
+  })
+
+  it('2 段階の部分固定化（たべのこし → すなあらし）は一括固定化と同じ並びになる', () => {
+    idSeq = 0
+    const all = effects()
+    const step1 = pinPassiveEffects(baseEvents(), all, ['left'], CTX, genId)
+    const rest1 = all.filter(e => !step1.removedEffectIds.includes(e.id))
+    const step2 = pinPassiveEffects(loose(step1.events), rest1, ['sand'], CTX, genId)
+    const rest2 = rest1.filter(e => !step2.removedEffectIds.includes(e.id))
+    const step3 = pinPassiveEffects(loose(step2.events), rest2, ['burn'], CTX, genId)
+
+    idSeq = 100
+    const once = pinPassiveEffects(baseEvents(), all, ['burn', 'sand', 'left'], CTX, genId)
+
+    const shape = (evs: unknown[]) => loose(evs).map(e =>
+      e.kind === 'attack' || e.kind === 'incoming' ? `${e.kind}:${e.usages ?? ''}` : `${e.kind}:${e.label}`)
+    expect(shape(step3.events)).toEqual(shape(once.events))
+    // 途中段階でもフックの適用順は固定化前と同じ
+    expect(hookOrder(loose(step2.events) as AnyEv[], rest2)).toEqual(hookOrder(baseEvents(), all))
+    expect(hookOrder(loose(step1.events) as AnyEv[], rest1)).toEqual(hookOrder(baseEvents(), all))
+  })
+
+  it('attack の usages 分割を伴う部分固定化でも order が保たれる', () => {
+    idSeq = 0
+    const all = effects()
+    const events = (): AnyEv[] => [attack('a1', 3)]
+    const res = pinPassiveEffects(events(), all, ['left'], CTX, genId)
+    expect(kinds(res.events).filter(k => k === 'attack')).toHaveLength(3)
+    const rest = all.filter(e => !res.removedEffectIds.includes(e.id))
+    expect(hookOrder(loose(res.events) as AnyEv[], rest)).toEqual(hookOrder(events(), all))
   })
 })
 

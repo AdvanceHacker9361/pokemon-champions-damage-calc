@@ -737,7 +737,7 @@
   {
     "name": "クォークチャージ",
     "nameEn": "Quark Drive",
-    "calcTag": "none"
+    "calcTag": "quark-drive"
   },
   {
     "name": "じょおうのいげん",
