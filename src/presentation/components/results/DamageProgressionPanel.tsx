@@ -10,8 +10,14 @@ import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculato
 import { makeIsContactAttack } from '@/presentation/hooks/isContactAttack'
 import { makeIsSheerForceAttack } from '@/presentation/hooks/isSheerForceAttack'
 import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
+import {
+  useBattleSequence,
+  BERRY_ROWS_START_KEY,
+  BERRY_ROWS_TRAILING_KEY,
+} from '@/presentation/hooks/useBattleSequence'
 import { EventRow } from './EventRow'
 import { PassiveGhostRow } from './PassiveGhostRow'
+import { BerryGhostRow } from './BerryGhostRow'
 import { ProgressionTabs } from './ProgressionTabs'
 import { findInsertEventAction, type InsertEventCtx } from './eventInsertActions'
 import { passiveToManualEvent } from './passiveCatalogUtils'
@@ -95,10 +101,14 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
     () => buildPassiveSchedule(events, effectivePassives, expansionCtx),
     [events, effectivePassives, expansionCtx],
   )
+  // きのみ（オボン/混乱実）の発動行。発動はエンジン内の乱数依存なので、シミュレーション結果の
+  // ステップ統計から「そのイベント中に発動した確率」として読み取り専用で表示する
+  const { berryRowsByEventId } = useBattleSequence()
   const hasGhostRows =
     passiveSchedule.start.length > 0 ||
     passiveSchedule.trailing.length > 0 ||
-    Object.keys(passiveSchedule.afterEvent).length > 0
+    Object.keys(passiveSchedule.afterEvent).length > 0 ||
+    Object.keys(berryRowsByEventId).length > 0
 
   // 挿入直後のハイライト。固定化は複数イベントを一度に挿入するため集合で持つ
   const [highlightedEventIds, setHighlightedEventIds] = useState<ReadonlySet<string>>(EMPTY_IDS)
@@ -272,6 +282,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
             onPin={pinHandler(passiveSchedule.start)}
             onInsertNow={insertNowHandler(passiveSchedule.start)}
           />
+          <BerryGhostRow items={berryRowsByEventId[BERRY_ROWS_START_KEY] ?? []} />
           {events.map((ev, idx) => (
             <Fragment key={ev.id}>
               <EventRow
@@ -299,6 +310,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
                 onPin={pinHandler(passiveSchedule.afterEvent[ev.id] ?? [])}
                 onInsertNow={insertNowHandler(passiveSchedule.afterEvent[ev.id] ?? [])}
               />
+              <BerryGhostRow items={berryRowsByEventId[ev.id] ?? []} />
             </Fragment>
           ))}
           <PassiveGhostRow
@@ -306,6 +318,7 @@ export function DamageProgressionPanel({ defenderMaxHp }: DamageProgressionPanel
             onPin={pinHandler(passiveSchedule.trailing)}
             onInsertNow={insertNowHandler(passiveSchedule.trailing)}
           />
+          <BerryGhostRow items={berryRowsByEventId[BERRY_ROWS_TRAILING_KEY] ?? []} />
         </div>
       ) : (
         <div className="text-xs text-fg-faint text-center py-1">
