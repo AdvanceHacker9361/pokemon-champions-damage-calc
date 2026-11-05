@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.1**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.2**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -801,6 +801,15 @@ src/
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
 
+### V3.21.2: きのみ発動の時系列表示（2026-11-05）
+
+- **背景**: きのみ（オボン/混乱実）はエンジンの状態機械で消費されるため、時系列にもステップ表にも「いつ発動したか」が出なかった。発動は乱数依存（連続技では途中ヒットでも起きる）なので「ステップごとの発動確率＋回復量」として可視化する
+- **エンジン**（`BattleSequenceCalc.ts`）: `SeqStepResult.berry?: { defender, attacker }` に `triggerProb / healExpected / rearmProb / cudProb`（`SeqStepBerryStats`）。`triggerD/triggerA` が処理中の状態の確率質量を受け取り、発動時にステップ単位の集計へ加算（attack/multiHit 各ヒット・incoming・painSplit・const・leechSeed・開始時の全呼び出し元）。ターン境界のはんすう再回復は `triggerProb` と `cudProb` に、しゅうかく再装填は `p×harvestChance` を `rearmProb` に、`rearmBerry` は消費済み質量を `rearmProb` に計上。開始HPでの即時発動はステップ0に帰属。`BattleSequenceResult.berrySummary?`（側ごと `expectedTriggers / healExpected`）。きのみ未設定なら両フィールドとも `undefined`（既存の step 比較テストに影響なし）
+- **フック**（`useBattleSequence.ts`）: 各エンジンステップの帰属イベント id を追跡し、`berryRowsByEventId: Record<eventId | '__start__' | '__trailing__', BerryGhostItem[]>` と `berrySummary` を返す。きのみ設定があれば `showSequence` が false でも `result` を計算（表の自動表示条件は不変）
+- **UI**: `BerryGhostRow.tsx`（`PassiveGhostRow` と同じ淡色＋「自動」バッジ、ボタンなし）を各イベントの常時効果ゴースト行の直後と開始/末尾位置に描画。`🍒 オボン/混乱実（防御側）+45 ─ 発動 73.2%`、`はんすう再回復 X%`、`しゅうかく再装填 X%` / `リサイクル再装填 X%`。ツールチップに期待回復・連続技途中注記。`SequenceResultPanel` のステップラベルに `🍒防 73%` バッジ、表上部に `🍒 きのみ: 防御側 期待発動 0.73回 / 期待回復 32.9`。`AccumExportButton` のテキスト出力にも同位置で行を追加。文言ヘルパーは `berryGhostText.ts`
+- 注意: きのみ行は通常パス（急所混合なし）の結果。きのみ名は設定に持たないため常に「オボン/混乱実」表記
+- テスト: `BattleSequenceCalc.test.ts`（+10）、`tests/presentation/berryTimeline.test.tsx`（新規8件）
+
 ### V3.21.0: 連続技途中のきのみ発動（ヒット単位エンジン）と開始HPの累積反映（2026-10-13）
 
 #### エンジン: `multiHit` イベント（`BattleSequenceCalc.ts`）
@@ -1325,6 +1334,7 @@ type ProgressionEvent =
 | `src/domain/calculators/PassiveEffectExpansion.ts` | 常時効果をターン境界へ展開する純関数 `buildPassiveSchedule` / `autoItemToSeqEvent`（V3.18.0） |
 | `src/domain/calculators/PassiveEffectPinning.ts` | 常時効果の固定化（自動展開分を位置そのままの手動イベントへ変換、usages 分割、`pinnedTurn/Order/Timing` メタ付与で部分固定化後も順序保持）（V3.18.1 / V3.20.0） |
 | `src/presentation/hooks/isSheerForceAttack.ts` | ちからずく × 追加効果技の判定コールバックを生成（いのちのたま反動のスキップ用）。`makeIsSheerForceAttack`（V3.20.0） |
+| `src/presentation/components/results/BerryGhostRow.tsx` / `berryGhostText.ts` | きのみ発動の読み取り専用ゴースト行（発動確率・期待回復・はんすう/しゅうかく/リサイクル）と文言ヘルパー（V3.21.2） |
 | `src/presentation/store/progressionStore.ts` | **統合イベント時系列ストア**。`events: ProgressionEvent[]`（attack/painSplit/incoming/const/recover を1配列に）＋ 常時効果 `passiveEffects` ＋ きのみ設定 `defenderBerry / attackerBerry` ＋ 開始HP |
 | `src/presentation/hooks/useAccumulatedDamage.ts` | progression events を SeqEvent 列（攻撃側HP固定モード）に変換し2Dエンジン経由で累積分布/KO確率を導出 |
 | `src/presentation/hooks/useBattleSequence.ts` | 同じ progression events を読み攻撃イベントの usages 展開・被ダメ攻守入替を継承。`hasSequenceImpact()` で出力可否を自動判定 |

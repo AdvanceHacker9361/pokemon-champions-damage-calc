@@ -94,6 +94,34 @@ export interface SeqStepResult {
   faintProb: number
   /** 両者生存マスの確率 */
   bothAliveProb: number
+  /**
+   * このステップ中のきのみ（オボン/混乱実）の発動統計。どちらの側にもきのみが無い構成では undefined。
+   * 確率は分布全体に対する質量（1ステップあたり ≤ 1）。初期状態での即発動はステップ 0 に計上。
+   */
+  berry?: {
+    defender: SeqStepBerryStats
+    attacker: SeqStepBerryStats
+  }
+}
+
+/** 1ステップ・片側のきのみ統計 */
+export interface SeqStepBerryStats {
+  /** このステップ中にきのみが発動した確率質量（はんすうのターン末再回復を含む） */
+  triggerProb: number
+  /** Σ 確率 × 実回復量（最大HPクランプ後） */
+  healExpected: number
+  /** このステップで再装填（しゅうかく / リサイクル）された確率質量 */
+  rearmProb: number
+  /** triggerProb のうち、はんすうのターン末再回復による分 */
+  cudProb: number
+}
+
+/** シーケンス全体のきのみ統計（片側。きのみ未設定の側は undefined） */
+export interface BerrySummarySide {
+  /** 期待発動回数（各ステップの triggerProb の総和。再装填があると 1 を超えうる） */
+  expectedTriggers: number
+  /** 期待回復量の総和 */
+  healExpected: number
 }
 
 export interface BattleSequenceResult {
@@ -111,6 +139,11 @@ export interface BattleSequenceResult {
   attackerSurviveProb: number
   /** 両者生存して終了する確率 */
   bothAliveProb: number
+  /** きのみの全体統計。どちらの側にもきのみが無い構成では undefined */
+  berrySummary?: {
+    defender?: BerrySummarySide
+    attacker?: BerrySummarySide
+  }
 }
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -301,31 +334,41 @@ export function runBattleSequence(
     return { a: Math.floor(baseAD / stride), d: baseAD % stride, dState, aState }
   }
 
-  /** 防御側HP減少後のきのみ発動チェック（HP≤threshold && 未消費 → +amount＋消費＋はんすう予約） */
-  function triggerD(d: number, state: number): { d: number; state: number } {
+  // ステップごとのきのみ統計（記録後にリセット）。初期発動はステップ 0 に計上される
+  const newBerryStats = (): SeqStepBerryStats => ({ triggerProb: 0, healExpected: 0, rearmProb: 0, cudProb: 0 })
+  let stepD = newBerryStats()
+  let stepA = newBerryStats()
+  const totalD: BerrySummarySide = { expectedTriggers: 0, healExpected: 0 }
+  const totalA: BerrySummarySide = { expectedTriggers: 0, healExpected: 0 }
+
+  /**
+   * 防御側HP減少後のきのみ発動チェック（HP≤threshold && 未消費 → +amount＋消費＋はんすう予約）。
+   * mass = この状態遷移の確率質量（発動統計に計上）
+   */
+  function triggerD(d: number, state: number, mass: number): { d: number; state: number } {
     if (dBerry.active && dBerry.consumedOf(state) === 0 && d > 0 && d <= dBerry.threshold) {
-      return {
-        d: Math.min(defenderMaxHp, d + dBerry.amount),
-        state: dBerry.pack(1, dBerry.cudEnabled ? 2 : 0),
-      }
+      const healed = Math.min(defenderMaxHp, d + dBerry.amount)
+      stepD.triggerProb += mass
+      stepD.healExpected += mass * (healed - d)
+      return { d: healed, state: dBerry.pack(1, dBerry.cudEnabled ? 2 : 0) }
     }
     return { d, state }
   }
 
   /** 攻撃側HP減少後のきのみ発動チェック（防御側と同仕様） */
-  function triggerA(a: number, state: number): { a: number; state: number } {
+  function triggerA(a: number, state: number, mass: number): { a: number; state: number } {
     if (aBerry.active && aBerry.consumedOf(state) === 0 && a > 0 && a <= aBerry.threshold) {
-      return {
-        a: Math.min(attackerMaxHp, a + aBerry.amount),
-        state: aBerry.pack(1, aBerry.cudEnabled ? 2 : 0),
-      }
+      const healed = Math.min(attackerMaxHp, a + aBerry.amount)
+      stepA.triggerProb += mass
+      stepA.healExpected += mass * (healed - a)
+      return { a: healed, state: aBerry.pack(1, aBerry.cudEnabled ? 2 : 0) }
     }
     return { a, state }
   }
 
   /** 攻撃側HPが減少したときだけきのみ判定を通す（回復では発動しない） */
-  function afterAttackerHpChange(prev: number, next: number, state: number) {
-    return next < prev ? triggerA(next, state) : { a: next, state }
+  function afterAttackerHpChange(prev: number, next: number, state: number, mass: number) {
+    return next < prev ? triggerA(next, state, mass) : { a: next, state }
   }
 
   // 3つの互いに排反な終端バケツ:
@@ -370,8 +413,8 @@ export function runBattleSequence(
       faintProb += mass
       return
     }
-    const t = triggerD(nd0, dState)
-    const ta = afterAttackerHpChange(a, na, aState)
+    const t = triggerD(nd0, dState, mass)
+    const ta = afterAttackerHpChange(a, na, aState, mass)
     sink(ta.a, t.d, t.state, ta.state, mass)
   }
 
@@ -425,8 +468,8 @@ export function runBattleSequence(
   const d0 = clamp(opts.defenderStartHp ?? defenderMaxHp, 0, defenderMaxHp)
 
   // 初期状態でも HP ≤ threshold ならきのみを即発動
-  const initD = triggerD(d0, 0)
-  const initA = triggerA(a0, 0)
+  const initD = triggerD(d0, 0, 1)
+  const initA = triggerA(a0, 0, 1)
   let joint = new Map<number, number>([[enc(initA.a, initD.d, initD.state, initA.state), 1]])
   const steps: SeqStepResult[] = []
 
@@ -472,7 +515,7 @@ export function runBattleSequence(
               else faintProb += p * rp
             } else if (nd <= 0) koProb += p * rp
             else {
-              const ta = afterAttackerHpChange(a, na, aState)
+              const ta = afterAttackerHpChange(a, na, aState, p * rp)
               addLive(ta.a, nd, dState, ta.state, p * rp)
             }
           }
@@ -490,14 +533,14 @@ export function runBattleSequence(
           if (ev.attackerHp !== undefined) {
             // 攻撃側HP固定（総合累積モード）: 防御側のみ均し、攻撃側HPは不変
             const nd0 = clamp(Math.floor((ev.attackerHp + d) / 2), 0, defenderMaxHp)
-            const t = triggerD(nd0, dState)
+            const t = triggerD(nd0, dState, p)
             addLive(a, t.d, t.state, aState, p)
           } else {
             const v = Math.floor((a + d) / 2)
             const na = clamp(v, 0, attackerMaxHp)
             const nd0 = clamp(v, 0, defenderMaxHp)
-            const t = triggerD(nd0, dState)
-            const ta = afterAttackerHpChange(a, na, aState)
+            const t = triggerD(nd0, dState, p)
+            const ta = afterAttackerHpChange(a, na, aState, p)
             addLive(ta.a, t.d, t.state, ta.state, p)
           }
           break
@@ -506,7 +549,7 @@ export function runBattleSequence(
           const nd0 = d - ev.amount
           if (nd0 <= 0) koProb += p
           else {
-            const t = triggerD(nd0, dState)
+            const t = triggerD(nd0, dState, p)
             addLive(a, t.d, t.state, aState, p)
           }
           break
@@ -515,7 +558,7 @@ export function runBattleSequence(
           const na = a - ev.amount
           if (na <= 0) faintProb += p
           else {
-            const ta = afterAttackerHpChange(a, na, aState)
+            const ta = afterAttackerHpChange(a, na, aState, p)
             addLive(ta.a, d, dState, ta.state, p)
           }
           break
@@ -531,8 +574,10 @@ export function runBattleSequence(
         case 'rearmBerry': {
           // リサイクル等: 消費済みのきのみを未消費に戻す（はんすう予約カウントは維持）
           if ((ev.side ?? 'defender') === 'attacker') {
+            if (aBerry.active && aBerry.consumedOf(aState) === 1) stepA.rearmProb += p
             addLive(a, d, dState, aBerry.pack(0, aBerry.cudOf(aState)), p)
           } else {
+            if (dBerry.active && dBerry.consumedOf(dState) === 1) stepD.rearmProb += p
             addLive(a, d, dBerry.pack(0, dBerry.cudOf(dState)), aState, p)
           }
           break
@@ -545,7 +590,7 @@ export function runBattleSequence(
             const na = clamp(a + actual, 0, attackerMaxHp)
             if (nd0 <= 0) koProb += p
             else {
-              const t = triggerD(nd0, dState)
+              const t = triggerD(nd0, dState, p)
               addLive(na, t.d, t.state, aState, p) // 攻撃側はHP上昇なのできのみは発動しない
             }
           } else {
@@ -554,7 +599,7 @@ export function runBattleSequence(
             const nd = clamp(d + actual, 0, defenderMaxHp)
             if (na <= 0) faintProb += p
             else {
-              const ta = afterAttackerHpChange(a, na, aState)
+              const ta = afterAttackerHpChange(a, na, aState, p)
               addLive(ta.a, nd, dState, ta.state, p) // 防御側はHP上昇なのできのみは発動しない
             }
           }
@@ -586,17 +631,25 @@ export function runBattleSequence(
         let nd = d
         let dCud = dBerry.cudOf(dState)
         if (dBerry.cudEnabled) {
-          if (dCud === 1) { nd = Math.min(defenderMaxHp, nd + dBerry.amount); dCud = 0 }
+          if (dCud === 1) {
+            nd = Math.min(defenderMaxHp, nd + dBerry.amount); dCud = 0
+            stepD.triggerProb += p; stepD.cudProb += p; stepD.healExpected += p * (nd - d)
+          }
           else if (dCud === 2) { dCud = 1 }
         }
         let na = a
         let aCud = aBerry.cudOf(aState)
         if (aBerry.cudEnabled) {
-          if (aCud === 1) { na = Math.min(attackerMaxHp, na + aBerry.amount); aCud = 0 }
+          if (aCud === 1) {
+            na = Math.min(attackerMaxHp, na + aBerry.amount); aCud = 0
+            stepA.triggerProb += p; stepA.cudProb += p; stepA.healExpected += p * (na - a)
+          }
           else if (aCud === 2) { aCud = 1 }
         }
 
         // しゅうかく/ものひろい: 消費済みなら確率で再装填（両側独立＝確率は積）
+        if (dBerry.active && dBerry.consumedOf(dState) === 1) stepD.rearmProb += p * dBerry.harvestChance
+        if (aBerry.active && aBerry.consumedOf(aState) === 1) stepA.rearmProb += p * aBerry.harvestChance
         for (const db of harvestBranches(dBerry, dBerry.consumedOf(dState), dCud)) {
           for (const ab of harvestBranches(aBerry, aBerry.consumedOf(aState), aCud)) {
             addAfter(na, nd, db.state, ab.state, p * db.prob * ab.prob)
@@ -616,7 +669,7 @@ export function runBattleSequence(
       dDist.set(d, (dDist.get(d) ?? 0) + p)
       bothAlive += p
     }
-    steps.push({
+    const step: SeqStepResult = {
       label: opts.labels?.[i] ?? `ステップ ${i + 1}`,
       attackerHpDist: aDist,
       defenderHpDist: dDist,
@@ -624,14 +677,24 @@ export function runBattleSequence(
       koProb: Math.min(1, koProb + bothFaint),
       faintProb: Math.min(1, faintProb + bothFaint),
       bothAliveProb: bothAlive,
-    })
+    }
+    if (dBerry.active || aBerry.active) {
+      step.berry = { defender: stepD, attacker: stepA }
+      totalD.expectedTriggers += stepD.triggerProb
+      totalD.healExpected += stepD.healExpected
+      totalA.expectedTriggers += stepA.triggerProb
+      totalA.healExpected += stepA.healExpected
+      stepD = newBerryStats()
+      stepA = newBerryStats()
+    }
+    steps.push(step)
   }
 
   let bothAlive = 0
   for (const p of joint.values()) bothAlive += p
 
   const attackerFaintProb = faintProb + bothFaint
-  return {
+  const result: BattleSequenceResult = {
     steps,
     defenderKoProb: Math.min(1, koProb + bothFaint),
     attackerFaintProb: Math.min(1, attackerFaintProb),
@@ -639,6 +702,13 @@ export function runBattleSequence(
     attackerSurviveProb: Math.min(1, 1 - attackerFaintProb),
     bothAliveProb: bothAlive,
   }
+  if (dBerry.active || aBerry.active) {
+    result.berrySummary = {
+      ...(dBerry.active ? { defender: totalD } : {}),
+      ...(aBerry.active ? { attacker: totalA } : {}),
+    }
+  }
+  return result
 }
 
 /**

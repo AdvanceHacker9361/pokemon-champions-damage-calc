@@ -8,6 +8,12 @@ import { useAccumulatedDamage } from '@/presentation/hooks/useAccumulatedDamage'
 import { passiveOriginSuffix, resolvePassiveAmount, type PassiveEffect } from '@/domain/models/PassiveEffect'
 import { useEffectivePassiveEffects } from '@/presentation/hooks/useEffectivePassiveEffects'
 import { resolveGlaiveRushDoubling, glaiveRushScaleOf } from '@/domain/calculators/GlaiveRushState'
+import {
+  useBattleSequence,
+  BERRY_ROWS_START_KEY,
+  BERRY_ROWS_TRAILING_KEY,
+} from '@/presentation/hooks/useBattleSequence'
+import { berryItemText } from './berryGhostText'
 
 function formatProb(prob: number): string {
   if (prob >= 1.0) return '確定KO'
@@ -58,6 +64,8 @@ export function AccumExportButton() {
     ?? (firstAttack && firstAttack.kind === 'attack' ? firstAttack.defenderMaxHp : storeDefHp)
   const attackerMaxHp = attackerBaseHp > 0 ? calculateHP(attackerBaseHp, attackerSpHp) : 0
   const accum = useAccumulatedDamage(defenderMaxHp)
+  // きのみ発動行（時系列の行と同じ内容を、発動したイベントの直後に出力）
+  const { berryRowsByEventId } = useBattleSequence()
   // きょけんとつげき後の自動補正（フック・時系列UIと同一の純粋関数）
   const glaiveScales = resolveGlaiveRushDoubling(events, {
     initialAttackerVulnerable: attackerGlaiveRush,
@@ -70,6 +78,11 @@ export function AccumExportButton() {
     const lines: string[] = []
     lines.push(`総合累積  (HP ${defenderMaxHp})`)
     lines.push('─'.repeat(30))
+
+    const pushBerryLines = (key: string) => {
+      for (const item of berryRowsByEventId[key] ?? []) lines.push(`  ${berryItemText(item)}`)
+    }
+    pushBerryLines(BERRY_ROWS_START_KEY)
 
     for (const ev of events) {
       switch (ev.kind) {
@@ -94,7 +107,9 @@ export function AccumExportButton() {
         case 'rearmBerry': lines.push(`リサイクル（${ev.side === 'attacker' ? '攻撃側' : '防御側'}きのみ再装填）`); break
         case 'leechSeed': lines.push(`宿り木（${ev.direction === 'fromAttacker' ? '攻→防' : '防→攻'}）`); break
       }
+      pushBerryLines(ev.id)
     }
+    pushBerryLines(BERRY_ROWS_TRAILING_KEY)
 
     if (defenderBerry.amount > 0) {
       lines.push(`防御側 オボン/混乱実(HP≤${defenderBerry.thresholdPct}%で1回): -${defenderBerry.amount}`)

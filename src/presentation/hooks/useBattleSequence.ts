@@ -47,6 +47,34 @@ export interface ResolvedEvent {
   glaiveRushDoubled?: boolean
 }
 
+/** タイムラインに描画するきのみ発動の読み取り専用行（1ステップ・片側ぶん） */
+export interface BerryGhostItem {
+  side: 'attacker' | 'defender'
+  /** 発動したステップのラベル（usages 展開・自動行のラベルを含む） */
+  stepLabel: string
+  /** そのステップの SeqEvent 種別（multiHit なら連続技の途中で発動しうる） */
+  stepKind: SeqEvent['kind']
+  /** このステップ中に発動した確率（はんすう再回復を含む） */
+  triggerProb: number
+  /** triggerProb のうち、はんすうのターン末再回復による分 */
+  cudProb: number
+  /** 期待回復量 */
+  healExpected: number
+  /** このステップで再装填（しゅうかく / リサイクル）された確率 */
+  rearmProb: number
+  /** 設定上の回復量 */
+  amount: number
+  cudChew: boolean
+}
+
+/** 先頭（開始時の常時効果）に属するステップのきのみ行のキー */
+export const BERRY_ROWS_START_KEY = '__start__'
+/** 末尾（追加ターンの常時効果）に属するステップのきのみ行のキー */
+export const BERRY_ROWS_TRAILING_KEY = '__trailing__'
+
+/** 表示対象とする最小確率（0.05%） */
+const BERRY_ROW_EPS = 0.0005
+
 export interface BattleSequenceComputed {
   /** シーケンス出力（生存率・各ステップHP）を表示すべきか */
   showSequence: boolean
@@ -65,6 +93,13 @@ export interface BattleSequenceComputed {
    * ゴースト行の描画に使う（`PassiveEffectExpansion.ts` 参照）。
    */
   passiveSchedule: PassiveSchedule
+  /**
+   * きのみ発動の行（`result` のステップ統計から導出）。キーは発動ステップが属する
+   * progression event の id（開始時の自動行は `BERRY_ROWS_START_KEY`、末尾は `BERRY_ROWS_TRAILING_KEY`）。
+   */
+  berryRowsByEventId: Record<string, BerryGhostItem[]>
+  /** きのみの全体統計（`result.berrySummary`） */
+  berrySummary: BattleSequenceResult['berrySummary']
 }
 
 const EMPTY_SCHEDULE: PassiveSchedule = {
@@ -159,12 +194,15 @@ export function useBattleSequence(): BattleSequenceComputed {
     })
     // 防御側だけの常時効果は攻守シミュレーションを表示しないが、総合累積には反映するため
     // 計算自体は実行する（useAccumulatedDamage が result を再利用する）
-    const shouldCompute = showSequence || effectivePassives.length > 0
+    // きのみ設定時も同様に計算する（時系列にきのみ発動行を出すため。showSequence は変えない）
+    const hasBerry = defenderBerryCfg.amount > 0 || attackerBerryCfg.amount > 0
+    const shouldCompute = showSequence || effectivePassives.length > 0 || hasBerry
 
     if (!shouldCompute || !attacker.pokemonId || !defender.pokemonId) {
       return {
         showSequence: false, attackerMaxHp, defenderMaxHp,
         resolved: [], result: null, critResult: null, passiveSchedule: EMPTY_SCHEDULE,
+        berryRowsByEventId: {}, berrySummary: undefined,
       }
     }
 
@@ -238,6 +276,9 @@ export function useBattleSequence(): BattleSequenceComputed {
     const seqEvents: SeqEvent[] = []
     const critSeqEvents: SeqEvent[] = []
     const labels: string[] = []
+    /** 各 SeqEvent ステップが属する progression event の id（きのみ行の配置先） */
+    const stepEventIds: string[] = []
+    let currentOwner = BERRY_ROWS_START_KEY
     const resolved: ResolvedEvent[] = []
 
     /** 与ダメ以外のイベントは通常パス・急所込みパスで完全に同一 */
@@ -245,6 +286,7 @@ export function useBattleSequence(): BattleSequenceComputed {
       seqEvents.push(ev)
       critSeqEvents.push(ev)
       labels.push(label)
+      stepEventIds.push(currentOwner)
     }
 
     let autoSeq = 1
@@ -279,6 +321,7 @@ export function useBattleSequence(): BattleSequenceComputed {
     let attackSeen = 0
 
     for (const ev of events) {
+      currentOwner = ev.id
       switch (ev.kind) {
         case 'attack': {
           if (attackSeen === 0) firstHadMultiscale = ev.hadMultiscale
@@ -318,6 +361,7 @@ export function useBattleSequence(): BattleSequenceComputed {
             seqEvents.push(seqEv)
             critSeqEvents.push(expanded.crit[u])
             labels.push(`与ダメ ${ev.label}${critTag}${glaiveTag}${drainTag}${recoilTag}${usageSuffix}`)
+            stepEventIds.push(ev.id)
             const turn = attackTurnStart + u
             // 攻撃側 perAttack（いのちのたま等）→ そのターンのターン末 の順で適用
             pushAuto(passiveSchedule.perAttackByTurn[turn], autoSeq++)
@@ -420,12 +464,14 @@ export function useBattleSequence(): BattleSequenceComputed {
     }
 
     // count が既存ターン数を超えた分は末尾に追加ターンとして続ける
+    currentOwner = BERRY_ROWS_TRAILING_KEY
     pushAuto(passiveSchedule.trailing, autoSeq++)
 
     if (seqEvents.length === 0 || attackerMaxHp === 0 || defenderMaxHp === 0) {
       return {
         showSequence, attackerMaxHp, defenderMaxHp, resolved,
         result: null, critResult: null, passiveSchedule,
+        berryRowsByEventId: {}, berrySummary: undefined,
       }
     }
 
@@ -442,7 +488,36 @@ export function useBattleSequence(): BattleSequenceComputed {
       ? runBattleSequence(critSeqEvents, attackerMaxHp, defenderMaxHp, runOpts)
       : result
 
-    return { showSequence, attackerMaxHp, defenderMaxHp, resolved, result, critResult, passiveSchedule }
+    // きのみ発動行: ステップ統計 → 発動ステップが属するイベントの直後
+    const berryRowsByEventId: Record<string, BerryGhostItem[]> = {}
+    result.steps.forEach((step, i) => {
+      if (!step.berry) return
+      const sides = [
+        ['defender', step.berry.defender, defenderBerryCfg],
+        ['attacker', step.berry.attacker, attackerBerryCfg],
+      ] as const
+      for (const [side, stats, cfg] of sides) {
+        if (cfg.amount <= 0) continue
+        if (stats.triggerProb <= BERRY_ROW_EPS && stats.rearmProb <= BERRY_ROW_EPS) continue
+        const key = stepEventIds[i] ?? BERRY_ROWS_TRAILING_KEY
+        ;(berryRowsByEventId[key] ??= []).push({
+          side,
+          stepLabel: step.label,
+          stepKind: seqEvents[i].kind,
+          triggerProb: stats.triggerProb,
+          cudProb: stats.cudProb,
+          healExpected: stats.healExpected,
+          rearmProb: stats.rearmProb,
+          amount: cfg.amount,
+          cudChew: cfg.cudChew,
+        })
+      }
+    })
+
+    return {
+      showSequence, attackerMaxHp, defenderMaxHp, resolved, result, critResult, passiveSchedule,
+      berryRowsByEventId, berrySummary: result.berrySummary,
+    }
   }, [
     events, passiveEffects,
     defenderBerryCfg, attackerBerryCfg,

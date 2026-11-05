@@ -970,4 +970,109 @@ describe('BattleSequenceCalc', () => {
       expect(single.attackerFaintProb).toBeCloseTo(1, 9)
     })
   })
+
+  describe('きのみ発動のステップ統計（step.berry / berrySummary）', () => {
+    const berry = { threshold: 50, amount: 25 }
+
+    it('確定で閾値を割る攻撃のステップで triggerProb=1・期待回復=amount', () => {
+      const r = runBattleSequence([{ kind: 'attack', dmg: [60] }], 100, 100, { defenderBerry: berry })
+      expect(r.steps[0].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.steps[0].berry?.defender.healExpected).toBeCloseTo(25, 10)
+      expect(r.steps[0].berry?.attacker.triggerProb).toBe(0)
+    })
+
+    it('閾値を割らない攻撃では 0、きのみ未設定なら berry / berrySummary は undefined', () => {
+      const r = runBattleSequence([{ kind: 'attack', dmg: [40] }], 100, 100, { defenderBerry: berry })
+      expect(r.steps[0].berry?.defender.triggerProb).toBe(0)
+      expect(r.steps[0].berry?.defender.healExpected).toBe(0)
+      const none = runBattleSequence([{ kind: 'attack', dmg: [60] }], 100, 100)
+      expect(none.steps[0].berry).toBeUndefined()
+      expect(none.berrySummary).toBeUndefined()
+    })
+
+    it('乱数の半分だけ閾値を割るなら triggerProb=0.5・期待回復=12.5', () => {
+      const r = runBattleSequence([{ kind: 'attack', dmg: [40, 60] }], 100, 100, { defenderBerry: berry })
+      expect(r.steps[0].berry?.defender.triggerProb).toBeCloseTo(0.5, 10)
+      expect(r.steps[0].berry?.defender.healExpected).toBeCloseTo(12.5, 10)
+    })
+
+    it('連続技の途中（2発目）で発動しても、その multiHit ステップに計上される', () => {
+      const r = runBattleSequence(
+        [{ kind: 'multiHit', hits: [[40], [40], [40]] }], 100, 100, { defenderBerry: berry },
+      )
+      expect(r.steps).toHaveLength(1)
+      expect(r.steps[0].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.steps[0].berry?.defender.healExpected).toBeCloseTo(25, 10)
+      // 100 → 60 → 20(発動 45) → 5
+      expect([...r.steps[0].defenderHpDist.keys()]).toEqual([5])
+    })
+
+    it('はんすう: 再回復はそれを行うターン境界のステップに cudProb として計上される', () => {
+      const r = runBattleSequence(
+        [{ kind: 'attack', dmg: [120] }, { kind: 'attack', dmg: [10] }],
+        100, 200, { defenderBerry: { threshold: 100, amount: 50, cudChew: true } },
+      )
+      // T1: 200 → 80 → 発動 130（cud 2→1）/ T2: 130 → 120 → ターン末に再回復 170
+      expect(r.steps[0].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.steps[0].berry?.defender.cudProb).toBe(0)
+      expect(r.steps[1].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.steps[1].berry?.defender.cudProb).toBeCloseTo(1, 10)
+      expect(r.steps[1].berry?.defender.healExpected).toBeCloseTo(50, 10)
+      expect([...r.steps[1].defenderHpDist.keys()]).toEqual([170])
+    })
+
+    it('しゅうかく100%: 境界で rearmProb=1、次の被弾で再発動。berrySummary は合計', () => {
+      const r = runBattleSequence(
+        [{ kind: 'attack', dmg: [60] }, { kind: 'attack', dmg: [30] }],
+        100, 100, { defenderBerry: { threshold: 50, amount: 30, harvestChance: 1 } },
+      )
+      expect(r.steps[0].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.steps[0].berry?.defender.rearmProb).toBeCloseTo(1, 10)
+      expect(r.steps[1].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.berrySummary?.defender?.expectedTriggers).toBeCloseTo(2, 10)
+      expect(r.berrySummary?.defender?.healExpected).toBeCloseTo(60, 10)
+      expect(r.berrySummary?.attacker).toBeUndefined()
+    })
+
+    it('リサイクル（rearmBerry）は消費済み質量を rearmProb に計上する', () => {
+      const r = runBattleSequence(
+        [{ kind: 'attack', dmg: [40, 60] }, { kind: 'rearmBerry' }],
+        100, 100, { defenderBerry: berry },
+      )
+      expect(r.steps[1].berry?.defender.rearmProb).toBeCloseTo(0.5, 10)
+      expect(r.steps[1].berry?.defender.triggerProb).toBe(0)
+    })
+
+    it('開始HPが閾値以下の即発動はステップ 0 に計上される', () => {
+      const r = runBattleSequence(
+        [{ kind: 'setupTurn', side: 'attacker' }, { kind: 'setupTurn', side: 'attacker' }],
+        100, 100, { defenderBerry: berry, defenderStartHp: 40 },
+      )
+      expect(r.steps[0].berry?.defender.triggerProb).toBeCloseTo(1, 10)
+      expect(r.steps[0].berry?.defender.healExpected).toBeCloseTo(25, 10)
+      expect(r.steps[1].berry?.defender.triggerProb).toBe(0)
+      expect(r.berrySummary?.defender?.expectedTriggers).toBeCloseTo(1, 10)
+    })
+
+    it('攻撃側のきのみは被ダメ（incoming）で発動し attacker 側に計上される', () => {
+      const r = runBattleSequence(
+        [{ kind: 'incoming', dmg: [60, 40] }], 100, 100,
+        { attackerBerry: { threshold: 50, amount: 30 } },
+      )
+      expect(r.steps[0].berry?.attacker.triggerProb).toBeCloseTo(0.5, 10)
+      expect(r.steps[0].berry?.attacker.healExpected).toBeCloseTo(15, 10)
+      expect(r.steps[0].berry?.defender.triggerProb).toBe(0)
+      expect(r.berrySummary?.attacker?.expectedTriggers).toBeCloseTo(0.5, 10)
+      expect(r.berrySummary?.defender).toBeUndefined()
+    })
+
+    it('回復量は最大HPでクランプした実回復で集計する', () => {
+      // 100 → 開始 40 は閾値外（threshold 30）。攻撃15で25 → +100 だが最大100まで → 実回復 75
+      const r = runBattleSequence(
+        [{ kind: 'attack', dmg: [15] }], 100, 100,
+        { defenderBerry: { threshold: 30, amount: 100 }, defenderStartHp: 40 },
+      )
+      expect(r.steps[0].berry?.defender.healExpected).toBeCloseTo(75, 10)
+    })
+  })
 })
