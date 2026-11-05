@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.0**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.1**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -1310,7 +1310,7 @@ type ProgressionEvent =
 | `src/presentation/hooks/berryOption.ts` | `BerryConfig` を実HPしきい値の engine オプションに変換。`toBerryOption` |
 | `src/domain/calculators/MoveResolution.ts` | 接地・天候・フィールドによる技タイプ/威力の解決。`resolveAttackerGrounded` / `resolveTerrainPulseType` / `resolveWeatherAwareMovePower`（V3.19.1） |
 | `src/presentation/store/buildLibraryStore.ts` | 登録個体ライブラリ（上限300、localStorage `pcma-builds-v1`）。`useBuildLibraryStore` / `normalizeBuildSnapshot` / `loadRegisteredBuild`（V3.17.0） |
-| `src/presentation/store/pokemonTabsStore.ts` | 攻守ポケモンタブ（上限8）のストアファクトリ。`createPokemonTabsStore` / `useAttackerTabsStore` / `useDefenderTabsStore`（V3.17.1） |
+| `src/presentation/store/pokemonTabsStore.ts` | 攻守ポケモンタブ（上限10・横1列に収まる最大数）のストアファクトリ。`createPokemonTabsStore` / `useAttackerTabsStore` / `useDefenderTabsStore`（V3.17.1） |
 | `src/presentation/components/pokemon/BuildLibraryModal.tsx` | 登録個体の登録・検索・エクスポート/インポート UI（V3.17.0） |
 | `src/presentation/components/pokemon/PokemonTabsBar.tsx` | 片側ポケモンのタブバー UI（`side` prop で攻守共用）（V3.17.1） |
 | `src/domain/models/Move.ts` | Move 型定義、`selfStatDrop` / `selfStatDrops` / `alwaysCrit` / `critChance` / `escalating` フィールドを含む |
