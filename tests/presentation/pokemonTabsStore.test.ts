@@ -124,11 +124,11 @@ describe('pokemonTabsStore（攻撃側）', () => {
     expect(useAttackerStore.getState().pokemonId).toBe(CHARIZARD)
   })
 
-  it('addTab は8タブで打ち止め', () => {
+  it('addTab は10タブで打ち止め', () => {
     useAttackerStore.getState().setPokemon(GARCHOMP)
     useAttackerTabsStore.getState().initIfEmpty()
     for (let i = 0; i < 12; i++) useAttackerTabsStore.getState().addTab()
-    expect(useAttackerTabsStore.getState().tabs.length).toBe(8)
+    expect(useAttackerTabsStore.getState().tabs.length).toBe(10)
   })
 
   it('攻撃側タブ操作は防御側ストアに一切触れない', () => {
@@ -323,11 +323,11 @@ describe('pokemonTabsStore（防御側）', () => {
     expect(useDefenderStore.getState().pokemonId).toBe(KANGASKHAN)
   })
 
-  it('addTab は8タブで打ち止め', () => {
+  it('addTab は10タブで打ち止め', () => {
     useDefenderStore.getState().setPokemon(KANGASKHAN)
     useDefenderTabsStore.getState().initIfEmpty()
     for (let i = 0; i < 12; i++) useDefenderTabsStore.getState().addTab()
-    expect(useDefenderTabsStore.getState().tabs.length).toBe(8)
+    expect(useDefenderTabsStore.getState().tabs.length).toBe(10)
   })
 
   it('セッション往復: 防御側タブ集合とライブ防御側が戻る', () => {

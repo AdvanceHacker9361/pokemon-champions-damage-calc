@@ -5,8 +5,13 @@ import {
 } from './sessionSnapshot'
 import { refreshDerivedFields } from './resolveDerivedFields'
 
-/** ポケモンタブの上限数（攻撃側・防御側とも共通） */
-export const POKEMON_TABS_MAX = 8
+/**
+ * ポケモンタブの上限数（攻撃側・防御側とも共通）。
+ * タブバーを横1列に収める前提で決める: 番号チップ（1桁≈26px / 2桁≈33px）＋ gap 4px ＋
+ * アクティブ行の「×」≈16px ＋「＋」≈30px で、10個 ≈ 353px がパネル内容幅（約380〜410px）に収まる最大。
+ * 11個以上は2桁チップが増えて 1 列からはみ出す
+ */
+export const POKEMON_TABS_MAX = 10
 
 /** 攻撃側・防御側のライブポケモンストア（zustand フック） */
 type PokemonStoreHook = typeof useAttackerStore

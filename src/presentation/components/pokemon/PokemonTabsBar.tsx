@@ -48,7 +48,7 @@ export function PokemonTabsBar({ side }: PokemonTabsBarProps) {
               aria-selected={isActive}
               onClick={() => switchTab(tab.id)}
               title={name}
-              className={`text-xs px-2.5 py-0.5 rounded border transition-colors ${
+              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                 isActive
                   ? 'bg-accent-bg text-accent border-accent-border font-medium'
                   : 'text-fg-muted border-edge hover:bg-surface-3'
@@ -74,7 +74,7 @@ export function PokemonTabsBar({ side }: PokemonTabsBarProps) {
         type="button"
         onClick={() => addTab()}
         disabled={atMax}
-        title={atMax ? '最大8個まで' : `${sideLabel}タブを追加`}
+        title={atMax ? `最大${POKEMON_TABS_MAX}個まで` : `${sideLabel}タブを追加`}
         aria-label={`${sideLabel}タブを追加`}
         className={`text-xs px-2 py-0.5 rounded border border-edge text-fg-muted transition-colors flex-shrink-0 ${
           atMax ? 'opacity-40 cursor-not-allowed' : 'hover:bg-surface-3'
