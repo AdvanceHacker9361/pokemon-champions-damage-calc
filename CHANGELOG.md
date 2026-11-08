@@ -6,6 +6,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [Unreleased]
 
+## [3.21.3] - 2026-11-08
+
+### Added
+- **ヒスイウインディ**（Arcanine-Hisui）を `pokemon.json` に追加（ほのお/いわ、特性 いかく/もらいび/いわはこび、H95/A115/B80/C95/D80/S90、体重168.0kg、id=10059）。いわはこび（いわ技 ×1.5）・もらいび（ほのお無効＋発動後 ほのお技 ×1.5）は V3.20.0 / V3.19.4 の実装がそのまま適用される
+
 ## [3.21.2] - 2026-11-05
 
 ### Added

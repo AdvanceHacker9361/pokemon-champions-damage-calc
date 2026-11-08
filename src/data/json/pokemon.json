@@ -881,6 +881,29 @@
     "weight": 155
   },
   {
+    "id": 10059,
+    "name": "ヒスイウインディ",
+    "nameEn": "Arcanine-Hisui",
+    "types": [
+      "ほのお",
+      "いわ"
+    ],
+    "baseStats": {
+      "hp": 95,
+      "atk": 115,
+      "def": 80,
+      "spa": 95,
+      "spd": 80,
+      "spe": 90
+    },
+    "abilities": [
+      "いかく",
+      "もらいび",
+      "いわはこび"
+    ],
+    "weight": 168
+  },
+  {
     "id": 60,
     "name": "ニョロモ",
     "nameEn": "Poliwag",
