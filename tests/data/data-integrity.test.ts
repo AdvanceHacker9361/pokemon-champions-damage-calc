@@ -701,6 +701,22 @@ describe('Reg.M-C data', () => {
     })
   })
 
+  it('だいふんげき（Raging Fury）が収録されている', () => {
+    const m = moves.find(x => x.name === 'だいふんげき')
+    expect(m).toBeDefined()
+    expect(m).toMatchObject({
+      nameEn: 'Raging Fury',
+      type: 'ほのお',
+      category: '物理',
+      power: 120,
+      accuracy: 100,
+      pp: 16,
+    })
+    // 非接触・追加効果なし（自分の混乱は Sheer Force 対象外）
+    expect(m!.flags.contact).toBe(false)
+    expect(m!.hasSecondaryEffect ?? false).toBe(false)
+  })
+
   it('Reg.M-C roster should be available', () => {
     const byId = new Map(pokemon.map(p => [p.id, p]))
 

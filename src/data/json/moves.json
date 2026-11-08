@@ -5373,6 +5373,26 @@
     "multiHit": null
   },
   {
+    "name": "だいふんげき",
+    "nameEn": "Raging Fury",
+    "type": "ほのお",
+    "category": "物理",
+    "power": 120,
+    "accuracy": 100,
+    "pp": 16,
+    "priority": 0,
+    "flags": {
+      "contact": false,
+      "sound": false,
+      "bullet": false,
+      "pulse": false,
+      "punch": false,
+      "bite": false,
+      "slice": false
+    },
+    "special": null
+  },
+  {
     "name": "だいもんじ",
     "nameEn": "Fire Blast",
     "type": "ほのお",
