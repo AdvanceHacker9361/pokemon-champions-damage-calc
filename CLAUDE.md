@@ -805,7 +805,7 @@ src/
 ### V3.21.3〜V3.21.5: ヒスイウインディ関連の収録（2026-11-08）
 
 - **V3.21.3** ヒスイウインディ（Arcanine-Hisui, id=10059）を `pokemon.json` に追加。**V3.21.4** で隠れ特性を いわはこび → **いしあたま** に修正（いわはこび はオトシドリ）
-- **V3.21.5** 技「だいふんげき」（Raging Fury）を `moves.json` に追加: ほのお／物理／120／命中100／PP 10 → Champions 換算 16、`flags.contact: false`、`special: null`、`hasSecondaryEffect` なし（自分の混乱は Sheer Force 対象外）。2〜3ターン固定行動＋終了後混乱はダメージ計算外。`ja.json` に `"raging fury"`、`data-integrity.test.ts` にピン留め
+- **V3.21.5** 技「だいふんげき」（Raging Fury）を `moves.json` に追加: ほのお／物理／120／命中100／PP 10 → Champions 換算 16、`flags.contact: false`、`special: null`、`hasSecondaryEffect` なし（自分の混乱は Sheer Force 対象外）。2〜3ターン固定行動＋終了後混乱はダメージ計算外。`ja.json` に `"raging fury"`、`data-integrity.test.ts` にピン留め。ヒスイウインディ以外にも ゴウカザル・エンブオー・バクフーン・エンテイ 等が習得（本ツールは技の習得制限を持たないため、どのポケモンでも選択可能）
 
 ### V3.21.2: きのみ発動の時系列表示（2026-11-05）
 
