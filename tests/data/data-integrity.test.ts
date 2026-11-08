@@ -362,6 +362,21 @@ describe('moves.json integrity', () => {
     })
   })
 
+  it('ヒスイウインディ should be available with Fire/Rock typing and いわはこび', () => {
+    const p = pokemon.find(x => x.name === 'ヒスイウインディ')
+    expect(p).toBeDefined()
+    expect(p).toMatchObject({
+      id: 10059,
+      nameEn: 'Arcanine-Hisui',
+      types: ['ほのお', 'いわ'],
+      baseStats: { hp: 95, atk: 115, def: 80, spa: 95, spd: 80, spe: 90 },
+      abilities: ['いかく', 'もらいび', 'いわはこび'],
+      weight: 168.0,
+    })
+    // 通常ウインディとは別エントリとして共存する
+    expect(pokemon.filter(x => x.nameEn.startsWith('Arcanine')).length).toBe(2)
+  })
+
   it('3ぼんのや should be available as a high-crit contact Fighting move', () => {
     const move = moves.find(m => m.name === '3ぼんのや')
     expect(move).toBeDefined()
