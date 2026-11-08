@@ -362,7 +362,7 @@ describe('moves.json integrity', () => {
     })
   })
 
-  it('ヒスイウインディ should be available with Fire/Rock typing and いわはこび', () => {
+  it('ヒスイウインディ should be available with Fire/Rock typing and いしあたま', () => {
     const p = pokemon.find(x => x.name === 'ヒスイウインディ')
     expect(p).toBeDefined()
     expect(p).toMatchObject({
@@ -370,7 +370,7 @@ describe('moves.json integrity', () => {
       nameEn: 'Arcanine-Hisui',
       types: ['ほのお', 'いわ'],
       baseStats: { hp: 95, atk: 115, def: 80, spa: 95, spd: 80, spe: 90 },
-      abilities: ['いかく', 'もらいび', 'いわはこび'],
+      abilities: ['いかく', 'もらいび', 'いしあたま'],
       weight: 168.0,
     })
     // 通常ウインディとは別エントリとして共存する
