@@ -362,6 +362,27 @@ describe('moves.json integrity', () => {
     })
   })
 
+  it('ルガルガンは まひる/まよなか/たそがれ の3フォルムが区別して収録されている', () => {
+    const byId = new Map(pokemon.map(p => [p.id, p]))
+    expect(byId.get(745)).toMatchObject({
+      name: 'ルガルガン(まひるのすがた)', nameEn: 'Lycanroc-Midday', types: ['いわ'],
+      baseStats: { hp: 75, atk: 115, def: 65, spa: 55, spd: 65, spe: 112 },
+      abilities: ['するどいめ', 'すなかき', 'ふくつのこころ'], weight: 25,
+    })
+    expect(byId.get(10126)).toMatchObject({
+      name: 'ルガルガン(まよなかのすがた)', nameEn: 'Lycanroc-Midnight', types: ['いわ'],
+      baseStats: { hp: 85, atk: 115, def: 75, spa: 55, spd: 75, spe: 82 },
+      abilities: ['するどいめ', 'やるき', 'ノーガード'], weight: 25,
+    })
+    expect(byId.get(10152)).toMatchObject({
+      name: 'ルガルガン(たそがれのすがた)', nameEn: 'Lycanroc-Dusk', types: ['いわ'],
+      baseStats: { hp: 75, atk: 117, def: 65, spa: 55, spd: 65, spe: 110 },
+      abilities: ['かたいツメ'], weight: 25,
+    })
+    // フォルム名なしの「ルガルガン」は残さない（どのフォルムか曖昧になるため）
+    expect(pokemon.some(p => p.name === 'ルガルガン')).toBe(false)
+  })
+
   it('ヒスイウインディ should be available with Fire/Rock typing and いしあたま', () => {
     const p = pokemon.find(x => x.name === 'ヒスイウインディ')
     expect(p).toBeDefined()
