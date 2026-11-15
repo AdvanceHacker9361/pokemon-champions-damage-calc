@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 ポケモンチャンピオンズ向けダメージ計算機（React + TypeScript + Vite）。  
-GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.5**
+GitHub Pages でホスティング、PWA 対応。現在バージョン: **3.21.6**
 
 - 本番 URL: `https://advancehacker9361.github.io/pokemon-champions-damage-calc/`
 - リポジトリ: `advancehacker9361/pokemon-champions-damage-calc`
@@ -801,6 +801,10 @@ src/
 
 #### テスト
 - `BattleSequenceCalc.test.ts` に3件追加（1D primitive `calcCombinedKoProbability` との一致 / `extractDefenderDamageDistribution` / `attackerHp` 指定痛み分け）
+
+### V3.21.6: ルガルガンの3フォルム（2026-11-15）
+
+- 既存 id=745「ルガルガン」を **ルガルガン(まひるのすがた)**（`Lycanroc-Midday`）に改名し、**ルガルガン(まよなかのすがた)**（id=10126、`Lycanroc-Midnight`、H85/A115/B75/C55/D75/S82、するどいめ/やるき/ノーガード）と **ルガルガン(たそがれのすがた)**（id=10152、`Lycanroc-Dusk`、H75/A117/B65/C55/D65/S110、かたいツメ）を追加。命名はポワルン・ストリンダー等と同じ「種族名(フォルム名)」形式。id は PokeAPI のフォルム id。`data-integrity.test.ts` で3フォルムとフォルム名なし表記の不在をピン留め
 
 ### V3.21.3〜V3.21.5: ヒスイウインディ関連の収録（2026-11-08）
 
